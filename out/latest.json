@@ -1,0 +1,1255 @@
+{
+  "generated_at": "2025-11-13T20:14:52.526359+01:00",
+  "schema": {
+    "version": 2,
+    "csv": [
+      "PlayerName",
+      "Canonical",
+      "Group",
+      "Role",
+      "NoShowOverall",
+      "NoShowRolling",
+      "LastSeenDate"
+    ],
+    "groups": [
+      "A",
+      "B"
+    ],
+    "roles": [
+      "Start",
+      "Ersatz"
+    ],
+    "capacities": {
+      "Start": 20,
+      "Ersatz": 10
+    },
+    "eb": {
+      "enabled": true,
+      "n0": 4.0,
+      "lambda": 0.2,
+      "winsorize": true
+    },
+    "prior": {
+      "fallback": 0.18,
+      "pad": 0.02,
+      "team_mean": 0.6639934633820112,
+      "value": 0.6839934633820112
+    }
+  },
+  "groups": {
+    "A": {
+      "Start": [
+        "Alonzo Mosley",
+        "BobbydyBob",
+        "Damien 44",
+        "Jimmy die Robbe",
+        "KUBI01",
+        "KingKobra2",
+        "Kurdun Laneti",
+        "Leraxo",
+        "LittelJoe",
+        "Maggyispass",
+        "Mahaja",
+        "Marikopopo",
+        "Michael 3840",
+        "PAvluWKA",
+        "Re3Slim3",
+        "Schalmei3",
+        "TheFisch",
+        "Tobinho25",
+        "itsH4K1",
+        "rompa ru"
+      ],
+      "Ersatz": [
+        "CRZDR79",
+        "Colombo123",
+        "Darkhold",
+        "Ginge4",
+        "Joschy81",
+        "Kamikaze82",
+        "Kinkel",
+        "jaymacmacjay",
+        "kalash89",
+        "x Earl x"
+      ]
+    },
+    "B": {
+      "Start": [
+        "APM77",
+        "Aegolas",
+        "Alstermaus",
+        "BjörnBärchi",
+        "Cheezusfries",
+        "Cupra290",
+        "Dany Bossss",
+        "DevastatorJMI",
+        "Elevn765",
+        "Evil Activities",
+        "Fenworld",
+        "Globi3000",
+        "Maik1234567890",
+        "Nico 90",
+        "Pickopf",
+        "Schlumpfsoldat 4714",
+        "Stiegl 13",
+        "ZANGE",
+        "abu47",
+        "cindy934"
+      ],
+      "Ersatz": [
+        "Amy0815",
+        "König Hoffi",
+        "Manu1206",
+        "Saribaron",
+        "Satauman",
+        "Wellsyone",
+        "Yoda0201",
+        "Yusam 83",
+        "Zombie 666 80 420",
+        "x Scorpion x"
+      ]
+    }
+  },
+  "players": [
+    {
+      "display": "Alonzo Mosley",
+      "canon": "alonzo mosley",
+      "group": "A",
+      "role": "Start",
+      "noshow_overall": 0.30000000000000004,
+      "noshow_rolling": 0.27127278328030147,
+      "last_seen": "2025-11-07",
+      "events_seen": 10,
+      "noshow_count": 3,
+      "risk_penalty": 0.0253394891511951,
+      "score": 0.0253394891511951,
+      "eb": {
+        "p0": 0.6639934633820112,
+        "n0": 4.0,
+        "p_hat": 0.4039981323948603,
+        "sigma": 0.1266974457559755
+      }
+    },
+    {
+      "display": "BobbydyBob",
+      "canon": "bobbydybob",
+      "group": "A",
+      "role": "Start",
+      "noshow_overall": 0.2727272727272727,
+      "noshow_rolling": 0.2368932651734874,
+      "last_seen": "2025-11-07",
+      "events_seen": 11,
+      "noshow_count": 3,
+      "risk_penalty": 0.02423256935318613,
+      "score": 0.02423256935318613,
+      "eb": {
+        "p0": 0.6639934633820112,
+        "n0": 4.0,
+        "p_hat": 0.37706492356853627,
+        "sigma": 0.12116284676593063
+      }
+    },
+    {
+      "display": "Damien 44",
+      "canon": "damien 44",
+      "group": "A",
+      "role": "Start",
+      "noshow_overall": 0.0,
+      "noshow_rolling": 0.0,
+      "last_seen": "2025-11-07",
+      "events_seen": 4,
+      "noshow_count": 0,
+      "risk_penalty": 0.03139532179145281,
+      "score": 0.03139532179145281,
+      "eb": {
+        "p0": 0.6639934633820112,
+        "n0": 4.0,
+        "p_hat": 0.3319967316910056,
+        "sigma": 0.15697660895726404
+      }
+    },
+    {
+      "display": "Jimmy die Robbe",
+      "canon": "jimmy die robbe",
+      "group": "A",
+      "role": "Start",
+      "noshow_overall": 0.0,
+      "noshow_rolling": 0.0,
+      "last_seen": "2025-11-07",
+      "events_seen": 11,
+      "noshow_count": 0,
+      "risk_penalty": 0.01908618193944278,
+      "score": 0.01908618193944278,
+      "eb": {
+        "p0": 0.6639934633820112,
+        "n0": 4.0,
+        "p_hat": 0.17706492356853631,
+        "sigma": 0.0954309096972139
+      }
+    },
+    {
+      "display": "KUBI01",
+      "canon": "kubi01",
+      "group": "A",
+      "role": "Start",
+      "noshow_overall": 0.0,
+      "noshow_rolling": 0.0,
+      "last_seen": "2025-11-07",
+      "events_seen": 3,
+      "noshow_count": 0,
+      "risk_penalty": 0.034311924303295376,
+      "score": 0.034311924303295376,
+      "eb": {
+        "p0": 0.6639934633820112,
+        "n0": 4.0,
+        "p_hat": 0.3794248362182921,
+        "sigma": 0.17155962151647686
+      }
+    },
+    {
+      "display": "KingKobra2",
+      "canon": "kingkobra 2",
+      "group": "A",
+      "role": "Start",
+      "noshow_overall": 0.25,
+      "noshow_rolling": 0.21888349570648902,
+      "last_seen": "2025-11-07",
+      "events_seen": 8,
+      "noshow_count": 2,
+      "risk_penalty": 0.027030211697157625,
+      "score": 0.027030211697157625,
+      "eb": {
+        "p0": 0.6639934633820112,
+        "n0": 4.0,
+        "p_hat": 0.387997821127337,
+        "sigma": 0.13515105848578812
+      }
+    },
+    {
+      "display": "Kurdun Laneti",
+      "canon": "kurdun laneti",
+      "group": "A",
+      "role": "Start",
+      "noshow_overall": 0.0,
+      "noshow_rolling": 0.0,
+      "last_seen": "",
+      "events_seen": 0,
+      "noshow_count": 0,
+      "risk_penalty": 0.04224747509311987,
+      "score": 0.04224747509311987,
+      "eb": {
+        "p0": 0.6639934633820112,
+        "n0": 4.0,
+        "p_hat": 0.6639934633820112,
+        "sigma": 0.21123737546559934
+      }
+    },
+    {
+      "display": "Leraxo",
+      "canon": "leraxo",
+      "group": "A",
+      "role": "Start",
+      "noshow_overall": 0.5,
+      "noshow_rolling": 0.48652540159742197,
+      "last_seen": "2025-11-07",
+      "events_seen": 2,
+      "noshow_count": 1,
+      "risk_penalty": 0.03688183254641984,
+      "score": 0.03688183254641984,
+      "eb": {
+        "p0": 0.6639934633820112,
+        "n0": 4.0,
+        "p_hat": 0.6093289755880075,
+        "sigma": 0.1844091627320992
+      }
+    },
+    {
+      "display": "LittelJoe",
+      "canon": "litteljoe",
+      "group": "A",
+      "role": "Start",
+      "noshow_overall": 0.0,
+      "noshow_rolling": 0.0,
+      "last_seen": "2025-11-07",
+      "events_seen": 6,
+      "noshow_count": 0,
+      "risk_penalty": 0.02663254429156235,
+      "score": 0.02663254429156235,
+      "eb": {
+        "p0": 0.6639934633820112,
+        "n0": 4.0,
+        "p_hat": 0.26559738535280447,
+        "sigma": 0.13316272145781174
+      }
+    },
+    {
+      "display": "Maggyispass",
+      "canon": "maggyispass",
+      "group": "A",
+      "role": "Start",
+      "noshow_overall": 0.36363636363636365,
+      "noshow_rolling": 0.3317975913601603,
+      "last_seen": "2025-11-07",
+      "events_seen": 11,
+      "noshow_count": 4,
+      "risk_penalty": 0.024841188883713925,
+      "score": 0.024841188883713925,
+      "eb": {
+        "p0": 0.6639934633820112,
+        "n0": 4.0,
+        "p_hat": 0.4437315902352029,
+        "sigma": 0.12420594441856962
+      }
+    },
+    {
+      "display": "Mahaja",
+      "canon": "mahaja",
+      "group": "A",
+      "role": "Start",
+      "noshow_overall": 0.11111111111111116,
+      "noshow_rolling": 0.08628445637933069,
+      "last_seen": "2025-11-07",
+      "events_seen": 9,
+      "noshow_count": 1,
+      "risk_penalty": 0.02403207045701894,
+      "score": 0.02403207045701894,
+      "eb": {
+        "p0": 0.6639934633820112,
+        "n0": 4.0,
+        "p_hat": 0.28122875796369573,
+        "sigma": 0.12016035228509468
+      }
+    },
+    {
+      "display": "Marikopopo",
+      "canon": "marikopopo",
+      "group": "A",
+      "role": "Start",
+      "noshow_overall": 0.0,
+      "noshow_rolling": 0.0,
+      "last_seen": "2025-11-07",
+      "events_seen": 8,
+      "noshow_count": 0,
+      "risk_penalty": 0.023027987956182452,
+      "score": 0.023027987956182452,
+      "eb": {
+        "p0": 0.6639934633820112,
+        "n0": 4.0,
+        "p_hat": 0.2213311544606704,
+        "sigma": 0.11513993978091225
+      }
+    },
+    {
+      "display": "Michael 3840",
+      "canon": "michael 3840",
+      "group": "A",
+      "role": "Start",
+      "noshow_overall": 0.5,
+      "noshow_rolling": 0.46252926347431633,
+      "last_seen": "2025-11-07",
+      "events_seen": 4,
+      "noshow_count": 2,
+      "risk_penalty": 0.03288204751613414,
+      "score": 0.03288204751613414,
+      "eb": {
+        "p0": 0.6639934633820112,
+        "n0": 4.0,
+        "p_hat": 0.5819967316910055,
+        "sigma": 0.1644102375806707
+      }
+    },
+    {
+      "display": "PAvluWKA",
+      "canon": "pavluwka",
+      "group": "A",
+      "role": "Start",
+      "noshow_overall": 0.30000000000000004,
+      "noshow_rolling": 0.2965631778519082,
+      "last_seen": "2025-11-07",
+      "events_seen": 10,
+      "noshow_count": 3,
+      "risk_penalty": 0.0253394891511951,
+      "score": 0.0253394891511951,
+      "eb": {
+        "p0": 0.6639934633820112,
+        "n0": 4.0,
+        "p_hat": 0.4039981323948603,
+        "sigma": 0.1266974457559755
+      }
+    },
+    {
+      "display": "Re3Slim3",
+      "canon": "re3slim3",
+      "group": "A",
+      "role": "Start",
+      "noshow_overall": 0.0,
+      "noshow_rolling": 0.0,
+      "last_seen": "",
+      "events_seen": 0,
+      "noshow_count": 0,
+      "risk_penalty": 0.04224747509311987,
+      "score": 0.04224747509311987,
+      "eb": {
+        "p0": 0.6639934633820112,
+        "n0": 4.0,
+        "p_hat": 0.6639934633820112,
+        "sigma": 0.21123737546559934
+      }
+    },
+    {
+      "display": "Schalmei3",
+      "canon": "schalmei3",
+      "group": "A",
+      "role": "Start",
+      "noshow_overall": 0.09090909090909094,
+      "noshow_rolling": 0.07002339844588845,
+      "last_seen": "2025-11-07",
+      "events_seen": 11,
+      "noshow_count": 1,
+      "risk_penalty": 0.021466631207330958,
+      "score": 0.021466631207330958,
+      "eb": {
+        "p0": 0.6639934633820112,
+        "n0": 4.0,
+        "p_hat": 0.24373159023520297,
+        "sigma": 0.10733315603665478
+      }
+    },
+    {
+      "display": "TheFisch",
+      "canon": "thefisch",
+      "group": "A",
+      "role": "Start",
+      "noshow_overall": 0.25,
+      "noshow_rolling": 0.20370094664093463,
+      "last_seen": "2025-10-24",
+      "events_seen": 8,
+      "noshow_count": 2,
+      "risk_penalty": 0.027030211697157625,
+      "score": 0.027030211697157625,
+      "eb": {
+        "p0": 0.6639934633820112,
+        "n0": 4.0,
+        "p_hat": 0.387997821127337,
+        "sigma": 0.13515105848578812
+      }
+    },
+    {
+      "display": "Tobinho25",
+      "canon": "tobinho25",
+      "group": "A",
+      "role": "Start",
+      "noshow_overall": 0.0,
+      "noshow_rolling": 0.0,
+      "last_seen": "2025-11-07",
+      "events_seen": 2,
+      "noshow_count": 0,
+      "risk_penalty": 0.03754710482898349,
+      "score": 0.03754710482898349,
+      "eb": {
+        "p0": 0.6639934633820112,
+        "n0": 4.0,
+        "p_hat": 0.4426623089213408,
+        "sigma": 0.18773552414491745
+      }
+    },
+    {
+      "display": "itsH4K1",
+      "canon": "itsh4k1",
+      "group": "A",
+      "role": "Start",
+      "noshow_overall": 0.0,
+      "noshow_rolling": 0.0,
+      "last_seen": "2025-11-07",
+      "events_seen": 11,
+      "noshow_count": 0,
+      "risk_penalty": 0.01908618193944278,
+      "score": 0.01908618193944278,
+      "eb": {
+        "p0": 0.6639934633820112,
+        "n0": 4.0,
+        "p_hat": 0.17706492356853631,
+        "sigma": 0.0954309096972139
+      }
+    },
+    {
+      "display": "rompa ru",
+      "canon": "rompa ru",
+      "group": "A",
+      "role": "Start",
+      "noshow_overall": 0.18181818181818177,
+      "noshow_rolling": 0.15757049321151484,
+      "last_seen": "2025-11-07",
+      "events_seen": 11,
+      "noshow_count": 2,
+      "risk_penalty": 0.023132832674261417,
+      "score": 0.023132832674261417,
+      "eb": {
+        "p0": 0.6639934633820112,
+        "n0": 4.0,
+        "p_hat": 0.3103982569018696,
+        "sigma": 0.11566416337130707
+      }
+    },
+    {
+      "display": "CRZDR79",
+      "canon": "crzdr79",
+      "group": "A",
+      "role": "Ersatz",
+      "noshow_overall": 0.0,
+      "noshow_rolling": 0.0,
+      "last_seen": "",
+      "events_seen": 0,
+      "noshow_count": 0,
+      "risk_penalty": 0.04224747509311987,
+      "score": 0.04224747509311987,
+      "eb": {
+        "p0": 0.6639934633820112,
+        "n0": 4.0,
+        "p_hat": 0.6639934633820112,
+        "sigma": 0.21123737546559934
+      }
+    },
+    {
+      "display": "Colombo123",
+      "canon": "colombo123",
+      "group": "A",
+      "role": "Ersatz",
+      "noshow_overall": 0.6,
+      "noshow_rolling": 0.5782518116655613,
+      "last_seen": "2025-11-07",
+      "events_seen": 5,
+      "noshow_count": 3,
+      "risk_penalty": 0.030561594918273136,
+      "score": 0.030561594918273136,
+      "eb": {
+        "p0": 0.6639934633820112,
+        "n0": 4.0,
+        "p_hat": 0.6284415392808937,
+        "sigma": 0.15280797459136566
+      }
+    },
+    {
+      "display": "Darkhold",
+      "canon": "darkhold",
+      "group": "A",
+      "role": "Ersatz",
+      "noshow_overall": 0.0,
+      "noshow_rolling": 0.0,
+      "last_seen": "",
+      "events_seen": 0,
+      "noshow_count": 0,
+      "risk_penalty": 0.04224747509311987,
+      "score": 0.04224747509311987,
+      "eb": {
+        "p0": 0.6639934633820112,
+        "n0": 4.0,
+        "p_hat": 0.6639934633820112,
+        "sigma": 0.21123737546559934
+      }
+    },
+    {
+      "display": "Ginge4",
+      "canon": "ginge4",
+      "group": "A",
+      "role": "Ersatz",
+      "noshow_overall": 0.0,
+      "noshow_rolling": 0.0,
+      "last_seen": "",
+      "events_seen": 0,
+      "noshow_count": 0,
+      "risk_penalty": 0.04224747509311987,
+      "score": 0.04224747509311987,
+      "eb": {
+        "p0": 0.6639934633820112,
+        "n0": 4.0,
+        "p_hat": 0.6639934633820112,
+        "sigma": 0.21123737546559934
+      }
+    },
+    {
+      "display": "Joschy81",
+      "canon": "joschy81",
+      "group": "A",
+      "role": "Ersatz",
+      "noshow_overall": 0.0,
+      "noshow_rolling": 0.0,
+      "last_seen": "",
+      "events_seen": 0,
+      "noshow_count": 0,
+      "risk_penalty": 0.04224747509311987,
+      "score": 0.04224747509311987,
+      "eb": {
+        "p0": 0.6639934633820112,
+        "n0": 4.0,
+        "p_hat": 0.6639934633820112,
+        "sigma": 0.21123737546559934
+      }
+    },
+    {
+      "display": "Kamikaze82",
+      "canon": "kamikaze82",
+      "group": "A",
+      "role": "Ersatz",
+      "noshow_overall": 0.0,
+      "noshow_rolling": 0.0,
+      "last_seen": "",
+      "events_seen": 0,
+      "noshow_count": 0,
+      "risk_penalty": 0.04224747509311987,
+      "score": 0.04224747509311987,
+      "eb": {
+        "p0": 0.6639934633820112,
+        "n0": 4.0,
+        "p_hat": 0.6639934633820112,
+        "sigma": 0.21123737546559934
+      }
+    },
+    {
+      "display": "Kinkel",
+      "canon": "kinkel",
+      "group": "A",
+      "role": "Ersatz",
+      "noshow_overall": 0.0,
+      "noshow_rolling": 0.0,
+      "last_seen": "",
+      "events_seen": 0,
+      "noshow_count": 0,
+      "risk_penalty": 0.04224747509311987,
+      "score": 0.04224747509311987,
+      "eb": {
+        "p0": 0.6639934633820112,
+        "n0": 4.0,
+        "p_hat": 0.6639934633820112,
+        "sigma": 0.21123737546559934
+      }
+    },
+    {
+      "display": "jaymacmacjay",
+      "canon": "jaymacmacjay",
+      "group": "A",
+      "role": "Ersatz",
+      "noshow_overall": 0.0,
+      "noshow_rolling": 0.0,
+      "last_seen": "",
+      "events_seen": 0,
+      "noshow_count": 0,
+      "risk_penalty": 0.04224747509311987,
+      "score": 0.04224747509311987,
+      "eb": {
+        "p0": 0.6639934633820112,
+        "n0": 4.0,
+        "p_hat": 0.6639934633820112,
+        "sigma": 0.21123737546559934
+      }
+    },
+    {
+      "display": "kalash89",
+      "canon": "kalash89",
+      "group": "A",
+      "role": "Ersatz",
+      "noshow_overall": 0.0,
+      "noshow_rolling": 0.0,
+      "last_seen": "",
+      "events_seen": 0,
+      "noshow_count": 0,
+      "risk_penalty": 0.04224747509311987,
+      "score": 0.04224747509311987,
+      "eb": {
+        "p0": 0.6639934633820112,
+        "n0": 4.0,
+        "p_hat": 0.6639934633820112,
+        "sigma": 0.21123737546559934
+      }
+    },
+    {
+      "display": "x Earl x",
+      "canon": "x earl x",
+      "group": "A",
+      "role": "Ersatz",
+      "noshow_overall": 0.33333333333333337,
+      "noshow_rolling": 0.27840371882303516,
+      "last_seen": "2025-10-31",
+      "events_seen": 3,
+      "noshow_count": 1,
+      "risk_penalty": 0.03532021470832828,
+      "score": 0.03532021470832828,
+      "eb": {
+        "p0": 0.6639934633820112,
+        "n0": 4.0,
+        "p_hat": 0.5222819790754349,
+        "sigma": 0.1766010735416414
+      }
+    },
+    {
+      "display": "APM77",
+      "canon": "apm77",
+      "group": "B",
+      "role": "Start",
+      "noshow_overall": 0.5,
+      "noshow_rolling": 0.5134745984013087,
+      "last_seen": "2025-11-07",
+      "events_seen": 2,
+      "noshow_count": 1,
+      "risk_penalty": 0.03688183254641984,
+      "score": 0.03688183254641984,
+      "eb": {
+        "p0": 0.6639934633820112,
+        "n0": 4.0,
+        "p_hat": 0.6093289755880075,
+        "sigma": 0.1844091627320992
+      }
+    },
+    {
+      "display": "Aegolas",
+      "canon": "aegolas",
+      "group": "B",
+      "role": "Start",
+      "noshow_overall": 0.7,
+      "noshow_rolling": 0.7187244874866141,
+      "last_seen": "2025-11-07",
+      "events_seen": 10,
+      "noshow_count": 7,
+      "risk_penalty": 0.023889143889512132,
+      "score": 0.023889143889512132,
+      "eb": {
+        "p0": 0.6639934633820112,
+        "n0": 4.0,
+        "p_hat": 0.689712418109146,
+        "sigma": 0.11944571944756066
+      }
+    },
+    {
+      "display": "Alstermaus",
+      "canon": "alstermaus",
+      "group": "B",
+      "role": "Start",
+      "noshow_overall": 0.33333333333333337,
+      "noshow_rolling": 0.3155329022799652,
+      "last_seen": "2025-11-07",
+      "events_seen": 3,
+      "noshow_count": 1,
+      "risk_penalty": 0.03532021470832828,
+      "score": 0.03532021470832828,
+      "eb": {
+        "p0": 0.6639934633820112,
+        "n0": 4.0,
+        "p_hat": 0.5222819790754349,
+        "sigma": 0.1766010735416414
+      }
+    },
+    {
+      "display": "BjörnBärchi",
+      "canon": "björnbärchi",
+      "group": "B",
+      "role": "Start",
+      "noshow_overall": 0.6666666666666667,
+      "noshow_rolling": 0.6844670977178551,
+      "last_seen": "2025-11-07",
+      "events_seen": 3,
+      "noshow_count": 2,
+      "risk_penalty": 0.03337132529637812,
+      "score": 0.03337132529637812,
+      "eb": {
+        "p0": 0.6639934633820112,
+        "n0": 4.0,
+        "p_hat": 0.6651391219325777,
+        "sigma": 0.1668566264818906
+      }
+    },
+    {
+      "display": "Cheezusfries",
+      "canon": "cheezusfries",
+      "group": "B",
+      "role": "Start",
+      "noshow_overall": 0.0,
+      "noshow_rolling": 0.0,
+      "last_seen": "",
+      "events_seen": 0,
+      "noshow_count": 0,
+      "risk_penalty": 0.04224747509311987,
+      "score": 0.04224747509311987,
+      "eb": {
+        "p0": 0.6639934633820112,
+        "n0": 4.0,
+        "p_hat": 0.6639934633820112,
+        "sigma": 0.21123737546559934
+      }
+    },
+    {
+      "display": "Cupra290",
+      "canon": "cupra290",
+      "group": "B",
+      "role": "Start",
+      "noshow_overall": 0.0,
+      "noshow_rolling": 0.0,
+      "last_seen": "2025-11-07",
+      "events_seen": 7,
+      "noshow_count": 0,
+      "risk_penalty": 0.02470850183155358,
+      "score": 0.02470850183155358,
+      "eb": {
+        "p0": 0.6639934633820112,
+        "n0": 4.0,
+        "p_hat": 0.2414521685025495,
+        "sigma": 0.12354250915776789
+      }
+    },
+    {
+      "display": "Dany Bossss",
+      "canon": "dany bossss",
+      "group": "B",
+      "role": "Start",
+      "noshow_overall": 0.33333333333333337,
+      "noshow_rolling": 0.3330106295984444,
+      "last_seen": "2025-11-07",
+      "events_seen": 3,
+      "noshow_count": 1,
+      "risk_penalty": 0.03532021470832828,
+      "score": 0.03532021470832828,
+      "eb": {
+        "p0": 0.6639934633820112,
+        "n0": 4.0,
+        "p_hat": 0.5222819790754349,
+        "sigma": 0.1766010735416414
+      }
+    },
+    {
+      "display": "DevastatorJMI",
+      "canon": "devastatorjmi",
+      "group": "B",
+      "role": "Start",
+      "noshow_overall": 0.7142857142857143,
+      "noshow_rolling": 0.685897100320426,
+      "last_seen": "2025-11-07",
+      "events_seen": 7,
+      "noshow_count": 5,
+      "risk_penalty": 0.026557166751464818,
+      "score": 0.026557166751464818,
+      "eb": {
+        "p0": 0.6639934633820112,
+        "n0": 4.0,
+        "p_hat": 0.695997623048004,
+        "sigma": 0.13278583375732408
+      }
+    },
+    {
+      "display": "Elevn765",
+      "canon": "elevn765",
+      "group": "B",
+      "role": "Start",
+      "noshow_overall": 0.0,
+      "noshow_rolling": 0.0,
+      "last_seen": "2025-11-07",
+      "events_seen": 11,
+      "noshow_count": 0,
+      "risk_penalty": 0.01908618193944278,
+      "score": 0.01908618193944278,
+      "eb": {
+        "p0": 0.6639934633820112,
+        "n0": 4.0,
+        "p_hat": 0.17706492356853631,
+        "sigma": 0.0954309096972139
+      }
+    },
+    {
+      "display": "Evil Activities",
+      "canon": "evil activities",
+      "group": "B",
+      "role": "Start",
+      "noshow_overall": 0.625,
+      "noshow_rolling": 0.5697176824271979,
+      "last_seen": "2025-11-07",
+      "events_seen": 8,
+      "noshow_count": 5,
+      "risk_penalty": 0.026657751152431186,
+      "score": 0.026657751152431186,
+      "eb": {
+        "p0": 0.6639934633820112,
+        "n0": 4.0,
+        "p_hat": 0.637997821127337,
+        "sigma": 0.13328875576215593
+      }
+    },
+    {
+      "display": "Fenworld",
+      "canon": "fenworld",
+      "group": "B",
+      "role": "Start",
+      "noshow_overall": 0.33333333333333337,
+      "noshow_rolling": 0.33301062958925765,
+      "last_seen": "2025-11-07",
+      "events_seen": 3,
+      "noshow_count": 1,
+      "risk_penalty": 0.03532021470832828,
+      "score": 0.03532021470832828,
+      "eb": {
+        "p0": 0.6639934633820112,
+        "n0": 4.0,
+        "p_hat": 0.5222819790754349,
+        "sigma": 0.1766010735416414
+      }
+    },
+    {
+      "display": "Globi3000",
+      "canon": "globi3000",
+      "group": "B",
+      "role": "Start",
+      "noshow_overall": 1.0,
+      "noshow_rolling": 1.0,
+      "last_seen": "2025-11-07",
+      "events_seen": 5,
+      "noshow_count": 5,
+      "risk_penalty": 0.022541954340161877,
+      "score": 0.022541954340161877,
+      "eb": {
+        "p0": 0.6639934633820112,
+        "n0": 4.0,
+        "p_hat": 0.8506637615031161,
+        "sigma": 0.11270977170080938
+      }
+    },
+    {
+      "display": "Maik1234567890",
+      "canon": "maik1234567890",
+      "group": "B",
+      "role": "Start",
+      "noshow_overall": 0.09090909090909094,
+      "noshow_rolling": 0.07447343854938149,
+      "last_seen": "2025-11-07",
+      "events_seen": 11,
+      "noshow_count": 1,
+      "risk_penalty": 0.021466631207330958,
+      "score": 0.021466631207330958,
+      "eb": {
+        "p0": 0.6639934633820112,
+        "n0": 4.0,
+        "p_hat": 0.24373159023520297,
+        "sigma": 0.10733315603665478
+      }
+    },
+    {
+      "display": "Nico 90",
+      "canon": "nico 90",
+      "group": "B",
+      "role": "Start",
+      "noshow_overall": 0.5,
+      "noshow_rolling": 0.5634168708028525,
+      "last_seen": "2025-11-07",
+      "events_seen": 10,
+      "noshow_count": 5,
+      "risk_penalty": 0.025706268142539818,
+      "score": 0.025706268142539818,
+      "eb": {
+        "p0": 0.6639934633820112,
+        "n0": 4.0,
+        "p_hat": 0.5468552752520032,
+        "sigma": 0.1285313407126991
+      }
+    },
+    {
+      "display": "Pickopf",
+      "canon": "pickopf",
+      "group": "B",
+      "role": "Start",
+      "noshow_overall": 0.7,
+      "noshow_rolling": 0.6929678514531263,
+      "last_seen": "2025-11-07",
+      "events_seen": 10,
+      "noshow_count": 7,
+      "risk_penalty": 0.023889143889512132,
+      "score": 0.023889143889512132,
+      "eb": {
+        "p0": 0.6639934633820112,
+        "n0": 4.0,
+        "p_hat": 0.689712418109146,
+        "sigma": 0.11944571944756066
+      }
+    },
+    {
+      "display": "Schlumpfsoldat 4714",
+      "canon": "schlumpfsoldat 4714",
+      "group": "B",
+      "role": "Start",
+      "noshow_overall": 0.8,
+      "noshow_rolling": 0.7610233601874548,
+      "last_seen": "2025-11-07",
+      "events_seen": 5,
+      "noshow_count": 4,
+      "risk_penalty": 0.027757127206551175,
+      "score": 0.027757127206551175,
+      "eb": {
+        "p0": 0.6639934633820112,
+        "n0": 4.0,
+        "p_hat": 0.7395526503920049,
+        "sigma": 0.13878563603275587
+      }
+    },
+    {
+      "display": "Stiegl 13",
+      "canon": "stiegl 13",
+      "group": "B",
+      "role": "Start",
+      "noshow_overall": 0.4285714285714286,
+      "noshow_rolling": 0.42080771064170297,
+      "last_seen": "2025-11-07",
+      "events_seen": 7,
+      "noshow_count": 3,
+      "risk_penalty": 0.028855903119143003,
+      "score": 0.028855903119143003,
+      "eb": {
+        "p0": 0.6639934633820112,
+        "n0": 4.0,
+        "p_hat": 0.5141794412298222,
+        "sigma": 0.144279515595715
+      }
+    },
+    {
+      "display": "ZANGE",
+      "canon": "zange",
+      "group": "B",
+      "role": "Start",
+      "noshow_overall": 0.4,
+      "noshow_rolling": 0.3680268817320027,
+      "last_seen": "2025-11-07",
+      "events_seen": 10,
+      "noshow_count": 4,
+      "risk_penalty": 0.025788687603418604,
+      "score": 0.025788687603418604,
+      "eb": {
+        "p0": 0.6639934633820112,
+        "n0": 4.0,
+        "p_hat": 0.4754267038234317,
+        "sigma": 0.12894343801709302
+      }
+    },
+    {
+      "display": "abu47",
+      "canon": "abu47",
+      "group": "B",
+      "role": "Start",
+      "noshow_overall": 0.0,
+      "noshow_rolling": 0.0,
+      "last_seen": "",
+      "events_seen": 0,
+      "noshow_count": 0,
+      "risk_penalty": 0.04224747509311987,
+      "score": 0.04224747509311987,
+      "eb": {
+        "p0": 0.6639934633820112,
+        "n0": 4.0,
+        "p_hat": 0.6639934633820112,
+        "sigma": 0.21123737546559934
+      }
+    },
+    {
+      "display": "cindy934",
+      "canon": "cindy934",
+      "group": "B",
+      "role": "Start",
+      "noshow_overall": 0.5,
+      "noshow_rolling": 0.5483504033886455,
+      "last_seen": "2025-11-07",
+      "events_seen": 6,
+      "noshow_count": 3,
+      "risk_penalty": 0.029890526503764954,
+      "score": 0.029890526503764954,
+      "eb": {
+        "p0": 0.6639934633820112,
+        "n0": 4.0,
+        "p_hat": 0.5655973853528045,
+        "sigma": 0.14945263251882476
+      }
+    },
+    {
+      "display": "Amy0815",
+      "canon": "amy0815",
+      "group": "B",
+      "role": "Ersatz",
+      "noshow_overall": 1.0,
+      "noshow_rolling": 1.0,
+      "last_seen": "2025-10-31",
+      "events_seen": 1,
+      "noshow_count": 1,
+      "risk_penalty": 0.03619843256260147,
+      "score": 0.03619843256260147,
+      "eb": {
+        "p0": 0.6639934633820112,
+        "n0": 4.0,
+        "p_hat": 0.7311947707056089,
+        "sigma": 0.18099216281300734
+      }
+    },
+    {
+      "display": "König Hoffi",
+      "canon": "könig hoffi",
+      "group": "B",
+      "role": "Ersatz",
+      "noshow_overall": 0.0,
+      "noshow_rolling": 0.0,
+      "last_seen": "",
+      "events_seen": 0,
+      "noshow_count": 0,
+      "risk_penalty": 0.04224747509311987,
+      "score": 0.04224747509311987,
+      "eb": {
+        "p0": 0.6639934633820112,
+        "n0": 4.0,
+        "p_hat": 0.6639934633820112,
+        "sigma": 0.21123737546559934
+      }
+    },
+    {
+      "display": "Manu1206",
+      "canon": "manu1206",
+      "group": "B",
+      "role": "Ersatz",
+      "noshow_overall": 0.0,
+      "noshow_rolling": 0.0,
+      "last_seen": "",
+      "events_seen": 0,
+      "noshow_count": 0,
+      "risk_penalty": 0.04224747509311987,
+      "score": 0.04224747509311987,
+      "eb": {
+        "p0": 0.6639934633820112,
+        "n0": 4.0,
+        "p_hat": 0.6639934633820112,
+        "sigma": 0.21123737546559934
+      }
+    },
+    {
+      "display": "Saribaron",
+      "canon": "saribaron",
+      "group": "B",
+      "role": "Ersatz",
+      "noshow_overall": 0.0,
+      "noshow_rolling": 0.0,
+      "last_seen": "",
+      "events_seen": 0,
+      "noshow_count": 0,
+      "risk_penalty": 0.04224747509311987,
+      "score": 0.04224747509311987,
+      "eb": {
+        "p0": 0.6639934633820112,
+        "n0": 4.0,
+        "p_hat": 0.6639934633820112,
+        "sigma": 0.21123737546559934
+      }
+    },
+    {
+      "display": "Satauman",
+      "canon": "satauman",
+      "group": "B",
+      "role": "Ersatz",
+      "noshow_overall": 0.0,
+      "noshow_rolling": 0.0,
+      "last_seen": "",
+      "events_seen": 0,
+      "noshow_count": 0,
+      "risk_penalty": 0.04224747509311987,
+      "score": 0.04224747509311987,
+      "eb": {
+        "p0": 0.6639934633820112,
+        "n0": 4.0,
+        "p_hat": 0.6639934633820112,
+        "sigma": 0.21123737546559934
+      }
+    },
+    {
+      "display": "Wellsyone",
+      "canon": "wellsyone",
+      "group": "B",
+      "role": "Ersatz",
+      "noshow_overall": 0.0,
+      "noshow_rolling": 0.0,
+      "last_seen": "",
+      "events_seen": 0,
+      "noshow_count": 0,
+      "risk_penalty": 0.04224747509311987,
+      "score": 0.04224747509311987,
+      "eb": {
+        "p0": 0.6639934633820112,
+        "n0": 4.0,
+        "p_hat": 0.6639934633820112,
+        "sigma": 0.21123737546559934
+      }
+    },
+    {
+      "display": "Yoda0201",
+      "canon": "yoda0201",
+      "group": "B",
+      "role": "Ersatz",
+      "noshow_overall": 0.8333333333333334,
+      "noshow_rolling": 0.8658952322282717,
+      "last_seen": "2025-10-31",
+      "events_seen": 6,
+      "noshow_count": 5,
+      "risk_penalty": 0.02554554071697723,
+      "score": 0.02554554071697723,
+      "eb": {
+        "p0": 0.6639934633820112,
+        "n0": 4.0,
+        "p_hat": 0.7655973853528044,
+        "sigma": 0.12772770358488614
+      }
+    },
+    {
+      "display": "Yusam 83",
+      "canon": "yusam 83",
+      "group": "B",
+      "role": "Ersatz",
+      "noshow_overall": 0.0,
+      "noshow_rolling": 0.0,
+      "last_seen": "",
+      "events_seen": 0,
+      "noshow_count": 0,
+      "risk_penalty": 0.04224747509311987,
+      "score": 0.04224747509311987,
+      "eb": {
+        "p0": 0.6639934633820112,
+        "n0": 4.0,
+        "p_hat": 0.6639934633820112,
+        "sigma": 0.21123737546559934
+      }
+    },
+    {
+      "display": "Zombie 666 80 420",
+      "canon": "zombie 666 80 420",
+      "group": "B",
+      "role": "Ersatz",
+      "noshow_overall": 0.0,
+      "noshow_rolling": 0.0,
+      "last_seen": "",
+      "events_seen": 0,
+      "noshow_count": 0,
+      "risk_penalty": 0.04224747509311987,
+      "score": 0.04224747509311987,
+      "eb": {
+        "p0": 0.6639934633820112,
+        "n0": 4.0,
+        "p_hat": 0.6639934633820112,
+        "sigma": 0.21123737546559934
+      }
+    },
+    {
+      "display": "x Scorpion x",
+      "canon": "x scorpion x",
+      "group": "B",
+      "role": "Ersatz",
+      "noshow_overall": 0.0,
+      "noshow_rolling": 0.0,
+      "last_seen": "",
+      "events_seen": 0,
+      "noshow_count": 0,
+      "risk_penalty": 0.04224747509311987,
+      "score": 0.04224747509311987,
+      "eb": {
+        "p0": 0.6639934633820112,
+        "n0": 4.0,
+        "p_hat": 0.6639934633820112,
+        "sigma": 0.21123737546559934
+      }
+    }
+  ]
+}

@@ -1,0 +1,1075 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex, nofollow">
+  <title>Roster Events verwalten</title>
+  <link rel="stylesheet" href="https://unpkg.com/tabulator-tables@5.5.2/dist/css/tabulator.min.css">
+  <style>
+    :root {
+      color-scheme: light dark;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: #f6f7f9;
+      color: #1a1c1f;
+    }
+
+    body {
+      margin: 0;
+      padding: 0;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    header {
+      background: white;
+      box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
+      padding: 1rem 1.5rem;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1rem;
+      align-items: flex-end;
+    }
+
+    header h1 {
+      flex-basis: 100%;
+      margin: 0 0 0.5rem;
+      font-size: 1.5rem;
+    }
+
+    main {
+      flex: 1;
+      padding: 1.5rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+
+    fieldset {
+      border: 1px solid rgba(0, 0, 0, 0.1);
+      border-radius: 0.75rem;
+      padding: 1rem;
+      min-width: min(400px, 100%);
+      background: white;
+    }
+
+    legend {
+      font-weight: 600;
+      padding: 0 0.5rem;
+    }
+
+    label {
+      display: flex;
+      flex-direction: column;
+      font-size: 0.85rem;
+      gap: 0.35rem;
+    }
+
+    input[type="text"],
+    input[type="url"],
+    input[type="password"],
+    select {
+      font: inherit;
+      padding: 0.5rem 0.65rem;
+      border-radius: 0.6rem;
+      border: 1px solid rgba(0, 0, 0, 0.2);
+      min-width: 12rem;
+    }
+
+    input[type="text"]:focus,
+    input[type="url"]:focus,
+    input[type="password"]:focus,
+    select:focus {
+      outline: 2px solid #0b63f6;
+      outline-offset: 1px;
+    }
+
+    button {
+      font: inherit;
+      padding: 0.55rem 1.1rem;
+      border-radius: 0.6rem;
+      border: none;
+      background: #0b63f6;
+      color: white;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.25rem;
+    }
+
+    button[disabled] {
+      background: #adb5bd;
+      cursor: not-allowed;
+    }
+
+    .secondary-button {
+      background: #4b4f56;
+    }
+
+    .danger-button {
+      background: #c62828;
+    }
+
+    .controls-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1rem;
+    }
+
+    .controls-row > * {
+      flex: 1 1 200px;
+    }
+
+    .inline {
+      flex-direction: row;
+      align-items: center;
+    }
+
+    .inline label {
+      flex: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .inline input[type="text"] {
+      flex: none;
+    }
+
+    .dropzone {
+      border: 2px dashed #0b63f6;
+      border-radius: 0.75rem;
+      padding: 1.5rem;
+      background: rgba(11, 99, 246, 0.08);
+      text-align: center;
+      font-weight: 500;
+      transition: border-color 0.2s ease, background 0.2s ease;
+    }
+
+    .dropzone.dragover {
+      border-color: #093a9b;
+      background: rgba(9, 58, 155, 0.15);
+    }
+
+    .tabulator {
+      border-radius: 0.75rem;
+      border: 1px solid rgba(0, 0, 0, 0.15);
+      background: white;
+    }
+
+    .tabulator .tabulator-header {
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+
+    .tabulator-row-invalid {
+      background: rgba(198, 40, 40, 0.08);
+    }
+
+    .statusbar {
+      display: flex;
+      gap: 1rem;
+      align-items: center;
+      padding: 0.75rem 1rem;
+      background: white;
+      border-radius: 0.75rem;
+      border: 1px solid rgba(0, 0, 0, 0.1);
+      font-size: 0.9rem;
+    }
+
+    .statusbar span {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+    }
+
+    .status-ok {
+      color: #256029;
+    }
+
+    .status-warn {
+      color: #b8860b;
+    }
+
+    .status-error {
+      color: #c62828;
+    }
+
+    .toast-container {
+      position: fixed;
+      right: 1rem;
+      bottom: 1rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+      z-index: 200;
+    }
+
+    .toast {
+      padding: 0.75rem 1rem;
+      border-radius: 0.75rem;
+      background: rgba(33, 37, 41, 0.9);
+      color: white;
+      min-width: 18rem;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
+      opacity: 0.95;
+      transform: translateY(0);
+      transition: opacity 0.3s ease, transform 0.3s ease;
+    }
+
+    .toast.fade-out {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+
+    .hidden {
+      display: none !important;
+    }
+
+    .duplicate-cell {
+      background: rgba(198, 40, 40, 0.15);
+    }
+
+    .error-banner {
+      background: rgba(198, 40, 40, 0.15);
+      border: 1px solid rgba(198, 40, 40, 0.35);
+      color: #5b1717;
+      padding: 0.75rem 1rem;
+      border-radius: 0.6rem;
+    }
+
+    .flex-gap {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Events hochladen (Tabellen-Editor)</h1>
+    <div class="controls-row">
+      <fieldset>
+        <legend>Event</legend>
+        <div class="flex-gap">
+          <label>
+            Event ID
+            <input type="text" id="event-id" placeholder="DS-2024-05-01-A" autocomplete="off">
+          </label>
+          <button type="button" id="derive-event">aus Datei ableiten</button>
+        </div>
+        <small>Format: DS-YYYY-MM-DD-A/B</small>
+      </fieldset>
+      <fieldset>
+        <legend>Import</legend>
+        <div class="dropzone" id="dropzone">CSV hierher ziehen (Mehrfach möglich)</div>
+        <button type="button" id="paste-btn" style="margin-top:0.5rem; width:100%">Aus Zwischenablage einfügen</button>
+      </fieldset>
+      <fieldset>
+        <legend>Branch &amp; Commit</legend>
+        <label>
+          Ziel-Branch
+          <select id="branch-select">
+            <option value="main">main</option>
+            <option value="ops/events">ops/events</option>
+            <option value="__custom">Custom…</option>
+          </select>
+        </label>
+        <label id="custom-branch-wrapper" class="hidden">
+          Custom-Branch
+          <input type="text" id="custom-branch" placeholder="feature/my-branch">
+        </label>
+        <label>
+          Strategie
+          <select id="strategy-select">
+            <option value="replace">replace (überschreiben)</option>
+            <option value="merge">merge (zusammenführen)</option>
+            <option value="abort-if-exists">abort-if-exists</option>
+          </select>
+        </label>
+      </fieldset>
+      <fieldset>
+        <legend>Worker</legend>
+        <label>
+          Worker URL
+          <input type="url" id="worker-url" value="/write-file">
+        </label>
+        <label>
+          Admin Key (X-Admin-Key)
+          <input type="password" id="admin-key" placeholder="••••••">
+        </label>
+        <label class="inline">
+          <input type="checkbox" id="remember-settings">
+          <span>Einstellungen merken</span>
+        </label>
+      </fieldset>
+    </div>
+    <div class="controls-row">
+      <button type="button" id="save-btn" disabled>Speichern</button>
+      <button type="button" id="build-btn" class="secondary-button" disabled>Roster neu bauen</button>
+      <button type="button" id="reset-btn" class="danger-button">Rückgängig</button>
+      <div id="actions-links" style="display:flex; align-items:center; gap:0.75rem;"></div>
+    </div>
+  </header>
+  <main>
+    <div id="error-banner" class="error-banner hidden"></div>
+    <div id="table"></div>
+    <div class="statusbar">
+      <span id="row-count">Zeilen: 0</span>
+      <span id="duplicate-count" class="status-ok">Duplikate: 0</span>
+      <span id="error-count" class="status-ok">Fehler: 0</span>
+    </div>
+  </main>
+  <div class="toast-container" id="toast-container"></div>
+
+  <script src="https://unpkg.com/dayjs@1.11.10/dayjs.min.js"></script>
+  <script src="https://unpkg.com/papaparse@5.4.1/papaparse.min.js"></script>
+  <script src="https://unpkg.com/tabulator-tables@5.5.2/dist/js/tabulator.min.js"></script>
+  <script>
+    const repoOwner = "its-h4k1";
+    const repoName = "desert-storm-roster-optimizer";
+
+    const elements = {
+      eventId: document.getElementById("event-id"),
+      deriveEvent: document.getElementById("derive-event"),
+      dropzone: document.getElementById("dropzone"),
+      pasteBtn: document.getElementById("paste-btn"),
+      branchSelect: document.getElementById("branch-select"),
+      customBranchWrapper: document.getElementById("custom-branch-wrapper"),
+      customBranch: document.getElementById("custom-branch"),
+      strategy: document.getElementById("strategy-select"),
+      workerUrl: document.getElementById("worker-url"),
+      adminKey: document.getElementById("admin-key"),
+      remember: document.getElementById("remember-settings"),
+      saveBtn: document.getElementById("save-btn"),
+      buildBtn: document.getElementById("build-btn"),
+      resetBtn: document.getElementById("reset-btn"),
+      actionsLinks: document.getElementById("actions-links"),
+      errorBanner: document.getElementById("error-banner"),
+      rowCount: document.getElementById("row-count"),
+      duplicateCount: document.getElementById("duplicate-count"),
+      errorCount: document.getElementById("error-count"),
+      toastContainer: document.getElementById("toast-container"),
+    };
+
+    const EVENT_ID_PATTERN = /^DS-\d{4}-\d{2}-\d{2}-[A-Z]$/;
+
+    let originalData = [];
+    let originalEventId = "";
+    let duplicateSlots = new Set();
+    let validationErrors = [];
+    let lastBuildUrl = null;
+
+    const table = new Tabulator("#table", {
+      height: "calc(100vh - 280px)",
+      layout: "fitDataStretch",
+      resizableColumns: true,
+      placeholder: "Noch keine Daten. CSV importieren oder einfügen.",
+      clipboard: true,
+      history: true,
+      columns: [
+        {
+          title: "Slot",
+          field: "Slot",
+          editor: "number",
+          editorParams: { min: 1, max: 30, step: 1 },
+          validator: ["required", customSlotValidator],
+          formatter: duplicateSlotFormatter,
+          headerSort: false,
+        },
+        {
+          title: "PlayerName",
+          field: "PlayerName",
+          editor: "input",
+          mutatorEdit: trimValue,
+          headerSort: false,
+        },
+        {
+          title: "RoleAtRegistration",
+          field: "RoleAtRegistration",
+          editor: "select",
+          editorParams: { values: { Start: "Start", Ersatz: "Ersatz" } },
+          validator: ["required", roleValidator],
+          headerSort: false,
+        },
+        {
+          title: "Teilgenommen",
+          field: "Teilgenommen",
+          editor: "tickCross",
+          editorParams: { tristate: false },
+          mutator: boolToIntMutator,
+          mutatorEdit: boolToIntMutator,
+          formatter: "tickCross",
+          formatterParams: { crossElement: "✘", tickElement: "✔" },
+          validator: [participatedValidator],
+          headerSort: false,
+        },
+        {
+          title: "Punkte",
+          field: "Punkte",
+          editor: "number",
+          editorParams: { min: 0, step: 1 },
+          validator: [pointsValidator],
+          headerSort: false,
+        },
+        {
+          title: "Warnungen",
+          field: "Warnungen",
+          editor: "input",
+          mutatorEdit: trimValue,
+          headerSort: false,
+        },
+      ],
+      rowFormatter: function(row) {
+        const data = row.getData();
+        if (!isRowValid(data)) {
+          row.getElement().classList.add("tabulator-row-invalid");
+        } else {
+          row.getElement().classList.remove("tabulator-row-invalid");
+        }
+      },
+      dataChanged: () => {
+        refreshValidationState();
+      },
+      cellEdited: () => {
+        refreshValidationState();
+      },
+    });
+
+    function customSlotValidator(cell, value) {
+      if (value === null || value === undefined || value === "") return false;
+      const num = Number(value);
+      return Number.isInteger(num) && num >= 1 && num <= 30;
+    }
+
+    function roleValidator(cell, value) {
+      return value === "Start" || value === "Ersatz";
+    }
+
+    function participatedValidator(cell, value) {
+      const normalized = normalizeTeilgenommen(value);
+      return normalized === 0 || normalized === 1;
+    }
+
+    function pointsValidator(cell, value) {
+      if (value === null || value === undefined || value === "") return true;
+      const num = Number(value);
+      return Number.isFinite(num) && num >= 0;
+    }
+
+    function duplicateSlotFormatter(cell, params) {
+      const value = cell.getValue();
+      const el = cell.getElement();
+      if (duplicateSlots.has(Number(value))) {
+        el.classList.add("duplicate-cell");
+      } else {
+        el.classList.remove("duplicate-cell");
+      }
+      return value;
+    }
+
+    function trimValue(value) {
+      if (typeof value === "string") {
+        return value.trim();
+      }
+      return value;
+    }
+
+    function boolToIntMutator(value) {
+      return normalizeTeilgenommen(value);
+    }
+
+    function normalizeTeilgenommen(value) {
+      if (value === true || value === "true") return 1;
+      if (value === false || value === "false") return 0;
+      if (value === "1" || value === 1) return 1;
+      if (value === "0" || value === 0) return 0;
+      return 0;
+    }
+
+    function showToast(message, timeout = 4000) {
+      const toast = document.createElement("div");
+      toast.className = "toast";
+      toast.textContent = message;
+      elements.toastContainer.appendChild(toast);
+      setTimeout(() => {
+        toast.classList.add("fade-out");
+        toast.addEventListener("transitionend", () => toast.remove(), { once: true });
+      }, timeout);
+    }
+
+    function setErrorBanner(message) {
+      if (message) {
+        elements.errorBanner.textContent = message;
+        elements.errorBanner.classList.remove("hidden");
+      } else {
+        elements.errorBanner.classList.add("hidden");
+        elements.errorBanner.textContent = "";
+      }
+    }
+
+    function getBranchValue() {
+      const selection = elements.branchSelect.value;
+      if (selection === "__custom") {
+        return elements.customBranch.value.trim();
+      }
+      return selection;
+    }
+
+    function validateEventId(value) {
+      if (!EVENT_ID_PATTERN.test(value || "")) {
+        return false;
+      }
+      const [, year, month, day] = value.split("-");
+      const parsed = dayjs(`${year}-${month}-${day}`);
+      return parsed.isValid() && parsed.format("YYYY") === year && parsed.format("MM") === month && parsed.format("DD") === day;
+    }
+
+    function isRowValid(row) {
+      const slotValid = Number.isInteger(Number(row.Slot)) && Number(row.Slot) >= 1 && Number(row.Slot) <= 30;
+      const roleValid = row.RoleAtRegistration === "Start" || row.RoleAtRegistration === "Ersatz";
+      const teil = normalizeTeilgenommen(row.Teilgenommen);
+      const teilValid = teil === 0 || teil === 1;
+      const points = Number(row.Punkte);
+      const pointsValid = row.Punkte === "" || (Number.isFinite(points) && points >= 0);
+      return slotValid && roleValid && teilValid && pointsValid;
+    }
+
+    function refreshValidationState() {
+      const data = table.getData().map(normalizeRow);
+      duplicateSlots = calculateDuplicateSlots(data);
+      validationErrors = collectValidationErrors(data);
+
+      table.getColumns().forEach(col => col.getCells().forEach(cell => {
+        if (cell.getField() === "Slot") {
+          duplicateSlotFormatter(cell);
+        }
+      }));
+
+      const eventIdValid = validateEventId(elements.eventId.value.trim());
+      if (!eventIdValid) {
+        validationErrors.push({ type: "event", message: "Event ID ungültig (DS-YYYY-MM-DD-A/B)" });
+      }
+
+      const branch = getBranchValue();
+      if (!branch) {
+        validationErrors.push({ type: "branch", message: "Branch darf nicht leer sein" });
+      }
+
+      const workerUrl = elements.workerUrl.value.trim();
+      if (!workerUrl) {
+        validationErrors.push({ type: "worker", message: "Worker URL darf nicht leer sein" });
+      }
+
+      updateStatusBar(data, eventIdValid);
+
+      if (validationErrors.length) {
+        const critical = validationErrors.filter(v => v.type !== "warning");
+        if (critical.length) {
+          setErrorBanner(critical.map(v => v.message).join(" · "));
+        } else {
+          setErrorBanner("");
+        }
+      } else {
+        setErrorBanner("");
+      }
+
+      const hasCriticalErrors = validationErrors.some(v => v.type !== "warning");
+      elements.saveBtn.disabled = hasCriticalErrors || data.length === 0;
+    }
+
+    function calculateDuplicateSlots(rows) {
+      const counts = new Map();
+      rows.forEach(row => {
+        const slot = Number(row.Slot);
+        if (Number.isInteger(slot)) {
+          counts.set(slot, (counts.get(slot) || 0) + 1);
+        }
+      });
+      const duplicates = new Set();
+      counts.forEach((count, slot) => {
+        if (count > 1) {
+          duplicates.add(slot);
+        }
+      });
+      return duplicates;
+    }
+
+    function collectValidationErrors(rows) {
+      const errors = [];
+      rows.forEach((row, index) => {
+        const rowNum = index + 1;
+        const slot = Number(row.Slot);
+        if (!Number.isInteger(slot) || slot < 1 || slot > 30) {
+          errors.push({ type: "row", message: `Zeile ${rowNum}: Slot muss 1-30 sein` });
+        }
+        if (!(row.RoleAtRegistration === "Start" || row.RoleAtRegistration === "Ersatz")) {
+          errors.push({ type: "row", message: `Zeile ${rowNum}: Role muss Start oder Ersatz sein` });
+        }
+        const teil = normalizeTeilgenommen(row.Teilgenommen);
+        if (!(teil === 0 || teil === 1)) {
+          errors.push({ type: "row", message: `Zeile ${rowNum}: Teilgenommen muss 0 oder 1 sein` });
+        }
+        const points = Number(row.Punkte);
+        if (row.Punkte !== "" && (!Number.isFinite(points) || points < 0)) {
+          errors.push({ type: "row", message: `Zeile ${rowNum}: Punkte muss >= 0 sein` });
+        }
+      });
+      if (duplicateSlots.size) {
+        errors.push({ type: "row", message: `Slots doppelt vergeben: ${Array.from(duplicateSlots).join(", ")}` });
+      }
+      return errors;
+    }
+
+    function updateStatusBar(data, eventIdValid) {
+      elements.rowCount.textContent = `Zeilen: ${data.length}`;
+      if (duplicateSlots.size) {
+        elements.duplicateCount.textContent = `Duplikate: ${duplicateSlots.size}`;
+        elements.duplicateCount.className = "status-error";
+      } else {
+        elements.duplicateCount.textContent = "Duplikate: 0";
+        elements.duplicateCount.className = "status-ok";
+      }
+      const criticalErrors = validationErrors.filter(v => v.type !== "warning");
+      elements.errorCount.textContent = `Fehler: ${criticalErrors.length}`;
+      elements.errorCount.className = criticalErrors.length ? "status-error" : (eventIdValid ? "status-ok" : "status-error");
+    }
+
+    function normalizeRow(row) {
+      let pointsValue = row.Punkte;
+      if (pointsValue === "" || pointsValue === null || pointsValue === undefined) {
+        pointsValue = 0;
+      }
+      const pointsNumber = Number(pointsValue);
+      const normalizedPoints = Number.isFinite(pointsNumber) && pointsNumber >= 0 ? pointsNumber : pointsValue;
+      return {
+        EventID: (row.EventID || elements.eventId.value || "").toString().trim(),
+        Slot: row.Slot === "" || row.Slot === null || row.Slot === undefined ? "" : Number(row.Slot),
+        PlayerName: (row.PlayerName || "").toString().trim(),
+        RoleAtRegistration: (row.RoleAtRegistration || "").toString().trim(),
+        Teilgenommen: normalizeTeilgenommen(row.Teilgenommen),
+        Punkte: normalizedPoints,
+        Warnungen: (row.Warnungen || "").toString().trim(),
+      };
+    }
+
+    function setTableData(rows) {
+      table.setData(rows.map(normalizeRow));
+      refreshValidationState();
+    }
+
+    function getTableData() {
+      return table.getData().map(normalizeRow);
+    }
+
+    function parseCsv(text) {
+      return new Promise((resolve, reject) => {
+        Papa.parse(text, {
+          header: true,
+          skipEmptyLines: true,
+          transformHeader: header => normalizeHeader(header),
+          complete: results => resolve(results.data),
+          error: err => reject(err),
+        });
+      });
+    }
+
+    function normalizeHeader(header) {
+      if (!header) return header;
+      const h = header.toLowerCase().replace(/[^a-z0-9]/g, "");
+      switch (h) {
+        case "eventid":
+          return "EventID";
+        case "slot":
+          return "Slot";
+        case "playername":
+          return "PlayerName";
+        case "roleatregistration":
+        case "role":
+          return "RoleAtRegistration";
+        case "teilgenommen":
+        case "participated":
+          return "Teilgenommen";
+        case "punkte":
+        case "points":
+          return "Punkte";
+        case "warnungen":
+        case "warnings":
+          return "Warnungen";
+        default:
+          return header;
+      }
+    }
+
+    async function importFiles(files) {
+      if (!files.length) return;
+      const rows = [];
+      for (const file of files) {
+        try {
+          const text = await file.text();
+          const parsed = await parseCsv(text);
+          rows.push(...parsed);
+          if (!elements.eventId.value && file.name) {
+            const match = file.name.match(/(DS-\d{4}-\d{2}-\d{2}-[A-Z])/i);
+            if (match) {
+              elements.eventId.value = match[1].toUpperCase();
+            }
+          }
+        } catch (err) {
+          console.error(err);
+          showToast(`Fehler beim Import von ${file.name}: ${err.message}`);
+        }
+      }
+      if (rows.length) {
+        setTableData(rows);
+        showToast(`${rows.length} Zeilen importiert.`);
+      } else {
+        showToast("Keine Daten gefunden.");
+      }
+    }
+
+    async function importClipboard() {
+      try {
+        const text = await navigator.clipboard.readText();
+        if (!text) {
+          showToast("Zwischenablage ist leer.");
+          return;
+        }
+        const parsed = await parseCsv(text);
+        if (parsed.length) {
+          setTableData(parsed);
+          showToast(`${parsed.length} Zeilen aus Zwischenablage importiert.`);
+        } else {
+          showToast("Keine Daten aus Zwischenablage erkannt.");
+        }
+      } catch (err) {
+        console.error(err);
+        showToast("Zwischenablage kann nicht gelesen werden.");
+      }
+    }
+
+    function deriveEventFromData() {
+      const data = getTableData();
+      const eventIds = new Set(
+        data
+          .map(row => row.EventID)
+          .filter(id => EVENT_ID_PATTERN.test(id))
+      );
+      if (eventIds.size === 1) {
+        const value = Array.from(eventIds)[0];
+        elements.eventId.value = value;
+        refreshValidationState();
+        showToast(`Event ID ${value} übernommen.`);
+        return;
+      }
+      showToast("Keine eindeutige Event ID in den Daten gefunden.");
+    }
+
+    function resetToOriginal() {
+      elements.eventId.value = originalEventId;
+      setTableData(originalData.map(row => ({ ...row })));
+      elements.actionsLinks.innerHTML = "";
+      elements.buildBtn.disabled = true;
+      lastBuildUrl = null;
+      showToast("Änderungen zurückgesetzt.");
+    }
+
+    async function saveData() {
+      const data = getTableData();
+      const eventId = elements.eventId.value.trim();
+      if (!data.length) {
+        showToast("Keine Daten zum Speichern.");
+        return;
+      }
+      if (!validateEventId(eventId)) {
+        showToast("Event ID ungültig.");
+        return;
+      }
+      const branch = getBranchValue();
+      const strategy = elements.strategy.value;
+      const workerUrl = elements.workerUrl.value.trim();
+      const adminKey = elements.adminKey.value.trim();
+
+      try {
+        const filePath = `data/${eventId}.csv`;
+        if (strategy === "abort-if-exists") {
+          const exists = await checkFileExists(branch, filePath);
+          if (exists) {
+            showToast("Datei existiert bereits – Speichern abgebrochen.");
+            return;
+          }
+        }
+
+        let mergedData = data;
+        let mergeNote = "";
+        if (strategy === "merge") {
+          const existing = await loadExistingCsv(branch, filePath);
+          if (existing && existing.length) {
+            const merged = mergeRows(existing, data);
+            const overwrittenSlots = merged.overwritten;
+            mergedData = merged.rows;
+            mergeNote = overwrittenSlots.length
+              ? `; überschrieben: Slots ${overwrittenSlots.join(", ")}`
+              : "";
+          }
+        }
+
+        const payload = {
+          path: filePath,
+          content: buildCsv(mergedData, eventId),
+          message: `event: ${strategy} ${eventId} (n=${mergedData.length})`,
+          branch: branch,
+        };
+
+        const headers = {
+          "Content-Type": "application/json",
+        };
+        if (adminKey) {
+          headers["X-Admin-Key"] = adminKey;
+        }
+
+        const response = await fetch(workerUrl, {
+          method: "POST",
+          headers,
+          body: JSON.stringify(payload),
+        });
+
+        if (!response.ok) {
+          const text = await response.text();
+          throw new Error(`Worker-Fehler (${response.status}): ${text}`);
+        }
+
+        showToast(`Gespeichert nach ${filePath}${mergeNote}`);
+        originalData = mergedData.map(row => ({ ...row }));
+        originalEventId = eventId;
+        lastBuildUrl = null;
+        elements.buildBtn.disabled = false;
+        renderPreviewLink(branch);
+        refreshValidationState();
+      } catch (err) {
+        console.error(err);
+        showToast(`Speichern fehlgeschlagen: ${err.message}`);
+      }
+    }
+
+    function buildCsv(rows, eventId) {
+      const header = ["EventID", "Slot", "PlayerName", "RoleAtRegistration", "Teilgenommen", "Punkte", "Warnungen"];
+      const csvRows = rows.map(row => {
+        const normalized = normalizeRow(row);
+        normalized.EventID = eventId;
+        return header.map(key => formatCsvValue(normalized[key]));
+      });
+      return [header.join(","), ...csvRows.map(cols => cols.join(","))].join("\n");
+    }
+
+    function formatCsvValue(value) {
+      if (value === null || value === undefined) return "";
+      const str = value.toString();
+      if (str.includes("\"") || str.includes(",") || str.includes("\n")) {
+        return `"${str.replace(/"/g, '""')}"`;
+      }
+      return str;
+    }
+
+    async function checkFileExists(branch, path) {
+      try {
+        const url = `https://raw.githubusercontent.com/${repoOwner}/${repoName}/${encodeURIComponent(branch)}/${path}`;
+        const response = await fetch(url, { method: "HEAD" });
+        return response.ok;
+      } catch (err) {
+        console.warn("HEAD check fehlgeschlagen", err);
+        return false;
+      }
+    }
+
+    async function loadExistingCsv(branch, path) {
+      try {
+        const url = `https://raw.githubusercontent.com/${repoOwner}/${repoName}/${encodeURIComponent(branch)}/${path}`;
+        const response = await fetch(url);
+        if (!response.ok) {
+          return null;
+        }
+        const text = await response.text();
+        const parsed = await parseCsv(text);
+        return parsed.map(normalizeRow);
+      } catch (err) {
+        console.warn("Merge: Laden fehlgeschlagen", err);
+        return null;
+      }
+    }
+
+    function mergeRows(existing, incoming) {
+      const bySlot = new Map();
+      const overwritten = [];
+      existing.forEach(row => {
+        const normalized = normalizeRow(row);
+        if (Number.isInteger(normalized.Slot)) {
+          bySlot.set(Number(normalized.Slot), normalized);
+        }
+      });
+      incoming.forEach(row => {
+        const normalized = normalizeRow(row);
+        const slot = Number(normalized.Slot);
+        if (Number.isInteger(slot)) {
+          if (bySlot.has(slot)) {
+            overwritten.push(slot);
+          }
+          bySlot.set(slot, normalized);
+        }
+      });
+      const rows = Array.from(bySlot.values()).sort((a, b) => Number(a.Slot) - Number(b.Slot));
+      return { rows, overwritten };
+    }
+
+    async function triggerBuild() {
+      const branch = getBranchValue();
+      const eventId = elements.eventId.value.trim();
+      const payload = {
+        ref: branch,
+        reason: `admin events upload ${eventId}`,
+      };
+      try {
+        const response = await fetch("/dispatch", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
+        if (!response.ok) {
+          const text = await response.text();
+          throw new Error(text || `HTTP ${response.status}`);
+        }
+        const result = await response.json().catch(() => null);
+        if (result && result.html_url) {
+          lastBuildUrl = result.html_url;
+          renderActionsLink(result.html_url);
+        }
+        showToast("Build ausgelöst.");
+      } catch (err) {
+        console.error(err);
+        showToast(`Build fehlgeschlagen: ${err.message}`);
+      }
+    }
+
+    function renderPreviewLink(branch) {
+      const url = `/?branch=${encodeURIComponent(branch)}`;
+      elements.actionsLinks.innerHTML = `<a href="${url}" target="_blank" rel="noopener">Vorschau öffnen</a>`;
+    }
+
+    function renderActionsLink(url) {
+      const preview = elements.actionsLinks.querySelector("a");
+      elements.actionsLinks.innerHTML = "";
+      if (preview) {
+        elements.actionsLinks.appendChild(preview);
+      }
+      const link = document.createElement("a");
+      link.href = url;
+      link.target = "_blank";
+      link.rel = "noopener";
+      link.textContent = "Actions-Run ansehen";
+      elements.actionsLinks.appendChild(link);
+    }
+
+    function restoreSettings() {
+      const stored = localStorage.getItem("dsro-admin-settings");
+      if (!stored) return;
+      try {
+        const values = JSON.parse(stored);
+        elements.workerUrl.value = values.workerUrl || "/write-file";
+        elements.adminKey.value = values.adminKey || "";
+        elements.branchSelect.value = values.branchSelect || "main";
+        if (elements.branchSelect.value === "__custom") {
+          elements.customBranchWrapper.classList.remove("hidden");
+          elements.customBranch.value = values.customBranch || "";
+        }
+        elements.remember.checked = true;
+      } catch (err) {
+        console.warn("Settings konnten nicht geladen werden", err);
+      }
+    }
+
+    function persistSettings() {
+      if (!elements.remember.checked) {
+        localStorage.removeItem("dsro-admin-settings");
+        return;
+      }
+      const values = {
+        workerUrl: elements.workerUrl.value,
+        adminKey: elements.adminKey.value,
+        branchSelect: elements.branchSelect.value,
+        customBranch: elements.customBranch.value,
+      };
+      localStorage.setItem("dsro-admin-settings", JSON.stringify(values));
+    }
+
+    // Event listeners
+    elements.dropzone.addEventListener("dragover", ev => {
+      ev.preventDefault();
+      elements.dropzone.classList.add("dragover");
+    });
+    elements.dropzone.addEventListener("dragleave", () => {
+      elements.dropzone.classList.remove("dragover");
+    });
+    elements.dropzone.addEventListener("drop", async ev => {
+      ev.preventDefault();
+      elements.dropzone.classList.remove("dragover");
+      const files = Array.from(ev.dataTransfer.files).filter(file => file.type === "text/csv" || file.name.endsWith(".csv"));
+      await importFiles(files);
+      refreshValidationState();
+    });
+
+    elements.pasteBtn.addEventListener("click", () => {
+      importClipboard().then(() => refreshValidationState());
+    });
+
+    elements.deriveEvent.addEventListener("click", () => {
+      deriveEventFromData();
+    });
+
+    elements.branchSelect.addEventListener("change", () => {
+      if (elements.branchSelect.value === "__custom") {
+        elements.customBranchWrapper.classList.remove("hidden");
+      } else {
+        elements.customBranchWrapper.classList.add("hidden");
+      }
+      persistSettings();
+      refreshValidationState();
+    });
+
+    [elements.eventId, elements.customBranch, elements.workerUrl, elements.adminKey].forEach(el => {
+      el.addEventListener("input", () => {
+        refreshValidationState();
+        persistSettings();
+      });
+    });
+
+    elements.remember.addEventListener("change", () => {
+      persistSettings();
+    });
+
+    elements.strategy.addEventListener("change", () => {
+      refreshValidationState();
+    });
+
+    elements.saveBtn.addEventListener("click", saveData);
+    elements.buildBtn.addEventListener("click", triggerBuild);
+    elements.resetBtn.addEventListener("click", resetToOriginal);
+
+    elements.eventId.addEventListener("blur", () => refreshValidationState());
+
+    table.on("tableBuilt", () => {
+      originalData = table.getData().map(row => ({ ...row }));
+      originalEventId = elements.eventId.value;
+      refreshValidationState();
+    });
+
+    // Initial setup
+    restoreSettings();
+    refreshValidationState();
+  </script>
+</body>
+</html>

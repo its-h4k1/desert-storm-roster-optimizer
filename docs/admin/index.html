@@ -1,0 +1,388 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8" />
+  <title>Desert Storm · Admin</title>
+  <meta name="robots" content="noindex" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    :root {
+      --bg:#0b0d12; --panel:#11151d; --muted:#8a97ac; --fg:#e6e8ec;
+      --acc:#66e0a3; --err:#ff6b6b; --ok:#52d67a; --line:#223042;
+    }
+    *{box-sizing:border-box}
+    body{margin:0;font-family:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,Arial,"Noto Sans",sans-serif;color:var(--fg);background:linear-gradient(180deg,#0b0d12 0,#0e121a 60%,#0b0d12 100%)}
+    header{position:sticky;top:0;z-index:10;backdrop-filter:blur(6px);background:rgba(15,19,26,.75);border-bottom:1px solid #1f2733;display:flex;align-items:center;gap:12px;padding:12px 16px}
+    .brand{font-weight:700;letter-spacing:.2px}
+    .spacer{flex:1}
+    .btn{display:inline-flex;align-items:center;gap:8px;padding:8px 12px;border:1px solid #243041;border-radius:10px;color:var(--fg);background:#0f1622;cursor:pointer;transition:all .15s ease}
+    .btn:hover{transform:translateY(-1px);border-color:#2f3c52}
+    .btn.pri{background:#122338;border-color:#2a3c56}
+    .btn.ok{background:#0f2219;border-color:#214a35;color:#b9f4d3}
+    .btn.err{background:#2a1515;border-color:#5e2e2e;color:#ffdede}
+    .wrap{max-width:1100px;margin:24px auto;padding:0 16px 80px}
+    .tabs{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px}
+    .tab{padding:10px 12px;border:1px solid #243041;border-bottom:none;border-radius:10px 10px 0 0;background:#0f1622;cursor:pointer}
+    .tab.active{background:#132033;color:#dff3ff;border-color:#2e415e}
+    .panel{border:1px solid #243041;background:#0e1420;border-radius:0 12px 12px 12px;padding:16px}
+    .row{display:flex;gap:12px;flex-wrap:wrap;align-items:center;margin:12px 0}
+    textarea, input[type="text"]{width:100%;padding:10px 12px;border-radius:10px;border:1px solid var(--line);background:#0b1120;color:var(--fg);font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono",monospace}
+    label{font-size:12px;color:#9aa9bf;display:block;margin-bottom:6px}
+    .two{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+    .hint{color:#9aa9bf;font-size:12px}
+    .kbd{padding:2px 6px;border:1px solid #34465f;border-bottom-width:2px;border-radius:6px;background:#0b1220;color:#cfe3ff;font-size:12px}
+    .stat{font-size:12px;color:#9aa9bf}
+    .code{font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace;background:#0b1120;padding:2px 6px;border-radius:6px;border:1px solid var(--line)}
+    .sep{height:1px;background:#1f2a3a;margin:16px 0}
+    .hidden{display:none !important}
+    .success{color:var(--ok)}
+    .error{color:var(--err);white-space:pre-wrap}
+    .pill{display:inline-flex;gap:6px;align-items:center;padding:4px 8px;border:1px solid #27344a;border-radius:999px;background:#0e1724;font-size:12px}
+    .mono{font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace}
+  </style>
+</head>
+<body>
+  <header>
+    <div class="brand">Desert Storm · Admin</div>
+    <div class="spacer"></div>
+    <span id="envSite" class="pill mono"></span>
+    <div id="authEmail" class="stat"></div>
+    <button id="btnLogin" class="btn pri">Anmelden</button>
+    <button id="btnLogout" class="btn err hidden">Abmelden</button>
+  </header>
+
+  <div class="wrap">
+    <div class="tabs">
+      <div class="tab active" data-tab="alliance">Allianzliste</div>
+      <div class="tab" data-tab="aliases">Aliases</div>
+      <div class="tab" data-tab="events">Event-CSV Upload</div>
+      <div class="tab" data-tab="absences">Abwesenheiten</div>
+    </div>
+
+    <div class="panel">
+      <!-- ALLIANCE -->
+      <section id="tab-alliance">
+        <div class="row"><div class="hint">Datei: <span class="code">data/alliance.csv</span></div></div>
+        <div class="row two">
+          <div>
+            <label>CSV-Inhalt</label>
+            <textarea id="taAlliance" rows="18" spellcheck="false" placeholder="PlayerName,Active
+itsH4K1,1
+…"></textarea>
+            <div class="row">
+              <button id="btnLoadAlliance" class="btn">Laden</button>
+              <button id="btnSaveAlliance" class="btn ok">Speichern</button>
+              <div id="msgAlliance" class="stat"></div>
+            </div>
+          </div>
+          <div>
+            <label>Format</label>
+            <div class="hint">
+              <div><span class="code">PlayerName,Active</span> (Header Pflicht; wird bei Bedarf automatisch ergänzt)</div>
+              <div>Active: <span class="kbd">1</span> = aktiv, <span class="kbd">0</span> = ausgetreten</div>
+              <div class="sep"></div>
+              <div>Roh-Datei live lesen: <span class="code">https://raw.githubusercontent.com/its-h4k1/desert-storm-roster-optimizer/main/data/alliance.csv</span></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ALIASES -->
+      <section id="tab-aliases" class="hidden">
+        <div class="row"><div class="hint">Datei: <span class="code">data/aliases.csv</span></div></div>
+        <div class="row two">
+          <div>
+            <label>CSV-Inhalt</label>
+            <textarea id="taAliases" rows="18" spellcheck="false" placeholder="PlayerName,Alias,Active
+DarkSchredder,DarkWerwolf,0
+…"></textarea>
+            <div class="row">
+              <button id="btnLoadAliases" class="btn">Laden</button>
+              <button id="btnSaveAliases" class="btn ok">Speichern</button>
+              <div id="msgAliases" class="stat"></div>
+            </div>
+          </div>
+          <div>
+            <label>Format</label>
+            <div class="hint">
+              <div><span class="code">PlayerName,Alias,Active</span> (Header Pflicht; wird bei Bedarf automatisch ergänzt)</div>
+              <div>Beispiel: <span class="code">DarkSchredder,DarkWerwolf,0</span></div>
+              <div class="sep"></div>
+              <div>Notiz: Bei mehrdeutigen Namen gewinnt die erste Zeile.</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- EVENTS -->
+      <section id="tab-events" class="hidden">
+        <div class="row"><div class="hint">Zielpfad standardmäßig unter <span class="code">data/</span>. Der Builder ignoriert <span class="code">alliance.csv</span> &amp; <span class="code">aliases.csv</span>, alles andere wird als Event interpretiert.</div></div>
+        <div class="row">
+          <div style="flex:1">
+            <label>Event-CSV (Upload)</label>
+            <input id="eventFile" type="file" accept=".csv,text/csv" />
+          </div>
+        </div>
+        <div class="two">
+          <div>
+            <label>Vorschau Inhalt</label>
+            <textarea id="taEventPreview" rows="14" spellcheck="false" placeholder="EventID,Slot,PlayerName,RoleAtRegistration,Teilgenommen,Punkte,Warnungen
+DS-2025-11-07-A,1,itsH4K1,Start,1,1548053,"></textarea>
+          </div>
+          <div>
+            <label>Zielpfad im Repo</label>
+            <input id="eventPath" type="text" placeholder="data/DS-2025-11-07-A.csv" />
+            <div class="hint">Tipp: Der Dateiname kann von der <span class="code">EventID</span> abgeleitet werden.</div>
+            <div class="row">
+              <button id="btnUploadEvent" class="btn ok">Hochladen &amp; Commit</button>
+              <div id="msgEvent" class="stat"></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ABSENCES -->
+      <section id="tab-absences" class="hidden">
+        <div class="row"><div class="hint">Datei: <span class="code">data/absences.csv</span> (wird erstellt, falls nicht vorhanden)</div></div>
+        <div class="row two">
+          <div>
+            <label>CSV-Inhalt</label>
+            <textarea id="taAbsences" rows="18" spellcheck="false" placeholder="PlayerName,From,To,Reason,Active
+itsH4K1,2025-11-14,2025-11-30,Ferien,1
+…"></textarea>
+            <div class="row">
+              <button id="btnLoadAbsences" class="btn">Laden</button>
+              <button id="btnSaveAbsences" class="btn ok">Speichern</button>
+              <div id="msgAbsences" class="stat"></div>
+            </div>
+          </div>
+          <div>
+            <label>Schnell-Eintrag</label>
+            <div class="row">
+              <input id="absName" type="text" placeholder="PlayerName" />
+              <input id="absFrom" type="text" placeholder="From (YYYY-MM-DD)" />
+              <input id="absTo" type="text" placeholder="To (YYYY-MM-DD)" />
+              <input id="absReason" type="text" placeholder="Reason" />
+              <button id="btnAbsAdd" class="btn">Zeile anhängen</button>
+            </div>
+            <div class="hint">Beim Speichern wird die Datei committet. Der Roster-Builder kann diese Datei später berücksichtigen.</div>
+          </div>
+        </div>
+      </section>
+    </div>
+  </div>
+
+<script>
+  // ==== API-Konfiguration (Cloudflare Worker) ====
+  const API_BASE = 'https://ds-commit.hak1.workers.dev';
+  const WRITE_URL = API_BASE + '/write-file';
+  const RAW_BASE = 'https://raw.githubusercontent.com/its-h4k1/desert-storm-roster-optimizer/main/';
+  const TAB_KEY = 'ds_admin_tab';
+
+  // UI helpers
+  const $ = (s) => document.querySelector(s);
+  const show = (el, on=true) => el.classList.toggle('hidden', !on);
+  const msg = (el, text, ok=true) => { el.textContent = text; el.className = ok ? 'stat success' : 'stat error'; };
+
+  // Anzeige der API-Base
+  $('#envSite') && ($('#envSite').textContent = new URL(API_BASE).host);
+
+  // Tabs
+  function activateTab(name){
+    document.querySelectorAll('.tab').forEach(x => x.classList.remove('active'));
+    document.querySelector(`.tab[data-tab="${name}"]`)?.classList.add('active');
+    document.querySelectorAll('section[id^="tab-"]').forEach(s => s.classList.add('hidden'));
+    document.getElementById('tab-'+name)?.classList.remove('hidden');
+    localStorage.setItem(TAB_KEY, name);
+  }
+  document.querySelectorAll('.tab').forEach(t => t.addEventListener('click', () => activateTab(t.dataset.tab)));
+  const savedTab = localStorage.getItem(TAB_KEY); if (savedTab) activateTab(savedTab);
+
+  // CSV utils
+  const normalizeEOL = (t) => t.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+  const ensureFinalNewline = (t) => /\n$/.test(t) ? t : t + '\n';
+  const ensureHeaderStrict = (text, header) => {
+    const t = normalizeEOL(text).trimStart();
+    if (!t) return header + '\n';
+    const first = t.split('\n')[0].trim();
+    return (first.toLowerCase() === header.toLowerCase())
+      ? ensureFinalNewline(t)
+      : header + '\n' + ensureFinalNewline(t);
+  };
+
+  const ensureHeaderPrefix = (text, prefixHeader) => {
+    const norm = normalizeEOL(text);
+    const trimmed = norm.replace(/^\s+/, '');
+    if (!trimmed) return prefixHeader + '\n';
+    const [firstLine, ...rest] = trimmed.split('\n');
+    if (firstLine.toLowerCase().startsWith(prefixHeader.toLowerCase())) {
+      return ensureFinalNewline([firstLine, ...rest].join('\n'));
+    }
+    return ensureFinalNewline(prefixHeader + '\n' + trimmed);
+  };
+
+  // ======= Einfacher Admin-Login (Shared Key) =======
+  let ADMIN_KEY = localStorage.getItem('ds_admin_key') || '';
+  const authEmail = $('#authEmail');
+  const btnLogin = $('#btnLogin');
+  const btnLogout = $('#btnLogout');
+
+  function updateAuthUI() {
+    if (ADMIN_KEY) { authEmail.textContent = 'Admin'; show(btnLogin,false); show(btnLogout,true); }
+    else { authEmail.textContent = ''; show(btnLogin,true); show(btnLogout,false); }
+  }
+  updateAuthUI();
+
+  btnLogin.addEventListener('click', () => {
+    const k = prompt('Admin-Key eingeben (z. B. r4-admin)');
+    if (k) { ADMIN_KEY = k.trim(); localStorage.setItem('ds_admin_key', ADMIN_KEY); updateAuthUI(); }
+  });
+  btnLogout.addEventListener('click', () => {
+    ADMIN_KEY=''; localStorage.removeItem('ds_admin_key'); updateAuthUI();
+  });
+
+  async function authedFetch(url, options = {}) {
+    if (!ADMIN_KEY) throw new Error('Nicht angemeldet (Admin-Key fehlt).');
+    const headers = Object.assign({}, options.headers || {}, {
+      'Content-Type': 'application/json',
+      'X-Admin-Key': ADMIN_KEY,         // Worker erwartet diesen Header
+    });
+    return fetch(url, Object.assign({}, options, { headers }));
+  }
+
+  // ========= Lesen (raw GitHub) =========
+  async function loadRaw(relPath){
+    const res = await fetch(RAW_BASE + relPath + '?_=' + Date.now());
+    if (!res.ok) throw new Error('Fetch failed: ' + res.status + ' ' + relPath);
+    return await res.text();
+  }
+
+  // ========= Schreiben (Worker) =========
+  async function saveFile(path, content, message='admin: update '+path){
+    const res = await authedFetch(WRITE_URL, {
+      method: 'POST',
+      body: JSON.stringify({ path, content, message })
+    });
+    const j = await res.json().catch(() => ({}));
+    if (!res.ok || !j.ok) {
+      const detail = (j && (j.error || j.detail)) ? (j.error + (j.detail ? (' · ' + j.detail) : '')) : 'write-file failed';
+      throw new Error(detail);
+    }
+    return j;
+  }
+
+  // ========= Allianz =========
+  $('#btnLoadAlliance').addEventListener('click', async () => {
+    const el = $('#msgAlliance'); msg(el, 'Lade…', true);
+    try {
+      const raw = await loadRaw('data/alliance.csv');
+      $('#taAlliance').value = normalizeEOL(raw);
+      msg(el, 'OK');
+    } catch(e){ msg(el, String(e), false); }
+  });
+
+  $('#btnSaveAlliance').addEventListener('click', async () => {
+    const el = $('#msgAlliance'); msg(el, 'Speichere…', true);
+    try {
+      const headerPrefix = 'PlayerName,Active';
+      const txt = ensureHeaderPrefix($('#taAlliance').value, headerPrefix);
+      await saveFile('data/alliance.csv', txt);
+      msg(el, 'Gespeichert ✓');
+    } catch(e){ msg(el, String(e), false); }
+  });
+
+  // ========= Aliases =========
+  $('#btnLoadAliases').addEventListener('click', async () => {
+    const el = $('#msgAliases'); msg(el, 'Lade…', true);
+    try {
+      const raw = await loadRaw('data/aliases.csv');
+      $('#taAliases').value = normalizeEOL(raw);
+      msg(el, 'OK');
+    } catch(e){
+      $('#taAliases').value = 'PlayerName,Alias,Active\n';
+      msg(el, 'Neue Datei vorbereitet (noch nicht gespeichert).');
+    }
+  });
+
+  $('#btnSaveAliases').addEventListener('click', async () => {
+    const el = $('#msgAliases'); msg(el, 'Speichere…', true);
+    try {
+      const header = 'PlayerName,Alias,Active';
+      const txt = ensureHeaderStrict($('#taAliases').value, header);
+      await saveFile('data/aliases.csv', txt);
+      msg(el, 'Gespeichert ✓');
+    } catch(e){ msg(el, String(e), false); }
+  });
+
+  // ========= Events =========
+  $('#eventFile').addEventListener('change', async (ev) => {
+    const f = ev.target.files && ev.target.files[0];
+    if (!f) return;
+    const text = await f.text();
+    const norm = normalizeEOL(text);
+    $('#taEventPreview').value = norm;
+
+    // Dateiname aus erster EventID ableiten
+    try {
+      const lines = norm.split('\n').filter(l => l.trim().length > 0);
+      const headerLike = /^EventID/i.test(lines[0]);
+      const firstData = headerLike ? lines[1] : lines[0];
+      const eventId = (firstData || '').split(',')[0].trim();
+      if (/^DS-\d{4}-\d{2}-\d{2}-[A-Z]$/.test(eventId)) {
+        $('#eventPath').value = `data/${eventId}.csv`;
+      }
+    } catch {}
+  });
+
+  $('#btnUploadEvent').addEventListener('click', async () => {
+    const el = $('#msgEvent'); msg(el, 'Hochladen…', true);
+    const path = $('#eventPath').value.trim();
+    let txt  = $('#taEventPreview').value;
+    if (!path || !txt) { msg(el, 'Pfad und Inhalt erforderlich.', false); return; }
+    const header = 'EventID,Slot,PlayerName,RoleAtRegistration,Teilgenommen,Punkte,Warnungen';
+    txt = ensureHeaderStrict(txt, header);
+    try {
+      await saveFile(path, txt, `admin: add ${path}`);
+      msg(el, `Gespeichert ✓ (${path})`);
+    } catch(e){ msg(el, String(e), false); }
+  });
+
+  // ========= Abwesenheiten =========
+  $('#btnLoadAbsences').addEventListener('click', async () => {
+    const el = $('#msgAbsences'); msg(el, 'Lade…', true);
+    try {
+      const raw = await loadRaw('data/absences.csv');
+      $('#taAbsences').value = normalizeEOL(raw);
+      msg(el, 'OK');
+    } catch(e){
+      $('#taAbsences').value = 'PlayerName,From,To,Reason,Active\n';
+      msg(el, 'Neue Datei vorbereitet (noch nicht gespeichert).');
+    }
+  });
+
+  $('#btnSaveAbsences').addEventListener('click', async () => {
+    const el = $('#msgAbsences'); msg(el, 'Speichere…', true);
+    try {
+      const header = 'PlayerName,From,To,Reason,Active';
+      const txt = ensureHeaderStrict($('#taAbsences').value, header);
+      await saveFile('data/absences.csv', txt);
+      msg(el, 'Gespeichert ✓');
+    } catch(e){ msg(el, String(e), false); }
+  });
+
+  $('#btnAbsAdd').addEventListener('click', () => {
+    const name = $('#absName').value.trim();
+    const from = $('#absFrom').value.trim();
+    const to   = $('#absTo').value.trim();
+    const rsn  = $('#absReason').value.trim();
+    if (!name || !from || !to) { alert('PlayerName, From, To sind Pflicht.'); return; }
+    const line = `${name},${from},${to},${rsn||''},1`;
+    const ta = $('#taAbsences');
+    ta.value = ensureFinalNewline(ta.value.replace(/\s*$/, '')) + line + '\n';
+  });
+
+  // Optional: initial Allianz laden
+  $('#btnLoadAlliance').click();
+</script>
+</body>
+</html>

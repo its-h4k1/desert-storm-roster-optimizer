@@ -1,0 +1,39 @@
+name: Purge old out files
+
+on:
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+jobs:
+  purge:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Remove tracked run-id files and push
+        shell: bash
+        run: |
+          set -e
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          echo "Tracked in out/ BEFORE:"; git ls-files out | sed 's/^/  /' || true
+
+          # ALLE alten Run-Dateien löschen (nur latest.* bleibt)
+          git rm -f out/aufstellung_*.csv out/aufstellung_*.json || true
+
+          # sicherstellen, dass latest.* (falls vorhanden) mitversioniert bleibt
+          git add -A out/latest.csv out/latest.json || true
+
+          if git diff --cached --quiet; then
+            echo "Nothing to commit."
+            exit 0
+          fi
+
+          git commit -m "chore: purge historical outputs in out/"
+          git push
+
+          echo "Tracked in out/ AFTER:"; git ls-files out | sed 's/^/  /' || true

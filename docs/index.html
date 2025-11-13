@@ -1,0 +1,359 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Desert Storm – Aufstellung (Latest)</title>
+  <style>
+    :root{
+      --fg:#111; --muted:#666; --line:#ddd;
+      --ok:#1f9d55; --mid:#c9a227; --bad:#d64545;
+      --bg:#fff; --bgth:#fafafa;
+    }
+    body{font-family:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,Arial,"Noto Sans",sans-serif;margin:24px;color:var(--fg);background:var(--bg)}
+    h1{margin:0 0 8px}
+    h2{margin:0 0 8px}
+    h3{margin:12px 0 6px;font-weight:600}
+    .grid{display:grid;grid-template-columns:1fr 1fr;gap:24px}
+    table{width:100%;border-collapse:collapse}
+    th,td{border-bottom:1px solid var(--line);padding:8px 10px;text-align:left;vertical-align:top}
+    th{background:var(--bgth)}
+    .muted{color:var(--muted)}
+    .num{font-variant-numeric:tabular-nums}
+    .counts{font-size:.9em;color:var(--muted);font-weight:400;margin-left:.25rem}
+    .chip{display:inline-block;min-width:52px;text-align:right;padding:2px 8px;border-radius:999px;border:1px solid var(--line)}
+    .chip.ns-neutral{background:#f6f7f8;border:1px solid #ccc;color:#555}
+    .ns-ok{border-color:#bfe8cc;background:#f3fbf6}
+    .ns-mid{background:#fff9e6;border:1px solid #f3d78a}
+    .ns-bad{border-color:#f2b7b7;background:#fff5f5}
+    .sub{margin:6px 0 18px}
+    .wrap{display:grid;grid-template-columns:1fr;gap:28px}
+    @media (min-width: 960px){ .wrap{grid-template-columns:1fr 1fr} }
+    .tag{display:inline-block;margin-left:6px;padding:2px 7px;border-radius:999px;font-size:0.72em;font-weight:600;vertical-align:middle}
+    .tag-nd{background:var(--bad);color:#fff}
+    .tag-low{background:#f1e1a8;color:#111}
+    .legend{font-size:0.85em;margin:12px 0 0}
+  </style>
+</head>
+<body>
+  <h1>Desert Storm – Aufstellung <span id="stamp" class="muted" style="font-size:0.8em"></span></h1>
+  <p class="muted" id="sort-note" style="margin:0 0 18px"></p>
+
+  <div class="grid">
+    <section id="A-Start">
+      <h2>Gruppe A · Start</h2>
+      <table>
+        <thead><tr><th>#</th><th>Spieler</th><th>No-Show (overall)</th><th>No-Show (rolling)</th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </section>
+    <section id="A-Ersatz">
+      <h2>Gruppe A · Ersatz</h2>
+      <table>
+        <thead><tr><th>#</th><th>Spieler</th><th>No-Show (overall)</th><th>No-Show (rolling)</th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </section>
+    <section id="B-Start">
+      <h2>Gruppe B · Start</h2>
+      <table>
+        <thead><tr><th>#</th><th>Spieler</th><th>No-Show (overall)</th><th>No-Show (rolling)</th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </section>
+    <section id="B-Ersatz">
+      <h2>Gruppe B · Ersatz</h2>
+      <table>
+        <thead><tr><th>#</th><th>Spieler</th><th>No-Show (overall)</th><th>No-Show (rolling)</th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </section>
+  </div>
+
+  <p class="muted legend">Legende: <span class="tag tag-nd" title="Keine Historie – events_seen = 0">No&nbsp;Data</span> keine Historie · <span class="tag tag-low" title="Wenig Historie – events_seen ∈ {1,2}">low&nbsp;n</span> wenig Historie<br />Farben basieren auf Historie (rolling→overall), EB wird nur zur Sortierung verwendet.<br />No-Data = nie teilgenommen (grau). low-n ≤2 = gelb. 1 Fehltermin = nie rot.</p>
+
+  <p class="sub muted">Quelle: <code>out/latest.json</code> (GitHub)</p>
+
+  <script>
+    // Quelle (mit Cache-Buster)
+    const url = new URL(location.href);
+    const branch = url.searchParams.get('branch') || 'main';
+    const RAW = `https://raw.githubusercontent.com/its-h4k1/desert-storm-roster-optimizer/${branch}/out/latest.json?v=${Date.now()}`;
+
+    // Konfiguration: Prior-Defaults (werden durch schema.prior überschrieben)
+    const DEFAULT_PRIOR_FALLBACK = 0.18;
+    const DEFAULT_PRIOR_PAD = 0.02;
+    const EPS = 1e-12;
+
+    // Format & Styling
+    const pad = (n)=> String(n).padStart(2,"0");
+    const pc  = (x)=> (x==null || isNaN(x)) ? "–" : (Math.round(x*1000)/10).toFixed(1)+"%";
+    const GREEN_TH  = 0.20;
+    const YELLOW_TH = 0.35;
+    const SINGLE_MISS_GREEN_SEEN_MIN = 10;
+    const SINGLE_MISS_GREEN_RATE_MAX = 0.12;
+    const clamp = (x)=> Math.min(1, Math.max(0, x));
+    const toNumber = (v)=>{
+      if (v==null) return null;
+      const n = Number(v);
+      return Number.isFinite(n) ? n : null;
+    };
+
+    function buildChipTooltip(p, rRolling, rOverall) {
+      const seen   = (p && Number.isFinite(p.events_seen))  ? Number(p.events_seen)  : null;
+      const miss   = (p && Number.isFinite(p.noshow_count)) ? Number(p.noshow_count) : null;
+      const eb     = (p && p.eb && isFinite(p.eb.p_hat))    ? Number(p.eb.p_hat)     : null;
+      const parts = [];
+      parts.push(`n=${seen!=null?seen:"–"}`);
+      parts.push(`misses=${miss!=null?miss:"–"}`);
+      if (rRolling!=null && isFinite(rRolling)) parts.push(`rolling=${pc(rRolling)}`);
+      if (rOverall!=null && isFinite(rOverall)) parts.push(`overall=${pc(rOverall)}`);
+      if (eb!=null) parts.push(`eb≈${pc(eb)}`);
+      return parts.join(" · ");
+    }
+
+    function writeBucketCounts(key, counts) {
+      const h2 = document.querySelector(`#${key} h2`);
+      if (!h2) return;
+      const base = h2.getAttribute("data-label") || h2.textContent;
+      h2.setAttribute("data-label", base);
+      const fmt = (value, label) => `${(value==null || !Number.isFinite(value)) ? "–" : value} ${label}`;
+      const suffix = ` — ${[fmt(counts.known, "bekannte"), fmt(counts.lown, "low-n"), fmt(counts.nd, "No-Data")].join(" · ")}`;
+      h2.innerHTML = `${base}<span class="counts">${suffix}</span>`;
+    }
+
+    fetch(RAW, { cache: "no-store" })
+      .then(r=>{ if(!r.ok) throw new Error(r.status+" "+r.statusText); return r.json(); })
+      .then(payload => {
+        const schema = (!Array.isArray(payload) && payload && typeof payload === "object") ? (payload.schema || {}) : {};
+        const ebEnabled = Boolean(schema && schema.eb && schema.eb.enabled);
+
+        // -------- payload -> rows (kompatibel zu alter Struktur) --------
+        const toRows = (payload) => {
+          if (Array.isArray(payload)) return payload; // alte Struktur weiterhin akzeptieren
+          const playersByDisplay = Object.fromEntries((payload.players || []).map(p => [p.display, p]));
+          const groups = payload.groups || {};
+          const out = [];
+          for (const G of ["A","B"]) {
+            const g = groups[G] || {};
+            for (const R of ["Start","Ersatz"]) {
+              const list = (g[R] || []);
+              list.forEach((name, idx) => {
+                const p = playersByDisplay[name] || {};
+                const eb = (p.eb && typeof p.eb === "object") ? {
+                  p_hat: toNumber(p.eb.p_hat),
+                  sigma: toNumber(p.eb.sigma),
+                } : null;
+                out.push({
+                  Group: G,
+                  Role: R,
+                  Slot: idx + 1,
+                  PlayerName: name,
+                  NoShowOverall: toNumber(p.noshow_overall),
+                  NoShowRolling: toNumber(p.noshow_rolling),
+                  EB: eb,
+                  EventsSeen: toNumber(p.events_seen),
+                });
+              });
+            }
+          }
+          return out;
+        };
+        const rows = toRows(payload);
+
+        const playersArray = (!Array.isArray(payload) && Array.isArray(payload.players)) ? payload.players : [];
+        const playersMap = Object.fromEntries(
+          playersArray
+            .filter(p => p && typeof p === "object" && typeof p.display === "string")
+            .map(p => [p.display, p])
+        );
+        const hasEventsSeen = playersArray.some(p => p && Object.prototype.hasOwnProperty.call(p, "events_seen"));
+
+        const observedFromPlayers = playersArray
+          .map(p => {
+            if (!p || typeof p !== "object") return null;
+            const seen = toNumber(p.events_seen);
+            const hasData = (seen == null) || (seen > 0);
+            if (p.eb && p.eb.p_hat != null && hasData) {
+              const v = toNumber(p.eb.p_hat);
+              if (v != null) return v;
+            }
+            if (p.noshow_rolling != null && hasData) {
+              const v = toNumber(p.noshow_rolling);
+              if (v != null) return v;
+            }
+            if (p.noshow_overall != null && hasData) {
+              const v = toNumber(p.noshow_overall);
+              if (v != null) return v;
+            }
+            return null;
+          })
+          .filter(v => v != null);
+
+        // -------- Prior (für No-Data-Spieler) dynamisch bestimmen --------
+        // Schätze den Mittelwert der beobachteten Raten (EB bevorzugt, sonst rolling → overall)
+        let observed = observedFromPlayers;
+        if (!observed.length) {
+          observed = rows.map(r => {
+            const seen = toNumber(r.EventsSeen);
+            const hasData = (seen == null) || (seen > 0);
+            if (r.EB && r.EB.p_hat != null && hasData) {
+              const v = toNumber(r.EB.p_hat);
+              if (v != null) return v;
+            }
+            if (r.NoShowRolling != null && hasData) {
+              const v = toNumber(r.NoShowRolling);
+              if (v != null) return v;
+            }
+            if (r.NoShowOverall != null && hasData) {
+              const v = toNumber(r.NoShowOverall);
+              if (v != null) return v;
+            }
+            return null;
+          }).filter(v => v != null);
+        }
+        const avg = (arr)=> arr.reduce((a,b)=>a+b,0)/Math.max(1,arr.length);
+        const fallbackPrior = (schema.prior && schema.prior.fallback != null && isFinite(schema.prior.fallback)) ? Number(schema.prior.fallback) : DEFAULT_PRIOR_FALLBACK;
+        const priorPad = (schema.prior && schema.prior.pad != null && isFinite(schema.prior.pad)) ? Number(schema.prior.pad) : DEFAULT_PRIOR_PAD;
+        const teamMeanSchema = (schema.prior && schema.prior.team_mean != null && isFinite(schema.prior.team_mean)) ? Number(schema.prior.team_mean) : null;
+        const priorValueSchema = (schema.prior && schema.prior.value != null && isFinite(schema.prior.value)) ? Number(schema.prior.value) : null;
+        const priorBase = observed.length ? avg(observed) : fallbackPrior;
+        const teamMean = (teamMeanSchema != null) ? teamMeanSchema : priorBase;
+        const PRIOR_NOSHOW = clamp(priorValueSchema != null ? priorValueSchema : (teamMean + priorPad));
+
+        // -------- Effektive Rate je Spieler für Sortierung --------
+        const effRate = (r) => {
+          if (r.EB && r.EB.p_hat != null) {
+            const v = toNumber(r.EB.p_hat);
+            if (v != null) return clamp(v);
+          }
+          const rolling = toNumber(r.NoShowRolling);
+          if (rolling != null) return clamp(rolling);
+          const overall = toNumber(r.NoShowOverall);
+          if (overall != null) return clamp(overall);
+          return PRIOR_NOSHOW;
+        };
+
+        // Sort-Hinweis im UI
+        document.getElementById("sort-note").textContent =
+          `Sortierung: niedrigste Risiko-Schätzung zuerst (Primär: ${ebEnabled ? "EB p̂" : "rolling"}, Fallback: ${ebEnabled ? "rolling → overall" : "overall"}, Prior ≈ ${(PRIOR_NOSHOW*100).toFixed(1)}%).`;
+
+        // -------- Buckets bilden --------
+        const targets = ["A-Start","A-Ersatz","B-Start","B-Ersatz"];
+        const buckets = Object.fromEntries(targets.map(k => [k, []]));
+        rows.forEach(r=>{
+          const key = `${r.Group}-${r.Role}`;
+          if (buckets[key]) buckets[key].push(r);
+        });
+
+        // -------- Buckets nach No-Show (aufsteigend) sortieren --------
+        for (const key of targets) {
+          buckets[key].sort((a,b)=>{
+            const da = effRate(a), db = effRate(b);
+            if (Math.abs(da - db) > EPS) return da - db;              // 1) No-Show (ASC)
+            const oaVal = (toNumber(a.NoShowOverall) != null) ? toNumber(a.NoShowOverall) : 1;
+            const obVal = (toNumber(b.NoShowOverall) != null) ? toNumber(b.NoShowOverall) : 1;
+            const oa = oaVal ?? 1;
+            const ob = obVal ?? 1;
+            if (Math.abs(oa - ob) > EPS) return oa - ob;              // 2) Overall (ASC) als Tiebreak
+            return (a.PlayerName||"").localeCompare(b.PlayerName||""); // 3) Name
+          });
+        }
+
+        // -------- Render --------
+        for (const key of targets) {
+          const tbody = document.querySelector(`#${key} tbody`);
+          tbody.innerHTML = "";
+          (buckets[key] || []).forEach((r, i) => {
+            const histOverall = toNumber(r.NoShowOverall);
+            const histRolling = toNumber(r.NoShowRolling);
+            const p = playersMap[r.PlayerName] || {};
+
+            const seenSource = Number.isFinite(p.events_seen) ? Number(p.events_seen) : null;
+            const seenFallback = Object.prototype.hasOwnProperty.call(r, "EventsSeen") ? toNumber(r.EventsSeen) : null;
+            const seen = (seenSource != null) ? seenSource : seenFallback;
+
+            const missesSource = Number.isFinite(p.noshow_count) ? Number(p.noshow_count) : null;
+            const missesFallback = Object.prototype.hasOwnProperty.call(r, "NoShowCount") ? toNumber(r.NoShowCount) : null;
+            const misses = (missesSource != null) ? missesSource : missesFallback;
+
+            const seenKnown = (p && Object.prototype.hasOwnProperty.call(p, "events_seen")) ||
+              Object.prototype.hasOwnProperty.call(r, "EventsSeen");
+            const annotate = seenKnown || hasEventsSeen;
+
+            const participated = (seen != null && seen > 0);
+            const noData = annotate ? !participated : false;
+            const lowN = annotate ? (participated && seen <= 2) : false;
+            const neverMissed = annotate ? (participated && misses === 0) : false;
+            const singleMiss = annotate ? (participated && misses === 1) : false;
+
+            const histRate = (histRolling ?? histOverall);
+
+            function chipClass() {
+              if (noData) return "chip ns-neutral";
+              if (neverMissed) return "chip ns-ok";
+              if (lowN) return "chip ns-mid";
+
+              if (singleMiss) {
+                if (seen >= SINGLE_MISS_GREEN_SEEN_MIN &&
+                    histRate != null && Number.isFinite(histRate) && histRate < SINGLE_MISS_GREEN_RATE_MAX) {
+                  return "chip ns-ok";
+                }
+                return "chip ns-mid";
+              }
+
+              const value = (histRate != null && Number.isFinite(histRate)) ? histRate : null;
+              if (value == null) return "chip ns-neutral";
+              if (value < GREEN_TH) return "chip ns-ok";
+              if (value < YELLOW_TH) return "chip ns-mid";
+              return "chip ns-bad";
+            }
+
+            const tip = buildChipTooltip(p, histRolling, histOverall);
+
+            const shownOverall = noData ? null : histOverall;
+            const shownRolling = noData ? null : histRolling;
+            const chipKlass = chipClass();
+            const tooltip = tip.replace(/"/g, '&quot;');
+            let nameHTML = `${r.PlayerName || ""}`;
+            if (noData) {
+              nameHTML += ' <span class="tag tag-nd" title="Keine Historie – events_seen = 0">No&nbsp;Data</span>';
+            }
+            if (lowN) {
+              nameHTML += ' <span class="tag tag-low" title="Wenig Historie – events_seen ∈ {1,2}">low&nbsp;n</span>';
+            }
+            const tr = document.createElement("tr");
+            tr.innerHTML = `
+              <td class="num">${pad(i+1)}</td>
+              <td>${nameHTML}</td>
+              <td><span class="${chipKlass}" title="${tooltip}">${pc(shownOverall)}</span></td>
+              <td><span class="${chipKlass}" title="${tooltip}">${pc(shownRolling)}</span></td>
+            `;
+            tbody.appendChild(tr);
+          });
+
+          if (!window.__bucketCounts) window.__bucketCounts = {};
+          const keyCounts = { known:0, lown:0, nd:0 };
+          (buckets[key] || []).forEach(row => {
+            const pp = playersMap[row.PlayerName] || {};
+            const seenVal = Number.isFinite(pp.events_seen) ? Number(pp.events_seen) :
+              (Object.prototype.hasOwnProperty.call(row, "EventsSeen") ? toNumber(row.EventsSeen) : null);
+            if (!(seenVal > 0)) { keyCounts.nd++; return; }
+            if (seenVal <= 2) { keyCounts.lown++; return; }
+            keyCounts.known++;
+          });
+          window.__bucketCounts[key] = keyCounts;
+          writeBucketCounts(key, keyCounts);
+        }
+
+        const ts = new Date().toISOString().replace('T',' ').slice(0,19) + " UTC";
+        const schemaVersion = (schema && schema.version != null) ? ` · schema v${schema.version}` : "";
+        document.getElementById("stamp").textContent = `· Stand: ${ts}${schemaVersion}`;
+      })
+      .catch(err=>{
+        document.body.insertAdjacentHTML("beforeend",
+          `<p style="color:#b00">Fehler beim Laden von <code>latest.json</code>: ${String(err)}</p>`);
+      });
+  </script>
+</body>
+</html>
