@@ -32,87 +32,11 @@ from typing import Dict, List, Optional, Tuple
 
 import pandas as pd
 
+from src.alias_utils import AliasResolutionError, load_alias_map
 from src.utils import canonical_name, parse_event_date
-
-# Optional: load_alias_map aus utils, sonst Fallback hier
-try:
-    from src.utils import load_alias_map as _utils_load_alias_map  # type: ignore
-except Exception:
-    _utils_load_alias_map = None
 
 
 EVENT_RE = re.compile(r"^DS-\d{4}-\d{2}-\d{2}-[A-Z]$", re.IGNORECASE)
-
-
-# --------------------------
-# Fallback: Alias-Loader
-# --------------------------
-def _fallback_load_alias_map(path: str) -> Dict[str, str]:
-    """
-    Unterstützt beide Schemata:
-      A) from_name,to_name[,active]
-      B) PlayerName,Alias[,Active]
-    - 'Active' optional; ==0 → Regel ignorieren
-    - 'erste Zeile gewinnt' pro from_name
-    - canonical_name() auf Keys/Values
-    - einfache Transitiv-Auflösung + Zyklus-Schutz
-    """
-    df = pd.read_csv(path, comment="#", dtype=str)
-    if df.empty:
-        return {}
-
-    lcmap = {c.strip().lower(): c for c in df.columns}
-    def pick(cands):
-        for c in cands:
-            if c in lcmap:
-                return lcmap[c]
-        return None
-
-    col_from = pick(["alias", "from_name", "from", "src", "playername", "aliasfrom", "alias_from"])
-    col_to   = pick(["canonical", "to_name", "to", "dst", "alias", "aliasto", "alias_to"])
-    if col_from is None or col_to is None:
-        raise ValueError("aliases.csv benötigt (from_name,to_name) ODER (PlayerName,Alias)")
-
-    col_active = pick(["active", "enabled"])
-
-    df = df[[col_from, col_to] + ([col_active] if col_active else [])].copy()
-    df[col_from] = df[col_from].astype(str).map(canonical_name)
-    df[col_to]   = df[col_to].astype(str).map(canonical_name)
-
-    if col_active:
-        df[col_active] = pd.to_numeric(df[col_active], errors="coerce").fillna(1).astype(int)
-        df = df[df[col_active] != 0]
-
-    df = df.dropna(subset=[col_from, col_to])
-    df = df[df[col_from] != ""]
-    df = df.drop_duplicates(subset=[col_from], keep="first")
-
-    mapping = {row[col_from]: row[col_to] for _, row in df.iterrows() if row[col_from] != row[col_to]}
-
-    def resolve(x: str) -> str:
-        seen = set()
-        cur = x
-        for _ in range(64):
-            nxt = mapping.get(cur)
-            if not nxt or nxt == cur:
-                return cur
-            if nxt in seen:
-                return cur
-            seen.add(nxt)
-            cur = nxt
-        return cur
-
-    for k in list(mapping.keys()):
-        mapping[k] = resolve(mapping[k])
-    return {k: v for k, v in mapping.items() if k != v}
-
-
-def load_alias_map(path: str) -> Dict[str, str]:
-    if not path:
-        return {}
-    if _utils_load_alias_map is not None:
-        return _utils_load_alias_map(path)  # type: ignore
-    return _fallback_load_alias_map(path)
 
 
 # --------------------------
@@ -322,7 +246,14 @@ def main():
     patterns = _normalize_event_patterns(args.events)
     events_df = _load_events(patterns)
     alliance_df = _load_alliance(args.alliance)
-    alias_map = load_alias_map(args.aliases) if args.aliases else {}
+    alias_map = {}
+    if args.aliases:
+        try:
+            alias_map = load_alias_map(args.aliases)
+        except AliasResolutionError as e:
+            print(f"[warn] aliases konnten nicht geladen werden: {e}")
+        except Exception as e:
+            print(f"[warn] aliases konnten nicht geladen werden: {e}")
 
     latest = _load_latest_json(args.latest)
 
