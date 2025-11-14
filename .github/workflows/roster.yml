@@ -66,6 +66,7 @@ jobs:
           --events "data/*.csv"
           --alliance data/alliance.csv
           --aliases data/aliases.csv
+          --absences data/absences.csv
           --out out
 
       - name: Commit generated files
