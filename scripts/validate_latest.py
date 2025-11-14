@@ -45,11 +45,12 @@ def validate_players(players: Any) -> bool:
         return False
 
     missing_fields = []
+    required_fields = ("events_seen", "noshow_count", "risk_penalty")
     for index, player in enumerate(players):
         if not isinstance(player, dict):
             report_error(f".players[{index}] must be an object")
             return False
-        for field in ("events_seen", "noshow_count"):
+        for field in required_fields:
             if field not in player:
                 missing_fields.append((index, field))
 
@@ -65,8 +66,8 @@ def validate_schema(schema: Any, players: list[dict[str, Any]]) -> bool:
         return False
 
     version = schema.get("version")
-    if version != 2:
-        report_error(".schema.version must equal 2")
+    if version != 3:
+        report_error(".schema.version must equal 3")
         return False
 
     eb = schema.get("eb")
