@@ -264,7 +264,14 @@ def _write_outputs(out_dir: Path, roster_df: pd.DataFrame, json_payload: Dict):
     latest_dir = Path("out")
     latest_dir.mkdir(parents=True, exist_ok=True)
 
-    csv_cols = ["PlayerName", "Group", "Role", "NoShowOverall", "NoShowRolling"]
+    csv_cols = [
+        "PlayerName",
+        "Group",
+        "Role",
+        "NoShowOverall",
+        "NoShowRolling",
+        "risk_penalty",
+    ]
     roster_df[csv_cols].to_csv(latest_dir / "latest.csv", index=False)
     (out_dir / "roster.csv").write_text((roster_df[csv_cols]).to_csv(index=False), encoding="utf-8")
 
@@ -577,8 +584,17 @@ def main():
             return default
 
     schema_block = {
-        "version": 2,
-        "csv": ["PlayerName", "Canonical", "Group", "Role", "NoShowOverall", "NoShowRolling", "LastSeenDate"],
+        "version": 3,
+        "csv": [
+            "PlayerName",
+            "Canonical",
+            "Group",
+            "Role",
+            "NoShowOverall",
+            "NoShowRolling",
+            "LastSeenDate",
+            "risk_penalty",
+        ],
         "groups": GROUPS,
         "roles": ["Start", "Ersatz"],
         "capacities": {"Start": STARTERS_PER_GROUP, "Ersatz": SUBS_PER_GROUP},
@@ -593,6 +609,12 @@ def main():
             "pad": float(cfg.PRIOR_PAD),
             "team_mean": float(p0),
             "value": float(prior_with_pad),
+        },
+        "metrics": {
+            "risk_penalty": {
+                "description": "Penalty summarizing expected no-show risk (0 = best, higher = worse)",
+                "range": [0.0, 1.0],
+            }
         },
     }
 
@@ -609,7 +631,6 @@ def main():
             "events_seen": _int_default(row.events_seen, 0),
             "noshow_count": _int_default(row.noshow_count, 0),
             "risk_penalty": _float_default(row.risk_penalty, 0.0),
-            "score": _float_default(row.risk_penalty, 0.0),
         }
         if cfg.EB_ENABLE:
             entry["eb"] = {
