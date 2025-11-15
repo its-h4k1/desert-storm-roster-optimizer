@@ -1231,12 +1231,14 @@
       const hasHardRowErrors = validationErrors.some(v => v.type === "row");
       const hasBranchError = validationErrors.some(v => v.type === "branch");
       const hasWorkerError = validationErrors.some(v => v.type === "worker");
+      const hasEventError = validationErrors.some(v => v.type === "event");
       const unresolvedBlocked = lastNameValidation.unresolved.length > 0 && !allowSaveOverride;
       const canSaveState = canSave({
         rowCount: data.length,
         hasHardRowErrors,
         hasBranchError,
         hasWorkerError,
+        hasEventError,
         unresolvedBlocked,
       });
       elements.saveBtn.disabled = !canSaveState;
@@ -1341,6 +1343,7 @@
       if (state.hasHardRowErrors) return false;
       if (state.hasBranchError) return false;
       if (state.hasWorkerError) return false;
+      if (state.hasEventError) return false;
       if (state.unresolvedBlocked) return false;
       return true;
     }
