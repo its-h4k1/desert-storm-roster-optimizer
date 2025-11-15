@@ -822,7 +822,12 @@
     function duplicateSlotFormatter(cell, params) {
       const value = cell.getValue();
       const el = cell.getElement();
-      if (duplicateSlots.has(Number(value))) {
+      const rowData = cell.getRow().getData();
+      const role = (rowData.RoleAtRegistration || "").toString().trim();
+      const slot = Number(value);
+      const key = Number.isInteger(slot) && role ? `${slot}::${role}` : null;
+
+      if (key && duplicateSlots.has(key)) {
         el.classList.add("duplicate-cell");
       } else {
         el.classList.remove("duplicate-cell");
@@ -1161,14 +1166,16 @@
       const counts = new Map();
       rows.forEach(row => {
         const slot = Number(row.Slot);
-        if (Number.isInteger(slot)) {
-          counts.set(slot, (counts.get(slot) || 0) + 1);
+        const role = (row.RoleAtRegistration || "").toString().trim();
+        if (Number.isInteger(slot) && role) {
+          const key = `${slot}::${role}`;
+          counts.set(key, (counts.get(key) || 0) + 1);
         }
       });
       const duplicates = new Set();
-      counts.forEach((count, slot) => {
+      counts.forEach((count, key) => {
         if (count > 1) {
-          duplicates.add(slot);
+          duplicates.add(key);
         }
       });
       return duplicates;
@@ -1194,21 +1201,50 @@
           errors.push({ type: "row", message: `Zeile ${rowNum}: Punkte muss >= 0 sein` });
         }
       });
+
       if (duplicateSlots.size) {
-        errors.push({ type: "row", message: `Slots doppelt vergeben: ${Array.from(duplicateSlots).join(", ")}` });
+        const duplicateSlotNumbers = new Set();
+        duplicateSlots.forEach(key => {
+          const [slotStr] = key.split("::");
+          const num = Number(slotStr);
+          if (Number.isInteger(num)) {
+            duplicateSlotNumbers.add(num);
+          }
+        });
+        if (duplicateSlotNumbers.size) {
+          const sorted = Array.from(duplicateSlotNumbers).sort((a, b) => a - b);
+          errors.push({
+            type: "row",
+            message: `Slots doppelt vergeben (innerhalb gleicher Rolle): ${sorted.join(", ")}`
+          });
+        }
       }
+
       return errors;
     }
 
     function updateStatusBar(data, eventIdValid) {
       elements.rowCount.textContent = `Zeilen: ${data.length}`;
+
+      let duplicateSlotNumbers = new Set();
       if (duplicateSlots.size) {
-        elements.duplicateCount.textContent = `Duplikate: ${duplicateSlots.size}`;
+        duplicateSlots.forEach(key => {
+          const [slotStr] = key.split("::");
+          const num = Number(slotStr);
+          if (Number.isInteger(num)) {
+            duplicateSlotNumbers.add(num);
+          }
+        });
+      }
+
+      if (duplicateSlotNumbers.size) {
+        elements.duplicateCount.textContent = `Duplikate: ${duplicateSlotNumbers.size}`;
         elements.duplicateCount.className = "status-error";
       } else {
         elements.duplicateCount.textContent = "Duplikate: 0";
         elements.duplicateCount.className = "status-ok";
       }
+
       const criticalErrors = validationErrors.filter(isCriticalError);
       elements.errorCount.textContent = `Fehler: ${criticalErrors.length}`;
       elements.errorCount.className = criticalErrors.length ? "status-error" : (eventIdValid ? "status-ok" : "status-error");
