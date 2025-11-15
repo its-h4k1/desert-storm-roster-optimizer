@@ -684,6 +684,19 @@
       canonicalList: [],
     };
     const nameResolutions = new Map();
+
+    function setNameResolution(key, value) {
+      if (!key) return;
+      nameResolutions.set(key, value);
+      updateNameStatusCells();
+    }
+
+    function deleteNameResolution(key) {
+      if (!key) return;
+      if (nameResolutions.delete(key)) {
+        updateNameStatusCells();
+      }
+    }
     let allowSaveOverride = false;
     let lastNameValidation = {
       total: 0,
@@ -915,6 +928,26 @@
         return { status: "empty" };
       }
       const key = normalizePlayerKey(trimmed);
+      if (nameResolutions.has(key)) {
+        const resolution = nameResolutions.get(key);
+        if (resolution && typeof resolution === "object" && resolution.status === "alias-resolved") {
+          const canonicalName = resolution.canonical || resolution.newPlayerName || trimmed;
+          return {
+            status: "alias-resolved",
+            canonical: canonicalName,
+            alias: trimmed,
+            key,
+          };
+        }
+        if (typeof resolution === "string") {
+          return {
+            status: "alias-resolved",
+            canonical: resolution,
+            alias: trimmed,
+            key,
+          };
+        }
+      }
       return getNameStatusByKey(key, trimmed);
     }
 
@@ -924,19 +957,37 @@
       }
       if (nameResolutions.has(key)) {
         const resolution = nameResolutions.get(key);
-        if (resolution.status === "alias") {
-          return {
-            status: "alias",
-            canonical: resolution.canonical,
-            alias: resolution.alias,
-            key,
-          };
+        if (resolution && typeof resolution === "object") {
+          if (resolution.status === "alias") {
+            return {
+              status: "alias",
+              canonical: resolution.canonical,
+              alias: resolution.alias,
+              key,
+            };
+          }
+          if (resolution.status === "new-player") {
+            return {
+              status: "new-player",
+              canonical: resolution.newPlayerName,
+              alias: resolution.alias,
+              key,
+            };
+          }
+          if (resolution.status === "alias-resolved") {
+            return {
+              status: "alias-resolved",
+              canonical: resolution.canonical || resolution.newPlayerName || original,
+              alias: original,
+              key,
+            };
+          }
         }
-        if (resolution.status === "new-player") {
+        if (typeof resolution === "string") {
           return {
-            status: "new-player",
-            canonical: resolution.newPlayerName,
-            alias: resolution.alias,
+            status: "alias-resolved",
+            canonical: resolution,
+            alias: original,
             key,
           };
         }
@@ -961,7 +1012,7 @@
       const statusKey = status.status || "empty";
       const wrapper = document.createElement("div");
       wrapper.className = `name-status-cell status-badge name-status-${statusKey}`;
-      if (statusKey === "known" || statusKey === "alias" || statusKey === "new-player") {
+      if (statusKey === "known" || statusKey === "alias" || statusKey === "new-player" || statusKey === "alias-resolved") {
         wrapper.classList.add("status-known");
       } else if (statusKey === "unresolved") {
         wrapper.classList.add("status-unknown");
@@ -986,6 +1037,17 @@
             note.textContent = "bekannt";
           }
           wrapper.title = status.canonical ? `Bekannt als ${status.canonical}` : "Bekannter Spieler";
+          break;
+        case "alias-resolved":
+          label.textContent = "OK";
+          if (status.canonical && status.canonical !== status.alias) {
+            note.textContent = `→ ${status.canonical}`;
+          } else {
+            note.textContent = "bekannt";
+          }
+          wrapper.title = status.canonical
+            ? `Alias auf ${status.canonical} aufgelöst`
+            : "Alias aufgelöst";
           break;
         case "alias":
           label.textContent = "Alias von";
@@ -1022,7 +1084,7 @@
           const status = getNameStatus(cell.getValue());
           const el = cell.getElement();
           el.classList.remove("playername-known", "playername-unresolved", "playername-alias", "playername-new-player");
-          if (status.status === "known") {
+          if (status.status === "known" || status.status === "alias-resolved") {
             el.classList.add("playername-known");
           } else if (status.status === "alias") {
             el.classList.add("playername-alias");
@@ -1035,6 +1097,8 @@
             el.title = `Alias von ${status.canonical}`;
           } else if (status.status === "known" && status.canonical && status.canonical !== cell.getValue()) {
             el.title = `Alias von ${status.canonical}`;
+          } else if (status.status === "alias-resolved" && status.canonical && status.canonical !== cell.getValue()) {
+            el.title = `Alias auf ${status.canonical} aufgelöst`;
           } else if (status.status === "new-player" && status.canonical) {
             el.title = `Neuer Spieler: ${status.canonical}`;
           } else {
@@ -1045,9 +1109,20 @@
     }
 
     function updateNameStatusCells() {
+      const rowsToReformat = new Set();
       table.getColumns().forEach(column => {
         if (column.getDefinition().formatter === playerNameStatusFormatter) {
-          column.getCells().forEach(cell => cell.render());
+          column.getCells().forEach(cell => {
+            const row = cell.getRow();
+            if (row) {
+              rowsToReformat.add(row);
+            }
+          });
+        }
+      });
+      rowsToReformat.forEach(row => {
+        if (typeof row.reformat === "function") {
+          row.reformat();
         }
       });
       updatePlayerNameCells();
@@ -1156,12 +1231,14 @@
       const hasHardRowErrors = validationErrors.some(v => v.type === "row");
       const hasBranchError = validationErrors.some(v => v.type === "branch");
       const hasWorkerError = validationErrors.some(v => v.type === "worker");
+      const hasEventError = validationErrors.some(v => v.type === "event");
       const unresolvedBlocked = lastNameValidation.unresolved.length > 0 && !allowSaveOverride;
       const canSaveState = canSave({
         rowCount: data.length,
         hasHardRowErrors,
         hasBranchError,
         hasWorkerError,
+        hasEventError,
         unresolvedBlocked,
       });
       elements.saveBtn.disabled = !canSaveState;
@@ -1266,6 +1343,7 @@
       if (state.hasHardRowErrors) return false;
       if (state.hasBranchError) return false;
       if (state.hasWorkerError) return false;
+      if (state.hasEventError) return false;
       if (state.unresolvedBlocked) return false;
       return true;
     }
@@ -1459,7 +1537,7 @@
       const validKeys = new Set(seen.keys());
       Array.from(nameResolutions.keys()).forEach(key => {
         if (!validKeys.has(key)) {
-          nameResolutions.delete(key);
+          deleteNameResolution(key);
         }
       });
 
@@ -1629,9 +1707,9 @@
         return;
       }
       if (canonicalKey === activeResolveKey) {
-        nameResolutions.delete(activeResolveKey);
+        deleteNameResolution(activeResolveKey);
       } else {
-        nameResolutions.set(activeResolveKey, {
+        setNameResolution(activeResolveKey, {
           status: "alias",
           alias: activeResolveName,
           canonical: canonicalName,
@@ -1660,7 +1738,7 @@
         setResolverError(`Name bereits vergeben (${existing}).`);
         return;
       }
-      nameResolutions.set(activeResolveKey, {
+      setNameResolution(activeResolveKey, {
         status: "new-player",
         alias: activeResolveName,
         newPlayerName,
@@ -1675,7 +1753,7 @@
         closeNameResolver();
         return;
       }
-      nameResolutions.delete(activeResolveKey);
+      deleteNameResolution(activeResolveKey);
       closeNameResolver();
       allowSaveOverride = false;
       refreshValidationState();
@@ -1849,7 +1927,7 @@
             const aliasKey = normalizePlayerKey(entry.alias);
             if (!aliasKey) return;
             playerDirectory.aliasToCanonical.set(aliasKey, entry.canonical);
-            nameResolutions.delete(aliasKey);
+            deleteNameResolution(aliasKey);
           });
         }
         if (allianceUpdate && Array.isArray(allianceUpdate.added)) {
@@ -1864,7 +1942,7 @@
               canonicalListChanged = true;
             }
             playerDirectory.aliasToCanonical.set(key, trimmed);
-            nameResolutions.delete(key);
+            deleteNameResolution(key);
           });
           if (canonicalListChanged) {
             playerDirectory.canonicalList = Array.from(new Set(playerDirectory.canonicalList)).sort((a, b) =>
