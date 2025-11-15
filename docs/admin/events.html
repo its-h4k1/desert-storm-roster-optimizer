@@ -1124,7 +1124,8 @@
 
       lastNameValidation = collectNameValidationState(data);
       if (lastNameValidation.unresolved.length) {
-        validationErrors.push({ type: "warning", message: `Namensvalidierung: ${lastNameValidation.unresolved.length} offen` });
+        const unresolvedType = allowSaveOverride ? "warning" : "names";
+        validationErrors.push({ type: unresolvedType, message: `Namensvalidierung: ${lastNameValidation.unresolved.length} offen` });
       }
 
       updateStatusBar(data, eventIdValid);
@@ -1136,7 +1137,7 @@
       }
 
       if (validationErrors.length) {
-        const critical = validationErrors.filter(v => v.type !== "warning");
+        const critical = validationErrors.filter(isCriticalError);
         if (critical.length) {
           setErrorBanner(critical.map(v => v.message).join(" · "));
         } else {
@@ -1146,9 +1147,14 @@
         setErrorBanner("");
       }
 
-      const hasCriticalErrors = validationErrors.some(v => v.type !== "warning");
-      const unresolvedBlocked = lastNameValidation.unresolved.length > 0 && !allowSaveOverride;
-      elements.saveBtn.disabled = hasCriticalErrors || data.length === 0 || unresolvedBlocked;
+      const canSaveState = canSave({
+        rowCount: data.length,
+        validationErrors,
+        unresolvedCount: lastNameValidation.unresolved.length,
+        allowSaveOverride,
+      });
+      elements.saveBtn.disabled = !canSaveState;
+      elements.buildBtn.disabled = !canSaveState;
     }
 
     function calculateDuplicateSlots(rows) {
@@ -1203,9 +1209,25 @@
         elements.duplicateCount.textContent = "Duplikate: 0";
         elements.duplicateCount.className = "status-ok";
       }
-      const criticalErrors = validationErrors.filter(v => v.type !== "warning");
+      const criticalErrors = validationErrors.filter(isCriticalError);
       elements.errorCount.textContent = `Fehler: ${criticalErrors.length}`;
       elements.errorCount.className = criticalErrors.length ? "status-error" : (eventIdValid ? "status-ok" : "status-error");
+    }
+
+    function isCriticalError(entry) {
+      return entry && entry.type !== "warning";
+    }
+
+    function canSave(state) {
+      if (!state) return false;
+      if (!state.rowCount) return false;
+      if (state.validationErrors && state.validationErrors.some(isCriticalError)) {
+        return false;
+      }
+      if (state.unresolvedCount > 0 && !state.allowSaveOverride) {
+        return false;
+      }
+      return true;
     }
 
     function normalizeRow(row) {
