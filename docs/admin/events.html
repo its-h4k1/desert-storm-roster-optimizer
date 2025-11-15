@@ -248,6 +248,213 @@
       flex-wrap: wrap;
       gap: 0.75rem;
     }
+
+    .name-summary {
+      background: white;
+      border-radius: 0.75rem;
+      border: 1px solid rgba(0, 0, 0, 0.1);
+      padding: 0.75rem 1rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    .name-summary-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 0.5rem;
+      font-weight: 600;
+    }
+
+    .name-summary-pending,
+    .name-summary-resolutions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      font-size: 0.85rem;
+    }
+
+    .name-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      padding: 0.35rem 0.6rem;
+      border-radius: 999px;
+      border: 1px solid rgba(198, 40, 40, 0.35);
+      background: rgba(198, 40, 40, 0.12);
+      color: #5b1717;
+      cursor: pointer;
+      font-size: 0.8rem;
+    }
+
+    .name-chip::before {
+      content: "⚠";
+      font-size: 0.8rem;
+    }
+
+    .name-chip:hover {
+      background: rgba(198, 40, 40, 0.2);
+    }
+
+    .name-summary-resolutions .resolution-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      padding: 0.35rem 0.6rem;
+      border-radius: 999px;
+      border: 1px solid rgba(11, 99, 246, 0.35);
+      background: rgba(11, 99, 246, 0.08);
+      color: #0b3a9b;
+      font-size: 0.8rem;
+    }
+
+    .name-summary-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      align-items: center;
+    }
+
+    .playername-known {
+      background: rgba(37, 96, 41, 0.08);
+    }
+
+    .playername-alias {
+      background: rgba(11, 99, 246, 0.08);
+    }
+
+    .playername-new-player {
+      background: rgba(11, 99, 246, 0.12);
+    }
+
+    .playername-unresolved {
+      background: rgba(198, 40, 40, 0.12);
+    }
+
+    .playername-cell {
+      padding: 0.15rem 0.35rem;
+      border-radius: 0.5rem;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.3rem;
+    }
+
+    .playername-cell strong {
+      font-weight: 600;
+    }
+
+    .name-status-cell {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      padding: 0.2rem 0.35rem;
+      border-radius: 0.5rem;
+      font-size: 0.8rem;
+      cursor: pointer;
+    }
+
+    .name-status-cell.name-status-known {
+      background: rgba(37, 96, 41, 0.1);
+      color: #256029;
+    }
+
+    .name-status-cell.name-status-alias,
+    .name-status-cell.name-status-new-player {
+      background: rgba(11, 99, 246, 0.1);
+      color: #0b3a9b;
+    }
+
+    .name-status-cell.name-status-unresolved {
+      background: rgba(198, 40, 40, 0.1);
+      color: #5b1717;
+    }
+
+    .name-status-cell .name-status-label {
+      font-weight: 600;
+    }
+
+    .name-status-note {
+      font-size: 0.75rem;
+      opacity: 0.8;
+    }
+
+    .name-status-cell.name-status-empty {
+      background: rgba(108, 117, 125, 0.12);
+      color: #4b4f56;
+      cursor: default;
+    }
+
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 18, 26, 0.55);
+      backdrop-filter: blur(2px);
+      z-index: 300;
+    }
+
+    .modal {
+      position: fixed;
+      inset: 50% auto auto 50%;
+      transform: translate(-50%, -50%);
+      width: min(520px, 92vw);
+      max-height: 90vh;
+      overflow-y: auto;
+      background: white;
+      border-radius: 0.9rem;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.25);
+      padding: 1.25rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+      z-index: 400;
+    }
+
+    .modal-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.5rem;
+    }
+
+    .modal-header h2 {
+      margin: 0;
+      font-size: 1.1rem;
+    }
+
+    .modal-body {
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+      font-size: 0.9rem;
+    }
+
+    .modal-body label {
+      font-size: 0.8rem;
+      font-weight: 600;
+    }
+
+    .modal-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+    }
+
+    .modal hr {
+      border: none;
+      border-top: 1px solid rgba(0, 0, 0, 0.08);
+      margin: 0.5rem 0;
+    }
+
+    .modal-note {
+      font-size: 0.8rem;
+      color: #4b4f56;
+    }
+
+    .modal-error {
+      font-size: 0.8rem;
+      color: #c62828;
+    }
   </style>
 </head>
 <body>
@@ -324,8 +531,52 @@
       <span id="duplicate-count" class="status-ok">Duplikate: 0</span>
       <span id="error-count" class="status-ok">Fehler: 0</span>
     </div>
+    <div id="name-validation" class="name-summary hidden">
+      <div class="name-summary-header">
+        <span>Namensvalidierung</span>
+        <span id="name-validation-status"></span>
+      </div>
+      <div id="name-validation-pending" class="name-summary-pending hidden"></div>
+      <div id="name-validation-resolutions" class="name-summary-resolutions hidden"></div>
+      <div id="name-validation-actions" class="name-summary-actions hidden">
+        <button type="button" id="force-save-btn" class="secondary-button">Speichern trotz offener Namen</button>
+      </div>
+    </div>
   </main>
   <div class="toast-container" id="toast-container"></div>
+
+  <div id="resolver-backdrop" class="modal-backdrop hidden"></div>
+  <div id="resolver-modal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="resolver-title">
+    <div class="modal-header">
+      <h2 id="resolver-title">Unbekannter Spieler</h2>
+      <button type="button" id="resolver-close" class="secondary-button">Schließen</button>
+    </div>
+    <div class="modal-body">
+      <div>
+        <div class="modal-note">Bitte ordne den Namen zu oder lege einen neuen Spieler an.</div>
+      </div>
+      <div>
+        <label for="resolver-canonical">Alias einem bekannten Spieler zuordnen</label>
+        <input type="text" id="resolver-canonical" list="resolver-canonical-list" placeholder="Bekannten Spieler suchen" autocomplete="off">
+        <datalist id="resolver-canonical-list"></datalist>
+        <div class="modal-actions">
+          <button type="button" id="resolver-alias-btn">Alias anlegen</button>
+        </div>
+      </div>
+      <hr>
+      <div>
+        <label for="resolver-new-player">Neuen Spieler aufnehmen</label>
+        <input type="text" id="resolver-new-player" autocomplete="off">
+        <div class="modal-actions">
+          <button type="button" id="resolver-new-player-btn" class="secondary-button">Neuen Spieler vormerken</button>
+        </div>
+      </div>
+      <div class="modal-actions">
+        <button type="button" id="resolver-reset" class="secondary-button">Zuordnung entfernen</button>
+      </div>
+      <div id="resolver-error" class="modal-error"></div>
+    </div>
+  </div>
 
   <script src="https://unpkg.com/dayjs@1.11.10/dayjs.min.js"></script>
   <script src="https://unpkg.com/papaparse@5.4.1/papaparse.min.js"></script>
@@ -355,6 +606,26 @@
       duplicateCount: document.getElementById("duplicate-count"),
       errorCount: document.getElementById("error-count"),
       toastContainer: document.getElementById("toast-container"),
+      nameValidation: document.getElementById("name-validation"),
+      nameValidationStatus: document.getElementById("name-validation-status"),
+      nameValidationPending: document.getElementById("name-validation-pending"),
+      nameValidationResolutions: document.getElementById("name-validation-resolutions"),
+      nameValidationActions: document.getElementById("name-validation-actions"),
+      forceSaveBtn: document.getElementById("force-save-btn"),
+    };
+
+    const resolverElements = {
+      modal: document.getElementById("resolver-modal"),
+      backdrop: document.getElementById("resolver-backdrop"),
+      close: document.getElementById("resolver-close"),
+      canonicalInput: document.getElementById("resolver-canonical"),
+      canonicalList: document.getElementById("resolver-canonical-list"),
+      aliasButton: document.getElementById("resolver-alias-btn"),
+      newPlayerInput: document.getElementById("resolver-new-player"),
+      newPlayerButton: document.getElementById("resolver-new-player-btn"),
+      resetButton: document.getElementById("resolver-reset"),
+      title: document.getElementById("resolver-title"),
+      error: document.getElementById("resolver-error"),
     };
 
     const EVENT_ID_PATTERN = /^DS-\d{4}-\d{2}-\d{2}-[A-Z]$/;
@@ -364,6 +635,21 @@
     let duplicateSlots = new Set();
     let validationErrors = [];
     let lastBuildUrl = null;
+    const playerDirectory = {
+      canonicalByKey: new Map(),
+      aliasToCanonical: new Map(),
+      canonicalList: [],
+    };
+    const nameResolutions = new Map();
+    let allowSaveOverride = false;
+    let lastNameValidation = {
+      total: 0,
+      unresolved: [],
+      aliasResolutions: [],
+      newPlayers: [],
+    };
+    let activeResolveKey = null;
+    let activeResolveName = "";
 
     const table = new Tabulator("#table", {
       height: "calc(100vh - 280px)",
@@ -381,6 +667,23 @@
           validator: ["required", customSlotValidator],
           formatter: duplicateSlotFormatter,
           headerSort: false,
+        },
+        {
+          title: "Name-Check",
+          field: "PlayerName",
+          headerSort: false,
+          width: 170,
+          hozAlign: "left",
+          formatter: playerNameStatusFormatter,
+          cellClick: (e, cell) => {
+            const name = cell.getRow().getData().PlayerName;
+            const status = getNameStatus(name);
+            if (status.status === "empty") return;
+            if (status.status === "known" && !nameResolutions.has(normalizePlayerKey(name))) {
+              return;
+            }
+            openNameResolver(name);
+          },
         },
         {
           title: "PlayerName",
@@ -434,9 +737,11 @@
         }
       },
       dataChanged: () => {
+        allowSaveOverride = false;
         refreshValidationState();
       },
       cellEdited: () => {
+        allowSaveOverride = false;
         refreshValidationState();
       },
     });
@@ -490,6 +795,148 @@
       if (value === "1" || value === 1) return 1;
       if (value === "0" || value === 0) return 0;
       return 0;
+    }
+
+    function normalizePlayerKey(name) {
+      if (name === null || name === undefined) return "";
+      return name.toString().trim().toLowerCase();
+    }
+
+    function getNameStatus(name) {
+      const trimmed = (name || "").toString().trim();
+      if (!trimmed) {
+        return { status: "empty" };
+      }
+      const key = normalizePlayerKey(trimmed);
+      return getNameStatusByKey(key, trimmed);
+    }
+
+    function getNameStatusByKey(key, original) {
+      if (!key) {
+        return { status: "empty" };
+      }
+      if (nameResolutions.has(key)) {
+        const resolution = nameResolutions.get(key);
+        if (resolution.status === "alias") {
+          return {
+            status: "alias",
+            canonical: resolution.canonical,
+            alias: resolution.alias,
+            key,
+          };
+        }
+        if (resolution.status === "new-player") {
+          return {
+            status: "new-player",
+            canonical: resolution.newPlayerName,
+            alias: resolution.alias,
+            key,
+          };
+        }
+      }
+      if (playerDirectory.aliasToCanonical.has(key)) {
+        return {
+          status: "known",
+          canonical: playerDirectory.aliasToCanonical.get(key),
+          alias: original,
+          key,
+        };
+      }
+      return {
+        status: "unresolved",
+        alias: original,
+        key,
+      };
+    }
+
+    function playerNameStatusFormatter(cell) {
+      const status = getNameStatus(cell.getValue());
+      const statusKey = status.status || "empty";
+      const wrapper = document.createElement("div");
+      wrapper.className = `name-status-cell name-status-${statusKey}`;
+      if (statusKey === "empty") {
+        wrapper.textContent = "–";
+        wrapper.title = "Kein Name";
+        return wrapper;
+      }
+      const label = document.createElement("span");
+      label.className = "name-status-label";
+      const note = document.createElement("span");
+      note.className = "name-status-note";
+      switch (statusKey) {
+        case "known":
+          label.textContent = "OK";
+          if (status.canonical && status.canonical !== status.alias) {
+            note.textContent = `→ ${status.canonical}`;
+          } else {
+            note.textContent = "bekannt";
+          }
+          wrapper.title = status.canonical ? `Bekannt als ${status.canonical}` : "Bekannter Spieler";
+          break;
+        case "alias":
+          label.textContent = "Alias";
+          note.textContent = `→ ${status.canonical}`;
+          wrapper.title = `Alias wird als ${status.canonical} gespeichert`;
+          break;
+        case "new-player":
+          label.textContent = "Neu";
+          note.textContent = status.canonical ? `→ ${status.canonical}` : "Neuer Spieler";
+          wrapper.title = status.canonical ? `Neuer Spieler ${status.canonical}` : "Neuer Spieler";
+          break;
+        case "unresolved":
+          label.textContent = "Unbekannt";
+          note.textContent = "Klicken zum Zuordnen";
+          wrapper.title = "Unbekannter Spieler – Zuordnung erforderlich";
+          break;
+        default:
+          label.textContent = statusKey;
+          note.textContent = "";
+      }
+      wrapper.appendChild(label);
+      if (note.textContent) {
+        wrapper.appendChild(note);
+      }
+      return wrapper;
+    }
+
+    function updatePlayerNameCells() {
+      const playerColumns = table
+        .getColumns()
+        .filter(col => col.getDefinition().field === "PlayerName" && col.getDefinition().title === "PlayerName");
+      playerColumns.forEach(column => {
+        column.getCells().forEach(cell => {
+          const status = getNameStatus(cell.getValue());
+          const el = cell.getElement();
+          el.classList.remove("playername-known", "playername-unresolved", "playername-alias", "playername-new-player");
+          if (status.status === "known") {
+            el.classList.add("playername-known");
+          } else if (status.status === "alias") {
+            el.classList.add("playername-alias");
+          } else if (status.status === "new-player") {
+            el.classList.add("playername-new-player");
+          } else if (status.status === "unresolved") {
+            el.classList.add("playername-unresolved");
+          }
+          if (status.status === "alias") {
+            el.title = `Alias von ${status.canonical}`;
+          } else if (status.status === "known" && status.canonical && status.canonical !== cell.getValue()) {
+            el.title = `Alias von ${status.canonical}`;
+          } else if (status.status === "new-player" && status.canonical) {
+            el.title = `Neuer Spieler: ${status.canonical}`;
+          } else {
+            el.title = "";
+          }
+        });
+      });
+    }
+
+    function updateNameStatusCells() {
+      table.getColumns().forEach(column => {
+        if (column.getDefinition().formatter === playerNameStatusFormatter) {
+          column.getCells().forEach(cell => cell.render());
+        }
+      });
+      updatePlayerNameCells();
     }
 
     function showToast(message, timeout = 4000) {
@@ -566,7 +1013,18 @@
         validationErrors.push({ type: "worker", message: "Worker URL darf nicht leer sein" });
       }
 
+      lastNameValidation = collectNameValidationState(data);
+      if (lastNameValidation.unresolved.length) {
+        validationErrors.push({ type: "warning", message: `Namensvalidierung: ${lastNameValidation.unresolved.length} offen` });
+      }
+
       updateStatusBar(data, eventIdValid);
+      updateNameSummary(lastNameValidation);
+      updateNameStatusCells();
+
+      if (lastNameValidation.unresolved.length === 0) {
+        allowSaveOverride = false;
+      }
 
       if (validationErrors.length) {
         const critical = validationErrors.filter(v => v.type !== "warning");
@@ -580,7 +1038,8 @@
       }
 
       const hasCriticalErrors = validationErrors.some(v => v.type !== "warning");
-      elements.saveBtn.disabled = hasCriticalErrors || data.length === 0;
+      const unresolvedBlocked = lastNameValidation.unresolved.length > 0 && !allowSaveOverride;
+      elements.saveBtn.disabled = hasCriticalErrors || data.length === 0 || unresolvedBlocked;
     }
 
     function calculateDuplicateSlots(rows) {
@@ -660,6 +1119,7 @@
 
     function setTableData(rows) {
       table.setData(rows.map(normalizeRow));
+      allowSaveOverride = false;
       refreshValidationState();
     }
 
@@ -704,6 +1164,342 @@
         default:
           return header;
       }
+    }
+
+    async function fetchFirstAvailable(urls) {
+      for (const url of urls) {
+        try {
+          const response = await fetch(url, { cache: "no-store" });
+          if (response.ok) {
+            return await response.text();
+          }
+        } catch (err) {
+          console.warn("Fallback-Ladevorgang fehlgeschlagen", url, err);
+        }
+      }
+      throw new Error(`Keine der Quellen erreichbar (${urls.join(", ")})`);
+    }
+
+    async function loadTextFromBranch(branch, path) {
+      const url = `https://raw.githubusercontent.com/${repoOwner}/${repoName}/${encodeURIComponent(branch)}/${path}`;
+      try {
+        const response = await fetch(url, { cache: "no-store" });
+        if (!response.ok) {
+          if (response.status === 404) {
+            return null;
+          }
+          throw new Error(`Fetch ${response.status} für ${path}`);
+        }
+        return await response.text();
+      } catch (err) {
+        console.warn("Fetch branch file fehlgeschlagen", url, err);
+        throw err;
+      }
+    }
+
+    async function loadPlayerDirectory() {
+      const basePaths = ["../../data", "../data", "./data", "data"];
+      const alliancePaths = basePaths.map(base => `${base.replace(/\/$/, "")}/alliance.csv`);
+      const aliasesPaths = basePaths.map(base => `${base.replace(/\/$/, "")}/aliases.csv`);
+      const rawAlliance = `https://raw.githubusercontent.com/${repoOwner}/${repoName}/main/data/alliance.csv`;
+      const rawAliases = `https://raw.githubusercontent.com/${repoOwner}/${repoName}/main/data/aliases.csv`;
+      alliancePaths.push(rawAlliance);
+      aliasesPaths.push(rawAliases);
+      try {
+        const allianceText = await fetchFirstAvailable(alliancePaths);
+        let aliasesText = "Canonical,Alias\n";
+        try {
+          aliasesText = await fetchFirstAvailable(aliasesPaths);
+        } catch (err) {
+          console.warn("Aliases nicht gefunden, starte mit leerer Liste", err);
+        }
+
+        const canonicalMap = new Map();
+        const aliasMap = new Map();
+
+        const allianceParsed = Papa.parse(allianceText, { header: true, skipEmptyLines: true });
+        allianceParsed.data.forEach(row => {
+          const name = (row.PlayerName || row.Canonical || "").toString().trim();
+          if (!name) return;
+          const key = normalizePlayerKey(name);
+          if (!key) return;
+          canonicalMap.set(key, name);
+          aliasMap.set(key, name);
+        });
+
+        const aliasesParsed = Papa.parse(aliasesText, { header: true, skipEmptyLines: true });
+        aliasesParsed.data.forEach(row => {
+          const canonical = (row.Canonical || row.PlayerName || "").toString().trim();
+          const alias = (row.Alias || row.Name || "").toString().trim();
+          if (!canonical || !alias) return;
+          const canonicalKey = normalizePlayerKey(canonical);
+          const aliasKey = normalizePlayerKey(alias);
+          if (!aliasKey) return;
+          if (!canonicalMap.has(canonicalKey)) {
+            canonicalMap.set(canonicalKey, canonical);
+          }
+          const canonicalValue = canonicalMap.get(canonicalKey) || canonical;
+          aliasMap.set(aliasKey, canonicalValue);
+        });
+
+        playerDirectory.canonicalByKey.clear();
+        playerDirectory.aliasToCanonical.clear();
+
+        canonicalMap.forEach((value, key) => {
+          playerDirectory.canonicalByKey.set(key, value);
+        });
+        aliasMap.forEach((value, key) => {
+          playerDirectory.aliasToCanonical.set(key, value);
+        });
+
+        playerDirectory.canonicalList = Array.from(new Set(canonicalMap.values())).sort((a, b) =>
+          a.localeCompare(b, "de", { sensitivity: "base" })
+        );
+
+        renderCanonicalOptions();
+      } catch (err) {
+        console.error("Spieler-Verzeichnis konnte nicht geladen werden", err);
+        showToast("Warnung: Spieler-Verzeichnis konnte nicht geladen werden.");
+      }
+    }
+
+    function renderCanonicalOptions() {
+      if (!resolverElements.canonicalList) return;
+      resolverElements.canonicalList.innerHTML = "";
+      playerDirectory.canonicalList.forEach(name => {
+        const option = document.createElement("option");
+        option.value = name;
+        resolverElements.canonicalList.appendChild(option);
+      });
+    }
+
+    function collectNameValidationState(rows) {
+      const seen = new Map();
+      rows.forEach(row => {
+        const rawName = (row.PlayerName || "").toString().trim();
+        if (!rawName) return;
+        const key = normalizePlayerKey(rawName);
+        if (!key) return;
+        if (!seen.has(key)) {
+          seen.set(key, rawName);
+        }
+      });
+
+      const validKeys = new Set(seen.keys());
+      Array.from(nameResolutions.keys()).forEach(key => {
+        if (!validKeys.has(key)) {
+          nameResolutions.delete(key);
+        }
+      });
+
+      const unresolved = [];
+      const aliasResolutions = [];
+      const newPlayers = [];
+      seen.forEach((displayName, key) => {
+        const status = getNameStatusByKey(key, displayName);
+        if (status.status === "unresolved") {
+          unresolved.push({ name: displayName, key });
+        } else if (status.status === "alias") {
+          aliasResolutions.push({ name: displayName, canonical: status.canonical, key });
+        } else if (status.status === "new-player") {
+          newPlayers.push({ name: displayName, canonical: status.canonical, key });
+        }
+      });
+
+      return {
+        total: seen.size,
+        unresolved,
+        aliasResolutions,
+        newPlayers,
+      };
+    }
+
+    function updateNameSummary(state) {
+      if (!state.total) {
+        elements.nameValidation.classList.add("hidden");
+        elements.nameValidationStatus.textContent = "";
+        elements.nameValidationPending.classList.add("hidden");
+        elements.nameValidationResolutions.classList.add("hidden");
+        elements.nameValidationActions.classList.add("hidden");
+        return;
+      }
+
+      elements.nameValidation.classList.remove("hidden");
+
+      if (state.unresolved.length) {
+        elements.nameValidationStatus.textContent = `${state.unresolved.length} Namen ohne Zuordnung`;
+      } else {
+        const summaryParts = [];
+        if (state.aliasResolutions.length) summaryParts.push(`${state.aliasResolutions.length} neue Aliase`);
+        if (state.newPlayers.length) summaryParts.push(`${state.newPlayers.length} neue Spieler`);
+        elements.nameValidationStatus.textContent = summaryParts.length
+          ? summaryParts.join(" · ")
+          : "Alle Namen geprüft ✓";
+      }
+
+      elements.nameValidationPending.innerHTML = "";
+      if (state.unresolved.length) {
+        elements.nameValidationPending.classList.remove("hidden");
+        state.unresolved.forEach(item => {
+          const button = document.createElement("button");
+          button.type = "button";
+          button.className = "name-chip";
+          button.dataset.name = item.name;
+          button.textContent = item.name;
+          elements.nameValidationPending.appendChild(button);
+        });
+      } else {
+        elements.nameValidationPending.classList.add("hidden");
+      }
+
+      elements.nameValidationResolutions.innerHTML = "";
+      const resolutionEntries = [];
+      state.aliasResolutions.forEach(item => {
+        const pill = document.createElement("span");
+        pill.className = "resolution-pill";
+        pill.textContent = `Alias: ${item.name} → ${item.canonical}`;
+        resolutionEntries.push(pill);
+      });
+      state.newPlayers.forEach(item => {
+        const pill = document.createElement("span");
+        pill.className = "resolution-pill";
+        pill.textContent = `Neuer Spieler: ${item.canonical}`;
+        resolutionEntries.push(pill);
+      });
+      if (resolutionEntries.length) {
+        elements.nameValidationResolutions.classList.remove("hidden");
+        resolutionEntries.forEach(node => elements.nameValidationResolutions.appendChild(node));
+      } else {
+        elements.nameValidationResolutions.classList.add("hidden");
+      }
+
+      if (state.unresolved.length) {
+        elements.nameValidationActions.classList.remove("hidden");
+        elements.forceSaveBtn.classList.remove("hidden");
+        elements.forceSaveBtn.disabled = allowSaveOverride;
+        elements.forceSaveBtn.textContent = allowSaveOverride
+          ? "Override aktiv"
+          : `Speichern trotz offener Namen (${state.unresolved.length})`;
+      } else {
+        elements.nameValidationActions.classList.add("hidden");
+        elements.forceSaveBtn.classList.add("hidden");
+        elements.forceSaveBtn.disabled = false;
+        elements.forceSaveBtn.textContent = "Speichern trotz offener Namen";
+      }
+    }
+
+    function setResolverError(message) {
+      if (!resolverElements.error) return;
+      resolverElements.error.textContent = message || "";
+    }
+
+    function closeNameResolver() {
+      resolverElements.modal.classList.add("hidden");
+      resolverElements.backdrop.classList.add("hidden");
+      setResolverError("");
+      activeResolveKey = null;
+      activeResolveName = "";
+    }
+
+    function openNameResolver(name) {
+      const trimmed = (name || "").toString().trim();
+      if (!trimmed) return;
+      activeResolveName = trimmed;
+      activeResolveKey = normalizePlayerKey(trimmed);
+      resolverElements.title.textContent = `Spieler „${trimmed}“ zuordnen`;
+      setResolverError("");
+      resolverElements.canonicalInput.value = "";
+      resolverElements.newPlayerInput.value = trimmed;
+      const status = getNameStatus(trimmed);
+      if (status.status === "alias") {
+        resolverElements.canonicalInput.value = status.canonical || "";
+      } else if (status.status === "new-player") {
+        resolverElements.newPlayerInput.value = status.canonical || trimmed;
+      } else if (status.status === "known") {
+        resolverElements.canonicalInput.value = status.canonical || trimmed;
+      }
+      resolverElements.backdrop.classList.remove("hidden");
+      resolverElements.modal.classList.remove("hidden");
+      setTimeout(() => resolverElements.canonicalInput.focus(), 50);
+    }
+
+    function resolveAliasFromModal() {
+      if (!activeResolveKey) return;
+      const canonicalInput = resolverElements.canonicalInput.value.trim();
+      if (!canonicalInput) {
+        setResolverError("Bitte bekannten Spieler auswählen.");
+        resolverElements.canonicalInput.focus();
+        return;
+      }
+      const canonicalKey = normalizePlayerKey(canonicalInput);
+      if (!canonicalKey) {
+        setResolverError("Ungültige Eingabe.");
+        return;
+      }
+      let canonicalName = playerDirectory.canonicalByKey.get(canonicalKey);
+      if (!canonicalName) {
+        const matchingNew = Array.from(nameResolutions.values()).find(value =>
+          value.status === "new-player" && normalizePlayerKey(value.newPlayerName) === canonicalKey
+        );
+        if (matchingNew) {
+          canonicalName = matchingNew.newPlayerName;
+        }
+      }
+      if (!canonicalName) {
+        setResolverError("Spieler nicht gefunden. Schreibweise prüfen.");
+        return;
+      }
+      if (canonicalKey === activeResolveKey) {
+        nameResolutions.delete(activeResolveKey);
+      } else {
+        nameResolutions.set(activeResolveKey, {
+          status: "alias",
+          alias: activeResolveName,
+          canonical: canonicalName,
+        });
+      }
+      closeNameResolver();
+      allowSaveOverride = false;
+      refreshValidationState();
+    }
+
+    function resolveNewPlayerFromModal() {
+      if (!activeResolveKey) return;
+      const newPlayerName = resolverElements.newPlayerInput.value.trim();
+      if (!newPlayerName) {
+        setResolverError("Bitte Namen für den neuen Spieler eingeben.");
+        resolverElements.newPlayerInput.focus();
+        return;
+      }
+      const newKey = normalizePlayerKey(newPlayerName);
+      if (!newKey) {
+        setResolverError("Ungültiger Name.");
+        return;
+      }
+      if (playerDirectory.aliasToCanonical.has(newKey)) {
+        const existing = playerDirectory.aliasToCanonical.get(newKey);
+        setResolverError(`Name bereits vergeben (${existing}).`);
+        return;
+      }
+      nameResolutions.set(activeResolveKey, {
+        status: "new-player",
+        alias: activeResolveName,
+        newPlayerName,
+      });
+      closeNameResolver();
+      allowSaveOverride = false;
+      refreshValidationState();
+    }
+
+    function resetNameResolutionFromModal() {
+      if (!activeResolveKey) {
+        closeNameResolver();
+        return;
+      }
+      nameResolutions.delete(activeResolveKey);
+      closeNameResolver();
+      allowSaveOverride = false;
+      refreshValidationState();
     }
 
     async function importFiles(files) {
@@ -776,6 +1572,7 @@
       elements.actionsLinks.innerHTML = "";
       elements.buildBtn.disabled = true;
       lastBuildUrl = null;
+      allowSaveOverride = false;
       showToast("Änderungen zurückgesetzt.");
     }
 
@@ -794,6 +1591,11 @@
       const strategy = elements.strategy.value;
       const workerUrl = elements.workerUrl.value.trim();
       const adminKey = elements.adminKey.value.trim();
+
+      if (lastNameValidation.unresolved.length && !allowSaveOverride) {
+        showToast("Namensvalidierung offen – bitte Zuordnungen abschließen.");
+        return;
+      }
 
       try {
         const filePath = `data/${eventId}.csv`;
@@ -819,37 +1621,70 @@
           }
         }
 
-        const payload = {
+        const eventPayload = {
           path: filePath,
           content: buildCsv(mergedData, eventId),
           message: `event: ${strategy} ${eventId} (n=${mergedData.length})`,
           branch: branch,
         };
 
-        const headers = {
-          "Content-Type": "application/json",
-        };
-        if (adminKey) {
-          headers["X-Admin-Key"] = adminKey;
+        const aliasUpdate = await prepareAliasFile(branch, lastNameValidation.aliasResolutions || []);
+        const allianceUpdate = await prepareAllianceFile(branch, lastNameValidation.newPlayers || []);
+
+        const filesToWrite = [];
+        const summaries = [];
+        if (aliasUpdate) {
+          filesToWrite.push(aliasUpdate.payload);
+          summaries.push(aliasUpdate.summary);
+        }
+        if (allianceUpdate) {
+          filesToWrite.push(allianceUpdate.payload);
+          summaries.push(allianceUpdate.summary);
+        }
+        filesToWrite.push(eventPayload);
+
+        await writeFilesSequential(filesToWrite, workerUrl, adminKey);
+
+        if (aliasUpdate && Array.isArray(aliasUpdate.added)) {
+          aliasUpdate.added.forEach(entry => {
+            const aliasKey = normalizePlayerKey(entry.alias);
+            if (!aliasKey) return;
+            playerDirectory.aliasToCanonical.set(aliasKey, entry.canonical);
+            nameResolutions.delete(aliasKey);
+          });
+        }
+        if (allianceUpdate && Array.isArray(allianceUpdate.added)) {
+          let canonicalListChanged = false;
+          allianceUpdate.added.forEach(name => {
+            const trimmed = (name || "").toString().trim();
+            const key = normalizePlayerKey(trimmed);
+            if (!key) return;
+            if (!playerDirectory.canonicalByKey.has(key)) {
+              playerDirectory.canonicalByKey.set(key, trimmed);
+              playerDirectory.canonicalList.push(trimmed);
+              canonicalListChanged = true;
+            }
+            playerDirectory.aliasToCanonical.set(key, trimmed);
+            nameResolutions.delete(key);
+          });
+          if (canonicalListChanged) {
+            playerDirectory.canonicalList = Array.from(new Set(playerDirectory.canonicalList)).sort((a, b) =>
+              a.localeCompare(b, "de", { sensitivity: "base" })
+            );
+            renderCanonicalOptions();
+          }
         }
 
-        const response = await fetch(workerUrl, {
-          method: "POST",
-          headers,
-          body: JSON.stringify(payload),
-        });
-
-        if (!response.ok) {
-          const text = await response.text();
-          throw new Error(`Worker-Fehler (${response.status}): ${text}`);
+        if (summaries.length) {
+          showToast(`Zusatz-Dateien gespeichert: ${summaries.join(" · ")}`);
         }
-
         showToast(`Gespeichert nach ${filePath}${mergeNote}`);
         originalData = mergedData.map(row => ({ ...row }));
         originalEventId = eventId;
         lastBuildUrl = null;
         elements.buildBtn.disabled = false;
         renderPreviewLink(branch);
+        allowSaveOverride = false;
         refreshValidationState();
       } catch (err) {
         console.error(err);
@@ -874,6 +1709,153 @@
         return `"${str.replace(/"/g, '""')}"`;
       }
       return str;
+    }
+
+    function buildSimpleCsv(header, rows) {
+      const lines = [];
+      lines.push(header.join(","));
+      rows.forEach(row => {
+        const cols = row.map(value => formatCsvValue(value === undefined || value === null ? "" : value));
+        lines.push(cols.join(","));
+      });
+      return lines.join("\n");
+    }
+
+    async function writeFilesSequential(files, workerUrl, adminKey) {
+      if (!files.length) return;
+      const headers = { "Content-Type": "application/json" };
+      if (adminKey) {
+        headers["X-Admin-Key"] = adminKey;
+      }
+      for (const file of files) {
+        const response = await fetch(workerUrl, {
+          method: "POST",
+          headers,
+          body: JSON.stringify(file),
+        });
+        if (!response.ok) {
+          const text = await response.text();
+          throw new Error(`Worker-Fehler (${response.status}): ${text}`);
+        }
+      }
+    }
+
+    async function prepareAliasFile(branch, aliasResolutions) {
+      if (!aliasResolutions.length) return null;
+      const path = "data/aliases.csv";
+      const header = ["Canonical", "Alias"];
+      let existingText = null;
+      try {
+        existingText = await loadTextFromBranch(branch, path);
+      } catch (err) {
+        if (err && err.message && err.message.includes(" 404")) {
+          existingText = null;
+        } else {
+          throw err;
+        }
+      }
+
+      const rows = [];
+      const existingAliases = new Set();
+      if (existingText) {
+        const parsed = Papa.parse(existingText, { header: true, skipEmptyLines: true });
+        parsed.data.forEach(row => {
+          const canonical = (row.Canonical || row.PlayerName || "").toString().trim();
+          const alias = (row.Alias || row.Name || "").toString().trim();
+          if (!canonical && !alias) return;
+          rows.push([canonical, alias]);
+          if (alias) {
+            existingAliases.add(normalizePlayerKey(alias));
+          }
+        });
+      }
+
+      const addedAliases = [];
+      const addedKeys = new Set();
+      aliasResolutions.forEach(item => {
+        const aliasName = (item.name || "").toString().trim();
+        const canonicalName = (item.canonical || "").toString().trim();
+        const aliasKey = normalizePlayerKey(aliasName);
+        if (!aliasKey || !canonicalName) return;
+        if (aliasKey === normalizePlayerKey(canonicalName)) return;
+        if (existingAliases.has(aliasKey) || addedKeys.has(aliasKey)) return;
+        rows.push([canonicalName, aliasName]);
+        addedKeys.add(aliasKey);
+        addedAliases.push({ alias: aliasName, canonical: canonicalName });
+      });
+
+      if (!addedAliases.length) {
+        return null;
+      }
+
+      const content = buildSimpleCsv(header, rows);
+      return {
+        payload: {
+          path,
+          content,
+          message: `admin: update aliases (${addedAliases.length})`,
+          branch,
+        },
+        summary: `Aliase: ${addedAliases.length}`,
+        added: addedAliases,
+      };
+    }
+
+    async function prepareAllianceFile(branch, newPlayers) {
+      if (!newPlayers.length) return null;
+      const path = "data/alliance.csv";
+      const header = ["PlayerName", "Active", "Note", "PrefGroup", "PrefMode", "PrefBoost"];
+      let existingText = null;
+      try {
+        existingText = await loadTextFromBranch(branch, path);
+      } catch (err) {
+        if (err && err.message && err.message.includes(" 404")) {
+          existingText = null;
+        } else {
+          throw err;
+        }
+      }
+
+      const rows = [];
+      const existingPlayers = new Set();
+      if (existingText) {
+        const parsed = Papa.parse(existingText, { header: true, skipEmptyLines: true });
+        parsed.data.forEach(row => {
+          const values = header.map(column => (row[column] !== undefined ? row[column] : ""));
+          const playerName = (values[0] || "").toString().trim();
+          if (!playerName) return;
+          rows.push(values);
+          existingPlayers.add(normalizePlayerKey(playerName));
+        });
+      }
+
+      const addedPlayers = [];
+      const addedPlayerKeys = new Set();
+      newPlayers.forEach(item => {
+        const canonicalName = (item.canonical || item.name || "").toString().trim();
+        if (!canonicalName) return;
+        const key = normalizePlayerKey(canonicalName);
+        if (!key || existingPlayers.has(key) || addedPlayerKeys.has(key)) return;
+        rows.push([canonicalName, "1", "", "", "", ""]);
+        addedPlayerKeys.add(key);
+        addedPlayers.push(canonicalName);
+      });
+
+      if (!addedPlayers.length) {
+        return null;
+      }
+
+      const content = buildSimpleCsv(header, rows);
+      return {
+        payload: {
+          path,
+          content,
+          message: `admin: update alliance (${addedPlayers.length})`,
+          branch,
+        },
+        summary: `Neue Spieler: ${addedPlayers.length}`,
+        added: addedPlayers,
+      };
     }
 
     async function checkFileExists(branch, path) {
@@ -1059,6 +2041,58 @@
     elements.buildBtn.addEventListener("click", triggerBuild);
     elements.resetBtn.addEventListener("click", resetToOriginal);
 
+    elements.nameValidationPending.addEventListener("click", event => {
+      const target = event.target.closest(".name-chip");
+      if (!target) return;
+      const value = target.dataset.name;
+      if (value) {
+        openNameResolver(value);
+      }
+    });
+
+    elements.forceSaveBtn.addEventListener("click", () => {
+      if (!lastNameValidation.unresolved.length) {
+        showToast("Keine offenen Namen.");
+        return;
+      }
+      if (allowSaveOverride) {
+        showToast("Override bereits aktiv.");
+        return;
+      }
+      const confirmed = window.confirm(
+        `Es sind noch ${lastNameValidation.unresolved.length} Namen offen. Trotzdem speichern erlauben?`
+      );
+      if (confirmed) {
+        allowSaveOverride = true;
+        showToast("Override aktiv – Speichern trotz offener Namen möglich.");
+        refreshValidationState();
+      }
+    });
+
+    resolverElements.close.addEventListener("click", closeNameResolver);
+    resolverElements.backdrop.addEventListener("click", closeNameResolver);
+    resolverElements.aliasButton.addEventListener("click", resolveAliasFromModal);
+    resolverElements.newPlayerButton.addEventListener("click", resolveNewPlayerFromModal);
+    resolverElements.resetButton.addEventListener("click", resetNameResolutionFromModal);
+    resolverElements.canonicalInput.addEventListener("keydown", event => {
+      if (event.key === "Enter") {
+        event.preventDefault();
+        resolveAliasFromModal();
+      }
+    });
+    resolverElements.newPlayerInput.addEventListener("keydown", event => {
+      if (event.key === "Enter") {
+        event.preventDefault();
+        resolveNewPlayerFromModal();
+      }
+    });
+    document.addEventListener("keydown", event => {
+      if (event.key === "Escape" && !resolverElements.modal.classList.contains("hidden")) {
+        event.preventDefault();
+        closeNameResolver();
+      }
+    });
+
     elements.eventId.addEventListener("blur", () => refreshValidationState());
 
     table.on("tableBuilt", () => {
@@ -1070,6 +2104,7 @@
     // Initial setup
     restoreSettings();
     refreshValidationState();
+    loadPlayerDirectory().then(() => refreshValidationState());
   </script>
 </body>
 </html>
