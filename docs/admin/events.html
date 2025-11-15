@@ -1112,7 +1112,8 @@
         }
       }));
 
-      const eventIdValid = validateEventId(elements.eventId.value.trim());
+      const eventId = elements.eventId.value.trim();
+      const eventIdValid = validateEventId(eventId);
       if (!eventIdValid) {
         validationErrors.push({ type: "event", message: "Event ID ungültig (DS-YYYY-MM-DD-A/B)" });
       }
@@ -1152,11 +1153,16 @@
         setErrorBanner("");
       }
 
+      const hasHardRowErrors = validationErrors.some(v => v.type === "row");
+      const hasBranchError = validationErrors.some(v => v.type === "branch");
+      const hasWorkerError = validationErrors.some(v => v.type === "worker");
+      const unresolvedBlocked = lastNameValidation.unresolved.length > 0 && !allowSaveOverride;
       const canSaveState = canSave({
         rowCount: data.length,
-        validationErrors,
-        unresolvedCount: lastNameValidation.unresolved.length,
-        allowSaveOverride,
+        hasHardRowErrors,
+        hasBranchError,
+        hasWorkerError,
+        unresolvedBlocked,
       });
       elements.saveBtn.disabled = !canSaveState;
       elements.buildBtn.disabled = !canSaveState;
@@ -1257,12 +1263,10 @@
     function canSave(state) {
       if (!state) return false;
       if (!state.rowCount) return false;
-      if (state.validationErrors && state.validationErrors.some(isCriticalError)) {
-        return false;
-      }
-      if (state.unresolvedCount > 0 && !state.allowSaveOverride) {
-        return false;
-      }
+      if (state.hasHardRowErrors) return false;
+      if (state.hasBranchError) return false;
+      if (state.hasWorkerError) return false;
+      if (state.unresolvedBlocked) return false;
       return true;
     }
 
