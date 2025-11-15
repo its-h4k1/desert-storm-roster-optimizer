@@ -1109,9 +1109,20 @@
     }
 
     function updateNameStatusCells() {
+      const rowsToReformat = new Set();
       table.getColumns().forEach(column => {
         if (column.getDefinition().formatter === playerNameStatusFormatter) {
-          column.getCells().forEach(cell => cell.render());
+          column.getCells().forEach(cell => {
+            const row = cell.getRow();
+            if (row) {
+              rowsToReformat.add(row);
+            }
+          });
+        }
+      });
+      rowsToReformat.forEach(row => {
+        if (typeof row.reformat === "function") {
+          row.reformat();
         }
       });
       updatePlayerNameCells();
