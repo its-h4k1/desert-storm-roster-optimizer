@@ -473,6 +473,30 @@
       font-size: 0.8rem;
       color: #c62828;
     }
+
+    .modal-suggestions {
+      margin-top: 0.35rem;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.4rem;
+    }
+
+    .chip-button {
+      border: 1px solid rgba(11, 99, 246, 0.35);
+      background: rgba(11, 99, 246, 0.08);
+      color: #0b3a9b;
+      border-radius: 999px;
+      padding: 0.2rem 0.75rem;
+      font-size: 0.8rem;
+      cursor: pointer;
+      transition: background 0.2s ease, color 0.2s ease;
+    }
+
+    .chip-button:hover,
+    .chip-button:focus-visible {
+      background: rgba(11, 99, 246, 0.15);
+      color: #093a9b;
+    }
   </style>
 </head>
 <body>
@@ -577,6 +601,7 @@
         <label for="resolver-canonical">Alias einem bekannten Spieler zuordnen</label>
         <input type="text" id="resolver-canonical" list="resolver-canonical-list" placeholder="Bekannten Spieler suchen" autocomplete="off">
         <datalist id="resolver-canonical-list"></datalist>
+        <div id="resolver-suggestions" class="modal-suggestions hidden"></div>
         <div class="modal-actions">
           <button type="button" id="resolver-alias-btn">Alias anlegen</button>
         </div>
@@ -709,6 +734,15 @@
           editor: "input",
           mutatorEdit: trimValue,
           headerSort: false,
+          cellClick: (e, cell) => {
+            const name = cell.getRow().getData().PlayerName;
+            const status = getNameStatus(name);
+            if (status.status === "empty") return;
+            if (status.status === "known" && !nameResolutions.has(normalizePlayerKey(name))) {
+              return;
+            }
+            openNameResolver(name);
+          },
         },
         {
           title: "RoleAtRegistration",
@@ -817,7 +851,57 @@
 
     function normalizePlayerKey(name) {
       if (name === null || name === undefined) return "";
-      return name.toString().trim().toLowerCase();
+      return name
+        .toString()
+        .normalize("NFKC")
+        .replace(/\s+/g, " ")
+        .trim()
+        .toLowerCase();
+    }
+
+    function similarity(a, b) {
+      const keyA = normalizePlayerKey(a);
+      const keyB = normalizePlayerKey(b);
+      if (!keyA || !keyB) return 0;
+      const maxPrefix = Math.min(keyA.length, keyB.length);
+      let common = 0;
+      while (common < maxPrefix && keyA[common] === keyB[common]) {
+        common += 1;
+      }
+      return (2 * common) / (keyA.length + keyB.length);
+    }
+
+    function suggestCanonicalNames(unknownName, maxResults = 5, minScore = 0.4) {
+      const source = (playerDirectory.canonicalList || []);
+      const scored = source
+        .map(name => ({ name, score: similarity(unknownName, name) }))
+        .filter(item => item.score >= minScore && item.score > 0)
+        .sort((a, b) => b.score - a.score)
+        .slice(0, maxResults)
+        .map(item => item.name);
+      return scored;
+    }
+
+    function renderCanonicalSuggestions(suggestions) {
+      const container = document.getElementById("resolver-suggestions");
+      if (!container) return;
+      container.innerHTML = "";
+      if (!Array.isArray(suggestions) || !suggestions.length) {
+        container.classList.add("hidden");
+        return;
+      }
+      container.classList.remove("hidden");
+      suggestions.forEach(name => {
+        const button = document.createElement("button");
+        button.type = "button";
+        button.className = "chip-button";
+        button.textContent = name;
+        button.addEventListener("click", () => {
+          resolverElements.canonicalInput.value = name;
+          setResolverError("");
+        });
+        container.appendChild(button);
+      });
     }
 
     function getNameStatus(name) {
@@ -1352,7 +1436,11 @@
       elements.nameValidation.classList.remove("hidden");
 
       if (state.unresolved.length) {
-        elements.nameValidationStatus.textContent = `${state.unresolved.length} Namen ohne Zuordnung`;
+        let statusText = `${state.unresolved.length} Namen ohne Zuordnung`;
+        if (allowSaveOverride) {
+          statusText += ` · Override aktiv – ${state.unresolved.length} offene Namen werden beim Speichern ignoriert.`;
+        }
+        elements.nameValidationStatus.textContent = statusText;
       } else {
         const summaryParts = [];
         if (state.aliasResolutions.length) summaryParts.push(`${state.aliasResolutions.length} neue Aliase`);
@@ -1422,6 +1510,7 @@
       resolverElements.modal.classList.add("hidden");
       resolverElements.backdrop.classList.add("hidden");
       setResolverError("");
+      renderCanonicalSuggestions([]);
       activeResolveKey = null;
       activeResolveName = "";
     }
@@ -1443,6 +1532,9 @@
       } else if (status.status === "known") {
         resolverElements.canonicalInput.value = status.canonical || trimmed;
       }
+      const shouldSuggest = !(status.status === "known" && !nameResolutions.has(activeResolveKey));
+      const suggestions = shouldSuggest ? suggestCanonicalNames(trimmed) : [];
+      renderCanonicalSuggestions(suggestions);
       resolverElements.backdrop.classList.remove("hidden");
       resolverElements.modal.classList.remove("hidden");
       setTimeout(() => resolverElements.canonicalInput.focus(), 50);
