@@ -315,6 +315,16 @@ def exp_decay_weight(event_dt: datetime, now_dt: datetime | None = None, half_li
     return 0.5 ** (delta_days / hl)
 
 # Öffentliche Symbole
+def load_alias_map(path: str, *, max_depth: int | None = None) -> Dict[str, str]:
+    """Lazy re-export to keep the historical public API stable."""
+
+    from .alias_utils import load_alias_map as _load_alias_map
+
+    if max_depth is None:
+        return _load_alias_map(path)
+    return _load_alias_map(path, max_depth=max_depth)
+
+
 __all__ = [
     "canonical_name",
     "build_deterministic_roster",
@@ -323,4 +333,5 @@ __all__ = [
     "STARTERS_PER_GROUP",
     "SUBS_PER_GROUP",
     "GROUPS",
+    "load_alias_map",
 ]
