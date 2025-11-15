@@ -344,30 +344,49 @@
       font-weight: 600;
     }
 
-    .name-status-cell {
+    .status-badge {
       display: inline-flex;
       align-items: center;
       gap: 0.35rem;
       padding: 0.2rem 0.35rem;
       border-radius: 0.5rem;
       font-size: 0.8rem;
-      cursor: pointer;
     }
 
-    .name-status-cell.name-status-known {
+    .status-known {
       background: rgba(37, 96, 41, 0.1);
       color: #256029;
     }
 
+    .status-unknown {
+      background: rgba(198, 40, 40, 0.1);
+      color: #5b1717;
+    }
+
+    .status-neutral {
+      background: rgba(108, 117, 125, 0.12);
+      color: #4b4f56;
+    }
+
+    .name-status-cell {
+      cursor: pointer;
+    }
+
+    .name-status-cell.name-status-known,
     .name-status-cell.name-status-alias,
     .name-status-cell.name-status-new-player {
-      background: rgba(11, 99, 246, 0.1);
-      color: #0b3a9b;
+      background: rgba(37, 96, 41, 0.1);
+      color: #256029;
     }
 
     .name-status-cell.name-status-unresolved {
       background: rgba(198, 40, 40, 0.1);
       color: #5b1717;
+    }
+
+    .name-status-cell.name-status-empty {
+      background: rgba(108, 117, 125, 0.12);
+      color: #4b4f56;
     }
 
     .name-status-cell .name-status-label {
@@ -379,9 +398,8 @@
       opacity: 0.8;
     }
 
-    .name-status-cell.name-status-empty {
-      background: rgba(108, 117, 125, 0.12);
-      color: #4b4f56;
+    .name-status-cell.name-status-empty,
+    .name-status-cell.status-neutral {
       cursor: default;
     }
 
@@ -669,7 +687,7 @@
           headerSort: false,
         },
         {
-          title: "Name-Check",
+          title: "Name-Status",
           field: "PlayerName",
           headerSort: false,
           width: 170,
@@ -853,7 +871,14 @@
       const status = getNameStatus(cell.getValue());
       const statusKey = status.status || "empty";
       const wrapper = document.createElement("div");
-      wrapper.className = `name-status-cell name-status-${statusKey}`;
+      wrapper.className = `name-status-cell status-badge name-status-${statusKey}`;
+      if (statusKey === "known" || statusKey === "alias" || statusKey === "new-player") {
+        wrapper.classList.add("status-known");
+      } else if (statusKey === "unresolved") {
+        wrapper.classList.add("status-unknown");
+      } else if (statusKey === "empty") {
+        wrapper.classList.add("status-neutral");
+      }
       if (statusKey === "empty") {
         wrapper.textContent = "–";
         wrapper.title = "Kein Name";
@@ -874,13 +899,13 @@
           wrapper.title = status.canonical ? `Bekannt als ${status.canonical}` : "Bekannter Spieler";
           break;
         case "alias":
-          label.textContent = "Alias";
-          note.textContent = `→ ${status.canonical}`;
+          label.textContent = "Alias von";
+          note.textContent = status.canonical || "";
           wrapper.title = `Alias wird als ${status.canonical} gespeichert`;
           break;
         case "new-player":
-          label.textContent = "Neu";
-          note.textContent = status.canonical ? `→ ${status.canonical}` : "Neuer Spieler";
+          label.textContent = "Neuer Spieler";
+          note.textContent = status.canonical || "";
           wrapper.title = status.canonical ? `Neuer Spieler ${status.canonical}` : "Neuer Spieler";
           break;
         case "unresolved":
@@ -1577,6 +1602,7 @@
     }
 
     async function saveData() {
+      refreshValidationState();
       const data = getTableData();
       const eventId = elements.eventId.value.trim();
       if (!data.length) {
@@ -1630,6 +1656,25 @@
 
         const aliasUpdate = await prepareAliasFile(branch, lastNameValidation.aliasResolutions || []);
         const allianceUpdate = await prepareAllianceFile(branch, lastNameValidation.newPlayers || []);
+
+        const aliasCount = aliasUpdate && Array.isArray(aliasUpdate.added) ? aliasUpdate.added.length : 0;
+        const newPlayerCount = allianceUpdate && Array.isArray(allianceUpdate.added) ? allianceUpdate.added.length : 0;
+        const unresolvedAccepted = allowSaveOverride ? lastNameValidation.unresolved.length : 0;
+        const summaryLines = [
+          `Ziel-Datei: ${filePath}`,
+          `Neue Aliase: ${aliasCount}`,
+          `Neue Spieler: ${newPlayerCount}`,
+        ];
+        if (unresolvedAccepted > 0) {
+          summaryLines.push(`Offene Namen (bewusst akzeptiert): ${unresolvedAccepted}`);
+        }
+        const proceed = window.confirm(
+          `Speichern vorbereiten:\n\n${summaryLines.join("\n")}\n\nFortfahren?`
+        );
+        if (!proceed) {
+          showToast("Speichern abgebrochen.");
+          return;
+        }
 
         const filesToWrite = [];
         const summaries = [];

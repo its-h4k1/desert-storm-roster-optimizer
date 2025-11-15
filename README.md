@@ -30,6 +30,7 @@ Für Eventdaten steht unter `docs/admin/events.html` eine eigenständige Tabelle
 - Die Tabelle erzwingt das Schema `EventID,Slot,PlayerName,RoleAtRegistration,Teilgenommen,Punkte,Warnungen`.
 - Event-IDs müssen dem Format `DS-YYYY-MM-DD-A/B` entsprechen; Slots (1–30), Rollen (`Start`/`Ersatz`), Teilnahmen (0/1) und Punkte (≥0) werden live validiert.
 - Beim Import werden Spielernamen gegen `data/alliance.csv` und `data/aliases.csv` geprüft. Unbekannte Namen lassen sich per Klick einem bekannten Spieler zuordnen, als Alias vormerken oder als neuer Spieler hinterlegen; die Seite schreibt die entsprechenden Ergänzungen bei Bedarf automatisch in `data/aliases.csv` bzw. `data/alliance.csv`.
+- Vor dem Speichern erscheint eine Zusammenfassung der geplanten Änderungen (neue Aliase, neue Spieler und – sofern explizit zugelassen – offen bleibende Namen). Gespeichert werden Events erst, wenn alle Namen entschieden oder bewusst übersteuert wurden.
 - Wähle den Ziel-Branch (`main`, `ops/events` oder einen Custom-Branch) und die Commit-Strategie (`replace`, `merge`, `abort-if-exists`).
 - Speichern erfolgt über den Worker-Endpunkt (Standard `/write-file`) mittels Commit `data/<EventID>.csv`; bei `main` löst der bestehende Workflow automatisch Builds aus.
 - Der Button „Roster neu bauen“ triggert optional `/dispatch` (workflow_dispatch) und verlinkt den Actions-Run.
