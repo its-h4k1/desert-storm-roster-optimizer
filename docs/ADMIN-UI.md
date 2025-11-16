@@ -37,4 +37,13 @@
 | `docs/admin/players.html` | Pflege von Spielerstatus, Aliases und Abwesenheiten mit Detailpanelen und Modal-Editoren. | Verwaltet `data/alliance.csv`, `data/aliases.csv`, `data/absences.csv`.
 | `docs/admin/noshow-dashboard.html` | Analytisches Dashboard mit Filtern, Histogrammen und Rolling-vs-Overall KPIs. | Lädt `out/latest.json` (aktuellster Build).
 
-> Wenn neue Admin- oder Analyse-Seiten entstehen, bitte hier kurz Zweck & Datenquellen ergänzen und in der README verlinken.
+  > Wenn neue Admin- oder Analyse-Seiten entstehen, bitte hier kurz Zweck & Datenquellen ergänzen und in der README verlinken.
+
+## Gruppenpräferenzen-Modell
+
+- Die Admin-Seite `docs/admin/group-preferences.html` pflegt die Spalten `PrefGroup` und `PrefMode` direkt aus `data/alliance.csv`.
+- UI-Optionen ↔ Modell:
+  - **Keine** → `PrefGroup` = `""`, `PrefMode` = `""`
+  - **Fest in A/B** → `PrefGroup` = `"A"|"B"`, `PrefMode` = `"hard"`
+  - **Bevorzugt A/B** → `PrefGroup` = `"A"|"B"`, `PrefMode` = `"soft"`
+- `PrefBoost` kann optional pro Spieler gesetzt werden; der Optimizer nutzt ansonsten den Standard-Boost, wenn eine passende Präferenz hinterlegt ist.
