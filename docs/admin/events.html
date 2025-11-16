@@ -546,7 +546,7 @@
         <legend>Worker</legend>
         <label>
           Worker URL
-          <input type="url" id="worker-url" value="/write-file">
+          <input type="url" id="worker-url" value="https://ds-commit.hak1.workers.dev/write-file">
         </label>
         <label>
           Admin Key (X-Admin-Key)
@@ -2238,7 +2238,7 @@
       if (!stored) return;
       try {
         const values = JSON.parse(stored);
-        elements.workerUrl.value = values.workerUrl || "/write-file";
+        elements.workerUrl.value = values.workerUrl || "https://ds-commit.hak1.workers.dev/write-file";
         elements.adminKey.value = values.adminKey || "";
         elements.branchSelect.value = values.branchSelect || "main";
         if (elements.branchSelect.value === "__custom") {
