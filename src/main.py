@@ -94,6 +94,36 @@ def _is_event_df(df: pd.DataFrame) -> bool:
     return sample.map(lambda s: bool(EVENT_RE.match(s))).all()
 
 
+def _ensure_in_alliance_column(df: pd.DataFrame, *, context: str) -> pd.Series:
+    """Normalize the ``InAlliance`` membership flag with a legacy fallback.
+
+    ``InAlliance`` encodes whether a player currently belongs to the Desert-Storm
+    alliance (1 = Mitglied, 0 = ausgetreten). Older CSVs may still ship the
+    column as ``Active``; we interpret it identically but ask the caller to
+    migrate.
+    """
+
+    if "InAlliance" in df.columns:
+        source_col = "InAlliance"
+    elif "Active" in df.columns:
+        print(
+            f"[warn] {context}: legacy column 'Active' gefunden – bitte in 'InAlliance' umbenennen."
+        )
+        source_col = "Active"
+    else:
+        raise SystemExit(
+            f"[fatal] {context} benötigt die Spalte 'InAlliance' (oder legacy 'Active')."
+        )
+
+    df["InAlliance"] = (
+        pd.to_numeric(df[source_col], errors="coerce")
+        .fillna(0)
+        .astype(int)
+        .clip(0, 1)
+    )
+    return df["InAlliance"]
+
+
 def _load_events(event_patterns: List[str]) -> pd.DataFrame:
     paths = _glob_paths(event_patterns)
     keep: List[pd.DataFrame] = []
@@ -118,12 +148,9 @@ def _load_alliance(path: str) -> pd.DataFrame:
     df = pd.read_csv(path, dtype=str)
     if "PlayerName" not in df.columns:
         raise SystemExit("[fatal] alliance.csv benötigt Spalte 'PlayerName']")
-    if "Active" not in df.columns:
-        df["Active"] = 1
-    # alliance["Active"] codiert die Allianz-Mitgliedschaft:
-    # 1 = Spieler gehört aktuell zur Allianz und darf für Roster berücksichtigt werden,
-    # 0 = Spieler ist ausgetreten/entfernt und wird im weiteren Verlauf gefiltert.
-    df["Active"] = pd.to_numeric(df["Active"], errors="coerce").fillna(0).astype(int).clip(0, 1)
+
+    _ensure_in_alliance_column(df, context="alliance.csv")
+    # InAlliance = 1 → Spieler gehört aktuell zur Allianz; 0 → ausgetreten/ignoriert.
     df["DisplayName"] = df["PlayerName"].astype(str)
     df["canon"] = df["PlayerName"].map(canonical_name)
     for col in ["PrefGroup", "PrefMode", "PrefBoost"]:
@@ -151,12 +178,9 @@ def _load_absences(path: str) -> pd.DataFrame:
     for col in ["From", "To"]:
         if col not in df.columns:
             df[col] = ""
-    if "Active" not in df.columns:
-        df["Active"] = 1
-    # Auch Abwesenheiten führen das Allianz-Membership-Flag.
-    # Nur Active==1 gilt als "gültig" (Spieler ist noch Teil der Allianz).
-    df["Active"] = pd.to_numeric(df["Active"], errors="coerce").fillna(0).astype(int)
-    df = df[df["Active"] == 1].copy()
+
+    _ensure_in_alliance_column(df, context="absences.csv")
+    df = df[df["InAlliance"] == 1].copy()
     df["canon"] = df["PlayerName"].map(canonical_name)
 
     def _parse_local(s: str) -> Optional[pd.Timestamp]:
@@ -215,7 +239,7 @@ def find_alias_suggestions(
     seen_pairs: set[tuple[str, str]] = set()
 
     for row in pool_df.itertuples(index=False):
-        if getattr(row, "Active", 0) != 1:
+        if getattr(row, "InAlliance", getattr(row, "Active", 0)) != 1:
             continue
         events_seen = getattr(row, "events_seen", 0)
         try:
@@ -358,14 +382,13 @@ def main():
     )
     hist["canon"] = hist["PlayerName"].map(to_canon)
 
-    # 3) Allianz joinen (nur Active==1 als Kandidaten)
+    # 3) Allianz joinen (nur InAlliance==1 als Kandidaten)
     pool = alliance_df.merge(
         role_probs.drop(columns=["PlayerName"], errors="ignore"),
         on="canon",
         how="left",
     )
 
-    pool["InAlliance"] = pool["Active"].fillna(0).astype(int)
     pool = pool[pool["InAlliance"] == 1].copy()
 
     # Separate Preferences (falls vorhanden) haben Vorrang

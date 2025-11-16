@@ -76,7 +76,7 @@
             <div class="row two">
               <div>
                 <label>CSV-Inhalt</label>
-                <textarea id="taAlliance" rows="18" spellcheck="false" placeholder="PlayerName,Active
+                <textarea id="taAlliance" rows="18" spellcheck="false" placeholder="PlayerName,InAlliance
 itsH4K1,1
 …"></textarea>
                 <div class="row">
@@ -88,8 +88,8 @@ itsH4K1,1
               <div>
                 <label>Format</label>
                 <div class="hint">
-                  <div><span class="code">PlayerName,Active</span> (Header Pflicht; wird bei Bedarf automatisch ergänzt)</div>
-                  <div>Active kennzeichnet die Allianz-Mitgliedschaft: <span class="kbd">1</span> = In Allianz, <span class="kbd">0</span> = Ausgetreten</div>
+                  <div><span class="code">PlayerName,InAlliance</span> (Header Pflicht; wird bei Bedarf automatisch ergänzt)</div>
+                  <div>InAlliance kennzeichnet die Allianz-Mitgliedschaft: <span class="kbd">1</span> = In Allianz, <span class="kbd">0</span> = Ausgetreten</div>
                   <div class="hint" style="margin-top:1rem;">Roh-Datei live lesen: <span class="code">https://raw.githubusercontent.com/its-h4k1/desert-storm-roster-optimizer/main/data/alliance.csv</span></div>
                 </div>
               </div>
@@ -102,7 +102,7 @@ itsH4K1,1
             <div class="row two">
               <div>
                 <label>CSV-Inhalt</label>
-                <textarea id="taAliases" rows="18" spellcheck="false" placeholder="PlayerName,Alias,Active
+                <textarea id="taAliases" rows="18" spellcheck="false" placeholder="PlayerName,Alias,InAlliance
 DarkSchredder,DarkWerwolf,0
 …"></textarea>
                 <div class="row">
@@ -114,8 +114,8 @@ DarkSchredder,DarkWerwolf,0
               <div>
                 <label>Format</label>
                 <div class="hint">
-                  <div><span class="code">PlayerName,Alias,Active</span> (Header Pflicht; wird bei Bedarf automatisch ergänzt)</div>
-                  <div>Die Spalte <span class="code">Active</span> entscheidet, ob der Alias aktuell zur Allianz gehört (1 = In Allianz, 0 = Ausgetreten).</div>
+                  <div><span class="code">PlayerName,Alias,InAlliance</span> (Header Pflicht; wird bei Bedarf automatisch ergänzt)</div>
+                  <div>Die Spalte <span class="code">InAlliance</span> entscheidet, ob der Alias aktuell zur Allianz gehört (1 = In Allianz, 0 = Ausgetreten).</div>
                   <div>Beispiel: <span class="code">DarkSchredder,DarkWerwolf,0</span></div>
                   <div class="hint" style="margin-top:1rem;">Notiz: Bei mehrdeutigen Namen gewinnt die erste Zeile.</div>
                 </div>
@@ -156,7 +156,7 @@ DS-2025-11-07-A,1,itsH4K1,Start,1,1548053,"></textarea>
             <div class="row two">
               <div>
                 <label>CSV-Inhalt</label>
-                <textarea id="taAbsences" rows="18" spellcheck="false" placeholder="PlayerName,From,To,Reason,Active
+                <textarea id="taAbsences" rows="18" spellcheck="false" placeholder="PlayerName,From,To,Reason,InAlliance
 itsH4K1,2025-11-14,2025-11-30,Ferien,1
 …"></textarea>
                 <div class="row">
@@ -296,7 +296,7 @@ itsH4K1,2025-11-14,2025-11-30,Ferien,1
     $('#btnSaveAlliance').addEventListener('click', async () => {
       const el = $('#msgAlliance'); msg(el, 'Speichere…', true);
       try {
-        const headerPrefix = 'PlayerName,Active';
+        const headerPrefix = 'PlayerName,InAlliance';
         const txt = ensureHeaderPrefix($('#taAlliance').value, headerPrefix);
         await saveFile('data/alliance.csv', txt);
         msg(el, 'Gespeichert ✓');
@@ -311,7 +311,7 @@ itsH4K1,2025-11-14,2025-11-30,Ferien,1
         $('#taAliases').value = normalizeEOL(raw);
         msg(el, 'OK');
       } catch(e){
-        $('#taAliases').value = 'PlayerName,Alias,Active\n';
+        $('#taAliases').value = 'PlayerName,Alias,InAlliance\n';
         msg(el, 'Neue Datei vorbereitet (noch nicht gespeichert).');
       }
     });
@@ -319,7 +319,7 @@ itsH4K1,2025-11-14,2025-11-30,Ferien,1
     $('#btnSaveAliases').addEventListener('click', async () => {
       const el = $('#msgAliases'); msg(el, 'Speichere…', true);
       try {
-        const header = 'PlayerName,Alias,Active';
+        const header = 'PlayerName,Alias,InAlliance';
         const txt = ensureHeaderStrict($('#taAliases').value, header);
         await saveFile('data/aliases.csv', txt);
         msg(el, 'Gespeichert ✓');
@@ -367,7 +367,7 @@ itsH4K1,2025-11-14,2025-11-30,Ferien,1
         $('#taAbsences').value = normalizeEOL(raw);
         msg(el, 'OK');
       } catch(e){
-        $('#taAbsences').value = 'PlayerName,From,To,Reason,Active\n';
+        $('#taAbsences').value = 'PlayerName,From,To,Reason,InAlliance\n';
         msg(el, 'Neue Datei vorbereitet (noch nicht gespeichert).');
       }
     });
@@ -375,7 +375,7 @@ itsH4K1,2025-11-14,2025-11-30,Ferien,1
     $('#btnSaveAbsences').addEventListener('click', async () => {
       const el = $('#msgAbsences'); msg(el, 'Speichere…', true);
       try {
-        const header = 'PlayerName,From,To,Reason,Active';
+        const header = 'PlayerName,From,To,Reason,InAlliance';
         const txt = ensureHeaderStrict($('#taAbsences').value, header);
         await saveFile('data/absences.csv', txt);
         msg(el, 'Gespeichert ✓');
