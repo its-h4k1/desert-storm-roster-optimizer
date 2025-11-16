@@ -1,0 +1,995 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex, nofollow">
+  <title>Spieler & Aliase verwalten</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <style>
+    :root {
+      color-scheme: light;
+      font-family: "Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: #f6f7f9;
+      color: #0f1116;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      background: radial-gradient(circle at top, rgba(11, 99, 246, 0.05), transparent 55%) fixed,
+        #f6f7f9;
+    }
+
+    header {
+      background: white;
+      padding: 1rem 1.5rem;
+      box-shadow: 0 1px 4px rgba(15, 23, 42, 0.08);
+      position: sticky;
+      top: 0;
+      z-index: 20;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1rem;
+      align-items: flex-end;
+    }
+
+    header h1 {
+      flex-basis: 100%;
+      margin: 0;
+      font-size: 1.45rem;
+    }
+
+    header .settings {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+      align-items: flex-end;
+    }
+
+    label {
+      font-size: 0.8rem;
+      color: #4b5563;
+      display: flex;
+      flex-direction: column;
+      gap: 0.35rem;
+    }
+
+    input[type="text"],
+    input[type="search"],
+    input[type="password"],
+    textarea {
+      font: inherit;
+      padding: 0.5rem 0.65rem;
+      border-radius: 0.6rem;
+      border: 1px solid rgba(15, 23, 42, 0.15);
+      background: white;
+      min-width: 12rem;
+    }
+
+    input[type="search"] {
+      min-width: 0;
+    }
+
+    input:focus,
+    textarea:focus {
+      outline: 2px solid #0b63f6;
+      outline-offset: 1px;
+    }
+
+    button {
+      font: inherit;
+      border: none;
+      border-radius: 0.6rem;
+      padding: 0.55rem 1.1rem;
+      background: #0b63f6;
+      color: white;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      transition: background 0.15s ease;
+    }
+
+    button.secondary {
+      background: #4b4f56;
+    }
+
+    button.ghost {
+      background: #e4e7ec;
+      color: #111827;
+    }
+
+    button[disabled] {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+
+    main {
+      flex: 1;
+      padding: 1.5rem;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      gap: 1.5rem;
+      align-items: start;
+    }
+
+    .panel {
+      background: white;
+      border-radius: 1rem;
+      padding: 1rem;
+      box-shadow: 0 10px 30px rgba(15, 23, 42, 0.08);
+      min-height: 400px;
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+
+    .panel h2 {
+      margin: 0;
+      font-size: 1.1rem;
+    }
+
+    .table-wrapper {
+      border: 1px solid rgba(15, 23, 42, 0.08);
+      border-radius: 0.75rem;
+      overflow: hidden;
+      flex: 1;
+      background: white;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.9rem;
+    }
+
+    thead {
+      background: #f4f6fb;
+      text-transform: uppercase;
+      font-size: 0.75rem;
+      letter-spacing: 0.04em;
+    }
+
+    th,
+    td {
+      padding: 0.5rem 0.75rem;
+      border-bottom: 1px solid rgba(15, 23, 42, 0.06);
+    }
+
+    tbody tr {
+      cursor: pointer;
+    }
+
+    tbody tr:nth-child(2n) {
+      background: #fafbff;
+    }
+
+    tbody tr:hover {
+      background: rgba(11, 99, 246, 0.08);
+    }
+
+    tbody tr.selected {
+      background: rgba(11, 99, 246, 0.15);
+    }
+
+    .status-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 999px;
+      display: inline-flex;
+      background: #d1d5db;
+    }
+
+    .status-dot.on {
+      background: #0ba360;
+    }
+
+    .player-details h3 {
+      margin: 0;
+      font-size: 1.25rem;
+    }
+
+    .alias-table button {
+      font-size: 0.8rem;
+      padding: 0.3rem 0.6rem;
+    }
+
+    .alias-table table {
+      font-size: 0.85rem;
+    }
+
+    .alias-table td {
+      vertical-align: middle;
+    }
+
+    .detail-section {
+      border: 1px solid rgba(15, 23, 42, 0.08);
+      border-radius: 0.75rem;
+      padding: 0.75rem;
+      background: #fafbff;
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+    }
+
+    .empty-state {
+      margin: auto;
+      text-align: center;
+      color: #6b7280;
+    }
+
+    .status-bar {
+      width: 100%;
+      background: white;
+      border-top: 1px solid rgba(15, 23, 42, 0.08);
+      padding: 0.75rem 1.5rem;
+      font-size: 0.9rem;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .status-bar span {
+      padding: 0.4rem 0.75rem;
+      border-radius: 999px;
+      font-weight: 600;
+    }
+
+    .status-info {
+      color: #1d4ed8;
+      background: rgba(59, 130, 246, 0.12);
+    }
+
+    .status-ok {
+      color: #0f7b43;
+      background: rgba(16, 185, 129, 0.15);
+    }
+
+    .status-error {
+      color: #991b1b;
+      background: rgba(248, 113, 113, 0.18);
+    }
+
+    .status-warn {
+      color: #92400e;
+      background: rgba(251, 146, 60, 0.18);
+    }
+
+    .status-text {
+      color: #4b5563;
+    }
+
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      padding: 0.25rem 0.6rem;
+      border-radius: 999px;
+      font-size: 0.8rem;
+      background: rgba(15, 23, 42, 0.08);
+    }
+
+    @media (max-width: 720px) {
+      header {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+      header .settings {
+        width: 100%;
+      }
+      label {
+        width: 100%;
+      }
+      input[type="text"],
+      input[type="password"],
+      input[type="search"] {
+        width: 100%;
+      }
+      button {
+        width: 100%;
+        justify-content: center;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div>
+      <h1>Spieler &amp; Aliase verwalten</h1>
+      <p style="margin:0;color:#6b7280;font-size:0.9rem">Pflege von <code>data/alliance.csv</code> und <code>data/aliases.csv</code></p>
+    </div>
+    <div class="settings">
+      <label>Worker URL
+        <input id="workerUrl" type="text" value="https://ds-commit.hak1.workers.dev/write-file" spellcheck="false">
+      </label>
+      <label>Branch
+        <input id="branchInput" type="text" value="main" spellcheck="false">
+      </label>
+      <label>Admin-Key
+        <input id="adminKey" type="password" placeholder="r4-admin" autocomplete="off">
+      </label>
+      <button id="reloadBtn" class="ghost">Neu laden</button>
+      <button id="saveBtn">Speichern</button>
+    </div>
+  </header>
+
+  <main>
+    <section class="panel">
+      <div style="display:flex;flex-wrap:wrap;gap:0.75rem;align-items:center;">
+        <h2 style="margin-right:auto">Spielerliste</h2>
+        <label style="flex:1;min-width:180px">Suche
+          <input type="search" id="playerSearch" placeholder="Name filtern…">
+        </label>
+      </div>
+      <div class="table-wrapper" aria-live="polite">
+        <table>
+          <thead>
+            <tr id="playerHeaderRow"></tr>
+          </thead>
+          <tbody id="playersBody"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="panel player-details" id="detailsPanel">
+      <div class="empty-state" id="emptyDetails">
+        Bitte einen Spieler aus der Liste wählen.
+      </div>
+      <div id="detailsContent" class="detail-content" style="display:none; gap:1rem; flex-direction:column;">
+        <div style="display:flex;align-items:center;gap:0.75rem;flex-wrap:wrap;">
+          <h3 id="detailName" style="flex:1;">–</h3>
+          <span class="pill" id="aliasCount">0 Aliase</span>
+        </div>
+        <div class="detail-section">
+          <strong>Spieler bearbeiten</strong>
+          <label> Name ändern
+            <div style="display:flex;gap:0.5rem;flex-wrap:wrap;">
+              <input type="text" id="renameInput" placeholder="Neuer Name">
+              <button id="renameBtn" class="secondary" style="flex:0 0 auto;">Übernehmen</button>
+            </div>
+          </label>
+          <div id="statusToggles" style="display:flex;gap:1rem;flex-wrap:wrap;"></div>
+        </div>
+        <div class="detail-section alias-table">
+          <div style="display:flex;align-items:center;gap:0.75rem;flex-wrap:wrap;">
+            <strong style="flex:1">Aliase</strong>
+            <button id="addAliasBtn" class="ghost" style="border:1px dashed rgba(15,23,42,0.3);">Alias hinzufügen</button>
+          </div>
+          <div class="table-wrapper" style="border:none;box-shadow:none;">
+            <table>
+              <thead>
+                <tr>
+                  <th>Alias</th>
+                  <th style="width:70px;"></th>
+                </tr>
+              </thead>
+              <tbody id="aliasBody"></tbody>
+            </table>
+          </div>
+          <div class="empty-state" id="aliasEmpty" style="display:none;">Keine Aliase eingetragen.</div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <div class="status-bar">
+    <span id="statusBadge" class="status-info">Bereit</span>
+    <div id="statusText" class="status-text">Noch keine Änderungen.</div>
+  </div>
+
+  <script src="https://unpkg.com/papaparse@5.4.1/papaparse.min.js"></script>
+  <script>
+    (function () {
+      const elements = {
+        workerUrl: document.getElementById("workerUrl"),
+        branch: document.getElementById("branchInput"),
+        adminKey: document.getElementById("adminKey"),
+        reloadBtn: document.getElementById("reloadBtn"),
+        saveBtn: document.getElementById("saveBtn"),
+        playerSearch: document.getElementById("playerSearch"),
+        playerHeaderRow: document.getElementById("playerHeaderRow"),
+        playersBody: document.getElementById("playersBody"),
+        emptyDetails: document.getElementById("emptyDetails"),
+        detailsContent: document.getElementById("detailsContent"),
+        detailName: document.getElementById("detailName"),
+        aliasBody: document.getElementById("aliasBody"),
+        aliasEmpty: document.getElementById("aliasEmpty"),
+        aliasCount: document.getElementById("aliasCount"),
+        addAliasBtn: document.getElementById("addAliasBtn"),
+        renameInput: document.getElementById("renameInput"),
+        renameBtn: document.getElementById("renameBtn"),
+        statusToggles: document.getElementById("statusToggles"),
+        statusBadge: document.getElementById("statusBadge"),
+        statusText: document.getElementById("statusText"),
+      };
+
+      const state = {
+        players: [],
+        aliases: [],
+        selectedPlayerId: null,
+        playerHeaders: [],
+        aliasHeaders: ["Canonical", "Alias"],
+        playerNameField: "PlayerName",
+        aliasCanonicalField: "Canonical",
+        aliasAliasField: "Alias",
+        statusFields: [],
+        originalAllianceCsv: "",
+        originalAliasesCsv: "",
+        loading: false,
+        saving: false,
+      };
+
+      const repoOwner = "its-h4k1";
+      const repoName = "desert-storm-roster-optimizer";
+      const defaultBranch = "main";
+      const SETTINGS_KEY = "dsro-player-admin-settings";
+
+      const STATUS_COLUMNS = ["Active", "InAlliance", "ActiveFlag", "ActiveStatus", "IsActive"];
+
+      function normalizeLineEndings(text) {
+        return (text || "").replace(/\r\n/g, "\n").replace(/\r/g, "\n");
+      }
+
+      function ensureTrailingNewline(text) {
+        if (!text) return "\n";
+        return /\n$/.test(text) ? text : text + "\n";
+      }
+
+      function formatCsvValue(value) {
+        if (value === null || value === undefined) return "";
+        const str = value.toString();
+        if (str.includes("\"") || str.includes(",") || str.includes("\n")) {
+          return `"${str.replace(/"/g, '""')}"`;
+        }
+        return str;
+      }
+
+      function buildCsvFromRows(headers, rows) {
+        const headerLine = headers.join(",");
+        const lines = rows.map(row => {
+          const values = headers.map(header => formatCsvValue(row[header] ?? ""));
+          return values.join(",");
+        });
+        return ensureTrailingNewline([headerLine, ...lines].join("\n"));
+      }
+
+      function setStatus(message, tone = "info") {
+        const badge = elements.statusBadge;
+        const text = elements.statusText;
+        badge.className = "status-" + tone;
+        badge.textContent =
+          tone === "ok" ? "OK" : tone === "error" ? "Fehler" : tone === "warn" ? "Hinweis" : "Status";
+        text.textContent = message;
+      }
+
+      function setLoading(isLoading) {
+        state.loading = isLoading;
+        elements.reloadBtn.disabled = isLoading || state.saving;
+        updateSaveButtonState();
+        if (isLoading) {
+          setStatus("Lade Spieler- und Aliasdaten…", "info");
+        }
+      }
+
+      function setSaving(isSaving) {
+        state.saving = isSaving;
+        updateSaveButtonState();
+      }
+
+      function updateSaveButtonState() {
+        const hasChanges = hasAllianceChanged() || hasAliasChanged();
+        elements.saveBtn.disabled = state.loading || state.saving || !hasChanges;
+        elements.saveBtn.textContent = state.saving ? "Speichert…" : "Speichern";
+      }
+
+      function hasAllianceChanged() {
+        const current = buildCurrentAllianceCsv();
+        return normalizeLineEndings(current).trim() !== normalizeLineEndings(state.originalAllianceCsv).trim();
+      }
+
+      function hasAliasChanged() {
+        const current = buildCurrentAliasCsv();
+        return normalizeLineEndings(current).trim() !== normalizeLineEndings(state.originalAliasesCsv).trim();
+      }
+
+      function buildCurrentAllianceCsv() {
+        const headers = state.playerHeaders.length ? state.playerHeaders : [state.playerNameField];
+        const rows = state.players.map(player => player.rawRow);
+        return buildCsvFromRows(headers, rows);
+      }
+
+      function buildCurrentAliasCsv() {
+        const headers = state.aliasHeaders.length ? state.aliasHeaders : ["Canonical", "Alias"];
+        const rows = state.aliases.map(alias => alias.rawRow);
+        return buildCsvFromRows(headers, rows);
+      }
+
+      function detectNameField(headers) {
+        const candidates = ["PlayerName", "DisplayName", "Canonical", "Name"];
+        return headers.find(header => candidates.includes(header)) || headers[0] || "PlayerName";
+      }
+
+      function detectAliasField(headers, preferred) {
+        return headers.find(header => preferred.includes(header)) || preferred[0];
+      }
+
+      async function fetchFirstAvailable(urls) {
+        for (const url of urls) {
+          try {
+            const response = await fetch(url, { cache: "no-store" });
+            if (response.ok) {
+              return await response.text();
+            }
+          } catch (err) {
+            console.warn("Fetch-Fallback fehlgeschlagen", url, err);
+          }
+        }
+        throw new Error(`Keine Quelle erreichbar (${urls.join(", ")})`);
+      }
+
+      function buildCandidatePaths(path) {
+        const cleanPath = path.replace(/^\/+/, "");
+        const prefixes = ["../../", "../", "./", ""];
+        const candidates = prefixes.map(prefix => `${prefix}${cleanPath}`.replace(/\/+/g, "/"));
+        const rawUrl = `https://raw.githubusercontent.com/${repoOwner}/${repoName}/${defaultBranch}/${cleanPath}`;
+        candidates.push(rawUrl);
+        return candidates;
+      }
+
+      async function loadAlliance() {
+        const paths = buildCandidatePaths("data/alliance.csv");
+        const text = await fetchFirstAvailable(paths);
+        const normalized = ensureTrailingNewline(normalizeLineEndings(text));
+        state.originalAllianceCsv = normalized;
+        const parsed = Papa.parse(normalized, { header: true, skipEmptyLines: true });
+        state.playerHeaders = parsed.meta.fields || [];
+        state.playerNameField = detectNameField(state.playerHeaders);
+        state.statusFields = state.playerHeaders.filter(header => STATUS_COLUMNS.includes(header));
+        state.players = (parsed.data || [])
+          .map((row, index) => {
+            const safeRow = { ...row };
+            const canonical = (safeRow[state.playerNameField] || "").toString().trim();
+            if (!canonical) return null;
+            return {
+              id: index,
+              canonical,
+              rawRow: safeRow,
+            };
+          })
+          .filter(Boolean);
+        if (state.players.length) {
+          state.selectedPlayerId = state.players[0].id;
+        } else {
+          state.selectedPlayerId = null;
+        }
+      }
+
+      async function loadAliases() {
+        try {
+          const paths = buildCandidatePaths("data/aliases.csv");
+          const text = await fetchFirstAvailable(paths);
+          const normalized = ensureTrailingNewline(normalizeLineEndings(text));
+          state.originalAliasesCsv = normalized;
+          const parsed = Papa.parse(normalized, { header: true, skipEmptyLines: true });
+          state.aliasHeaders = parsed.meta.fields && parsed.meta.fields.length ? parsed.meta.fields : ["Canonical", "Alias"];
+          state.aliasCanonicalField = detectAliasField(state.aliasHeaders, ["Canonical", "PlayerName", "Name"]);
+          state.aliasAliasField = detectAliasField(state.aliasHeaders, ["Alias", "DisplayName"]);
+          state.aliases = (parsed.data || [])
+            .map((row, index) => {
+              const safeRow = { ...row };
+              const canonical = (safeRow[state.aliasCanonicalField] || "").toString().trim();
+              const alias = (safeRow[state.aliasAliasField] || "").toString().trim();
+              if (!canonical || !alias) return null;
+              return {
+                id: index,
+                canonical,
+                alias,
+                rawRow: safeRow,
+              };
+            })
+            .filter(Boolean);
+        } catch (err) {
+          console.warn("Aliases konnten nicht geladen werden, starte neu", err);
+          state.aliasHeaders = ["Canonical", "Alias"];
+          state.aliasCanonicalField = "Canonical";
+          state.aliasAliasField = "Alias";
+          state.aliases = [];
+          state.originalAliasesCsv = ensureTrailingNewline("Canonical,Alias");
+        }
+      }
+
+      async function reloadData() {
+        setLoading(true);
+        try {
+          await loadAlliance();
+          await loadAliases();
+          renderPlayerHeader();
+          renderPlayerTable();
+          renderDetails();
+          setStatus(
+            `Geladen (${state.players.length} Spieler, ${state.aliases.length} Aliase).`,
+            "ok"
+          );
+        } catch (err) {
+          console.error(err);
+          setStatus(`Laden fehlgeschlagen: ${err.message}`, "error");
+        } finally {
+          setLoading(false);
+          updateSaveButtonState();
+        }
+      }
+
+      function renderPlayerHeader() {
+        const row = elements.playerHeaderRow;
+        row.innerHTML = "";
+        const nameTh = document.createElement("th");
+        nameTh.textContent = "Name";
+        row.appendChild(nameTh);
+        state.statusFields.forEach(field => {
+          const th = document.createElement("th");
+          th.textContent = field;
+          row.appendChild(th);
+        });
+      }
+
+      function getFilteredPlayers() {
+        const query = elements.playerSearch.value.trim().toLowerCase();
+        return state.players
+          .map(player => ({ ...player }))
+          .filter(player => {
+            if (!query) return true;
+            return player.canonical.toLowerCase().includes(query);
+          })
+          .sort((a, b) => a.canonical.localeCompare(b.canonical, "de", { sensitivity: "base" }));
+      }
+
+      function renderPlayerTable() {
+        const tbody = elements.playersBody;
+        tbody.innerHTML = "";
+        const players = getFilteredPlayers();
+        players.forEach(player => {
+          const tr = document.createElement("tr");
+          if (player.id === state.selectedPlayerId) {
+            tr.classList.add("selected");
+          }
+          tr.addEventListener("click", () => {
+            state.selectedPlayerId = player.id;
+            renderPlayerTable();
+            renderDetails();
+          });
+          const nameTd = document.createElement("td");
+          nameTd.textContent = player.canonical;
+          tr.appendChild(nameTd);
+          state.statusFields.forEach(field => {
+            const td = document.createElement("td");
+            const dot = document.createElement("span");
+            dot.className = "status-dot";
+            const value = player.rawRow[field];
+            const isActive = value === 1 || value === "1" || value === true || value === "true";
+            if (isActive) {
+              dot.classList.add("on");
+            }
+            td.appendChild(dot);
+            tr.appendChild(td);
+          });
+          tbody.appendChild(tr);
+        });
+        if (!players.length) {
+          const tr = document.createElement("tr");
+          const td = document.createElement("td");
+          td.colSpan = Math.max(1, 1 + state.statusFields.length);
+          td.style.textAlign = "center";
+          td.style.padding = "1.5rem";
+          td.textContent = "Keine Spieler gefunden.";
+          tr.appendChild(td);
+          tbody.appendChild(tr);
+        }
+      }
+
+      function getSelectedPlayer() {
+        return state.players.find(player => player.id === state.selectedPlayerId) || null;
+      }
+
+      function renderDetails() {
+        const player = getSelectedPlayer();
+        if (!player) {
+          elements.emptyDetails.style.display = "block";
+          elements.detailsContent.style.display = "none";
+          return;
+        }
+        elements.emptyDetails.style.display = "none";
+        elements.detailsContent.style.display = "flex";
+        elements.detailName.textContent = player.canonical;
+        elements.renameInput.value = player.canonical;
+        renderStatusToggles(player);
+        renderAliasTable(player);
+      }
+
+      function renderStatusToggles(player) {
+        const container = elements.statusToggles;
+        container.innerHTML = "";
+        if (!state.statusFields.length) {
+          const note = document.createElement("div");
+          note.style.color = "#6b7280";
+          note.textContent = "Keine Statusfelder in alliance.csv gefunden.";
+          container.appendChild(note);
+          return;
+        }
+        state.statusFields.forEach(field => {
+          const label = document.createElement("label");
+          label.style.flexDirection = "row";
+          label.style.alignItems = "center";
+          label.style.gap = "0.5rem";
+          label.style.fontSize = "0.9rem";
+          label.style.color = "#111827";
+          label.textContent = field;
+          const checkbox = document.createElement("input");
+          checkbox.type = "checkbox";
+          checkbox.checked = player.rawRow[field] === 1 || player.rawRow[field] === "1" || player.rawRow[field] === true;
+          checkbox.addEventListener("change", () => {
+            player.rawRow[field] = checkbox.checked ? "1" : "0";
+            renderPlayerTable();
+            updateSaveButtonState();
+            setStatus("Status geändert, bitte speichern.", "warn");
+          });
+          label.prepend(checkbox);
+          container.appendChild(label);
+        });
+      }
+
+      function renderAliasTable(player) {
+        const tbody = elements.aliasBody;
+        tbody.innerHTML = "";
+        const rows = state.aliases.filter(alias => alias.canonical === player.canonical);
+        elements.aliasCount.textContent = `${rows.length} Alias${rows.length === 1 ? "" : "e"}`;
+        if (!rows.length) {
+          elements.aliasEmpty.style.display = "block";
+        } else {
+          elements.aliasEmpty.style.display = "none";
+        }
+        rows
+          .sort((a, b) => a.alias.localeCompare(b.alias, "de", { sensitivity: "base" }))
+          .forEach(alias => {
+            const tr = document.createElement("tr");
+            const aliasTd = document.createElement("td");
+            aliasTd.textContent = alias.alias;
+            const actionTd = document.createElement("td");
+            const btn = document.createElement("button");
+            btn.className = "secondary";
+            btn.textContent = "Löschen";
+            btn.addEventListener("click", () => {
+              removeAlias(alias.id);
+            });
+            actionTd.appendChild(btn);
+            tr.appendChild(aliasTd);
+            tr.appendChild(actionTd);
+            tbody.appendChild(tr);
+          });
+        updateSaveButtonState();
+      }
+
+      function removeAlias(id) {
+        const before = state.aliases.length;
+        state.aliases = state.aliases.filter(alias => alias.id !== id);
+        if (state.aliases.length !== before) {
+          renderDetails();
+          updateSaveButtonState();
+          setStatus("Alias entfernt, bitte speichern.", "warn");
+        }
+      }
+
+      function canonicalExists(name, ignoreId) {
+        const norm = name.toLowerCase();
+        return state.players.some(player => player.id !== ignoreId && player.canonical.toLowerCase() === norm);
+      }
+
+      function aliasExists(name) {
+        const norm = name.toLowerCase();
+        return state.aliases.some(alias => alias.alias.toLowerCase() === norm);
+      }
+
+      function addAlias() {
+        const player = getSelectedPlayer();
+        if (!player) return;
+        const value = window.prompt(`Neuen Alias für ${player.canonical} eingeben:`);
+        if (!value) return;
+        const trimmed = value.trim();
+        if (!trimmed) return;
+        if (canonicalExists(trimmed, player.id) || aliasExists(trimmed)) {
+          setStatus("Alias bereits vorhanden.", "error");
+          return;
+        }
+        const newRow = {};
+        state.aliasHeaders.forEach(header => {
+          newRow[header] = "";
+        });
+        newRow[state.aliasCanonicalField] = player.canonical;
+        newRow[state.aliasAliasField] = trimmed;
+        const alias = {
+          id: Date.now(),
+          canonical: player.canonical,
+          alias: trimmed,
+          rawRow: newRow,
+        };
+        state.aliases.push(alias);
+        renderDetails();
+        updateSaveButtonState();
+        setStatus("Alias hinzugefügt. Speichern nicht vergessen.", "warn");
+      }
+
+      function applyPlayerRename() {
+        const player = getSelectedPlayer();
+        if (!player) return;
+        const newName = elements.renameInput.value.trim();
+        if (!newName) {
+          setStatus("Name darf nicht leer sein.", "error");
+          return;
+        }
+        if (newName === player.canonical) {
+          setStatus("Keine Änderung erkannt.", "info");
+          return;
+        }
+        if (canonicalExists(newName, player.id) || aliasExists(newName)) {
+          setStatus("Name bereits als Spieler oder Alias vorhanden.", "error");
+          return;
+        }
+        const oldName = player.canonical;
+        player.canonical = newName;
+        player.rawRow[state.playerNameField] = newName;
+        state.aliases.forEach(alias => {
+          if (alias.canonical === oldName) {
+            alias.canonical = newName;
+            alias.rawRow[state.aliasCanonicalField] = newName;
+          }
+        });
+        renderPlayerTable();
+        renderDetails();
+        updateSaveButtonState();
+        setStatus(`Spieler umbenannt von ${oldName} zu ${newName}.`, "warn");
+      }
+
+      async function saveChanges() {
+        if (state.loading || state.saving) return;
+        const workerUrl = elements.workerUrl.value.trim();
+        const adminKey = elements.adminKey.value.trim();
+        const branch = elements.branch.value.trim() || defaultBranch;
+        if (!workerUrl) {
+          setStatus("Worker-URL fehlt.", "error");
+          return;
+        }
+        if (!adminKey) {
+          setStatus("Admin-Key erforderlich.", "error");
+          return;
+        }
+        const payloads = [];
+        const allianceCsv = buildCurrentAllianceCsv();
+        if (hasAllianceChanged()) {
+          payloads.push({
+            path: "data/alliance.csv",
+            content: allianceCsv,
+            message: "admin: update alliance.csv via players ui",
+            branch,
+          });
+        }
+        const aliasCsv = buildCurrentAliasCsv();
+        if (hasAliasChanged()) {
+          payloads.push({
+            path: "data/aliases.csv",
+            content: aliasCsv,
+            message: "admin: update aliases.csv via players ui",
+            branch,
+          });
+        }
+        if (!payloads.length) {
+          setStatus("Keine Änderungen zum Speichern.", "info");
+          return;
+        }
+        setSaving(true);
+        setStatus("Speichere Änderungen…", "info");
+        try {
+          for (const payload of payloads) {
+            await writeFile(workerUrl, adminKey, payload);
+          }
+          state.originalAllianceCsv = buildCurrentAllianceCsv();
+          state.originalAliasesCsv = buildCurrentAliasCsv();
+          setStatus("Speichern erfolgreich.", "ok");
+        } catch (err) {
+          console.error(err);
+          setStatus(`Speichern fehlgeschlagen: ${err.message}`, "error");
+        } finally {
+          setSaving(false);
+          updateSaveButtonState();
+        }
+      }
+
+      async function writeFile(workerUrl, adminKey, payload) {
+        const headers = { "Content-Type": "application/json", "X-Admin-Key": adminKey };
+        const response = await fetch(workerUrl, {
+          method: "POST",
+          headers,
+          body: JSON.stringify(payload),
+        });
+        if (!response.ok) {
+          const text = await response.text().catch(() => "");
+          throw new Error(text || `HTTP ${response.status}`);
+        }
+        const result = await response.json().catch(() => ({}));
+        if (result && result.ok === false) {
+          throw new Error(result.error || "Worker-Fehler");
+        }
+        return result;
+      }
+
+      function restoreSettings() {
+        const saved = localStorage.getItem(SETTINGS_KEY);
+        if (saved) {
+          try {
+            const parsed = JSON.parse(saved);
+            if (parsed.workerUrl) elements.workerUrl.value = parsed.workerUrl;
+            if (parsed.branch) elements.branch.value = parsed.branch;
+            if (parsed.adminKey) elements.adminKey.value = parsed.adminKey;
+            return;
+          } catch (err) {
+            console.warn("Settings konnten nicht gelesen werden", err);
+          }
+        }
+        const shared = localStorage.getItem("dsro-admin-settings");
+        if (shared) {
+          try {
+            const parsed = JSON.parse(shared);
+            if (parsed.workerUrl) elements.workerUrl.value = parsed.workerUrl;
+            if (parsed.customBranch) {
+              elements.branch.value = parsed.customBranch;
+            } else if (parsed.branchSelect) {
+              elements.branch.value = parsed.branchSelect;
+            }
+            if (parsed.adminKey) elements.adminKey.value = parsed.adminKey;
+          } catch (err) {
+            console.warn("Shared settings konnten nicht gelesen werden", err);
+          }
+        }
+      }
+
+      function persistSettings() {
+        const values = {
+          workerUrl: elements.workerUrl.value,
+          branch: elements.branch.value,
+          adminKey: elements.adminKey.value,
+        };
+        localStorage.setItem(SETTINGS_KEY, JSON.stringify(values));
+      }
+
+      function initEvents() {
+        elements.playerSearch.addEventListener("input", () => {
+          renderPlayerTable();
+        });
+        elements.renameBtn.addEventListener("click", () => applyPlayerRename());
+        elements.addAliasBtn.addEventListener("click", () => addAlias());
+        elements.reloadBtn.addEventListener("click", () => reloadData());
+        elements.saveBtn.addEventListener("click", () => saveChanges());
+        elements.workerUrl.addEventListener("change", persistSettings);
+        elements.adminKey.addEventListener("change", persistSettings);
+        elements.branch.addEventListener("change", persistSettings);
+        elements.renameInput.addEventListener("keydown", ev => {
+          if (ev.key === "Enter") {
+            ev.preventDefault();
+            applyPlayerRename();
+          }
+        });
+      }
+
+      restoreSettings();
+      initEvents();
+      reloadData();
+    })();
+  </script>
+</body>
+</html>
