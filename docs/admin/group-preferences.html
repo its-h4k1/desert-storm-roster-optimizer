@@ -16,6 +16,34 @@
       color: var(--text);
     }
 
+    .admin-groupprefs {
+      --density-font-size: 0.88rem;
+      --density-head-font-size: 0.76rem;
+      --density-cell-padding-y: 0.35rem;
+      --density-cell-padding-x: 0.6rem;
+      --density-input-padding-y: 0.35rem;
+      --density-input-padding-x: 0.55rem;
+      --density-control-gap: 0.65rem;
+      --density-legend-font-size: 0.88rem;
+      --density-legend-gap: 0.5rem;
+      --density-help-padding: 0.55rem;
+      --density-help-line-height: 1.35;
+    }
+
+    .admin-groupprefs.is-spacious {
+      --density-font-size: 0.95rem;
+      --density-head-font-size: 0.82rem;
+      --density-cell-padding-y: 0.55rem;
+      --density-cell-padding-x: 0.85rem;
+      --density-input-padding-y: 0.5rem;
+      --density-input-padding-x: 0.75rem;
+      --density-control-gap: 0.85rem;
+      --density-legend-font-size: 0.95rem;
+      --density-legend-gap: 0.75rem;
+      --density-help-padding: 0.8rem;
+      --density-help-line-height: 1.45;
+    }
+
     .page-header {
       background: var(--glass, rgba(255, 255, 255, 0.92));
       padding: 1.25rem clamp(1rem, 4vw, 2rem);
@@ -195,6 +223,72 @@
       background: rgba(255, 255, 255, 0.45);
     }
 
+    .admin-groupprefs label {
+      gap: 0.28rem;
+      font-size: 0.82rem;
+    }
+
+    .admin-groupprefs input[type="text"],
+    .admin-groupprefs input[type="search"],
+    .admin-groupprefs input[type="password"],
+    .admin-groupprefs input[type="number"],
+    .admin-groupprefs select,
+    .admin-groupprefs textarea {
+      padding: var(--density-input-padding-y) var(--density-input-padding-x);
+      min-width: clamp(8rem, 22vw, 15rem);
+      font-size: 0.92rem;
+    }
+
+    .admin-groupprefs textarea {
+      line-height: 1.3;
+      resize: vertical;
+    }
+
+    .admin-groupprefs .controls { gap: var(--density-control-gap); }
+
+    .admin-groupprefs table { font-size: var(--density-font-size); }
+    .admin-groupprefs thead { font-size: var(--density-head-font-size); letter-spacing: 0.05em; }
+    .admin-groupprefs th,
+    .admin-groupprefs td { padding: var(--density-cell-padding-y) var(--density-cell-padding-x); }
+    .admin-groupprefs tbody tr:hover { background: rgba(37, 99, 235, 0.06); }
+
+    .admin-groupprefs td:nth-child(3) select { min-width: 9.5rem; }
+    .admin-groupprefs td:nth-child(4) input[type="number"] {
+      width: 6.5rem;
+      min-width: 0;
+      max-width: 6.5rem;
+      text-align: right;
+      font-variant-numeric: tabular-nums;
+      padding-inline: calc(var(--density-input-padding-x) - 0.1rem);
+    }
+    .admin-groupprefs td:nth-child(5) textarea {
+      min-height: 2.35rem;
+      max-width: 22ch;
+      padding-inline: calc(var(--density-input-padding-x) - 0.05rem);
+      width: 100%;
+    }
+    .admin-groupprefs.is-spacious td:nth-child(5) textarea { min-height: 2.9rem; max-width: 26ch; }
+
+    .admin-groupprefs .legend {
+      grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+      gap: var(--density-legend-gap);
+      font-size: var(--density-legend-font-size);
+      line-height: 1.35;
+    }
+
+    .admin-groupprefs .legend strong {
+      margin-bottom: 0.15rem;
+      font-size: calc(var(--density-legend-font-size) + 0.05rem);
+    }
+
+    .admin-groupprefs .help-box {
+      padding: var(--density-help-padding);
+      background: rgba(255, 255, 255, 0.35);
+      line-height: var(--density-help-line-height);
+      display: grid;
+      gap: 0.35rem;
+    }
+
     @media (max-width: 900px) {
       .page-header { position: static; }
       table { font-size: 0.85rem; }
@@ -222,7 +316,7 @@
     </nav>
 
       <main class="admin-content">
-        <section class="admin-section page-wrapper">
+        <section class="admin-section page-wrapper admin-groupprefs">
           <div class="page-inner">
           <header class="page-header">
             <div style="flex:1;min-width:240px;">
@@ -262,9 +356,14 @@
               <label style="flex:1;min-width:200px;">Suche
                 <input type="search" id="searchInput" placeholder="Namen filtern…">
               </label>
+              <div class="flex-spacer"></div>
               <label style="align-items:center;flex-direction:row;gap:0.5rem;">
                 <input type="checkbox" id="activeOnly" checked>
                 <span>Nur InAlliance = 1</span>
+              </label>
+              <label style="align-items:center;flex-direction:row;gap:0.5rem;">
+                <input type="checkbox" id="compactToggle" checked>
+                <span>Kompakte Ansicht</span>
               </label>
             </div>
             <div class="table-wrapper" aria-live="polite">
@@ -298,6 +397,7 @@
   <script>
     (function(){
       const elements = {
+        root: document.querySelector(".admin-groupprefs"),
         workerUrl: document.getElementById("workerUrl"),
         branch: document.getElementById("branchInput"),
         adminKey: document.getElementById("adminKey"),
@@ -305,6 +405,7 @@
         saveBtn: document.getElementById("saveBtn"),
         searchInput: document.getElementById("searchInput"),
         activeOnly: document.getElementById("activeOnly"),
+        compactToggle: document.getElementById("compactToggle"),
         tableBody: document.getElementById("tableBody"),
         emptyState: document.getElementById("emptyState"),
         statsPill: document.getElementById("statsPill"),
@@ -318,6 +419,7 @@
         originalCsv: "",
         loading: false,
         saving: false,
+        compact: true,
       };
 
       const SETTINGS_KEY = "dsro-group-pref-settings";
@@ -457,6 +559,13 @@
       function updateSaveButtonState() {
         elements.saveBtn.disabled = state.loading || state.saving || !hasChanges();
         elements.saveBtn.textContent = state.saving ? "Speichert…" : "Speichern";
+      }
+
+      function applyDensityMode(isCompact) {
+        state.compact = isCompact;
+        if (elements.root) {
+          elements.root.classList.toggle("is-spacious", !isCompact);
+        }
       }
 
       function hasChanges() {
@@ -689,6 +798,9 @@
         elements.saveBtn.addEventListener("click", () => saveChanges());
         elements.searchInput.addEventListener("input", () => renderTable());
         elements.activeOnly.addEventListener("change", () => renderTable());
+        if (elements.compactToggle) {
+          elements.compactToggle.addEventListener("change", () => applyDensityMode(elements.compactToggle.checked));
+        }
         elements.workerUrl.addEventListener("change", persistSettings);
         elements.branch.addEventListener("change", persistSettings);
         elements.adminKey.addEventListener("change", persistSettings);
@@ -696,6 +808,7 @@
 
       restoreSettings();
       initEvents();
+      applyDensityMode(!elements.compactToggle || elements.compactToggle.checked !== false);
       reloadData();
     })();
   </script>
