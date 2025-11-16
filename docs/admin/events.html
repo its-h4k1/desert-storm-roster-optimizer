@@ -1429,8 +1429,17 @@
       throw new Error(`Keine der Quellen erreichbar (${urls.join(", ")})`);
     }
 
+    function buildRawUrl(branch, path) {
+      const safeBranch = encodeURIComponent(branch || "").replace(/%2F/g, "/");
+      const safePath = (path || "")
+        .split("/")
+        .map(segment => encodeURIComponent(segment))
+        .join("/");
+      return `https://raw.githubusercontent.com/${repoOwner}/${repoName}/${safeBranch}/${safePath}`;
+    }
+
     async function loadTextFromBranch(branch, path) {
-      const url = `https://raw.githubusercontent.com/${repoOwner}/${repoName}/${encodeURIComponent(branch)}/${path}`;
+      const url = buildRawUrl(branch, path);
       try {
         const response = await fetch(url, { cache: "no-store" });
         if (!response.ok) {
@@ -2137,7 +2146,7 @@
 
     async function checkFileExists(branch, path) {
       try {
-        const url = `https://raw.githubusercontent.com/${repoOwner}/${repoName}/${encodeURIComponent(branch)}/${path}`;
+        const url = buildRawUrl(branch, path);
         const response = await fetch(url, { method: "HEAD" });
         return response.ok;
       } catch (err) {
@@ -2148,7 +2157,7 @@
 
     async function loadExistingCsv(branch, path) {
       try {
-        const url = `https://raw.githubusercontent.com/${repoOwner}/${repoName}/${encodeURIComponent(branch)}/${path}`;
+        const url = buildRawUrl(branch, path);
         const response = await fetch(url);
         if (!response.ok) {
           return null;
