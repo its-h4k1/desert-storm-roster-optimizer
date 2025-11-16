@@ -26,3 +26,15 @@
 - **CSS**: `docs/admin/admin.css` enthält alle globalen Styles (Layout, Buttons, Panels, Tabellen, Typografie). Seite-spezifische Styles verbleiben inline oder in eigenen Dateien, greifen aber auf die Basis-Klassen zurück.
 - **JavaScript**: `docs/admin/admin.js` markiert automatisch den aktiven Menüpunkt anhand des aktuellen Pfades und kann künftig weitere Shell-Helfer beherbergen.
 - **Einbindung**: Jede Admin-Seite lädt `admin.css` und `admin.js` und rendert die gemeinsame Shell-Struktur (`.admin-shell` → `.admin-header` + `.admin-layout`).
+
+## 5. Aktueller UI-Bestand
+
+| Seite | Zweck | Datenquellen |
+| --- | --- | --- |
+| `docs/index.html` | Öffentliche Roster-Ansicht für Gruppen A/B, inklusive No-Show-Trends, Player-Meta-Toggle und Links zu Admin-Tools. | Lädt `out/latest.json` (Standard `main`, optional `?branch=`) von `raw.githubusercontent.com`.
+| `docs/admin/index.html` | Shell-Einstieg, Tab-Tools für Allianz-, Alias-, Event- und Abwesenheits-Dateien. Dient als Fallback, falls spezialisierte Admin-UIs nicht genügen. | Liest/Schreibt direkt `data/alliance.csv`, `data/aliases.csv`, `data/absences.csv` und Event-CSVs via Worker-API.
+| `docs/admin/events.html` | Tabellenbasiertes Erfassen/Validieren von Events, inkl. Alias-Resolver, Auto-Vervollständigung und Commit-Flow. | Liest `data/alliance.csv`, `data/aliases.csv` (lokal oder Raw-URLs) und speichert `data/<EventID>.csv`.
+| `docs/admin/players.html` | Pflege von Spielerstatus, Aliases und Abwesenheiten mit Detailpanelen und Modal-Editoren. | Verwaltet `data/alliance.csv`, `data/aliases.csv`, `data/absences.csv`.
+| `docs/admin/noshow-dashboard.html` | Analytisches Dashboard mit Filtern, Histogrammen und Rolling-vs-Overall KPIs. | Lädt `out/latest.json` (aktuellster Build).
+
+> Wenn neue Admin- oder Analyse-Seiten entstehen, bitte hier kurz Zweck & Datenquellen ergänzen und in der README verlinken.
