@@ -126,6 +126,7 @@
     th, td { padding: 0.5rem 0.75rem; border-bottom: 1px solid rgba(255, 255, 255, 0.05); }
     tbody tr:nth-child(2n) { background: #f9fafc; }
     tbody tr:hover { background: rgba(37, 99, 235, 0.08); }
+    tbody tr.inactive { opacity: 0.55; }
 
     .pill {
       padding: 0.2rem 0.55rem;
@@ -244,9 +245,10 @@
               <span class="pill" id="statsPill">–</span>
               <div class="help-box">
                 <div class="legend">
-                  <div><strong>Feste Gruppe (hard)</strong> Spieler MUSS in der gewählten Gruppe landen.</div>
-                  <div><strong>Weiche Präferenz (soft)</strong> Bevorzugte Gruppe, Wechsel möglich wenn Slots knapp.</div>
-                  <div><strong>Keine Vorgabe</strong> Optimizer verteilt frei. PrefBoost erhöht Score bei Wunschgruppe.</div>
+                  <div><strong>Fest in A/B</strong> Harte Vorgabe (PrefMode = <code>hard</code>): Spieler muss in dieser Gruppe landen.</div>
+                  <div><strong>Bevorzugt A/B</strong> Weiche Präferenz (PrefMode = <code>soft</code>): wird berücksichtigt, kann aber verletzt werden.</div>
+                  <div><strong>Keine</strong> Kein Wunsch hinterlegt. <code>PrefGroup</code> und <code>PrefMode</code> bleiben leer.</div>
+                  <div><strong>PrefBoost</strong> Optionaler Score-Bonus für die Wunschgruppe. Standard-Boost laut Optimizer-Logik.</div>
                 </div>
               </div>
             </div>
@@ -265,9 +267,7 @@
                   <tr>
                     <th>Spieler</th>
                     <th>Status</th>
-                    <th>Feste Gruppe</th>
-                    <th>Soft-Präferenz</th>
-                    <th>Präferenztyp</th>
+                    <th>Gruppenpräferenz</th>
                     <th>PrefBoost</th>
                     <th>Notiz</th>
                   </tr>
@@ -318,6 +318,36 @@
       const repoName = "desert-storm-roster-optimizer";
       const defaultBranch = "main";
       const DEFAULT_HEADERS = ["PlayerName", "InAlliance", "Note", "PrefGroup", "PrefMode", "PrefBoost"];
+      const PREF_OPTIONS = [
+        { value: "none", label: "Keine" },
+        { value: "hard-A", label: "Fest in A" },
+        { value: "hard-B", label: "Fest in B" },
+        { value: "soft-A", label: "Bevorzugt A" },
+        { value: "soft-B", label: "Bevorzugt B" },
+      ];
+
+      function uiPrefToModel(value) {
+        switch ((value || "none").toString()) {
+          case "hard-A":
+            return { prefGroup: "A", prefMode: "hard" };
+          case "hard-B":
+            return { prefGroup: "B", prefMode: "hard" };
+          case "soft-A":
+            return { prefGroup: "A", prefMode: "soft" };
+          case "soft-B":
+            return { prefGroup: "B", prefMode: "soft" };
+          default:
+            return { prefGroup: "", prefMode: "" };
+        }
+      }
+
+      function modelToUiPref(prefGroup, prefMode) {
+        const group = (prefGroup || "").toString().toUpperCase();
+        const mode = (prefMode || "").toString().toLowerCase();
+        if (mode === "hard" && (group === "A" || group === "B")) return `hard-${group}`;
+        if (mode === "soft" && (group === "A" || group === "B")) return `soft-${group}`;
+        return "none";
+      }
 
       function normalizeLineEndings(text) {
         return (text || "").replace(/\r\n/g, "\n").replace(/\r/g, "\n");
@@ -485,6 +515,7 @@
         elements.emptyState.style.display = "none";
         rows.forEach(entry => {
           const tr = document.createElement("tr");
+          if (!toBoolFlag(entry.raw.InAlliance)) tr.classList.add("inactive");
 
           const nameTd = document.createElement("td");
           nameTd.textContent = entry.raw.PlayerName || "(unbenannt)";
@@ -499,33 +530,10 @@
           tr.appendChild(statusTd);
 
           const prefTd = document.createElement("td");
-          const fixedValue = (entry.raw.PrefMode === "hard") ? (entry.raw.PrefGroup || "").toUpperCase() : "";
-          const prefSelect = createSelect([
-            { value: "", label: "–" },
-            { value: "A", label: "A" },
-            { value: "B", label: "B" },
-          ], fixedValue, (val) => setPreference(entry.id, val.toUpperCase(), val ? "hard" : ""));
+          const prefSelect = createSelect(PREF_OPTIONS, modelToUiPref(entry.raw.PrefGroup, entry.raw.PrefMode), (val) => setPreference(entry.id, val));
+          prefSelect.disabled = !inAlliance;
           prefTd.appendChild(prefSelect);
           tr.appendChild(prefTd);
-
-          const softTd = document.createElement("td");
-          const softValue = (entry.raw.PrefMode === "soft") ? (entry.raw.PrefGroup || "").toUpperCase() : "";
-          const softSelect = createSelect([
-            { value: "", label: "–" },
-            { value: "A", label: "A" },
-            { value: "B", label: "B" },
-          ], softValue, (val) => setPreference(entry.id, val.toUpperCase(), val ? "soft" : ""));
-          softTd.appendChild(softSelect);
-          tr.appendChild(softTd);
-
-          const modeTd = document.createElement("td");
-          const modeSelect = createSelect([
-            { value: "", label: "Keine" },
-            { value: "hard", label: "hard (fix)" },
-            { value: "soft", label: "soft" },
-          ], (entry.raw.PrefMode || "").toLowerCase(), (val) => updateField(entry.id, "PrefMode", val.toLowerCase()));
-          modeTd.appendChild(modeSelect);
-          tr.appendChild(modeTd);
 
           const boostTd = document.createElement("td");
           const boostInput = document.createElement("input");
@@ -535,6 +543,7 @@
           boostInput.step = "0.01";
           boostInput.value = entry.raw.PrefBoost ?? "";
           boostInput.placeholder = "0.05";
+          boostInput.disabled = !inAlliance;
           boostInput.addEventListener("input", () => updateField(entry.id, "PrefBoost", boostInput.value));
           boostTd.appendChild(boostInput);
           tr.appendChild(boostTd);
@@ -544,6 +553,7 @@
           noteInput.value = entry.raw.Note ?? "";
           noteInput.rows = 1;
           noteInput.placeholder = "Notiz (optional)";
+          noteInput.disabled = !inAlliance;
           noteInput.addEventListener("input", () => updateField(entry.id, "Note", noteInput.value));
           noteTd.appendChild(noteInput);
           tr.appendChild(noteTd);
@@ -567,11 +577,12 @@
         updateSaveButtonState();
       }
 
-      function setPreference(id, groupValue, modeValue) {
+      function setPreference(id, uiValue) {
         const entry = state.rows.find(r => r.id === id);
         if (!entry) return;
-        entry.raw.PrefGroup = (groupValue || "").toUpperCase();
-        entry.raw.PrefMode = (modeValue || "").toLowerCase();
+        const { prefGroup, prefMode } = uiPrefToModel(uiValue);
+        entry.raw.PrefGroup = prefGroup;
+        entry.raw.PrefMode = prefMode;
         renderTable();
       }
 
