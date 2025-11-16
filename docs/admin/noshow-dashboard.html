@@ -4,6 +4,7 @@
   <meta charset="utf-8" />
   <title>Desert Storm · No-Show Analyse</title>
   <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <link rel="stylesheet" href="admin.css" />
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js" integrity="sha256-0NKJgpQwa4ZpQt2l6QIeoebgtMVcT8d+GtoEDK8n66g=" crossorigin="anonymous"></script>
   <style>
     :root {
@@ -14,13 +15,18 @@
     body {
       margin:0;
       font-family: "Inter",ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+      color:var(--fg);
+      min-height:100vh;
+      background:transparent;
+    }
+    .page-wrapper {
       background:radial-gradient(circle at 20% 20%,rgba(62,105,255,.15),transparent 35%),
                  radial-gradient(circle at 80% 0%,rgba(255,118,154,.15),transparent 45%),
                  var(--bg);
-      color:var(--fg);
-      min-height:100vh;
+      border-radius:1rem;
+      border:1px solid rgba(255,255,255,0.05);
     }
-    header {
+    .page-header {
       display:flex;
       align-items:center;
       gap:12px;
@@ -32,11 +38,11 @@
       background:rgba(7,11,20,.85);
       border-bottom:1px solid var(--line);
     }
-    header .brand { font-size:1rem; font-weight:600; letter-spacing:.3px; }
-    header .spacer { flex:1; }
-    header a { color:var(--muted); text-decoration:none; font-size:.9rem; }
-    header a:hover { color:var(--fg); }
-    main {
+    .page-header .brand { font-size:1rem; font-weight:600; letter-spacing:.3px; }
+    .page-header .spacer { flex:1; }
+    .page-header a { color:var(--muted); text-decoration:none; font-size:.9rem; }
+    .page-header a:hover { color:var(--fg); }
+    .page-main {
       padding:32px clamp(16px,4vw,64px) 80px;
       max-width:1200px;
       margin:0 auto;
@@ -190,111 +196,129 @@
     }
   </style>
 </head>
-<body>
-  <header>
-    <div class="brand">Desert Storm · No-Show Analyse</div>
-    <div class="spacer"></div>
-    <a href="../index.html">Zurück zur Admin-Startseite</a>
+<body class="admin-shell">
+  <header class="admin-header">
+    <div class="admin-brand">ELT Admin</div>
+    <div class="admin-header-actions">
+      <a class="btn ghost" href="../index.html">Zur Roster-Ansicht</a>
+    </div>
   </header>
-  <main>
-    <section>
-      <h1>No-Show Dashboard</h1>
-      <p class="hint">Live-Daten aus <code>out/latest.json</code>. Vergleiche Gruppen, Rollen und Metriken, um den Effekt der EB-Roster zu beurteilen.</p>
-    </section>
+  <div class="admin-layout">
+    <nav class="admin-nav">
+      <a href="index.html">CSV &amp; Datei-Tools</a>
+      <a href="events.html">Events erfassen</a>
+      <a href="players.html">Spieler &amp; Aliase</a>
+      <a href="noshow-dashboard.html">No-Show Analyse</a>
+    </nav>
+    <main class="admin-content">
+      <section class="admin-section page-wrapper">
+        <header class="page-header">
+            <div class="brand">Desert Storm · No-Show Analyse</div>
+            <div class="spacer"></div>
+            <a href="../index.html">Zurück zur Admin-Startseite</a>
+          </header>
+        <main class="page-main">
+            <section>
+              <h1>No-Show Dashboard</h1>
+              <p class="hint">Live-Daten aus <code>out/latest.json</code>. Vergleiche Gruppen, Rollen und Metriken, um den Effekt der EB-Roster zu beurteilen.</p>
+            </section>
 
-    <section class="panel">
-      <div class="filters">
-        <div class="filter">
-          <label>Metrik</label>
-          <div class="chip-group" data-filter="metric">
-            <button data-value="overall" class="active">No-Show (overall)</button>
-            <button data-value="rolling">No-Show (rolling)</button>
-          </div>
-        </div>
-        <div class="filter">
-          <label>Rolle</label>
-          <div class="chip-group" data-filter="role">
-            <button data-value="all" class="active">Alle</button>
-            <button data-value="Start">Start</button>
-            <button data-value="Ersatz">Ersatz</button>
-          </div>
-        </div>
-        <div class="filter">
-          <label>Gruppe</label>
-          <div class="chip-group" data-filter="group">
-            <button data-value="all" class="active">Alle</button>
-            <button data-value="A">A</button>
-            <button data-value="B">B</button>
-          </div>
-        </div>
-        <div class="filter">
-          <label>Minimale Anzahl Events</label>
-          <input type="range" min="0" max="10" value="0" id="minEvents" />
-          <div class="metric-pill">ab <strong id="minEventsValue">0</strong> Events</div>
-        </div>
-      </div>
-    </section>
+            <section class="panel">
+              <div class="filters">
+                <div class="filter">
+                  <label>Metrik</label>
+                  <div class="chip-group" data-filter="metric">
+                    <button data-value="overall" class="active">No-Show (overall)</button>
+                    <button data-value="rolling">No-Show (rolling)</button>
+                  </div>
+                </div>
+                <div class="filter">
+                  <label>Rolle</label>
+                  <div class="chip-group" data-filter="role">
+                    <button data-value="all" class="active">Alle</button>
+                    <button data-value="Start">Start</button>
+                    <button data-value="Ersatz">Ersatz</button>
+                  </div>
+                </div>
+                <div class="filter">
+                  <label>Gruppe</label>
+                  <div class="chip-group" data-filter="group">
+                    <button data-value="all" class="active">Alle</button>
+                    <button data-value="A">A</button>
+                    <button data-value="B">B</button>
+                  </div>
+                </div>
+                <div class="filter">
+                  <label>Minimale Anzahl Events</label>
+                  <input type="range" min="0" max="10" value="0" id="minEvents" />
+                  <div class="metric-pill">ab <strong id="minEventsValue">0</strong> Events</div>
+                </div>
+              </div>
+            </section>
 
-    <section class="panel">
-      <div class="cards" id="summaryCards"></div>
-    </section>
+            <section class="panel">
+              <div class="cards" id="summaryCards"></div>
+            </section>
 
-    <section class="panel">
-      <div class="chart-title">Risikoverteilung <span class="hint" id="filterLabel"></span></div>
-      <div id="riskStack" class="stacked"></div>
-      <div class="legend-grid">
-        <span class="l-nodata">Keine Historie</span>
-        <span class="l-low">Wenig Daten (≤2 Events)</span>
-        <span class="l-good">Grün &lt; 20%</span>
-        <span class="l-mid">Gelb 20–35%</span>
-        <span class="l-bad">Rot &gt; 35%</span>
-      </div>
-    </section>
+            <section class="panel">
+              <div class="chart-title">Risikoverteilung <span class="hint" id="filterLabel"></span></div>
+              <div id="riskStack" class="stacked"></div>
+              <div class="legend-grid">
+                <span class="l-nodata">Keine Historie</span>
+                <span class="l-low">Wenig Daten (≤2 Events)</span>
+                <span class="l-good">Grün &lt; 20%</span>
+                <span class="l-mid">Gelb 20–35%</span>
+                <span class="l-bad">Rot &gt; 35%</span>
+              </div>
+            </section>
 
-    <section class="panel">
-      <div class="chart-title">Verteilung &amp; Zusammenhänge</div>
-      <div class="chart-grid">
-        <div>
-          <div class="hint" style="margin-bottom:8px;">Histogramm der No-Show-Raten (in %)</div>
-          <canvas id="histogram"></canvas>
-          <p class="hint" id="histHint"></p>
-        </div>
-        <div>
-          <div class="hint" style="margin-bottom:8px;">Events vs. No-Show</div>
-          <canvas id="scatter"></canvas>
-          <p class="hint" id="scatterHint"></p>
-        </div>
-      </div>
-    </section>
+            <section class="panel">
+              <div class="chart-title">Verteilung &amp; Zusammenhänge</div>
+              <div class="chart-grid">
+                <div>
+                  <div class="hint" style="margin-bottom:8px;">Histogramm der No-Show-Raten (in %)</div>
+                  <canvas id="histogram"></canvas>
+                  <p class="hint" id="histHint"></p>
+                </div>
+                <div>
+                  <div class="hint" style="margin-bottom:8px;">Events vs. No-Show</div>
+                  <canvas id="scatter"></canvas>
+                  <p class="hint" id="scatterHint"></p>
+                </div>
+              </div>
+            </section>
 
-    <section class="panel">
-      <div class="chart-title">Gruppenvergleich</div>
-      <div class="bar-grid" id="groupBars"></div>
-    </section>
+            <section class="panel">
+              <div class="chart-title">Gruppenvergleich</div>
+              <div class="bar-grid" id="groupBars"></div>
+            </section>
 
-    <section class="panel">
-      <div class="chart-title">Top-Risiko-Spieler</div>
-      <div class="table-wrap">
-        <table>
-          <thead>
-            <tr>
-              <th>Name</th>
-              <th>Gruppe</th>
-              <th>Rolle</th>
-              <th>Events</th>
-              <th>No-Show</th>
-            </tr>
-          </thead>
-          <tbody id="riskTable"></tbody>
-        </table>
-      </div>
-    </section>
+            <section class="panel">
+              <div class="chart-title">Top-Risiko-Spieler</div>
+              <div class="table-wrap">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Name</th>
+                      <th>Gruppe</th>
+                      <th>Rolle</th>
+                      <th>Events</th>
+                      <th>No-Show</th>
+                    </tr>
+                  </thead>
+                  <tbody id="riskTable"></tbody>
+                </table>
+              </div>
+            </section>
 
-    <section class="panel">
-      <div class="chart-title">Risikoreichste Spieler (Detailkarten)</div>
-      <div class="risk-list" id="playerList"></div>
-    </section>
-  </main>
+            <section class="panel">
+              <div class="chart-title">Risikoreichste Spieler (Detailkarten)</div>
+              <div class="risk-list" id="playerList"></div>
+            </section>
+          </main>
+      </section>
+    </main>
+  </div>
 
   <script>
     const state = {
@@ -686,5 +710,6 @@
     initFilters();
     loadData();
   </script>
+  <script src="admin.js"></script>
 </body>
 </html>
