@@ -40,6 +40,7 @@
       <a href="index.html" class="active">CSV &amp; Datei-Tools</a>
       <a href="events.html">Events erfassen</a>
       <a href="players.html">Spieler &amp; Aliase</a>
+      <a href="absences.html">Absenzen</a>
       <a href="noshow-dashboard.html">No-Show Analyse</a>
     </nav>
 
@@ -52,6 +53,11 @@
             <h3>Spieler &amp; Aliase</h3>
             <span class="hint">Neue Oberfläche für Alias-Verknüpfungen &amp; Details.</span>
             <a class="btn pri" href="players.html" style="margin-top:auto; width:max-content;">Zur Verwaltung</a>
+          </div>
+          <div class="card">
+            <h3>Absenzen</h3>
+            <span class="hint">Komfortable Pflege von <span class="code">data/absences.csv</span> inkl. Commit-Flow.</span>
+            <a class="btn" href="absences.html" style="margin-top:auto; width:max-content;">Absenzen öffnen</a>
           </div>
           <div class="card">
             <h3>No-Show Analyse</h3>
@@ -152,29 +158,29 @@ DS-2025-11-07-A,1,itsH4K1,Start,1,1548053,"></textarea>
 
           <!-- ABSENCES -->
           <section id="tab-absences" class="hidden">
-            <div class="row"><div class="hint">Datei: <span class="code">data/absences.csv</span> (wird erstellt, falls nicht vorhanden)</div></div>
+            <div class="row"><div class="hint">Absenzen werden jetzt im Menüpunkt <a href="absences.html">Absenzen</a> gepflegt. Diese Ansicht ist nur noch zum Lesen gedacht.</div></div>
             <div class="row two">
               <div>
-                <label>CSV-Inhalt</label>
+                <label>CSV-Inhalt (Read-only)</label>
                 <textarea id="taAbsences" rows="18" spellcheck="false" placeholder="PlayerName,From,To,Reason,InAlliance
 itsH4K1,2025-11-14,2025-11-30,Ferien,1
-…"></textarea>
+…" readonly></textarea>
                 <div class="row">
                   <button id="btnLoadAbsences" class="btn">Laden</button>
-                  <button id="btnSaveAbsences" class="btn ok">Speichern</button>
+                  <button id="btnSaveAbsences" class="btn ok" disabled title="Bitte Absenzen-Seite nutzen">Speichern</button>
                   <div id="msgAbsences" class="stat"></div>
                 </div>
               </div>
               <div>
                 <label>Schnell-Eintrag</label>
                 <div class="row">
-                  <input id="absName" type="text" placeholder="PlayerName" />
-                  <input id="absFrom" type="text" placeholder="From (YYYY-MM-DD)" />
-                  <input id="absTo" type="text" placeholder="To (YYYY-MM-DD)" />
-                  <input id="absReason" type="text" placeholder="Reason" />
-                  <button id="btnAbsAdd" class="btn">Zeile anhängen</button>
+                  <input id="absName" type="text" placeholder="PlayerName" disabled />
+                  <input id="absFrom" type="text" placeholder="From (YYYY-MM-DD)" disabled />
+                  <input id="absTo" type="text" placeholder="To (YYYY-MM-DD)" disabled />
+                  <input id="absReason" type="text" placeholder="Reason" disabled />
+                  <button id="btnAbsAdd" class="btn" disabled title="Bitte Absenzen-Seite nutzen">Zeile anhängen</button>
                 </div>
-                <div class="hint" style="margin-top:0.75rem;">Beim Speichern wird die Datei committet. Der Roster-Builder kann diese Datei später berücksichtigen.</div>
+                <div class="hint" style="margin-top:0.75rem;">Bitte den neuen Editor nutzen, um Absenzen hinzuzufügen oder zu bearbeiten.</div>
               </div>
             </div>
           </section>

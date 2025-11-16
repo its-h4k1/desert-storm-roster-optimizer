@@ -1,0 +1,797 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex, nofollow">
+  <title>Absenzen verwalten</title>
+  <link rel="stylesheet" href="admin.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <style>
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: var(--bg);
+      color: var(--text);
+    }
+
+    .page-header {
+      background: var(--glass, rgba(255, 255, 255, 0.92));
+      padding: 1.25rem clamp(1rem, 4vw, 2rem);
+      border-radius: 1rem;
+      border: 1px solid var(--border-strong, var(--border));
+      box-shadow: var(--shadow-panel, 0 20px 45px rgba(15, 23, 42, 0.08));
+      backdrop-filter: blur(18px);
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1rem;
+      align-items: flex-end;
+    }
+
+    .page-header h1 {
+      flex-basis: 100%;
+      margin: 0;
+      font-size: 1.45rem;
+    }
+
+    .page-header .settings {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+      align-items: flex-end;
+    }
+
+    label {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      display: flex;
+      flex-direction: column;
+      gap: 0.35rem;
+    }
+
+    input[type="text"],
+    input[type="search"],
+    input[type="password"],
+    input[type="date"],
+    select,
+    textarea {
+      font: inherit;
+      padding: 0.5rem 0.65rem;
+      border-radius: 0.75rem;
+      border: 1px solid var(--border);
+      background: var(--bg-alt);
+      color: var(--text);
+      min-width: clamp(12rem, 24vw, 20rem);
+      box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+    }
+
+    input[type="search"] {
+      min-width: 0;
+    }
+
+    input:focus,
+    select:focus,
+    textarea:focus {
+      outline: 2px solid rgba(37, 99, 235, 0.35);
+      outline-offset: 1px;
+    }
+
+    button {
+      font: inherit;
+      border: 1px solid var(--border);
+      border-radius: 0.75rem;
+      padding: 0.55rem 1.1rem;
+      background: #fff;
+      color: var(--text);
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      transition: background 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+    }
+
+    button:hover {
+      background: #f8fafc;
+      box-shadow: 0 4px 12px rgba(15, 23, 42, 0.12);
+    }
+
+    button.secondary {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: #fff;
+    }
+
+    button.ghost {
+      background: transparent;
+      border-color: transparent;
+      color: var(--accent);
+    }
+
+    button[disabled] {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+
+    .page-main {
+      flex: 1;
+      padding: 1.5rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+    }
+
+    .panel {
+      background: var(--panel);
+      border-radius: 1rem;
+      padding: 1rem;
+      border: 1px solid var(--border);
+      box-shadow: 0 12px 28px rgba(15, 23, 42, 0.08);
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+
+    .panel h2 {
+      margin: 0;
+      font-size: 1.1rem;
+    }
+
+    .table-wrapper {
+      border: 1px solid var(--border);
+      border-radius: 0.85rem;
+      overflow: auto;
+      box-shadow: 0 14px 30px rgba(15, 23, 42, 0.08);
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      min-width: 760px;
+    }
+
+    thead {
+      background: var(--bg-alt);
+    }
+
+    th, td {
+      text-align: left;
+      padding: 0.6rem 0.75rem;
+      border-bottom: 1px solid var(--border);
+    }
+
+    tbody tr:nth-child(2n) td {
+      background: var(--panel-muted);
+    }
+
+    td input[type="text"],
+    td input[type="date"],
+    td textarea,
+    td select {
+      min-width: 0;
+      width: 100%;
+      box-sizing: border-box;
+    }
+
+    td textarea {
+      resize: vertical;
+      min-height: 40px;
+    }
+
+    .controls {
+      display: flex;
+      gap: 0.75rem;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      padding: 0.2rem 0.65rem;
+      border-radius: 999px;
+      background: var(--panel-muted);
+      color: var(--text-muted);
+      font-size: 0.85rem;
+      border: 1px solid var(--border);
+    }
+
+    .status-bar {
+      position: sticky;
+      bottom: 0;
+      background: var(--glass, rgba(255, 255, 255, 0.92));
+      border-top: 1px solid var(--border);
+      padding: 0.75rem 1rem;
+      display: flex;
+      gap: 0.6rem;
+      align-items: center;
+      box-shadow: 0 -8px 24px rgba(15, 23, 42, 0.08);
+      flex-wrap: wrap;
+    }
+
+    .status-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      padding: 0.35rem 0.7rem;
+      border-radius: 999px;
+      font-weight: 600;
+      font-size: 0.9rem;
+    }
+
+    .status-info { background: #e0f2fe; color: #075985; }
+    .status-warn { background: #fff7ed; color: #9a3412; }
+    .status-ok { background: #dcfce7; color: #14532d; }
+    .status-error { background: #fee2e2; color: #991b1b; }
+
+    @media (max-width: 1024px) {
+      .page-main {
+        padding: 1rem;
+      }
+      table {
+        min-width: 640px;
+      }
+      .page-header .settings {
+        width: 100%;
+      }
+      label {
+        width: 100%;
+      }
+      input[type="text"],
+      input[type="password"],
+      input[type="search"],
+      input[type="date"],
+      select {
+        width: 100%;
+      }
+      button {
+        width: 100%;
+        justify-content: center;
+      }
+    }
+  </style>
+</head>
+<body class="admin-shell">
+  <header class="admin-header">
+    <div class="admin-brand">ELT Admin</div>
+    <div class="admin-header-actions">
+      <a class="btn ghost" href="../index.html">Zur Roster-Ansicht</a>
+    </div>
+  </header>
+  <div class="admin-layout">
+    <nav class="admin-nav">
+      <a href="index.html">CSV &amp; Datei-Tools</a>
+      <a href="events.html">Events erfassen</a>
+      <a href="players.html">Spieler &amp; Aliase</a>
+      <a href="absences.html" class="active">Absenzen</a>
+      <a href="noshow-dashboard.html">No-Show Analyse</a>
+    </nav>
+
+    <main class="admin-content">
+      <section class="admin-section page-wrapper">
+        <header class="page-header">
+          <div style="flex:1;min-width:240px;">
+            <h1>Absenzen verwalten</h1>
+            <p style="margin:0;color:#6b7280;font-size:0.9rem">Pflege von <code>data/absences.csv</code> über Worker/Commit-Flow.</p>
+          </div>
+          <div class="settings">
+            <label>Worker URL
+              <input id="workerUrl" type="text" value="https://ds-commit.hak1.workers.dev/write-file" spellcheck="false">
+            </label>
+            <label>Branch
+              <input id="branchInput" type="text" value="main" spellcheck="false">
+            </label>
+            <label>Admin-Key
+              <input id="adminKey" type="password" placeholder="r4-admin" autocomplete="off">
+            </label>
+            <button id="reloadBtn" class="ghost">Neu laden</button>
+            <button id="saveBtn">Speichern</button>
+          </div>
+        </header>
+
+        <main class="page-main">
+          <section class="panel">
+            <div style="display:flex;align-items:center;gap:0.75rem;flex-wrap:wrap;">
+              <h2 style="margin-right:auto;">Absenz-Liste</h2>
+              <span class="pill" id="statsPill">–</span>
+              <button id="addAbsenceBtn" class="ghost" style="border:1px dashed rgba(15,23,42,0.3);">+ Neue Absenz</button>
+            </div>
+            <div class="controls">
+              <label style="flex:1;min-width:200px;">Suche
+                <input type="search" id="searchInput" placeholder="Spieler oder Grund filtern…">
+              </label>
+              <label style="align-items:center;flex-direction:row;gap:0.5rem;">
+                <input type="checkbox" id="activeOnly" checked>
+                <span>Nur aktuell aktive Absenzen</span>
+              </label>
+              <label>Sortierung
+                <select id="sortSelect">
+                  <option value="from">Startdatum</option>
+                  <option value="player">Spielername</option>
+                  <option value="to">Enddatum</option>
+                </select>
+              </label>
+            </div>
+            <div class="table-wrapper" aria-live="polite">
+              <table>
+                <thead>
+                  <tr id="tableHead"></tr>
+                </thead>
+                <tbody id="tableBody"></tbody>
+              </table>
+            </div>
+            <div class="hint" id="emptyState" style="display:none;">Keine Absenzen gefunden.</div>
+          </section>
+        </main>
+      </section>
+    </main>
+  </div>
+
+  <div class="status-bar">
+    <span id="statusBadge" class="status-badge status-info">Bereit</span>
+    <div id="statusText" class="status-text">Noch keine Änderungen.</div>
+  </div>
+
+  <datalist id="playerOptions"></datalist>
+
+  <script src="https://unpkg.com/papaparse@5.4.1/papaparse.min.js"></script>
+  <script>
+    (function () {
+      const elements = {
+        workerUrl: document.getElementById("workerUrl"),
+        branch: document.getElementById("branchInput"),
+        adminKey: document.getElementById("adminKey"),
+        reloadBtn: document.getElementById("reloadBtn"),
+        saveBtn: document.getElementById("saveBtn"),
+        addAbsenceBtn: document.getElementById("addAbsenceBtn"),
+        searchInput: document.getElementById("searchInput"),
+        activeOnly: document.getElementById("activeOnly"),
+        sortSelect: document.getElementById("sortSelect"),
+        tableHead: document.getElementById("tableHead"),
+        tableBody: document.getElementById("tableBody"),
+        statusBadge: document.getElementById("statusBadge"),
+        statusText: document.getElementById("statusText"),
+        statsPill: document.getElementById("statsPill"),
+        emptyState: document.getElementById("emptyState"),
+        playerOptions: document.getElementById("playerOptions"),
+      };
+
+      const state = {
+        absences: [],
+        headers: [],
+        originalCsv: "",
+        alliancePlayers: [],
+        loading: false,
+        saving: false,
+        nextId: 1,
+      };
+
+      const SETTINGS_KEY = "dsro-absences-admin-settings";
+      const repoOwner = "its-h4k1";
+      const repoName = "desert-storm-roster-optimizer";
+      const defaultBranch = "main";
+      const DEFAULT_HEADERS = ["PlayerName", "From", "To", "Reason", "InAlliance"];
+
+      function normalizeLineEndings(text) {
+        return (text || "").replace(/\r\n/g, "\n").replace(/\r/g, "\n");
+      }
+
+      function ensureTrailingNewline(text) {
+        if (!text) return "\n";
+        return /\n$/.test(text) ? text : text + "\n";
+      }
+
+      function formatCsvValue(value) {
+        if (value === null || value === undefined) return "";
+        const str = value.toString();
+        if (str.includes("\"") || str.includes(",") || str.includes("\n")) {
+          return `"${str.replace(/"/g, '""')}"`;
+        }
+        return str;
+      }
+
+      function buildCsvFromRows(headers, rows) {
+        const headerLine = headers.join(",");
+        const lines = rows.map(row => headers.map(h => formatCsvValue(row[h] ?? "")).join(","));
+        return ensureTrailingNewline([headerLine, ...lines].join("\n"));
+      }
+
+      function setStatus(message, tone = "info") {
+        const badge = elements.statusBadge;
+        badge.className = "status-badge status-" + tone;
+        badge.textContent = tone === "ok" ? "OK" : tone === "error" ? "Fehler" : tone === "warn" ? "Hinweis" : "Status";
+        elements.statusText.textContent = message;
+      }
+
+      function setLoading(isLoading) {
+        state.loading = isLoading;
+        elements.reloadBtn.disabled = isLoading || state.saving;
+        updateSaveButtonState();
+        if (isLoading) setStatus("Lade Absenzen…", "info");
+      }
+
+      function setSaving(isSaving) {
+        state.saving = isSaving;
+        updateSaveButtonState();
+      }
+
+      function updateSaveButtonState() {
+        elements.saveBtn.disabled = state.loading || state.saving || !hasChanges();
+        elements.saveBtn.textContent = state.saving ? "Speichert…" : "Speichern";
+      }
+
+      function hasChanges() {
+        const current = buildCurrentCsv();
+        return normalizeLineEndings(current).trim() !== normalizeLineEndings(state.originalCsv).trim();
+      }
+
+      function buildCurrentCsv() {
+        const headers = state.headers.length ? state.headers : [...DEFAULT_HEADERS];
+        const rows = state.absences
+          .filter(item => !item.deleted)
+          .map(item => {
+            const row = {};
+            headers.forEach(h => { row[h] = item.raw[h] ?? ""; });
+            return row;
+          });
+        return buildCsvFromRows(headers, rows);
+      }
+
+      function buildCandidatePaths(path) {
+        const cleanPath = path.replace(/^\/+/, "");
+        const prefixes = ["../../", "../", "./", ""];
+        const candidates = prefixes.map(prefix => `${prefix}${cleanPath}`.replace(/\/+/g, "/"));
+        const rawUrl = `https://raw.githubusercontent.com/${repoOwner}/${repoName}/${defaultBranch}/${cleanPath}`;
+        candidates.push(rawUrl);
+        return candidates;
+      }
+
+      async function fetchFirstAvailable(urls) {
+        for (const url of urls) {
+          try {
+            const response = await fetch(url, { cache: "no-store" });
+            if (response.ok) return await response.text();
+          } catch (err) {
+            console.warn("Fetch-Fallback fehlgeschlagen", url, err);
+          }
+        }
+        throw new Error(`Keine Quelle erreichbar (${urls.join(", ")})`);
+      }
+
+      async function loadAlliance() {
+        const paths = buildCandidatePaths("data/alliance.csv");
+        try {
+          const text = await fetchFirstAvailable(paths);
+          const normalized = ensureTrailingNewline(normalizeLineEndings(text));
+          const parsed = Papa.parse(normalized, { header: true, skipEmptyLines: true });
+          const headers = parsed.meta.fields || [];
+          const nameField = detectNameField(headers);
+          state.alliancePlayers = (parsed.data || [])
+            .map(row => (row && row[nameField] ? row[nameField].toString().trim() : ""))
+            .filter(Boolean)
+            .sort((a, b) => a.localeCompare(b, "de", { sensitivity: "base" }));
+        } catch (err) {
+          console.warn("Alliance konnte nicht geladen werden", err);
+          state.alliancePlayers = [];
+        }
+        renderPlayerOptions();
+      }
+
+      async function loadAbsences() {
+        const paths = buildCandidatePaths("data/absences.csv");
+        let text = "";
+        try {
+          text = await fetchFirstAvailable(paths);
+        } catch (err) {
+          console.warn("Absences nicht gefunden, initialisiere leeres CSV", err);
+          text = DEFAULT_HEADERS.join(",") + "\n";
+        }
+        const normalized = ensureTrailingNewline(normalizeLineEndings(text));
+        state.originalCsv = normalized;
+        const parsed = Papa.parse(normalized, { header: true, skipEmptyLines: false });
+        state.headers = (parsed.meta.fields || []).filter(Boolean);
+        if (!state.headers.length) state.headers = [...DEFAULT_HEADERS];
+        const rows = parsed.data || [];
+        state.absences = rows
+          .filter(row => Object.values(row || {}).some(v => (v ?? "").toString().trim() !== ""))
+          .map((row, idx) => ({
+            id: idx + 1,
+            raw: { ...row },
+            deleted: false,
+          }));
+        state.nextId = state.absences.reduce((max, row) => Math.max(max, row.id), 0) + 1;
+        renderTable();
+      }
+
+      function detectNameField(headers) {
+        const candidates = ["PlayerName", "DisplayName", "Canonical", "Name"];
+        return headers.find(h => candidates.includes(h)) || headers[0] || "PlayerName";
+      }
+
+      function renderPlayerOptions() {
+        if (!elements.playerOptions) return;
+        elements.playerOptions.innerHTML = "";
+        state.alliancePlayers.forEach(name => {
+          const option = document.createElement("option");
+          option.value = name;
+          elements.playerOptions.appendChild(option);
+        });
+      }
+
+      function parseDate(value) {
+        if (!value) return null;
+        const ts = Date.parse(value);
+        return Number.isNaN(ts) ? null : new Date(ts);
+      }
+
+      function isActiveAbsence(row) {
+        const fromDate = parseDate(row.raw.From || row.raw.from);
+        const toDate = parseDate(row.raw.To || row.raw.to);
+        const now = new Date();
+        const activeFlag = row.raw.InAlliance ?? row.raw.Active ?? "1";
+        const inAlliance = activeFlag === 1 || activeFlag === "1" || activeFlag === true || activeFlag === "true";
+        if (!inAlliance) return false;
+        if (fromDate && fromDate > now) return false;
+        if (toDate && toDate < now) return false;
+        return true;
+      }
+
+      function getFilteredAbsences() {
+        const query = (elements.searchInput.value || "").trim().toLowerCase();
+        const activeOnly = elements.activeOnly.checked;
+        const sortBy = elements.sortSelect.value || "from";
+        const rows = state.absences.filter(row => !row.deleted);
+        const filtered = rows.filter(row => {
+          if (activeOnly && !isActiveAbsence(row)) return false;
+          if (!query) return true;
+          const haystack = `${row.raw.PlayerName || ""} ${row.raw.Reason || ""}`.toLowerCase();
+          return haystack.includes(query);
+        });
+        filtered.sort((a, b) => {
+          if (sortBy === "player") {
+            return (a.raw.PlayerName || "").localeCompare(b.raw.PlayerName || "", "de", { sensitivity: "base" });
+          }
+          const aDate = parseDate(sortBy === "to" ? a.raw.To : a.raw.From);
+          const bDate = parseDate(sortBy === "to" ? b.raw.To : b.raw.From);
+          if (aDate && bDate) return aDate - bDate;
+          if (aDate) return -1;
+          if (bDate) return 1;
+          return (a.raw.PlayerName || "").localeCompare(b.raw.PlayerName || "", "de", { sensitivity: "base" });
+        });
+        return filtered;
+      }
+
+      function renderTableHeader() {
+        const head = elements.tableHead;
+        head.innerHTML = "";
+        const headers = state.headers.length ? state.headers : [...DEFAULT_HEADERS];
+        headers.forEach(h => {
+          const th = document.createElement("th");
+          th.textContent = h;
+          head.appendChild(th);
+        });
+        const actionTh = document.createElement("th");
+        actionTh.textContent = "Aktionen";
+        head.appendChild(actionTh);
+      }
+
+      function renderTable() {
+        renderTableHeader();
+        const tbody = elements.tableBody;
+        tbody.innerHTML = "";
+        const rows = getFilteredAbsences();
+        const headers = state.headers.length ? state.headers : [...DEFAULT_HEADERS];
+        if (!rows.length) {
+          elements.emptyState.style.display = "block";
+        } else {
+          elements.emptyState.style.display = "none";
+        }
+        rows.forEach(row => {
+          const tr = document.createElement("tr");
+          headers.forEach(header => {
+            const td = document.createElement("td");
+            if (header.toLowerCase() === "reason") {
+              const textarea = document.createElement("textarea");
+              textarea.value = row.raw[header] ?? "";
+              textarea.addEventListener("input", () => updateField(row.id, header, textarea.value));
+              td.appendChild(textarea);
+            } else if (header.toLowerCase() === "inalliance" || header.toLowerCase() === "active") {
+              const checkbox = document.createElement("input");
+              checkbox.type = "checkbox";
+              const value = row.raw[header];
+              checkbox.checked = value === 1 || value === "1" || value === true || value === "true";
+              checkbox.addEventListener("change", () => updateField(row.id, header, checkbox.checked ? "1" : "0"));
+              td.appendChild(checkbox);
+            } else if (header.toLowerCase() === "playername") {
+              const input = document.createElement("input");
+              input.type = "text";
+              input.setAttribute("list", "playerOptions");
+              input.value = row.raw[header] ?? "";
+              input.placeholder = "Spieler wählen oder eingeben";
+              input.addEventListener("input", () => updateField(row.id, header, input.value));
+              td.appendChild(input);
+            } else if (header.toLowerCase() === "from" || header.toLowerCase() === "to") {
+              const input = document.createElement("input");
+              input.type = "date";
+              input.value = row.raw[header] || "";
+              input.addEventListener("change", () => updateField(row.id, header, input.value));
+              td.appendChild(input);
+            } else {
+              const input = document.createElement("input");
+              input.type = "text";
+              input.value = row.raw[header] ?? "";
+              input.addEventListener("input", () => updateField(row.id, header, input.value));
+              td.appendChild(input);
+            }
+            tr.appendChild(td);
+          });
+          const actions = document.createElement("td");
+          actions.style.whiteSpace = "nowrap";
+          actions.style.display = "flex";
+          actions.style.gap = "0.35rem";
+          const deleteBtn = document.createElement("button");
+          deleteBtn.className = "secondary";
+          deleteBtn.textContent = "Löschen";
+          deleteBtn.addEventListener("click", () => deleteAbsence(row.id));
+          actions.appendChild(deleteBtn);
+          tr.appendChild(actions);
+          tbody.appendChild(tr);
+        });
+        updateStats();
+        updateSaveButtonState();
+      }
+
+      function updateStats() {
+        const total = state.absences.filter(row => !row.deleted).length;
+        const active = state.absences.filter(row => !row.deleted && isActiveAbsence(row)).length;
+        elements.statsPill.textContent = `${total} gesamt · ${active} aktiv`;
+      }
+
+      function updateField(id, header, value) {
+        const target = state.absences.find(row => row.id === id);
+        if (!target) return;
+        target.raw[header] = value;
+        updateSaveButtonState();
+      }
+
+      function addAbsence() {
+        const headers = state.headers.length ? state.headers : [...DEFAULT_HEADERS];
+        const newRow = {};
+        headers.forEach(h => { newRow[h] = ""; });
+        if (headers.includes("InAlliance")) newRow["InAlliance"] = "1";
+        const entry = { id: state.nextId++, raw: newRow, deleted: false };
+        state.absences.unshift(entry);
+        renderTable();
+        setStatus("Neue Absenz hinzugefügt. Speichern nicht vergessen.", "warn");
+      }
+
+      function deleteAbsence(id) {
+        const entry = state.absences.find(row => row.id === id);
+        if (!entry) return;
+        if (!window.confirm("Absenz wirklich löschen?")) return;
+        entry.deleted = true;
+        renderTable();
+        setStatus("Absenz gelöscht. Speichern nicht vergessen.", "warn");
+      }
+
+      async function reloadData() {
+        setLoading(true);
+        try {
+          await Promise.all([loadAlliance(), loadAbsences()]);
+          setStatus("Geladen.", "ok");
+        } catch (err) {
+          console.error(err);
+          setStatus(`Laden fehlgeschlagen: ${err.message}`, "error");
+        } finally {
+          setLoading(false);
+          updateSaveButtonState();
+        }
+      }
+
+      async function saveChanges() {
+        if (state.loading || state.saving) return;
+        const workerUrl = elements.workerUrl.value.trim();
+        const adminKey = elements.adminKey.value.trim();
+        const branch = elements.branch.value.trim() || defaultBranch;
+        if (!workerUrl) { setStatus("Worker-URL fehlt.", "error"); return; }
+        if (!adminKey) { setStatus("Admin-Key erforderlich.", "error"); return; }
+        const content = buildCurrentCsv();
+        setSaving(true);
+        setStatus("Speichere Absenzen…", "info");
+        try {
+          await writeFile(workerUrl, adminKey, {
+            path: "data/absences.csv",
+            content,
+            branch,
+            message: "admin: update absences.csv via absences ui",
+          });
+          state.originalCsv = content;
+          setStatus("Absenzen gespeichert.", "ok");
+        } catch (err) {
+          console.error(err);
+          setStatus(`Speichern fehlgeschlagen: ${err.message}`, "error");
+        } finally {
+          setSaving(false);
+          updateSaveButtonState();
+        }
+      }
+
+      async function writeFile(workerUrl, adminKey, payload) {
+        const headers = { "Content-Type": "application/json", "X-Admin-Key": adminKey };
+        const response = await fetch(workerUrl, {
+          method: "POST",
+          headers,
+          body: JSON.stringify(payload),
+        });
+        if (!response.ok) {
+          const text = await response.text().catch(() => "");
+          throw new Error(text || `HTTP ${response.status}`);
+        }
+        const result = await response.json().catch(() => ({}));
+        if (result && result.ok === false) {
+          throw new Error(result.error || "Worker-Fehler");
+        }
+        return result;
+      }
+
+      function restoreSettings() {
+        const saved = localStorage.getItem(SETTINGS_KEY);
+        if (saved) {
+          try {
+            const parsed = JSON.parse(saved);
+            if (parsed.workerUrl) elements.workerUrl.value = parsed.workerUrl;
+            if (parsed.branch) elements.branch.value = parsed.branch;
+            if (parsed.adminKey) elements.adminKey.value = parsed.adminKey;
+          } catch (err) { console.warn("Settings konnten nicht gelesen werden", err); }
+        } else {
+          const shared = localStorage.getItem("dsro-admin-settings");
+          if (shared) {
+            try {
+              const parsed = JSON.parse(shared);
+              if (parsed.workerUrl) elements.workerUrl.value = parsed.workerUrl;
+              if (parsed.customBranch) {
+                elements.branch.value = parsed.customBranch;
+              } else if (parsed.branchSelect) {
+                elements.branch.value = parsed.branchSelect;
+              }
+              if (parsed.adminKey) elements.adminKey.value = parsed.adminKey;
+            } catch (err) {
+              console.warn("Shared settings konnten nicht gelesen werden", err);
+            }
+          }
+        }
+      }
+
+      function persistSettings() {
+        const values = {
+          workerUrl: elements.workerUrl.value,
+          branch: elements.branch.value,
+          adminKey: elements.adminKey.value,
+        };
+        localStorage.setItem(SETTINGS_KEY, JSON.stringify(values));
+      }
+
+      function initEvents() {
+        elements.reloadBtn.addEventListener("click", () => reloadData());
+        elements.saveBtn.addEventListener("click", () => saveChanges());
+        elements.addAbsenceBtn.addEventListener("click", () => addAbsence());
+        elements.searchInput.addEventListener("input", () => renderTable());
+        elements.activeOnly.addEventListener("change", () => renderTable());
+        elements.sortSelect.addEventListener("change", () => renderTable());
+        elements.workerUrl.addEventListener("change", persistSettings);
+        elements.branch.addEventListener("change", persistSettings);
+        elements.adminKey.addEventListener("change", persistSettings);
+      }
+
+      restoreSettings();
+      initEvents();
+      reloadData();
+    })();
+  </script>
+  <script src="admin.js"></script>
+</body>
+</html>
