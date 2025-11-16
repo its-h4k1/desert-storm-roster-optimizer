@@ -1,6 +1,6 @@
 # Desert Storm Roster Optimizer
 
-Ein Python-Tool, das Event-Historien der Allianz „Desert Storm“ analysiert, Empirical-Bayes-No-Show-
+Ein Python-Tool, das Event-Historien der Allianz im „Desert Storm“-Event analysiert, Empirical-Bayes-No-Show-
 Schätzungen berechnet und daraus deterministische Aufstellungen (A/B, Start/Ersatz) ableitet.
 
 ## Kurzüberblick
