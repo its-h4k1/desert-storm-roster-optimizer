@@ -277,6 +277,98 @@
       background: rgba(15, 23, 42, 0.08);
     }
 
+    .hidden {
+      display: none !important;
+    }
+
+    .tab-buttons {
+      display: inline-flex;
+      border: 1px solid rgba(15, 23, 42, 0.1);
+      border-radius: 999px;
+      overflow: hidden;
+      background: white;
+      align-self: flex-start;
+    }
+
+    .tab-button {
+      border: none;
+      background: transparent;
+      color: #4b5563;
+      padding: 0.35rem 1rem;
+      font-size: 0.85rem;
+      cursor: pointer;
+    }
+
+    .tab-button.active {
+      background: #0b63f6;
+      color: white;
+    }
+
+    .tab-panel {
+      margin-top: 0.75rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+    }
+
+    .absence-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+    }
+
+    .absence-form {
+      border: 1px dashed rgba(15, 23, 42, 0.2);
+      border-radius: 0.75rem;
+      padding: 0.75rem;
+      background: rgba(11, 99, 246, 0.05);
+    }
+
+    .absence-form form {
+      display: grid;
+      gap: 0.75rem;
+    }
+
+    .absence-form .form-grid {
+      display: grid;
+      gap: 0.5rem;
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    }
+
+    .absence-form-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+    }
+
+    .modal {
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.45);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 1.5rem;
+      z-index: 30;
+    }
+
+    .modal:not(.hidden) {
+      display: flex;
+    }
+
+    .modal-content {
+      background: white;
+      border-radius: 1rem;
+      padding: 1rem;
+      width: min(720px, 100%);
+      max-height: 90vh;
+      overflow: auto;
+      box-shadow: 0 20px 50px rgba(15, 23, 42, 0.35);
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+  
     @media (max-width: 720px) {
       header {
         flex-direction: column;
@@ -304,7 +396,7 @@
   <header>
     <div>
       <h1>Spieler &amp; Aliase verwalten</h1>
-      <p style="margin:0;color:#6b7280;font-size:0.9rem">Pflege von <code>data/alliance.csv</code> und <code>data/aliases.csv</code></p>
+      <p style="margin:0;color:#6b7280;font-size:0.9rem">Pflege von <code>data/alliance.csv</code>, <code>data/aliases.csv</code> und <code>data/absences.csv</code></p>
     </div>
     <div class="settings">
       <label>Worker URL
@@ -359,22 +451,44 @@
           <div id="statusToggles" style="display:flex;gap:1rem;flex-wrap:wrap;"></div>
         </div>
         <div class="detail-section alias-table">
-          <div style="display:flex;align-items:center;gap:0.75rem;flex-wrap:wrap;">
-            <strong style="flex:1">Aliase</strong>
-            <button id="addAliasBtn" class="ghost" style="border:1px dashed rgba(15,23,42,0.3);">Alias hinzufügen</button>
+          <div class="tab-buttons">
+            <button type="button" class="tab-button active" data-detail-tab="aliases" id="aliasesTabButton">Aliase</button>
+            <button type="button" class="tab-button" data-detail-tab="absences" id="absencesTabButton">Absenzen</button>
           </div>
-          <div class="table-wrapper" style="border:none;box-shadow:none;">
-            <table>
-              <thead>
-                <tr>
-                  <th>Alias</th>
-                  <th style="width:70px;"></th>
-                </tr>
-              </thead>
-              <tbody id="aliasBody"></tbody>
-            </table>
+          <div id="aliasTabPanel" class="tab-panel">
+            <div style="display:flex;align-items:center;gap:0.75rem;flex-wrap:wrap;">
+              <strong style="flex:1">Aliase</strong>
+              <button id="addAliasBtn" class="ghost" style="border:1px dashed rgba(15,23,42,0.3);">Alias hinzufügen</button>
+            </div>
+            <div class="table-wrapper" style="border:none;box-shadow:none;">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Alias</th>
+                    <th style="width:120px;">Aktionen</th>
+                  </tr>
+                </thead>
+                <tbody id="aliasBody"></tbody>
+              </table>
+            </div>
+            <div class="empty-state" id="aliasEmpty" style="display:none;">Keine Aliase eingetragen.</div>
           </div>
-          <div class="empty-state" id="aliasEmpty" style="display:none;">Keine Aliase eingetragen.</div>
+          <div id="absenceTabPanel" class="tab-panel hidden">
+            <div class="table-wrapper" style="border:none;box-shadow:none;">
+              <table>
+                <thead>
+                  <tr id="absenceHeaderRow"></tr>
+                </thead>
+                <tbody id="absenceBody"></tbody>
+              </table>
+            </div>
+            <div class="empty-state" id="absenceEmpty" style="display:none;">Keine Absenzen eingetragen.</div>
+            <div class="absence-actions">
+              <button id="addAbsenceBtn" class="ghost" style="border:1px dashed rgba(15,23,42,0.3);">Absenz hinzufügen</button>
+              <button id="showAllAbsencesBtn" class="secondary">Alle Absenzen des Spielers anzeigen</button>
+            </div>
+            <div id="absenceFormContainer" class="absence-form hidden"></div>
+          </div>
         </div>
       </div>
     </section>
@@ -383,6 +497,16 @@
   <div class="status-bar">
     <span id="statusBadge" class="status-info">Bereit</span>
     <div id="statusText" class="status-text">Noch keine Änderungen.</div>
+  </div>
+
+  <div id="absenceModal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="absenceModalTitle">
+    <div class="modal-content">
+      <div style="display:flex;align-items:center;gap:0.75rem;justify-content:space-between;flex-wrap:wrap;">
+        <strong id="absenceModalTitle">Absenzen</strong>
+        <button id="closeAbsenceModal" type="button" class="ghost">Schließen</button>
+      </div>
+      <div id="absenceModalBody"></div>
+    </div>
   </div>
 
   <script src="https://unpkg.com/papaparse@5.4.1/papaparse.min.js"></script>
@@ -404,6 +528,19 @@
         aliasEmpty: document.getElementById("aliasEmpty"),
         aliasCount: document.getElementById("aliasCount"),
         addAliasBtn: document.getElementById("addAliasBtn"),
+        aliasesTabButton: document.getElementById("aliasesTabButton"),
+        absencesTabButton: document.getElementById("absencesTabButton"),
+        aliasTabPanel: document.getElementById("aliasTabPanel"),
+        absenceTabPanel: document.getElementById("absenceTabPanel"),
+        absenceHeaderRow: document.getElementById("absenceHeaderRow"),
+        absenceBody: document.getElementById("absenceBody"),
+        absenceEmpty: document.getElementById("absenceEmpty"),
+        addAbsenceBtn: document.getElementById("addAbsenceBtn"),
+        showAllAbsencesBtn: document.getElementById("showAllAbsencesBtn"),
+        absenceFormContainer: document.getElementById("absenceFormContainer"),
+        absenceModal: document.getElementById("absenceModal"),
+        absenceModalBody: document.getElementById("absenceModalBody"),
+        closeAbsenceModal: document.getElementById("closeAbsenceModal"),
         renameInput: document.getElementById("renameInput"),
         renameBtn: document.getElementById("renameBtn"),
         statusToggles: document.getElementById("statusToggles"),
@@ -414,17 +551,23 @@
       const state = {
         players: [],
         aliases: [],
+        absences: [],
         selectedPlayerId: null,
         playerHeaders: [],
         aliasHeaders: ["Canonical", "Alias"],
+        absenceHeaders: [],
         playerNameField: "PlayerName",
         aliasCanonicalField: "Canonical",
         aliasAliasField: "Alias",
+        absencePlayerField: "PlayerName",
         statusFields: [],
         originalAllianceCsv: "",
         originalAliasesCsv: "",
+        originalAbsencesCsv: "",
         loading: false,
         saving: false,
+        nextAbsenceId: 0,
+        activeDetailTab: "aliases",
       };
 
       const repoOwner = "its-h4k1";
@@ -433,6 +576,39 @@
       const SETTINGS_KEY = "dsro-player-admin-settings";
 
       const STATUS_COLUMNS = ["Active", "InAlliance", "ActiveFlag", "ActiveStatus", "IsActive"];
+      const DEFAULT_ABSENCE_HEADERS = ["PlayerName", "From", "To", "Reason", "Active"];
+      const ZERO_WIDTH_REGEX = /[\u200B-\u200F\u2060\uFEFF]/g;
+      const HOMOGLYPH_MAP = {
+        "А": "A",
+        "В": "B",
+        "Е": "E",
+        "К": "K",
+        "М": "M",
+        "Н": "H",
+        "О": "O",
+        "Р": "P",
+        "С": "S",
+        "Т": "T",
+        "Х": "X",
+        "І": "I",
+        "Ј": "J",
+        "У": "Y",
+        "а": "a",
+        "е": "e",
+        "о": "o",
+        "р": "p",
+        "с": "s",
+        "х": "x",
+        "у": "y",
+        "к": "k",
+        "м": "m",
+        "т": "t",
+        "н": "h",
+        "і": "i",
+        "ј": "j",
+        "ѵ": "y",
+      };
+      const HOMOGLYPH_REGEX = new RegExp(`[${Object.keys(HOMOGLYPH_MAP).join("")}]`, "g");
 
       function normalizeLineEndings(text) {
         return (text || "").replace(/\r\n/g, "\n").replace(/\r/g, "\n");
@@ -475,7 +651,7 @@
         elements.reloadBtn.disabled = isLoading || state.saving;
         updateSaveButtonState();
         if (isLoading) {
-          setStatus("Lade Spieler- und Aliasdaten…", "info");
+          setStatus("Lade Spieler-, Alias- und Absenzdaten…", "info");
         }
       }
 
@@ -485,7 +661,7 @@
       }
 
       function updateSaveButtonState() {
-        const hasChanges = hasAllianceChanged() || hasAliasChanged();
+        const hasChanges = hasAllianceChanged() || hasAliasChanged() || hasAbsenceChanged();
         elements.saveBtn.disabled = state.loading || state.saving || !hasChanges;
         elements.saveBtn.textContent = state.saving ? "Speichert…" : "Speichern";
       }
@@ -500,6 +676,11 @@
         return normalizeLineEndings(current).trim() !== normalizeLineEndings(state.originalAliasesCsv).trim();
       }
 
+      function hasAbsenceChanged() {
+        const current = buildCurrentAbsenceCsv();
+        return normalizeLineEndings(current).trim() !== normalizeLineEndings(state.originalAbsencesCsv).trim();
+      }
+
       function buildCurrentAllianceCsv() {
         const headers = state.playerHeaders.length ? state.playerHeaders : [state.playerNameField];
         const rows = state.players.map(player => player.rawRow);
@@ -512,6 +693,22 @@
         return buildCsvFromRows(headers, rows);
       }
 
+      function buildCurrentAbsenceCsv() {
+        const headers = state.absenceHeaders.length
+          ? state.absenceHeaders
+          : [state.absencePlayerField || "PlayerName"];
+        const rows = state.absences
+          .filter(absence => !absence.deleted)
+          .map(absence => {
+            const row = {};
+            headers.forEach(header => {
+              row[header] = absence.rawRow[header] ?? "";
+            });
+            return row;
+          });
+        return buildCsvFromRows(headers, rows);
+      }
+
       function detectNameField(headers) {
         const candidates = ["PlayerName", "DisplayName", "Canonical", "Name"];
         return headers.find(header => candidates.includes(header)) || headers[0] || "PlayerName";
@@ -519,6 +716,40 @@
 
       function detectAliasField(headers, preferred) {
         return headers.find(header => preferred.includes(header)) || preferred[0];
+      }
+
+      function detectAbsencePlayerField(headers) {
+        if (!headers || !headers.length) return "PlayerName";
+        const lowered = headers.map(header => (header || "").toString().toLowerCase());
+        const priorities = ["playername", "player", "canonical", "name"];
+        for (const candidate of priorities) {
+          const idx = lowered.indexOf(candidate);
+          if (idx !== -1) return headers[idx];
+        }
+        for (let i = 0; i < headers.length; i += 1) {
+          const header = lowered[i];
+          if (header.includes("player") || header.includes("name")) {
+            return headers[i];
+          }
+        }
+        return headers[0];
+      }
+
+      function normalizePlayerKey(value) {
+        if (value === undefined || value === null) return "";
+        let text = value.toString();
+        if (typeof text.normalize === "function") {
+          try {
+            text = text.normalize("NFKC");
+          } catch (err) {
+            console.warn("Unicode-Normalisierung nicht möglich", err);
+          }
+        }
+        text = text.replace(ZERO_WIDTH_REGEX, "");
+        text = text.replace(HOMOGLYPH_REGEX, ch => HOMOGLYPH_MAP[ch] || ch);
+        text = text.toLowerCase();
+        text = text.replace(/\s+/g, " ").trim();
+        return text;
       }
 
       async function fetchFirstAvailable(urls) {
@@ -606,16 +837,57 @@
         }
       }
 
+      async function loadAbsences() {
+        let dataRows = [];
+        try {
+          const paths = buildCandidatePaths("data/absences.csv");
+          const text = await fetchFirstAvailable(paths);
+          const normalized = ensureTrailingNewline(normalizeLineEndings(text));
+          state.originalAbsencesCsv = normalized;
+          const parsed = Papa.parse(normalized, { header: true, skipEmptyLines: true });
+          const headers = (parsed.meta.fields || []).filter(Boolean);
+          state.absenceHeaders = headers.length ? headers : [...DEFAULT_ABSENCE_HEADERS];
+          dataRows = parsed.data || [];
+        } catch (err) {
+          console.warn("Absences konnten nicht geladen werden, starte neu", err);
+          state.absenceHeaders = [...DEFAULT_ABSENCE_HEADERS];
+          state.originalAbsencesCsv = ensureTrailingNewline(DEFAULT_ABSENCE_HEADERS.join(","));
+          dataRows = [];
+        }
+        state.absencePlayerField = detectAbsencePlayerField(state.absenceHeaders);
+        if (!state.absenceHeaders.includes(state.absencePlayerField)) {
+          state.absenceHeaders = [state.absencePlayerField, ...state.absenceHeaders];
+        }
+        state.absenceHeaders = Array.from(new Set(state.absenceHeaders.filter(Boolean)));
+        state.absences = dataRows.map((row, index) => {
+          const safeRow = {};
+          state.absenceHeaders.forEach(header => {
+            const rawValue = row && Object.prototype.hasOwnProperty.call(row, header) ? row[header] : "";
+            safeRow[header] = rawValue === undefined || rawValue === null ? "" : String(rawValue);
+          });
+          const playerName = (safeRow[state.absencePlayerField] || "").toString().trim();
+          return {
+            id: index + 1,
+            rawRow: safeRow,
+            playerName,
+            canonicalKey: normalizePlayerKey(playerName),
+            deleted: false,
+          };
+        });
+        state.nextAbsenceId = state.absences.reduce((max, item) => Math.max(max, item.id), 0) + 1;
+      }
+
       async function reloadData() {
         setLoading(true);
         try {
           await loadAlliance();
           await loadAliases();
+          await loadAbsences();
           renderPlayerHeader();
           renderPlayerTable();
           renderDetails();
           setStatus(
-            `Geladen (${state.players.length} Spieler, ${state.aliases.length} Aliase).`,
+            `Geladen (${state.players.length} Spieler, ${state.aliases.length} Aliase, ${state.absences.length} Absenzen).`,
             "ok"
           );
         } catch (err) {
@@ -703,6 +975,8 @@
         if (!player) {
           elements.emptyDetails.style.display = "block";
           elements.detailsContent.style.display = "none";
+          closeAbsenceForm();
+          updateDetailTabs();
           return;
         }
         elements.emptyDetails.style.display = "none";
@@ -711,6 +985,8 @@
         elements.renameInput.value = player.canonical;
         renderStatusToggles(player);
         renderAliasTable(player);
+        renderAbsenceTable(player);
+        updateDetailTabs();
       }
 
       function renderStatusToggles(player) {
@@ -774,6 +1050,291 @@
             tbody.appendChild(tr);
           });
         updateSaveButtonState();
+      }
+
+      function updateDetailTabs() {
+        const isAliasTab = state.activeDetailTab === "aliases";
+        if (elements.aliasesTabButton && elements.absencesTabButton) {
+          elements.aliasesTabButton.classList.toggle("active", isAliasTab);
+          elements.absencesTabButton.classList.toggle("active", !isAliasTab);
+        }
+        if (elements.aliasTabPanel && elements.absenceTabPanel) {
+          elements.aliasTabPanel.classList.toggle("hidden", !isAliasTab);
+          elements.absenceTabPanel.classList.toggle("hidden", isAliasTab);
+        }
+        if (isAliasTab) {
+          closeAbsenceForm();
+        }
+      }
+
+      function renderAbsenceHeader() {
+        const row = elements.absenceHeaderRow;
+        if (!row) return;
+        row.innerHTML = "";
+        const headers = state.absenceHeaders.length
+          ? state.absenceHeaders
+          : [state.absencePlayerField || "PlayerName"];
+        headers.forEach(header => {
+          const th = document.createElement("th");
+          th.textContent = header;
+          row.appendChild(th);
+        });
+        const actionTh = document.createElement("th");
+        actionTh.textContent = "Aktionen";
+        row.appendChild(actionTh);
+      }
+
+      function getAbsencesForPlayer(player) {
+        if (!player) return [];
+        const key = normalizePlayerKey(player.canonical);
+        return state.absences.filter(absence => !absence.deleted && absence.canonicalKey === key);
+      }
+
+      function renderAbsenceTable(player) {
+        renderAbsenceHeader();
+        const tbody = elements.absenceBody;
+        if (!tbody) return;
+        tbody.innerHTML = "";
+        const headers = state.absenceHeaders.length
+          ? state.absenceHeaders
+          : [state.absencePlayerField || "PlayerName"];
+        const rows = player ? getAbsencesForPlayer(player) : [];
+        rows.forEach(absence => {
+          const tr = document.createElement("tr");
+          headers.forEach(header => {
+            const td = document.createElement("td");
+            td.textContent = absence.rawRow[header] ?? "";
+            tr.appendChild(td);
+          });
+          const actions = document.createElement("td");
+          actions.style.whiteSpace = "nowrap";
+          actions.style.display = "flex";
+          actions.style.flexWrap = "wrap";
+          actions.style.gap = "0.35rem";
+          const editBtn = document.createElement("button");
+          editBtn.className = "ghost";
+          editBtn.textContent = "Bearbeiten";
+          editBtn.addEventListener("click", () => editAbsence(absence.id));
+          const deleteBtn = document.createElement("button");
+          deleteBtn.className = "secondary";
+          deleteBtn.textContent = "Löschen";
+          deleteBtn.addEventListener("click", () => deleteAbsence(absence.id));
+          actions.appendChild(editBtn);
+          actions.appendChild(deleteBtn);
+          tr.appendChild(actions);
+          tbody.appendChild(tr);
+        });
+        if (elements.absenceEmpty) {
+          elements.absenceEmpty.style.display = rows.length ? "none" : "block";
+          if (!player) {
+            elements.absenceEmpty.textContent = "Bitte zuerst einen Spieler auswählen.";
+          } else {
+            elements.absenceEmpty.textContent = "Keine Absenzen eingetragen.";
+          }
+        }
+        if (elements.addAbsenceBtn) {
+          elements.addAbsenceBtn.disabled = !player;
+        }
+        if (elements.showAllAbsencesBtn) {
+          elements.showAllAbsencesBtn.disabled = !player || !rows.length;
+        }
+      }
+
+      function closeAbsenceForm() {
+        const container = elements.absenceFormContainer;
+        if (!container) return;
+        container.classList.add("hidden");
+        container.innerHTML = "";
+      }
+
+      function addAbsenceForSelectedPlayer() {
+        const player = getSelectedPlayer();
+        if (!player) return;
+        state.activeDetailTab = "absences";
+        updateDetailTabs();
+        openAbsenceForm("add", null);
+      }
+
+      function editAbsence(id) {
+        const player = getSelectedPlayer();
+        if (!player) return;
+        const entry = state.absences.find(absence => absence.id === id && !absence.deleted);
+        if (!entry) return;
+        state.activeDetailTab = "absences";
+        updateDetailTabs();
+        openAbsenceForm("edit", entry);
+      }
+
+      function openAbsenceForm(mode, absence) {
+        const player = getSelectedPlayer();
+        if (!player) return;
+        const container = elements.absenceFormContainer;
+        container.classList.remove("hidden");
+        container.innerHTML = "";
+        const title = document.createElement("strong");
+        title.textContent = mode === "edit" ? "Absenz bearbeiten" : "Neue Absenz";
+        container.appendChild(title);
+        const info = document.createElement("p");
+        info.style.margin = "0";
+        info.style.color = "#4b5563";
+        info.textContent = "Spieler: ";
+        const strong = document.createElement("strong");
+        strong.textContent = player.canonical;
+        info.appendChild(strong);
+        container.appendChild(info);
+        const form = document.createElement("form");
+        const grid = document.createElement("div");
+        grid.className = "form-grid";
+        const headers = state.absenceHeaders.length
+          ? state.absenceHeaders
+          : [state.absencePlayerField || "PlayerName"];
+        headers.forEach(header => {
+          if (header === state.absencePlayerField) return;
+          const label = document.createElement("label");
+          label.textContent = header;
+          const input = document.createElement("input");
+          input.type = "text";
+          input.name = header;
+          const defaultValue = header.toLowerCase() === "active" ? "1" : "";
+          input.value = absence ? absence.rawRow[header] ?? "" : defaultValue;
+          label.appendChild(input);
+          grid.appendChild(label);
+        });
+        if (!grid.children.length) {
+          const note = document.createElement("div");
+          note.textContent = "Keine editierbaren Spalten gefunden.";
+          grid.appendChild(note);
+        }
+        form.appendChild(grid);
+        const actions = document.createElement("div");
+        actions.className = "absence-form-actions";
+        const submitBtn = document.createElement("button");
+        submitBtn.type = "submit";
+        submitBtn.textContent = mode === "edit" ? "Speichern" : "Absenz anlegen";
+        const cancelBtn = document.createElement("button");
+        cancelBtn.type = "button";
+        cancelBtn.className = "ghost";
+        cancelBtn.textContent = "Abbrechen";
+        cancelBtn.addEventListener("click", () => closeAbsenceForm());
+        actions.appendChild(submitBtn);
+        actions.appendChild(cancelBtn);
+        form.appendChild(actions);
+        form.addEventListener("submit", event => {
+          event.preventDefault();
+          submitAbsenceForm(mode, absence ? absence.id : null, new FormData(form));
+        });
+        container.appendChild(form);
+      }
+
+      function submitAbsenceForm(mode, absenceId, formData) {
+        const player = getSelectedPlayer();
+        if (!player) return;
+        const headers = state.absenceHeaders.length
+          ? state.absenceHeaders
+          : [state.absencePlayerField || "PlayerName"];
+        const values = {};
+        headers.forEach(header => {
+          if (header === state.absencePlayerField) return;
+          const raw = formData.get(header);
+          values[header] = raw === undefined || raw === null ? "" : String(raw).trim();
+        });
+        if (mode === "edit" && absenceId !== null) {
+          const target = state.absences.find(item => item.id === absenceId);
+          if (!target) return;
+          headers.forEach(header => {
+            if (header === state.absencePlayerField) {
+              target.rawRow[header] = player.canonical;
+            } else {
+              target.rawRow[header] = values[header] ?? "";
+            }
+          });
+          target.playerName = player.canonical;
+          target.canonicalKey = normalizePlayerKey(player.canonical);
+          setStatus("Absenz aktualisiert. Speichern nicht vergessen.", "warn");
+        } else {
+          const newRow = {};
+          headers.forEach(header => {
+            if (header === state.absencePlayerField) {
+              newRow[header] = player.canonical;
+            } else {
+              newRow[header] = values[header] ?? "";
+            }
+          });
+          const newAbsence = {
+            id: state.nextAbsenceId++,
+            rawRow: newRow,
+            playerName: player.canonical,
+            canonicalKey: normalizePlayerKey(player.canonical),
+            deleted: false,
+          };
+          state.absences.push(newAbsence);
+          setStatus("Absenz hinzugefügt. Speichern nicht vergessen.", "warn");
+        }
+        closeAbsenceForm();
+        renderAbsenceTable(player);
+        updateSaveButtonState();
+      }
+
+      function deleteAbsence(id) {
+        const player = getSelectedPlayer();
+        const entry = state.absences.find(absence => absence.id === id && !absence.deleted);
+        if (!entry) return;
+        if (!window.confirm("Absenz wirklich löschen?")) {
+          return;
+        }
+        entry.deleted = true;
+        closeAbsenceForm();
+        renderAbsenceTable(player);
+        updateSaveButtonState();
+        setStatus("Absenz gelöscht. Speichern nicht vergessen.", "warn");
+      }
+
+      function showAllAbsencesForSelectedPlayer() {
+        const player = getSelectedPlayer();
+        if (!player) return;
+        const rows = getAbsencesForPlayer(player);
+        if (!rows.length) return;
+        renderAbsenceModal(player, rows);
+        elements.absenceModal.classList.remove("hidden");
+      }
+
+      function renderAbsenceModal(player, rows) {
+        const body = elements.absenceModalBody;
+        body.innerHTML = "";
+        const info = document.createElement("p");
+        info.style.margin = "0";
+        info.textContent = `${rows.length} Absenz${rows.length === 1 ? "" : "en"} für ${player.canonical}`;
+        body.appendChild(info);
+        const table = document.createElement("table");
+        const thead = document.createElement("thead");
+        const headerRow = document.createElement("tr");
+        const headers = state.absenceHeaders.length
+          ? state.absenceHeaders
+          : [state.absencePlayerField || "PlayerName"];
+        headers.forEach(header => {
+          const th = document.createElement("th");
+          th.textContent = header;
+          headerRow.appendChild(th);
+        });
+        thead.appendChild(headerRow);
+        const tbody = document.createElement("tbody");
+        rows.forEach(absence => {
+          const tr = document.createElement("tr");
+          headers.forEach(header => {
+            const td = document.createElement("td");
+            td.textContent = absence.rawRow[header] ?? "";
+            tr.appendChild(td);
+          });
+          tbody.appendChild(tr);
+        });
+        table.appendChild(thead);
+        table.appendChild(tbody);
+        body.appendChild(table);
+      }
+
+      function closeAbsenceModal() {
+        elements.absenceModal.classList.add("hidden");
+        elements.absenceModalBody.innerHTML = "";
       }
 
       function removeAlias(id) {
@@ -850,6 +1411,15 @@
             alias.rawRow[state.aliasCanonicalField] = newName;
           }
         });
+        const oldKey = normalizePlayerKey(oldName);
+        const newKey = normalizePlayerKey(newName);
+        state.absences.forEach(absence => {
+          if (absence.canonicalKey === oldKey) {
+            absence.playerName = newName;
+            absence.canonicalKey = newKey;
+            absence.rawRow[state.absencePlayerField] = newName;
+          }
+        });
         renderPlayerTable();
         renderDetails();
         updateSaveButtonState();
@@ -888,6 +1458,15 @@
             branch,
           });
         }
+        const absenceCsv = buildCurrentAbsenceCsv();
+        if (hasAbsenceChanged()) {
+          payloads.push({
+            path: "data/absences.csv",
+            content: absenceCsv,
+            message: "admin: update absences.csv via players ui",
+            branch,
+          });
+        }
         if (!payloads.length) {
           setStatus("Keine Änderungen zum Speichern.", "info");
           return;
@@ -898,9 +1477,10 @@
           for (const payload of payloads) {
             await writeFile(workerUrl, adminKey, payload);
           }
-          state.originalAllianceCsv = buildCurrentAllianceCsv();
-          state.originalAliasesCsv = buildCurrentAliasCsv();
-          setStatus("Speichern erfolgreich.", "ok");
+          state.originalAllianceCsv = allianceCsv;
+          state.originalAliasesCsv = aliasCsv;
+          state.originalAbsencesCsv = absenceCsv;
+          setStatus("Spieler, Aliase und Absenzen gespeichert.", "ok");
         } catch (err) {
           console.error(err);
           setStatus(`Speichern fehlgeschlagen: ${err.message}`, "error");
@@ -973,11 +1553,39 @@
         });
         elements.renameBtn.addEventListener("click", () => applyPlayerRename());
         elements.addAliasBtn.addEventListener("click", () => addAlias());
+        if (elements.addAbsenceBtn) {
+          elements.addAbsenceBtn.addEventListener("click", () => addAbsenceForSelectedPlayer());
+        }
+        if (elements.showAllAbsencesBtn) {
+          elements.showAllAbsencesBtn.addEventListener("click", () => showAllAbsencesForSelectedPlayer());
+        }
         elements.reloadBtn.addEventListener("click", () => reloadData());
         elements.saveBtn.addEventListener("click", () => saveChanges());
         elements.workerUrl.addEventListener("change", persistSettings);
         elements.adminKey.addEventListener("change", persistSettings);
         elements.branch.addEventListener("change", persistSettings);
+        if (elements.aliasesTabButton) {
+          elements.aliasesTabButton.addEventListener("click", () => {
+            state.activeDetailTab = "aliases";
+            updateDetailTabs();
+          });
+        }
+        if (elements.absencesTabButton) {
+          elements.absencesTabButton.addEventListener("click", () => {
+            state.activeDetailTab = "absences";
+            updateDetailTabs();
+          });
+        }
+        if (elements.closeAbsenceModal) {
+          elements.closeAbsenceModal.addEventListener("click", () => closeAbsenceModal());
+        }
+        if (elements.absenceModal) {
+          elements.absenceModal.addEventListener("click", event => {
+            if (event.target === elements.absenceModal) {
+              closeAbsenceModal();
+            }
+          });
+        }
         elements.renameInput.addEventListener("keydown", ev => {
           if (ev.key === "Enter") {
             ev.preventDefault();
