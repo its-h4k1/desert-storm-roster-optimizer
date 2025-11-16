@@ -120,6 +120,9 @@ def _load_alliance(path: str) -> pd.DataFrame:
         raise SystemExit("[fatal] alliance.csv benötigt Spalte 'PlayerName']")
     if "Active" not in df.columns:
         df["Active"] = 1
+    # alliance["Active"] codiert die Allianz-Mitgliedschaft:
+    # 1 = Spieler gehört aktuell zur Allianz und darf für Roster berücksichtigt werden,
+    # 0 = Spieler ist ausgetreten/entfernt und wird im weiteren Verlauf gefiltert.
     df["Active"] = pd.to_numeric(df["Active"], errors="coerce").fillna(0).astype(int).clip(0, 1)
     df["DisplayName"] = df["PlayerName"].astype(str)
     df["canon"] = df["PlayerName"].map(canonical_name)
@@ -150,6 +153,8 @@ def _load_absences(path: str) -> pd.DataFrame:
             df[col] = ""
     if "Active" not in df.columns:
         df["Active"] = 1
+    # Auch Abwesenheiten führen das Allianz-Membership-Flag.
+    # Nur Active==1 gilt als "gültig" (Spieler ist noch Teil der Allianz).
     df["Active"] = pd.to_numeric(df["Active"], errors="coerce").fillna(0).astype(int)
     df = df[df["Active"] == 1].copy()
     df["canon"] = df["PlayerName"].map(canonical_name)

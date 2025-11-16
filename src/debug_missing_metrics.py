@@ -102,6 +102,9 @@ def _load_alliance(path: str) -> pd.DataFrame:
         raise SystemExit("[fatal] alliance.csv benötigt Spalte 'PlayerName'")
     if "Active" not in df.columns:
         df["Active"] = 1
+    # alliance["Active"] kennzeichnet die Mitgliedschaft in der Allianz:
+    # 1 = Spieler ist (noch) dabei und taucht in Reports/Roster auf,
+    # 0 = Spieler wurde entfernt bzw. ist ausgetreten.
     df["Active"] = pd.to_numeric(df["Active"], errors="coerce").fillna(0).astype(int).clip(0, 1)
     df["DisplayName"] = df["PlayerName"].astype(str)
     df["canon"] = df["PlayerName"].map(canonical_name)

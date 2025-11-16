@@ -260,6 +260,7 @@
     function parseActiveFlag(value) {
       if (value == null) return false;
       const normalized = String(value).trim().toLowerCase();
+      // "Active" ist das Allianz-Membership-Flag (1 = noch in der Allianz, 0 = ausgetreten).
       return ["1","true","yes","y","aktiv","active"].includes(normalized);
     }
 
@@ -291,7 +292,7 @@
       const todayMs = today.getTime();
       return entries.filter(entry => {
         if (!entry.active) {
-          return false; // Frontend betrachtet derzeit nur Active==true als "aktuell".
+          return false; // Nur Spieler, die noch zur Allianz gehören, tauchen in der Übersicht auf.
         }
         if (entry.fromDate && entry.fromDate.getTime() > todayMs) {
           return false;

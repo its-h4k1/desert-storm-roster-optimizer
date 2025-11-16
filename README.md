@@ -95,6 +95,9 @@ Cupra290,1,B,soft,0.08
 Mahaja,1,,,
 ```
 
+- `Active` bleibt als Spaltenname erhalten, steht aber für die Mitgliedschaft in der Allianz:
+  `1` = Spieler ist aktuell Teil der Allianz (wird beim Roster berücksichtigt),
+  `0` = Spieler ist ausgetreten bzw. entfernt (taucht in Berechnungen nicht mehr auf).
 - `PrefGroup` wählt die Wunschgruppe (`A` oder `B`).
 - `PrefMode = hard` erzwingt die Zuteilung in die Wunschgruppe, außer andernfalls bliebe eine
   Gruppe dauerhaft unterbesetzt.
