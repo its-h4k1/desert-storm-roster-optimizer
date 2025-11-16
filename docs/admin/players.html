@@ -126,11 +126,12 @@
 
     .page-main {
       flex: 1;
-      padding: 1.5rem;
+      padding: 0;
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
       gap: 1.5rem;
       align-items: start;
+      width: 100%;
     }
 
     .panel {
@@ -153,7 +154,7 @@
     .table-wrapper {
       border: 1px solid var(--border);
       border-radius: 0.75rem;
-      overflow: hidden;
+      overflow-x: auto;
       flex: 1;
       background: var(--panel-muted);
     }
@@ -431,7 +432,8 @@
     </nav>
     <main class="admin-content">
       <section class="admin-section page-wrapper">
-        <header class="page-header">
+          <div class="page-inner">
+          <header class="page-header">
             <div>
               <h1>Spieler &amp; Aliase verwalten</h1>
               <p style="margin:0;color:#6b7280;font-size:0.9rem">Pflege von <code>data/alliance.csv</code>, <code>data/aliases.csv</code> und <code>data/absences.csv</code></p>
@@ -529,7 +531,8 @@
                 </div>
               </div>
             </section>
-          </main>
+        </main>
+          </div>
       </section>
     </main>
   </div>

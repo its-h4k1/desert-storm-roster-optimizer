@@ -118,10 +118,11 @@
 
     .page-main {
       flex: 1;
-      padding: 1.5rem;
+      padding: 0;
       display: flex;
       flex-direction: column;
       gap: 1.5rem;
+      width: 100%;
     }
 
     .panel {
@@ -229,9 +230,6 @@
     .status-error { background: #fee2e2; color: #991b1b; }
 
     @media (max-width: 1024px) {
-      .page-main {
-        padding: 1rem;
-      }
       table {
         min-width: 640px;
       }
@@ -272,14 +270,15 @@
       <a href="noshow-dashboard.html">No-Show Analyse</a>
     </nav>
 
-    <main class="admin-content">
-      <section class="admin-section page-wrapper">
-        <header class="page-header">
-          <div style="flex:1;min-width:240px;">
-            <h1>Absenzen verwalten</h1>
-            <p style="margin:0;color:#6b7280;font-size:0.9rem">Pflege von <code>data/absences.csv</code> über Worker/Commit-Flow.</p>
-          </div>
-          <div class="settings">
+      <main class="admin-content">
+        <section class="admin-section page-wrapper">
+          <div class="page-inner">
+          <header class="page-header">
+            <div style="flex:1;min-width:240px;">
+              <h1>Absenzen verwalten</h1>
+              <p style="margin:0;color:#6b7280;font-size:0.9rem">Pflege von <code>data/absences.csv</code> über Worker/Commit-Flow.</p>
+            </div>
+            <div class="settings">
             <label>Worker URL
               <input id="workerUrl" type="text" value="https://ds-commit.hak1.workers.dev/write-file" spellcheck="false">
             </label>
@@ -292,12 +291,12 @@
             <button id="reloadBtn" class="ghost">Neu laden</button>
             <button id="saveBtn">Speichern</button>
           </div>
-        </header>
+          </header>
 
-        <main class="page-main">
-          <section class="panel">
-            <div style="display:flex;align-items:center;gap:0.75rem;flex-wrap:wrap;">
-              <h2 style="margin-right:auto;">Absenz-Liste</h2>
+          <main class="page-main">
+            <section class="panel">
+              <div style="display:flex;align-items:center;gap:0.75rem;flex-wrap:wrap;">
+                <h2 style="margin-right:auto;">Absenz-Liste</h2>
               <span class="pill" id="statsPill">–</span>
               <button id="addAbsenceBtn" class="ghost" style="border:1px dashed rgba(15,23,42,0.3);">+ Neue Absenz</button>
             </div>
@@ -325,11 +324,12 @@
                 <tbody id="tableBody"></tbody>
               </table>
             </div>
-            <div class="hint" id="emptyState" style="display:none;">Keine Absenzen gefunden.</div>
-          </section>
-        </main>
-      </section>
-    </main>
+              <div class="hint" id="emptyState" style="display:none;">Keine Absenzen gefunden.</div>
+            </section>
+          </main>
+          </div>
+        </section>
+      </main>
   </div>
 
   <div class="status-bar">

@@ -142,6 +142,30 @@ body {
   box-shadow: var(--shadow-panel);
 }
 
+.admin-section.page-wrapper {
+  padding: 0;
+}
+
+.page-inner {
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: clamp(1.25rem, 3vw, 2rem);
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.page-wrapper .page-header,
+.page-wrapper .page-main {
+  width: 100%;
+}
+
+.page-wrapper .page-main {
+  padding: 0;
+}
+
 .card-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
@@ -267,6 +291,10 @@ body {
   border-radius: 1rem;
   padding: 1rem;
   box-shadow: var(--shadow-soft);
+}
+
+.table-wrapper {
+  overflow-x: auto;
 }
 
 .table-wrapper table {
