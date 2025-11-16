@@ -425,6 +425,7 @@
       <a href="index.html">CSV &amp; Datei-Tools</a>
       <a href="events.html">Events erfassen</a>
       <a href="players.html" class="active">Spieler &amp; Aliase</a>
+      <a href="absences.html">Absenzen</a>
       <a href="noshow-dashboard.html">No-Show Analyse</a>
     </nav>
     <main class="admin-content">
@@ -519,7 +520,7 @@
                     </div>
                     <div class="empty-state" id="absenceEmpty" style="display:none;">Keine Absenzen eingetragen.</div>
                     <div class="absence-actions">
-                      <button id="addAbsenceBtn" class="ghost" style="border:1px dashed rgba(15,23,42,0.3);">Absenz hinzufügen</button>
+                      <div class="hint">Absenzen werden im Menüpunkt <a href="absences.html">Absenzen</a> gepflegt. Diese Ansicht ist read-only.</div>
                       <button id="showAllAbsencesBtn" class="secondary">Alle Absenzen des Spielers anzeigen</button>
                     </div>
                     <div id="absenceFormContainer" class="absence-form hidden"></div>
@@ -624,6 +625,7 @@
       const ALLIANCE_MEMBERSHIP_LABEL = "In Allianz";
       const ALLIANCE_MEMBERSHIP_HINT = "Wenn deaktiviert, gilt der Spieler als ausgetreten und wird im Roster ignoriert.";
       const DEFAULT_ABSENCE_HEADERS = ["PlayerName", "From", "To", "Reason", "InAlliance"];
+      const ABSENCES_READ_ONLY = true;
       const ZERO_WIDTH_REGEX = /[\u200B-\u200F\u2060\uFEFF]/g;
       const HOMOGLYPH_MAP = {
         "А": "A",
@@ -1150,9 +1152,11 @@
           th.textContent = header;
           row.appendChild(th);
         });
-        const actionTh = document.createElement("th");
-        actionTh.textContent = "Aktionen";
-        row.appendChild(actionTh);
+        if (!ABSENCES_READ_ONLY) {
+          const actionTh = document.createElement("th");
+          actionTh.textContent = "Aktionen";
+          row.appendChild(actionTh);
+        }
       }
 
       function getAbsencesForPlayer(player) {
@@ -1177,22 +1181,24 @@
             td.textContent = absence.rawRow[header] ?? "";
             tr.appendChild(td);
           });
-          const actions = document.createElement("td");
-          actions.style.whiteSpace = "nowrap";
-          actions.style.display = "flex";
-          actions.style.flexWrap = "wrap";
-          actions.style.gap = "0.35rem";
-          const editBtn = document.createElement("button");
-          editBtn.className = "ghost";
-          editBtn.textContent = "Bearbeiten";
-          editBtn.addEventListener("click", () => editAbsence(absence.id));
-          const deleteBtn = document.createElement("button");
-          deleteBtn.className = "secondary";
-          deleteBtn.textContent = "Löschen";
-          deleteBtn.addEventListener("click", () => deleteAbsence(absence.id));
-          actions.appendChild(editBtn);
-          actions.appendChild(deleteBtn);
-          tr.appendChild(actions);
+          if (!ABSENCES_READ_ONLY) {
+            const actions = document.createElement("td");
+            actions.style.whiteSpace = "nowrap";
+            actions.style.display = "flex";
+            actions.style.flexWrap = "wrap";
+            actions.style.gap = "0.35rem";
+            const editBtn = document.createElement("button");
+            editBtn.className = "ghost";
+            editBtn.textContent = "Bearbeiten";
+            editBtn.addEventListener("click", () => editAbsence(absence.id));
+            const deleteBtn = document.createElement("button");
+            deleteBtn.className = "secondary";
+            deleteBtn.textContent = "Löschen";
+            deleteBtn.addEventListener("click", () => deleteAbsence(absence.id));
+            actions.appendChild(editBtn);
+            actions.appendChild(deleteBtn);
+            tr.appendChild(actions);
+          }
           tbody.appendChild(tr);
         });
         if (elements.absenceEmpty) {
@@ -1204,7 +1210,7 @@
           }
         }
         if (elements.addAbsenceBtn) {
-          elements.addAbsenceBtn.disabled = !player;
+          elements.addAbsenceBtn.disabled = true;
         }
         if (elements.showAllAbsencesBtn) {
           elements.showAllAbsencesBtn.disabled = !player || !rows.length;
