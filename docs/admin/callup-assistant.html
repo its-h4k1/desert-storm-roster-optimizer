@@ -24,10 +24,11 @@
     .hint { color:var(--text-muted); font-size:0.9rem; }
     .card-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:0.75rem; }
     .card { background:var(--panel-muted); border:1px solid var(--border); border-radius:0.85rem; padding:0.75rem; }
+    .callup-table-wrapper { width:100%; overflow-x:auto; }
     .table-wrapper { border:1px solid var(--border); border-radius:0.85rem; overflow:auto; box-shadow:var(--shadow-card); }
-    table { width:100%; border-collapse:collapse; min-width:1040px; }
+    .callup-table { width:100%; border-collapse:collapse; min-width:960px; }
     thead { background:var(--bg-alt); position:sticky; top:0; z-index:5; }
-    th, td { padding:0.55rem 0.65rem; border-bottom:1px solid var(--border); text-align:left; vertical-align:top; }
+    th, td { padding:0.8rem 0.85rem; border-bottom:1px solid var(--border); text-align:left; vertical-align:top; }
     tbody tr:nth-child(2n) td { background:var(--panel-muted); }
     tbody tr.absent td { opacity:0.65; }
     tbody tr.recommended td { box-shadow: inset 3px 0 0 #2563eb; }
@@ -42,9 +43,19 @@
     .chip.ns-bad { background:#fee2e2; color:#991b1b; border-color:#fecdd3; }
     .chip.ns-neutral { background:#e2e8f0; color:#475569; border-color:#cbd5e1; }
     .row-actions { display:flex; gap:0.4rem; flex-wrap:wrap; }
-    .callup-step { display:flex; flex-direction:column; gap:0.35rem; min-width:180px; }
-    .callup-step small { color:var(--text-muted); }
-    .callup-step .inline { display:flex; gap:0.4rem; align-items:center; }
+    .cell-stack { display:flex; flex-direction:column; gap:0.35rem; }
+    .player-cell .player-name { font-weight:700; font-size:0.95rem; }
+    .player-cell .player-meta { display:flex; flex-wrap:wrap; gap:0.45rem; color:var(--text-muted); font-size:0.85rem; }
+    .risk-cell .chip { width:fit-content; }
+    .reason-chip { display:inline-flex; align-items:center; gap:0.35rem; padding:0.2rem 0.55rem; border-radius:0.8rem; background:var(--bg-alt); border:1px solid var(--border); font-weight:600; font-size:0.85rem; margin:0.1rem 0; }
+    .callup-cell { min-width:200px; }
+    .callup-cell .inline { display:flex; gap:0.5rem; align-items:center; justify-content:space-between; flex-wrap:wrap; }
+    .callup-cell .inline small { color:var(--text-muted); }
+    .timestamp-input { min-width:160px; max-width:200px; padding:0.4rem 0.55rem; }
+    .callup-cell select { min-width:160px; width:fit-content; }
+    .final-control { padding-top:0.25rem; border-top:1px dashed var(--border); }
+    .final-control .hint { font-size:0.8rem; }
+    textarea.notes { min-width:200px; min-height:48px; max-width:240px; resize:vertical; }
     .status-bar { position:sticky; bottom:0; background:var(--glass); border-top:1px solid var(--border); padding:0.75rem 1rem; display:flex; gap:0.6rem; align-items:center; box-shadow:0 -8px 24px rgba(15,23,42,0.08); flex-wrap:wrap; }
     .status-badge { display:inline-flex; align-items:center; gap:0.35rem; padding:0.35rem 0.7rem; border-radius:999px; font-weight:600; font-size:0.9rem; }
     .status-info { background:#e0f2fe; color:#075985; }
@@ -137,19 +148,15 @@
                 <span id="candidateCount" class="pill info">–</span>
                 <span class="hint" id="eventMeta"></span>
               </div>
-              <div class="table-wrapper">
-                <table>
+              <div class="table-wrapper callup-table-wrapper">
+                <table class="callup-table">
                   <thead>
                     <tr>
                       <th>Spieler</th>
-                      <th>Gruppe/Rolle</th>
-                      <th>Events</th>
-                      <th>No-Show overall</th>
-                      <th>No-Show rolling</th>
+                      <th>No-Show &amp; Risiko</th>
                       <th>Grund</th>
                       <th>Callup 1</th>
                       <th>Callup 2</th>
-                      <th>Final</th>
                       <th>Notiz</th>
                     </tr>
                   </thead>
@@ -540,17 +547,13 @@
           const tr = document.createElement('tr');
           if (c.absence) tr.classList.add('absent');
           if (c.recommended) tr.classList.add('recommended');
+          const finalControl = buildFinalControl(c);
+          const refresh = () => { finalControl.refresh(); updateSaveButtonState(); };
           tr.appendChild(tdPlayer(c));
-          tr.appendChild(tdText(`${c.group || '–'} / ${c.role || '–'}`));
-          tr.appendChild(tdText(c.eventsSeen != null ? c.eventsSeen : '–'));
-          tr.appendChild(tdBadge(c.noshowOverall, c.badgeOverall));
-          tr.appendChild(tdBadge(c.noshowRolling, c.badgeRolling));
+          tr.appendChild(tdNoShow(c));
           tr.appendChild(tdReason(c));
-          const finalCell = tdFinal(c);
-          const refresh = () => { finalCell.refresh(); updateSaveButtonState(); };
           tr.appendChild(tdCallupStep(c, 1, refresh));
-          tr.appendChild(tdCallupStep(c, 2, refresh));
-          tr.appendChild(finalCell.td);
+          tr.appendChild(tdCallupStep(c, 2, refresh, finalControl));
           tr.appendChild(tdNotes(c, refresh));
           elements.candidateBody.appendChild(tr);
         });
@@ -566,43 +569,68 @@
         updateSaveButtonState();
       }
 
-      function tdText(text) {
-        const td = document.createElement('td');
-        td.textContent = text;
-        return td;
-      }
-
       function tdPlayer(c) {
         const td = document.createElement('td');
+        td.className = 'player-cell';
+        const wrap = document.createElement('div');
+        wrap.className = 'cell-stack';
         const name = document.createElement('div');
+        name.className = 'player-name';
         name.textContent = c.name;
         const meta = document.createElement('div');
-        meta.className = 'hint';
-        const parts = [];
-        if (c.eventsSeen != null) parts.push(`${c.eventsSeen} Events`);
-        if (c.absence) parts.push(`Abwesend (${c.absence.reason || 'keine Angabe'})`);
-        meta.textContent = parts.join(' · ');
-        td.appendChild(name);
-        td.appendChild(meta);
+        meta.className = 'player-meta';
+        const metaParts = [];
+        metaParts.push(`${c.group || '–'} / ${c.role || '–'}`);
+        metaParts.push(`${c.eventsSeen != null ? `${c.eventsSeen} Events` : '– Events'}`);
+        if (c.absence) metaParts.push(`Abwesend: ${c.absence.reason || 'keine Angabe'}`);
+        meta.textContent = metaParts.join(' · ');
+        wrap.appendChild(name);
+        wrap.appendChild(meta);
+        td.appendChild(wrap);
         return td;
       }
 
-      function tdBadge(rate, badge) {
+      function tdNoShow(c) {
         const td = document.createElement('td');
-        const chip = document.createElement('span');
-        chip.className = BADGE_CLASS_BY_LEVEL[badge.level] || BADGE_CLASS_BY_LEVEL.nodata;
-        chip.innerHTML = `<strong>${pc(rate)}</strong> <small>${badge.reason}</small>`;
-        td.appendChild(chip);
+        td.className = 'risk-cell';
+        const wrap = document.createElement('div');
+        wrap.className = 'cell-stack';
+        wrap.appendChild(noShowBadge('Overall', c.noshowOverall, c.badgeOverall));
+        wrap.appendChild(noShowBadge('Rolling', c.noshowRolling, c.badgeRolling));
+        td.appendChild(wrap);
         return td;
+      }
+
+      function noShowBadge(label, rate, badge) {
+        const chip = document.createElement('div');
+        chip.className = BADGE_CLASS_BY_LEVEL[badge.level] || BADGE_CLASS_BY_LEVEL.nodata;
+        const reasonLabel = badgeReasonLabel(badge.reason);
+        chip.innerHTML = `<div><strong>${label}</strong></div><div>${pc(rate)}</div><small>${reasonLabel}</small>`;
+        return chip;
+      }
+
+      function badgeReasonLabel(reason) {
+        const map = {
+          'no-data': 'keine Daten',
+          'no-rate': 'keine Rate',
+          'never-missed': 'nie No-Show',
+          'low-n': 'Low-N',
+          'single-miss-soft-warning': '1 No-Show',
+          'single-miss-soft-green': '1 No-Show',
+          'threshold': 'threshold',
+          'small-sample-soften': 'kleine Stichprobe',
+        };
+        return map[reason] || reason || '–';
       }
 
       function tdReason(c) {
         const td = document.createElement('td');
+        td.className = 'reason-cell';
         if (c.reasons.length) {
           c.reasons.forEach(r => {
             const pill = document.createElement('div');
-            pill.className = 'pill info';
-            pill.textContent = r;
+            pill.className = 'reason-chip';
+            pill.textContent = shortenReason(r);
             td.appendChild(pill);
           });
         } else {
@@ -611,10 +639,19 @@
         return td;
       }
 
-      function tdCallupStep(c, step, onChange = () => {}) {
+      function shortenReason(reason) {
+        if (/High No-Show overall/i.test(reason)) return 'High No-Show overall';
+        if (/High No-Show rolling/i.test(reason)) return 'High No-Show rolling';
+        if (/Low-N/i.test(reason)) return reason;
+        if (/Kürzliche Ausfälle/i.test(reason)) return 'Rolling Uptick';
+        return reason;
+      }
+
+      function tdCallupStep(c, step, onChange = () => {}, finalControl = null) {
         const td = document.createElement('td');
+        td.className = 'callup-cell';
         const wrap = document.createElement('div');
-        wrap.className = 'callup-step';
+        wrap.className = 'cell-stack';
         const sentKey = step === 1 ? 'Reminder1SentAt' : 'Reminder2SentAt';
         const resultKey = step === 1 ? 'Reminder1Result' : 'Reminder2Result';
         const sent = document.createElement('label');
@@ -624,6 +661,7 @@
         cb.checked = Boolean(c.callup[sentKey]);
         const stamp = document.createElement('input');
         stamp.type = 'text';
+        stamp.className = 'timestamp-input';
         stamp.placeholder = 'YYYY-MM-DD HH:MM';
         stamp.value = c.callup[sentKey] || '';
         cb.addEventListener('change', () => {
@@ -639,8 +677,11 @@
         stamp.addEventListener('input', () => { c.callup[sentKey] = stamp.value; cb.checked = Boolean(stamp.value); onChange(); updateSaveButtonState(); });
         sent.appendChild(cb);
         sent.appendChild(document.createTextNode('gesendet'));
-        wrap.appendChild(sent);
-        wrap.appendChild(stamp);
+        const firstLine = document.createElement('div');
+        firstLine.className = 'inline';
+        firstLine.appendChild(sent);
+        firstLine.appendChild(stamp);
+        wrap.appendChild(firstLine);
 
         const sel = document.createElement('select');
         ['','zugesagt','abgesagt','keine Antwort'].forEach(optVal => {
@@ -657,14 +698,21 @@
           const note = document.createElement('small');
           note.textContent = 'aktiv nach Callup 1';
           wrap.appendChild(note);
+          if (finalControl) {
+            wrap.appendChild(finalControl.container);
+          }
         }
 
         td.appendChild(wrap);
         return td;
       }
 
-      function tdFinal(c) {
-        const td = document.createElement('td');
+      function buildFinalControl(c) {
+        const wrap = document.createElement('div');
+        wrap.className = 'final-control cell-stack';
+        const label = document.createElement('div');
+        label.className = 'hint';
+        label.textContent = 'Final';
         const select = document.createElement('select');
         ['','confirmed','declined','no_response'].forEach(val => {
           const opt = document.createElement('option');
@@ -681,13 +729,15 @@
         };
         refresh();
         select.addEventListener('change', () => { c.callup.FinalStatus = select.value; refresh(); updateSaveButtonState(); });
-        td.appendChild(select);
-        td.appendChild(hint);
-        return { td, refresh };
+        wrap.appendChild(label);
+        wrap.appendChild(select);
+        wrap.appendChild(hint);
+        return { container: wrap, refresh };
       }
 
       function tdNotes(c, onChange = () => {}) {
         const td = document.createElement('td');
+        td.className = 'notes-cell';
         const ta = document.createElement('textarea');
         ta.className = 'notes';
         ta.value = c.callup.Notes || '';
