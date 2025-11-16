@@ -193,6 +193,13 @@
       background: rgba(37, 99, 235, 0.18);
     }
 
+    .status-hint {
+      font-size: 0.75rem;
+      color: #6b7280;
+      display: block;
+      margin-left: 1.6rem;
+    }
+
     .status-dot {
       width: 10px;
       height: 10px;
@@ -606,7 +613,10 @@
       const defaultBranch = "main";
       const SETTINGS_KEY = "dsro-player-admin-settings";
 
-      const STATUS_COLUMNS = ["Active", "InAlliance", "ActiveFlag", "ActiveStatus", "IsActive"];
+      // Diese Spalten kodieren das Allianz-Membership-Flag (Active==1 bedeutet "im Roster").
+      const ALLIANCE_MEMBERSHIP_COLUMNS = ["Active", "InAlliance", "ActiveFlag", "ActiveStatus", "IsActive"];
+      const ALLIANCE_MEMBERSHIP_LABEL = "In Allianz";
+      const ALLIANCE_MEMBERSHIP_HINT = "Wenn deaktiviert, gilt der Spieler als ausgetreten und wird im Roster ignoriert.";
       const DEFAULT_ABSENCE_HEADERS = ["PlayerName", "From", "To", "Reason", "Active"];
       const ZERO_WIDTH_REGEX = /[\u200B-\u200F\u2060\uFEFF]/g;
       const HOMOGLYPH_MAP = {
@@ -640,6 +650,17 @@
         "ѵ": "y",
       };
       const HOMOGLYPH_REGEX = new RegExp(`[${Object.keys(HOMOGLYPH_MAP).join("")}]`, "g");
+
+      function isAllianceMembershipField(field) {
+        return ALLIANCE_MEMBERSHIP_COLUMNS.includes(field);
+      }
+
+      function formatStatusLabel(field) {
+        if (isAllianceMembershipField(field)) {
+          return ALLIANCE_MEMBERSHIP_LABEL;
+        }
+        return field;
+      }
 
       function normalizeLineEndings(text) {
         return (text || "").replace(/\r\n/g, "\n").replace(/\r/g, "\n");
@@ -814,7 +835,7 @@
         const parsed = Papa.parse(normalized, { header: true, skipEmptyLines: true });
         state.playerHeaders = parsed.meta.fields || [];
         state.playerNameField = detectNameField(state.playerHeaders);
-        state.statusFields = state.playerHeaders.filter(header => STATUS_COLUMNS.includes(header));
+        state.statusFields = state.playerHeaders.filter(header => ALLIANCE_MEMBERSHIP_COLUMNS.includes(header));
         state.players = (parsed.data || [])
           .map((row, index) => {
             const safeRow = { ...row };
@@ -938,7 +959,7 @@
         row.appendChild(nameTh);
         state.statusFields.forEach(field => {
           const th = document.createElement("th");
-          th.textContent = field;
+          th.textContent = formatStatusLabel(field);
           row.appendChild(th);
         });
       }
@@ -1032,12 +1053,11 @@
         }
         state.statusFields.forEach(field => {
           const label = document.createElement("label");
-          label.style.flexDirection = "row";
-          label.style.alignItems = "center";
-          label.style.gap = "0.5rem";
+          label.style.flexDirection = "column";
+          label.style.alignItems = "flex-start";
+          label.style.gap = "0.35rem";
           label.style.fontSize = "0.9rem";
           label.style.color = "#111827";
-          label.textContent = field;
           const checkbox = document.createElement("input");
           checkbox.type = "checkbox";
           checkbox.checked = player.rawRow[field] === 1 || player.rawRow[field] === "1" || player.rawRow[field] === true;
@@ -1047,7 +1067,21 @@
             updateSaveButtonState();
             setStatus("Status geändert, bitte speichern.", "warn");
           });
-          label.prepend(checkbox);
+          const textWrapper = document.createElement("div");
+          textWrapper.style.display = "flex";
+          textWrapper.style.alignItems = "center";
+          textWrapper.style.gap = "0.5rem";
+          const text = document.createElement("span");
+          text.textContent = formatStatusLabel(field);
+          textWrapper.appendChild(checkbox);
+          textWrapper.appendChild(text);
+          label.appendChild(textWrapper);
+          if (isAllianceMembershipField(field)) {
+            const hint = document.createElement("span");
+            hint.className = "status-hint";
+            hint.textContent = ALLIANCE_MEMBERSHIP_HINT;
+            label.appendChild(hint);
+          }
           container.appendChild(label);
         });
       }
