@@ -99,11 +99,12 @@
 
     .page-main {
       flex: 1;
-      padding: 1.5rem;
+      padding: 0;
       display: grid;
       grid-template-columns: 1fr;
       gap: 1.5rem;
       align-items: start;
+      width: 100%;
     }
 
     .panel {
@@ -119,7 +120,12 @@
 
     .panel h2 { margin: 0; font-size: 1.1rem; }
 
-    .table-wrapper { border: 1px solid var(--border); border-radius: 0.75rem; overflow: hidden; background: var(--panel-muted); }
+    .table-wrapper {
+      border: 1px solid var(--border);
+      border-radius: 0.75rem;
+      overflow-x: auto;
+      background: var(--panel-muted);
+    }
 
     table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
     thead { background: #f1f5f9; text-transform: uppercase; font-size: 0.75rem; letter-spacing: 0.04em; }
@@ -191,7 +197,6 @@
 
     @media (max-width: 900px) {
       .page-header { position: static; }
-      .page-main { padding: 1rem; }
       table { font-size: 0.85rem; }
       label { width: 100%; }
       input[type="text"], input[type="password"], input[type="search"], select { width: 100%; }
@@ -216,14 +221,15 @@
       <a href="noshow-dashboard.html">No-Show Analyse</a>
     </nav>
 
-    <main class="admin-content">
-      <section class="admin-section page-wrapper">
-        <header class="page-header">
-          <div style="flex:1;min-width:240px;">
-            <h1>Gruppenpräferenzen verwalten</h1>
-            <p style="margin:0;color:#6b7280;font-size:0.9rem">Pflege von <code>data/alliance.csv</code> (Spalten <code>PrefGroup</code>, <code>PrefMode</code>, <code>PrefBoost</code>).</p>
-          </div>
-          <div class="settings">
+      <main class="admin-content">
+        <section class="admin-section page-wrapper">
+          <div class="page-inner">
+          <header class="page-header">
+            <div style="flex:1;min-width:240px;">
+              <h1>Gruppenpräferenzen verwalten</h1>
+              <p style="margin:0;color:#6b7280;font-size:0.9rem">Pflege von <code>data/alliance.csv</code> (Spalten <code>PrefGroup</code>, <code>PrefMode</code>, <code>PrefBoost</code>).</p>
+            </div>
+            <div class="settings">
             <label>Worker URL
               <input id="workerUrl" type="text" value="https://ds-commit.hak1.workers.dev/write-file" spellcheck="false">
             </label>
@@ -236,12 +242,12 @@
             <button id="reloadBtn" class="ghost">Neu laden</button>
             <button id="saveBtn">Speichern</button>
           </div>
-        </header>
+          </header>
 
-        <main class="page-main">
-          <section class="panel">
-            <div style="display:flex;align-items:center;gap:0.75rem;flex-wrap:wrap;">
-              <h2 style="margin-right:auto;">Allianz-Mitglieder</h2>
+          <main class="page-main">
+            <section class="panel">
+              <div style="display:flex;align-items:center;gap:0.75rem;flex-wrap:wrap;">
+                <h2 style="margin-right:auto;">Allianz-Mitglieder</h2>
               <span class="pill" id="statsPill">–</span>
               <div class="help-box">
                 <div class="legend">
@@ -278,8 +284,9 @@
             <div class="hint" id="emptyState" style="display:none;">Keine Spieler gefunden.</div>
           </section>
         </main>
-      </section>
-    </main>
+          </div>
+        </section>
+      </main>
   </div>
 
   <div class="status-bar">

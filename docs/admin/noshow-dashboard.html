@@ -41,12 +41,13 @@
     .page-header a { color:var(--acc); text-decoration:none; font-size:.9rem; }
     .page-header a:hover { color:#1d4ed8; }
     .page-main {
-      padding:32px clamp(16px,4vw,64px) 80px;
-      max-width:1200px;
-      margin:0 auto;
+      padding:0;
+      max-width:none;
+      margin:0;
       display:flex;
       flex-direction:column;
       gap:24px;
+      width:100%;
     }
     h1 { margin:0; font-size:2rem; }
     p { margin:0; }
@@ -212,9 +213,10 @@
       <a href="group-preferences.html">Gruppenpräferenzen</a>
       <a href="noshow-dashboard.html" class="active">No-Show Analyse</a>
     </nav>
-    <main class="admin-content">
-      <section class="admin-section page-wrapper">
-        <header class="page-header">
+      <main class="admin-content">
+        <section class="admin-section page-wrapper">
+          <div class="page-inner">
+          <header class="page-header">
             <div class="brand">Desert Storm · No-Show Analyse</div>
             <div class="spacer"></div>
             <a href="../index.html">Zurück zur Admin-Startseite</a>
@@ -318,9 +320,10 @@
               <div class="risk-list" id="playerList"></div>
             </section>
           </main>
-      </section>
-    </main>
-  </div>
+        </div>
+        </section>
+      </main>
+    </div>
 
   <script>
     const state = {
