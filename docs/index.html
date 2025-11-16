@@ -33,6 +33,12 @@
     .tag-nd{background:var(--bad);color:#fff}
     .tag-low{background:#f1e1a8;color:#111}
     .legend{font-size:0.85em;margin:12px 0 0}
+    .admin-tools{margin-top:40px;padding-top:20px;border-top:1px solid var(--line)}
+    .admin-tools h2{margin:0 0 8px}
+    .admin-tools p{margin:0 0 12px;color:var(--muted)}
+    .admin-tools ul{list-style:none;margin:0;padding:0;display:flex;flex-wrap:wrap;gap:12px}
+    .admin-tools a{display:inline-flex;align-items:center;gap:8px;padding:8px 14px;border:1px solid var(--line);border-radius:10px;text-decoration:none;color:var(--fg);background:#fff;box-shadow:0 4px 12px rgba(0,0,0,0.05)}
+    .admin-tools a span{font-size:0.82em;color:var(--muted)}
   </style>
 </head>
 <body>
@@ -71,6 +77,16 @@
   </div>
 
   <p class="muted legend">Legende: <span class="tag tag-nd" title="Keine Historie – events_seen = 0">No&nbsp;Data</span> keine Historie · <span class="tag tag-low" title="Wenig Historie – events_seen ∈ {1,2}">low&nbsp;n</span> wenig Historie<br />Farben basieren auf Historie (rolling→overall), EB wird nur zur Sortierung verwendet.<br />No-Data = nie teilgenommen (grau). low-n ≤2 = gelb. 1 Fehltermin = nie rot.</p>
+
+  <section class="admin-tools">
+    <h2>Admin &amp; Tools</h2>
+    <p>Interne Helfer für Events, Spieler und Analysen (GitHub Pages):</p>
+    <ul>
+      <li><a href="admin/events.html">Events erfassen (Admin)</a></li>
+      <li><a href="admin/players.html">Spieler &amp; Aliase &amp; Absenzen (Admin)</a></li>
+      <li><a href="admin/noshow-dashboard.html">No-Show Analyse (Admin)</a></li>
+    </ul>
+  </section>
 
   <p class="sub muted">Quelle: <code>out/latest.json</code> (GitHub)</p>
 

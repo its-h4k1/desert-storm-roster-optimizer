@@ -8,15 +8,11 @@
   <link rel="stylesheet" href="admin.css">
   <link rel="stylesheet" href="https://unpkg.com/tabulator-tables@5.5.2/dist/css/tabulator.min.css">
   <style>
-    :root {
-      color-scheme: dark;
-    }
-
     body {
       margin: 0;
       padding: 0;
       color: var(--text);
-      background: transparent;
+      background: var(--bg);
     }
 
     .page-header {
@@ -73,17 +69,18 @@
       font: inherit;
       padding: 0.5rem 0.65rem;
       border-radius: 0.75rem;
-      border: 1px solid rgba(255, 255, 255, 0.15);
+      border: 1px solid var(--border);
       min-width: 12rem;
       background: var(--bg-alt);
       color: var(--text);
+      box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
     }
 
     input[type="text"]:focus,
     input[type="url"]:focus,
     input[type="password"]:focus,
     select:focus {
-      outline: 2px solid rgba(102, 224, 163, 0.5);
+      outline: 2px solid rgba(37, 99, 235, 0.35);
       outline-offset: 1px;
     }
 
@@ -91,18 +88,19 @@
       font: inherit;
       padding: 0.55rem 1.1rem;
       border-radius: 0.75rem;
-      border: 1px solid rgba(255, 255, 255, 0.1);
-      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--border);
+      background: #fff;
       color: var(--text);
       cursor: pointer;
       display: inline-flex;
       align-items: center;
       gap: 0.35rem;
-      transition: background 0.15s ease, border-color 0.15s ease;
+      transition: background 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
     }
 
     button:hover {
-      background: rgba(255, 255, 255, 0.1);
+      background: #f8fafc;
+      box-shadow: 0 4px 12px rgba(15, 23, 42, 0.12);
     }
 
     button[disabled] {
@@ -111,13 +109,15 @@
     }
 
     .secondary-button {
-      background: rgba(111, 155, 255, 0.15);
-      border-color: rgba(111, 155, 255, 0.4);
+      background: var(--accent);
+      border-color: var(--accent);
+      color: #fff;
     }
 
     .danger-button {
-      background: rgba(255, 107, 107, 0.2);
-      border-color: rgba(255, 107, 107, 0.45);
+      background: #dc2626;
+      border-color: #dc2626;
+      color: #fff;
     }
 
     .controls-row {
@@ -516,7 +516,7 @@
   <div class="admin-layout">
     <nav class="admin-nav">
       <a href="index.html">CSV &amp; Datei-Tools</a>
-      <a href="events.html">Events erfassen</a>
+      <a href="events.html" class="active">Events erfassen</a>
       <a href="players.html">Spieler &amp; Aliase</a>
       <a href="noshow-dashboard.html">No-Show Analyse</a>
     </nav>
