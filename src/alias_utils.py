@@ -3,7 +3,8 @@ from __future__ import annotations
 """Utilities for loading and resolving player aliases."""
 
 from dataclasses import dataclass
-from typing import Dict, Iterable, Optional, Set
+from typing import Dict, Iterable, Optional, Set, List, Tuple
+import warnings
 
 import pandas as pd
 
@@ -91,6 +92,53 @@ def _prepare_raw_mapping(df: pd.DataFrame, cols: _AliasColumns) -> Dict[str, str
     return mapping
 
 
+def _prune_cycles(raw_map: Dict[str, str]) -> Tuple[Dict[str, str], Set[str]]:
+    """Entfernt Alias-Regeln, die Zyklen erzeugen.
+
+    Statt den gesamten Import scheitern zu lassen, werden nur die direkt
+    betroffenen Quellen entfernt. So bleiben valide Aliase verfügbar und
+    Problemfälle können dennoch identifiziert werden.
+    """
+
+    graph = dict(raw_map)
+    visited: Set[str] = set()
+    active: Set[str] = set()
+    cycle_nodes: Set[str] = set()
+
+    def dfs(node: str, stack: List[str]):
+        if node in visited or node in cycle_nodes:
+            return
+        if node in active:
+            # Zyklus gefunden → alle Nodes ab erstem Auftreten im Stack markieren
+            try:
+                start = stack.index(node)
+            except ValueError:
+                start = 0
+            cycle_nodes.update(stack[start:])
+            return
+
+        active.add(node)
+        stack.append(node)
+        target = graph.get(node)
+        if target is not None:
+            dfs(target, stack)
+        stack.pop()
+        active.remove(node)
+        visited.add(node)
+
+    for node in list(graph.keys()):
+        if node not in visited:
+            dfs(node, [])
+
+    if not cycle_nodes:
+        return graph, set()
+
+    for node in cycle_nodes:
+        graph.pop(node, None)
+
+    return graph, cycle_nodes
+
+
 def resolve_alias_map(
     raw_map: Dict[str, str],
     *,
@@ -151,7 +199,20 @@ def load_alias_map(path: str, *, max_depth: int = DEFAULT_MAX_ALIAS_DEPTH) -> Di
     if not raw_map:
         return {}
 
-    return resolve_alias_map(raw_map, max_depth=max_depth)
+    clean_map, cycle_nodes = _prune_cycles(raw_map)
+    if cycle_nodes:
+        preview = ", ".join(sorted(cycle_nodes)[:5])
+        more = "" if len(cycle_nodes) <= 5 else ", …"
+        warnings.warn(
+            (
+                f"{len(cycle_nodes)} Alias-Regeln wegen Zyklus entfernt: "
+                f"{preview}{more}"
+            ),
+            RuntimeWarning,
+            stacklevel=2,
+        )
+
+    return resolve_alias_map(clean_map, max_depth=max_depth)
 
 
 __all__ = ["AliasResolutionError", "DEFAULT_MAX_ALIAS_DEPTH", "load_alias_map", "resolve_alias_map"]

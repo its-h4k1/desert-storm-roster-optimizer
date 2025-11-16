@@ -29,13 +29,14 @@ def test_resolve_alias_map_transitive_chain(tmp_path):
     assert mapping == {"alpha": "charlie", "bravo": "charlie"}
 
 
-def test_resolve_alias_map_cycle_raises(tmp_path):
+def test_resolve_alias_map_cycle_pruned(tmp_path):
     path = _write_aliases(tmp_path, [
         ("Alpha", "Bravo"),
         ("Bravo", "Alpha"),
     ])
-    with pytest.raises(AliasResolutionError):
-        load_alias_map(str(path))
+    with pytest.warns(RuntimeWarning, match="Zyklus"):
+        mapping = load_alias_map(str(path))
+    assert mapping == {}
 
 
 def test_resolve_alias_map_depth_guard(tmp_path):
