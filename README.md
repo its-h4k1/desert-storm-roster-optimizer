@@ -86,7 +86,8 @@ keinen Build-Schritt.
 ## Gruppen-Präferenzen
 
 Die Datei `data/alliance.csv` kann optionale Präferenzspalten enthalten, um Gruppenwünsche zu
-berücksichtigen:
+berücksichtigen. Die Spalten lassen sich direkt in der Admin-UI unter
+`docs/admin/group-preferences.html` per Dropdown pflegen:
 
 ```
 PlayerName,InAlliance,PrefGroup,PrefMode,PrefBoost
