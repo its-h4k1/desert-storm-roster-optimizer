@@ -5,56 +5,52 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="robots" content="noindex, nofollow">
   <title>Roster Events verwalten</title>
+  <link rel="stylesheet" href="admin.css">
   <link rel="stylesheet" href="https://unpkg.com/tabulator-tables@5.5.2/dist/css/tabulator.min.css">
   <style>
     :root {
-      color-scheme: light dark;
-      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-      background: #f6f7f9;
-      color: #1a1c1f;
+      color-scheme: dark;
     }
 
     body {
       margin: 0;
       padding: 0;
-      min-height: 100vh;
-      display: flex;
-      flex-direction: column;
+      color: var(--text);
+      background: transparent;
     }
 
-    header {
-      background: white;
-      box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
-      padding: 1rem 1.5rem;
-      position: sticky;
-      top: 0;
-      z-index: 100;
+    .page-header {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 1rem;
+      padding: 1.25rem clamp(1rem, 4vw, 2rem);
       display: flex;
       flex-wrap: wrap;
       gap: 1rem;
       align-items: flex-end;
+      box-shadow: 0 10px 30px rgba(2, 6, 12, 0.45);
     }
 
-    header h1 {
+    .page-header h1 {
       flex-basis: 100%;
-      margin: 0 0 0.5rem;
+      margin: 0;
       font-size: 1.5rem;
     }
 
-    main {
-      flex: 1;
-      padding: 1.5rem;
+    .page-main {
       display: flex;
       flex-direction: column;
       gap: 1rem;
+      margin-top: 1.5rem;
     }
 
     fieldset {
-      border: 1px solid rgba(0, 0, 0, 0.1);
-      border-radius: 0.75rem;
+      border: 1px solid var(--border);
+      border-radius: 0.9rem;
       padding: 1rem;
       min-width: min(400px, 100%);
-      background: white;
+      background: var(--panel-muted);
+      color: var(--text);
     }
 
     legend {
@@ -67,6 +63,7 @@
       flex-direction: column;
       font-size: 0.85rem;
       gap: 0.35rem;
+      color: var(--text-muted);
     }
 
     input[type="text"],
@@ -75,43 +72,52 @@
     select {
       font: inherit;
       padding: 0.5rem 0.65rem;
-      border-radius: 0.6rem;
-      border: 1px solid rgba(0, 0, 0, 0.2);
+      border-radius: 0.75rem;
+      border: 1px solid rgba(255, 255, 255, 0.15);
       min-width: 12rem;
+      background: var(--bg-alt);
+      color: var(--text);
     }
 
     input[type="text"]:focus,
     input[type="url"]:focus,
     input[type="password"]:focus,
     select:focus {
-      outline: 2px solid #0b63f6;
+      outline: 2px solid rgba(102, 224, 163, 0.5);
       outline-offset: 1px;
     }
 
     button {
       font: inherit;
       padding: 0.55rem 1.1rem;
-      border-radius: 0.6rem;
-      border: none;
-      background: #0b63f6;
-      color: white;
+      border-radius: 0.75rem;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      background: rgba(255, 255, 255, 0.05);
+      color: var(--text);
       cursor: pointer;
       display: inline-flex;
       align-items: center;
-      gap: 0.25rem;
+      gap: 0.35rem;
+      transition: background 0.15s ease, border-color 0.15s ease;
+    }
+
+    button:hover {
+      background: rgba(255, 255, 255, 0.1);
     }
 
     button[disabled] {
-      background: #adb5bd;
+      opacity: 0.5;
       cursor: not-allowed;
     }
 
     .secondary-button {
-      background: #4b4f56;
+      background: rgba(111, 155, 255, 0.15);
+      border-color: rgba(111, 155, 255, 0.4);
     }
 
     .danger-button {
-      background: #c62828;
+      background: rgba(255, 107, 107, 0.2);
+      border-color: rgba(255, 107, 107, 0.45);
     }
 
     .controls-row {
@@ -141,24 +147,24 @@
     }
 
     .dropzone {
-      border: 2px dashed #0b63f6;
-      border-radius: 0.75rem;
+      border: 2px dashed rgba(102, 224, 163, 0.6);
+      border-radius: 0.9rem;
       padding: 1.5rem;
-      background: rgba(11, 99, 246, 0.08);
+      background: rgba(102, 224, 163, 0.08);
       text-align: center;
       font-weight: 500;
       transition: border-color 0.2s ease, background 0.2s ease;
     }
 
     .dropzone.dragover {
-      border-color: #093a9b;
-      background: rgba(9, 58, 155, 0.15);
+      border-color: rgba(102, 224, 163, 0.9);
+      background: rgba(102, 224, 163, 0.15);
     }
 
     .tabulator {
-      border-radius: 0.75rem;
-      border: 1px solid rgba(0, 0, 0, 0.15);
-      background: white;
+      border-radius: 0.9rem;
+      border: 1px solid var(--border);
+      background: var(--panel);
     }
 
     .tabulator .tabulator-header {
@@ -176,9 +182,9 @@
       gap: 1rem;
       align-items: center;
       padding: 0.75rem 1rem;
-      background: white;
-      border-radius: 0.75rem;
-      border: 1px solid rgba(0, 0, 0, 0.1);
+      background: var(--panel);
+      border-radius: 0.9rem;
+      border: 1px solid var(--border);
       font-size: 0.9rem;
     }
 
@@ -238,9 +244,9 @@
     .error-banner {
       background: rgba(198, 40, 40, 0.15);
       border: 1px solid rgba(198, 40, 40, 0.35);
-      color: #5b1717;
+      color: #ffb3b3;
       padding: 0.75rem 1rem;
-      border-radius: 0.6rem;
+      border-radius: 0.75rem;
     }
 
     .flex-gap {
@@ -250,9 +256,9 @@
     }
 
     .name-summary {
-      background: white;
-      border-radius: 0.75rem;
-      border: 1px solid rgba(0, 0, 0, 0.1);
+      background: var(--panel);
+      border-radius: 0.9rem;
+      border: 1px solid var(--border);
       padding: 0.75rem 1rem;
       display: flex;
       flex-direction: column;
@@ -418,9 +424,10 @@
       width: min(520px, 92vw);
       max-height: 90vh;
       overflow-y: auto;
-      background: white;
-      border-radius: 0.9rem;
-      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.25);
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 1rem;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.35);
       padding: 1.25rem;
       display: flex;
       flex-direction: column;
@@ -499,92 +506,110 @@
     }
   </style>
 </head>
-<body>
-  <header>
-    <h1>Events hochladen (Tabellen-Editor)</h1>
-    <div class="controls-row">
-      <fieldset>
-        <legend>Event</legend>
-        <div class="flex-gap">
-          <label>
-            Event ID
-            <input type="text" id="event-id" placeholder="DS-2024-05-01-A" autocomplete="off">
-          </label>
-          <button type="button" id="derive-event">aus Datei ableiten</button>
-        </div>
-        <small>Format: DS-YYYY-MM-DD-A/B</small>
-      </fieldset>
-      <fieldset>
-        <legend>Import</legend>
-        <div class="dropzone" id="dropzone">CSV hierher ziehen (Mehrfach möglich)</div>
-        <button type="button" id="paste-btn" style="margin-top:0.5rem; width:100%">Aus Zwischenablage einfügen</button>
-      </fieldset>
-      <fieldset>
-        <legend>Branch &amp; Commit</legend>
-        <label>
-          Ziel-Branch
-          <select id="branch-select">
-            <option value="main">main</option>
-            <option value="ops/events">ops/events</option>
-            <option value="__custom">Custom…</option>
-          </select>
-        </label>
-        <label id="custom-branch-wrapper" class="hidden">
-          Custom-Branch
-          <input type="text" id="custom-branch" placeholder="feature/my-branch">
-        </label>
-        <label>
-          Strategie
-          <select id="strategy-select">
-            <option value="replace">replace (überschreiben)</option>
-            <option value="merge">merge (zusammenführen)</option>
-            <option value="abort-if-exists">abort-if-exists</option>
-          </select>
-        </label>
-      </fieldset>
-      <fieldset>
-        <legend>Worker</legend>
-        <label>
-          Worker URL
-          <input type="url" id="worker-url" value="https://ds-commit.hak1.workers.dev/write-file">
-        </label>
-        <label>
-          Admin Key (X-Admin-Key)
-          <input type="password" id="admin-key" placeholder="••••••">
-        </label>
-        <label class="inline">
-          <input type="checkbox" id="remember-settings">
-          <span>Einstellungen merken</span>
-        </label>
-      </fieldset>
-    </div>
-    <div class="controls-row">
-      <button type="button" id="save-btn" disabled>Speichern</button>
-      <button type="button" id="build-btn" class="secondary-button" disabled>Roster neu bauen</button>
-      <button type="button" id="reset-btn" class="danger-button">Rückgängig</button>
-      <div id="actions-links" style="display:flex; align-items:center; gap:0.75rem;"></div>
+<body class="admin-shell">
+  <header class="admin-header">
+    <div class="admin-brand">ELT Admin</div>
+    <div class="admin-header-actions">
+      <a class="btn ghost" href="../index.html">Zur Roster-Ansicht</a>
     </div>
   </header>
-  <main>
-    <div id="error-banner" class="error-banner hidden"></div>
-    <div id="table"></div>
-    <div class="statusbar">
-      <span id="row-count">Zeilen: 0</span>
-      <span id="duplicate-count" class="status-ok">Duplikate: 0</span>
-      <span id="error-count" class="status-ok">Fehler: 0</span>
-    </div>
-    <div id="name-validation" class="name-summary hidden">
-      <div class="name-summary-header">
-        <span>Namensvalidierung</span>
-        <span id="name-validation-status"></span>
-      </div>
-      <div id="name-validation-pending" class="name-summary-pending hidden"></div>
-      <div id="name-validation-resolutions" class="name-summary-resolutions hidden"></div>
-      <div id="name-validation-actions" class="name-summary-actions hidden">
-        <button type="button" id="force-save-btn" class="secondary-button">Speichern trotz offener Namen</button>
-      </div>
-    </div>
-  </main>
+  <div class="admin-layout">
+    <nav class="admin-nav">
+      <a href="index.html">CSV &amp; Datei-Tools</a>
+      <a href="events.html">Events erfassen</a>
+      <a href="players.html">Spieler &amp; Aliase</a>
+      <a href="noshow-dashboard.html">No-Show Analyse</a>
+    </nav>
+    <main class="admin-content">
+      <section class="admin-section page-wrapper">
+        <header class="page-header">
+            <h1>Events hochladen (Tabellen-Editor)</h1>
+            <div class="controls-row">
+              <fieldset>
+                <legend>Event</legend>
+                <div class="flex-gap">
+                  <label>
+                    Event ID
+                    <input type="text" id="event-id" placeholder="DS-2024-05-01-A" autocomplete="off">
+                  </label>
+                  <button type="button" id="derive-event">aus Datei ableiten</button>
+                </div>
+                <small>Format: DS-YYYY-MM-DD-A/B</small>
+              </fieldset>
+              <fieldset>
+                <legend>Import</legend>
+                <div class="dropzone" id="dropzone">CSV hierher ziehen (Mehrfach möglich)</div>
+                <button type="button" id="paste-btn" style="margin-top:0.5rem; width:100%">Aus Zwischenablage einfügen</button>
+              </fieldset>
+              <fieldset>
+                <legend>Branch &amp; Commit</legend>
+                <label>
+                  Ziel-Branch
+                  <select id="branch-select">
+                    <option value="main">main</option>
+                    <option value="ops/events">ops/events</option>
+                    <option value="__custom">Custom…</option>
+                  </select>
+                </label>
+                <label id="custom-branch-wrapper" class="hidden">
+                  Custom-Branch
+                  <input type="text" id="custom-branch" placeholder="feature/my-branch">
+                </label>
+                <label>
+                  Strategie
+                  <select id="strategy-select">
+                    <option value="replace">replace (überschreiben)</option>
+                    <option value="merge">merge (zusammenführen)</option>
+                    <option value="abort-if-exists">abort-if-exists</option>
+                  </select>
+                </label>
+              </fieldset>
+              <fieldset>
+                <legend>Worker</legend>
+                <label>
+                  Worker URL
+                  <input type="url" id="worker-url" value="https://ds-commit.hak1.workers.dev/write-file">
+                </label>
+                <label>
+                  Admin Key (X-Admin-Key)
+                  <input type="password" id="admin-key" placeholder="••••••">
+                </label>
+                <label class="inline">
+                  <input type="checkbox" id="remember-settings">
+                  <span>Einstellungen merken</span>
+                </label>
+              </fieldset>
+            </div>
+            <div class="controls-row">
+              <button type="button" id="save-btn" disabled>Speichern</button>
+              <button type="button" id="build-btn" class="secondary-button" disabled>Roster neu bauen</button>
+              <button type="button" id="reset-btn" class="danger-button">Rückgängig</button>
+              <div id="actions-links" style="display:flex; align-items:center; gap:0.75rem;"></div>
+            </div>
+          </header>
+        <main class="page-main">
+            <div id="error-banner" class="error-banner hidden"></div>
+            <div id="table"></div>
+            <div class="statusbar">
+              <span id="row-count">Zeilen: 0</span>
+              <span id="duplicate-count" class="status-ok">Duplikate: 0</span>
+              <span id="error-count" class="status-ok">Fehler: 0</span>
+            </div>
+            <div id="name-validation" class="name-summary hidden">
+              <div class="name-summary-header">
+                <span>Namensvalidierung</span>
+                <span id="name-validation-status"></span>
+              </div>
+              <div id="name-validation-pending" class="name-summary-pending hidden"></div>
+              <div id="name-validation-resolutions" class="name-summary-resolutions hidden"></div>
+              <div id="name-validation-actions" class="name-summary-actions hidden">
+                <button type="button" id="force-save-btn" class="secondary-button">Speichern trotz offener Namen</button>
+              </div>
+            </div>
+          </main>
+      </section>
+    </main>
+  </div>
   <div class="toast-container" id="toast-container"></div>
 
   <div id="resolver-backdrop" class="modal-backdrop hidden"></div>
@@ -2392,5 +2417,6 @@
     refreshValidationState();
     loadPlayerDirectory().then(() => refreshValidationState());
   </script>
+  <script src="admin.js"></script>
 </body>
 </html>
