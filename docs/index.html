@@ -14,6 +14,12 @@
     h1{margin:0 0 8px}
     h2{margin:0 0 8px}
     h3{margin:12px 0 6px;font-weight:600}
+    .top-bar{display:flex;align-items:flex-start;gap:12px;flex-wrap:wrap;margin:0 0 6px}
+    .top-actions{margin-left:auto;display:flex;gap:10px;align-items:flex-start;flex-wrap:wrap}
+    .admin-link{display:inline-flex;align-items:center;gap:8px;padding:8px 14px;border:1px solid var(--line);border-radius:10px;text-decoration:none;color:var(--fg);background:#fff;box-shadow:0 4px 12px rgba(0,0,0,0.05);font-weight:600}
+    .admin-link:hover{border-color:#c8d5ec;box-shadow:0 6px 16px rgba(0,0,0,0.08)}
+    .admin-link:active{transform:translateY(1px)}
+    .stamp{display:block;font-size:0.8em;line-height:1.4;margin-top:4px}
     .grid{display:grid;grid-template-columns:1fr 1fr;gap:24px}
     table{width:100%;border-collapse:collapse}
     th,td{border-bottom:1px solid var(--line);padding:8px 10px;text-align:left;vertical-align:top}
@@ -39,12 +45,6 @@
     .player-name-row{font-size:14px;font-weight:600}
     .player-meta-row{font-size:11px;color:#777;margin-top:2px;display:none}
     .show-player-meta .player-meta-row{display:block}
-    .admin-tools{margin-top:40px;padding-top:20px;border-top:1px solid var(--line)}
-    .admin-tools h2{margin:0 0 8px}
-    .admin-tools p{margin:0 0 12px;color:var(--muted)}
-    .admin-tools ul{list-style:none;margin:0;padding:0;display:flex;flex-wrap:wrap;gap:12px}
-    .admin-tools a{display:inline-flex;align-items:center;gap:8px;padding:8px 14px;border:1px solid var(--line);border-radius:10px;text-decoration:none;color:var(--fg);background:#fff;box-shadow:0 4px 12px rgba(0,0,0,0.05)}
-    .admin-tools a span{font-size:0.82em;color:var(--muted)}
     #absences{margin-top:48px;padding-top:24px;border-top:1px solid var(--line)}
     #absences h2{margin:0 0 8px}
     #absences .absences-empty{color:var(--muted);margin:0}
@@ -54,7 +54,12 @@
   </style>
 </head>
 <body>
-  <h1>Desert Storm – Aufstellung <span id="stamp" class="muted" style="font-size:0.8em"></span></h1>
+  <div class="top-bar">
+    <h1>Desert Storm – Aufstellung <span id="stamp" class="muted stamp"></span></h1>
+    <div class="top-actions">
+      <a class="admin-link" href="admin/index.html">Admin &amp; Tools</a>
+    </div>
+  </div>
   <p class="muted" id="sort-note" style="margin:0 0 18px"></p>
 
   <div class="roster-controls">
@@ -96,16 +101,6 @@
   </div>
 
   <p class="muted legend">Legende: <span class="tag tag-nd" title="Keine Historie – events_seen = 0">No&nbsp;Data</span> keine Historie · <span class="tag tag-low" title="Wenig Historie – events_seen ∈ {1,2}">low&nbsp;n</span> wenig Historie<br />Farben basieren auf Historie (rolling→overall), EB wird nur zur Sortierung verwendet.<br />No-Data = nie teilgenommen (grau). low-n ≤2 = gelb. 1 Fehltermin = nie rot.</p>
-
-  <section class="admin-tools">
-    <h2>Admin &amp; Tools</h2>
-    <p>Interne Helfer für Events, Spieler und Analysen (GitHub Pages):</p>
-    <ul>
-      <li><a href="admin/events.html">Events erfassen (Admin)</a></li>
-      <li><a href="admin/players.html">Spieler &amp; Aliase &amp; Absenzen (Admin)</a></li>
-      <li><a href="admin/noshow-dashboard.html">No-Show Analyse (Admin)</a></li>
-    </ul>
-  </section>
 
   <section id="absences">
     <h2>Absenzen</h2>
@@ -746,7 +741,7 @@
 
         const ts = new Date().toISOString().replace('T',' ').slice(0,19) + " UTC";
         const schemaVersion = (schema && schema.version != null) ? ` · schema v${schema.version}` : "";
-        document.getElementById("stamp").textContent = `· Stand: ${ts}${schemaVersion}`;
+        document.getElementById("stamp").textContent = `Stand: ${ts}${schemaVersion}`;
       })
       .catch(err=>{
         document.body.insertAdjacentHTML("beforeend",
