@@ -45,6 +45,12 @@
     .admin-tools ul{list-style:none;margin:0;padding:0;display:flex;flex-wrap:wrap;gap:12px}
     .admin-tools a{display:inline-flex;align-items:center;gap:8px;padding:8px 14px;border:1px solid var(--line);border-radius:10px;text-decoration:none;color:var(--fg);background:#fff;box-shadow:0 4px 12px rgba(0,0,0,0.05)}
     .admin-tools a span{font-size:0.82em;color:var(--muted)}
+    #absences{margin-top:48px;padding-top:24px;border-top:1px solid var(--line)}
+    #absences h2{margin:0 0 8px}
+    #absences .absences-empty{color:var(--muted);margin:0}
+    #absences table{margin-top:12px}
+    .absences-roster-badge{display:inline-block;margin-left:6px;padding:2px 8px;border-radius:999px;border:1px solid var(--line);font-size:0.75em;color:var(--muted);background:var(--bgth)}
+    .absences-error{color:#b00}
   </style>
 </head>
 <body>
@@ -101,6 +107,11 @@
     </ul>
   </section>
 
+  <section id="absences">
+    <h2>Absenzen</h2>
+    <div id="absences-content" class="muted">Wird geladen …</div>
+  </section>
+
   <p class="sub muted">Quelle: <code>out/latest.json</code> (GitHub)</p>
 
   <script>
@@ -108,15 +119,21 @@
     const url = new URL(location.href);
     const branch = url.searchParams.get('branch') || 'main';
     const RAW = `https://raw.githubusercontent.com/its-h4k1/desert-storm-roster-optimizer/${branch}/out/latest.json?v=${Date.now()}`;
+    const ABSENCES_RAW = `https://raw.githubusercontent.com/its-h4k1/desert-storm-roster-optimizer/${branch}/data/absences.csv?v=${Date.now()}`;
 
     // Konfiguration: Prior-Defaults (werden durch schema.prior überschrieben)
     const DEFAULT_PRIOR_FALLBACK = 0.18;
     const DEFAULT_PRIOR_PAD = 0.02;
     const EPS = 1e-12;
 
-    const state = { showPlayerMeta: false };
+    const state = {
+      showPlayerMeta: false,
+      absences: { entries: [], active: [], error: null, loading: true },
+      playersByCanon: {},
+    };
     const rosterRoot = document.getElementById("roster-root");
     const playerMetaToggle = document.getElementById("player-meta-toggle");
+    const absencesContainer = document.getElementById("absences-content");
     if (playerMetaToggle) {
       state.showPlayerMeta = Boolean(playerMetaToggle.checked);
       playerMetaToggle.addEventListener("change", (event) => {
@@ -155,6 +172,217 @@
       const n = Number(v);
       return Number.isFinite(n) ? n : null;
     };
+
+    const ZERO_WIDTH_RE = /[\u200b\u200c\u200d\u200e\u200f\u2060\ufeff]/g;
+    const HOMO_TRANSLATE = {
+      "А":"A","В":"B","Е":"E","К":"K","М":"M","Н":"H","О":"O",
+      "Р":"P","С":"S","Т":"T","Х":"X","І":"I","Ј":"J","У":"Y",
+      "а":"a","е":"e","о":"o","р":"p","с":"s","х":"x","у":"y",
+      "к":"k","м":"m","т":"t","н":"h","і":"i","ј":"j","ѵ":"y",
+    };
+
+    function canonicalNameJS(value) {
+      if (value == null) return "";
+      let s = String(value);
+      if (typeof s.normalize === "function") {
+        s = s.normalize("NFKC");
+      }
+      s = s.replace(ZERO_WIDTH_RE, "");
+      s = s.split("").map(ch => HOMO_TRANSLATE[ch] || ch).join("");
+      s = s.toLowerCase();
+      s = s.trim().replace(/\s+/g, " ");
+      return s;
+    }
+
+    function escapeHtml(value) {
+      return value == null ? "" : String(value)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#39;");
+    }
+
+    function splitCsvLine(line) {
+      const out = [];
+      let current = "";
+      let inQuotes = false;
+      for (let i = 0; i < line.length; i++) {
+        const char = line[i];
+        if (inQuotes) {
+          if (char === '"') {
+            if (line[i + 1] === '"') {
+              current += '"';
+              i++;
+            } else {
+              inQuotes = false;
+            }
+          } else {
+            current += char;
+          }
+        } else if (char === '"') {
+          inQuotes = true;
+        } else if (char === ',') {
+          out.push(current);
+          current = "";
+        } else {
+          current += char;
+        }
+      }
+      out.push(current);
+      return out;
+    }
+
+    function parseCsv(text) {
+      const cleaned = (text || "").replace(/^\ufeff/, "").split(/\r?\n/);
+      const lines = cleaned.filter(line => line && line.trim().length);
+      if (!lines.length) return [];
+      const headers = splitCsvLine(lines.shift()).map(h => h.trim());
+      return lines.map(line => {
+        const cells = splitCsvLine(line);
+        const obj = {};
+        headers.forEach((header, idx) => {
+          obj[header] = cells[idx] != null ? cells[idx].trim() : "";
+        });
+        return obj;
+      });
+    }
+
+    function parseDateOnly(value) {
+      if (!value) return null;
+      const trimmed = String(value).trim();
+      if (!trimmed) return null;
+      const date = new Date(trimmed);
+      if (Number.isNaN(date.getTime())) return null;
+      return new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()));
+    }
+
+    function parseActiveFlag(value) {
+      if (value == null) return false;
+      const normalized = String(value).trim().toLowerCase();
+      return ["1","true","yes","y","aktiv","active"].includes(normalized);
+    }
+
+    function normalizeAbsenceRow(row) {
+      const playerName = (row?.PlayerName ?? row?.playername ?? "").toString().trim();
+      const from = (row?.From ?? row?.from ?? "").toString().trim();
+      const to = (row?.To ?? row?.to ?? "").toString().trim();
+      const reason = (row?.Reason ?? row?.reason ?? "").toString().trim();
+      const activeFlag = row?.Active ?? row?.active;
+      return {
+        playerName,
+        canon: canonicalNameJS(playerName),
+        from,
+        to,
+        fromDate: parseDateOnly(from),
+        toDate: parseDateOnly(to),
+        reason,
+        active: parseActiveFlag(activeFlag),
+      };
+    }
+
+    function todayDateUTC() {
+      const now = new Date();
+      return new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
+    }
+
+    function computeActiveAbsences(entries) {
+      const today = todayDateUTC();
+      const todayMs = today.getTime();
+      return entries.filter(entry => {
+        if (!entry.active) {
+          return false; // Frontend betrachtet derzeit nur Active==true als "aktuell".
+        }
+        if (entry.fromDate && entry.fromDate.getTime() > todayMs) {
+          return false;
+        }
+        if (entry.toDate && entry.toDate.getTime() < todayMs) {
+          return false;
+        }
+        return true;
+      });
+    }
+
+    function formatAbsenceRange(entry) {
+      const from = entry.from || "–";
+      const to = entry.to || "–";
+      if (!entry.from && !entry.to) return "–";
+      return `${from} – ${to}`;
+    }
+
+    function rosterBadgeFor(entry) {
+      const meta = state.playersByCanon[entry.canon];
+      if (!meta) return "";
+      const parts = [];
+      if (meta.group) parts.push(`Gruppe ${meta.group}`);
+      if (meta.role) parts.push(meta.role);
+      const text = parts.join(" · ");
+      return text ? `<span class="absences-roster-badge">im Roster${text ? ` · ${escapeHtml(text)}` : ""}</span>` : "";
+    }
+
+    function updateAbsencesUI() {
+      if (!absencesContainer) return;
+      const { loading, error, active } = state.absences;
+      if (loading) {
+        absencesContainer.textContent = "Wird geladen …";
+        return;
+      }
+      if (error) {
+        absencesContainer.innerHTML = `<p class="absences-error">Absenzen konnten nicht geladen werden (${escapeHtml(error.message || error)})</p>`;
+        return;
+      }
+      if (!active.length) {
+        absencesContainer.innerHTML = '<p class="absences-empty">Aktuell sind keine Absenzen erfasst.</p>';
+        return;
+      }
+      const rows = active.map(entry => {
+        const rosterMeta = state.playersByCanon[entry.canon];
+        const label = rosterMeta?.display || entry.playerName || "Unbekannt";
+        const badge = rosterBadgeFor(entry);
+        return `
+          <tr>
+            <td>${escapeHtml(label)}${badge}</td>
+            <td>${escapeHtml(formatAbsenceRange(entry))}</td>
+            <td>${entry.reason ? escapeHtml(entry.reason) : "–"}</td>
+            <td>aktiv</td>
+          </tr>
+        `;
+      }).join("");
+      absencesContainer.innerHTML = `
+        <table>
+          <thead>
+            <tr><th>Spieler</th><th>Zeitraum</th><th>Grund</th><th>Status</th></tr>
+          </thead>
+          <tbody>${rows}</tbody>
+        </table>
+      `;
+    }
+
+    function fetchAbsences() {
+      state.absences.loading = true;
+      state.absences.error = null;
+      updateAbsencesUI();
+      fetch(ABSENCES_RAW, { cache: "no-store" })
+        .then(r => { if (!r.ok) throw new Error(r.status + " " + r.statusText); return r.text(); })
+        .then(text => {
+          const parsed = parseCsv(text);
+          const normalized = parsed.map(normalizeAbsenceRow).filter(row => row.playerName);
+          state.absences.entries = normalized;
+          state.absences.active = computeActiveAbsences(normalized);
+          state.absences.error = null;
+        })
+        .catch(err => {
+          state.absences.entries = [];
+          state.absences.active = [];
+          state.absences.error = err;
+        })
+        .finally(() => {
+          state.absences.loading = false;
+          updateAbsencesUI();
+        });
+    }
+
+    fetchAbsences();
 
     /**
      * Farb-Logik für No-Show-Badges (bisheriges Verhalten in Klartext):
@@ -323,6 +551,20 @@
             .filter(p => p && typeof p === "object" && typeof p.display === "string")
             .map(p => [p.display, p])
         );
+        const playersByCanon = {};
+        playersArray.forEach(p => {
+          if (!p || typeof p !== "object") return;
+          const canonSource = typeof p.canon === "string" && p.canon.trim() ? p.canon : p.display;
+          const canon = canonicalNameJS(canonSource || "");
+          if (!canon) return;
+          playersByCanon[canon] = {
+            display: p.display,
+            group: p.group,
+            role: p.role,
+          };
+        });
+        state.playersByCanon = playersByCanon;
+        updateAbsencesUI();
         const hasEventsSeen = playersArray.some(p => p && Object.prototype.hasOwnProperty.call(p, "events_seen"));
 
         const observedFromPlayers = playersArray
