@@ -613,11 +613,17 @@
       const defaultBranch = "main";
       const SETTINGS_KEY = "dsro-player-admin-settings";
 
-      // Diese Spalten kodieren das Allianz-Membership-Flag (Active==1 bedeutet "im Roster").
-      const ALLIANCE_MEMBERSHIP_COLUMNS = ["Active", "InAlliance", "ActiveFlag", "ActiveStatus", "IsActive"];
+      // Diese Spalten kodieren das Allianz-Membership-Flag (InAlliance==1 bedeutet "im Roster").
+      const ALLIANCE_MEMBERSHIP_COLUMNS = [
+        "InAlliance",
+        "Active",
+        "ActiveFlag",
+        "ActiveStatus",
+        "IsActive",
+      ];
       const ALLIANCE_MEMBERSHIP_LABEL = "In Allianz";
       const ALLIANCE_MEMBERSHIP_HINT = "Wenn deaktiviert, gilt der Spieler als ausgetreten und wird im Roster ignoriert.";
-      const DEFAULT_ABSENCE_HEADERS = ["PlayerName", "From", "To", "Reason", "Active"];
+      const DEFAULT_ABSENCE_HEADERS = ["PlayerName", "From", "To", "Reason", "InAlliance"];
       const ZERO_WIDTH_REGEX = /[\u200B-\u200F\u2060\uFEFF]/g;
       const HOMOGLYPH_MAP = {
         "А": "A",
@@ -997,8 +1003,8 @@
             const dot = document.createElement("span");
             dot.className = "status-dot";
             const value = player.rawRow[field];
-            const isActive = value === 1 || value === "1" || value === true || value === "true";
-            if (isActive) {
+            const isInAlliance = value === 1 || value === "1" || value === true || value === "true";
+            if (isInAlliance) {
               dot.classList.add("on");
             }
             td.appendChild(dot);

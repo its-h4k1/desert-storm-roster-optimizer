@@ -89,15 +89,18 @@ Die Datei `data/alliance.csv` kann optionale Präferenzspalten enthalten, um Gru
 berücksichtigen:
 
 ```
-PlayerName,Active,PrefGroup,PrefMode,PrefBoost
+PlayerName,InAlliance,PrefGroup,PrefMode,PrefBoost
 itsH4K1,1,A,hard,
 Cupra290,1,B,soft,0.08
 Mahaja,1,,,
 ```
 
-- `Active` bleibt als Spaltenname erhalten, steht aber für die Mitgliedschaft in der Allianz:
-  `1` = Spieler ist aktuell Teil der Allianz (wird beim Roster berücksichtigt),
-  `0` = Spieler ist ausgetreten bzw. entfernt (taucht in Berechnungen nicht mehr auf).
+- `InAlliance` kennzeichnet die Allianz-Mitgliedschaft: `1` = Spieler ist aktuell Teil der
+  Allianz (wird beim Roster berücksichtigt), `0` = Spieler ist ausgetreten bzw. entfernt
+  (taucht in Berechnungen nicht mehr auf). Ältere CSVs mit `Active` werden weiter eingelesen,
+  es erscheint jedoch eine Warnung mit dem Hinweis auf die neue Spalte. Das Skript
+  `scripts/migrate_active_flag.py data/alliance.csv --backup` benennt alte Dateien auf Wunsch
+  automatisch um.
 - `PrefGroup` wählt die Wunschgruppe (`A` oder `B`).
 - `PrefMode = hard` erzwingt die Zuteilung in die Wunschgruppe, außer andernfalls bliebe eine
   Gruppe dauerhaft unterbesetzt.

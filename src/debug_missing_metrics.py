@@ -96,19 +96,36 @@ def _load_events(event_patterns: List[str]) -> pd.DataFrame:
     return pd.concat(keep, ignore_index=True)
 
 
+def _ensure_in_alliance_column(df: pd.DataFrame, *, context: str) -> pd.Series:
+    """Normalize the InAlliance membership flag with Active as a legacy alias."""
+
+    if "InAlliance" in df.columns:
+        column = "InAlliance"
+    elif "Active" in df.columns:
+        print(
+            f"[warn] {context}: legacy column 'Active' gefunden – bitte künftig 'InAlliance' verwenden."
+        )
+        column = "Active"
+    else:
+        raise SystemExit(
+            f"[fatal] {context} benötigt die Spalte 'InAlliance' (oder legacy 'Active')."
+        )
+
+    df["InAlliance"] = (
+        pd.to_numeric(df[column], errors="coerce").fillna(0).astype(int).clip(0, 1)
+    )
+    return df["InAlliance"]
+
+
 def _load_alliance(path: str) -> pd.DataFrame:
     df = pd.read_csv(path, dtype=str)
     if "PlayerName" not in df.columns:
         raise SystemExit("[fatal] alliance.csv benötigt Spalte 'PlayerName'")
-    if "Active" not in df.columns:
-        df["Active"] = 1
-    # alliance["Active"] kennzeichnet die Mitgliedschaft in der Allianz:
-    # 1 = Spieler ist (noch) dabei und taucht in Reports/Roster auf,
-    # 0 = Spieler wurde entfernt bzw. ist ausgetreten.
-    df["Active"] = pd.to_numeric(df["Active"], errors="coerce").fillna(0).astype(int).clip(0, 1)
+
+    _ensure_in_alliance_column(df, context="alliance.csv")
     df["DisplayName"] = df["PlayerName"].astype(str)
     df["canon"] = df["PlayerName"].map(canonical_name)
-    return df[["canon", "DisplayName", "Active"]].copy()
+    return df[["canon", "DisplayName", "InAlliance"]].copy()
 
 
 def _load_latest_json(path: str) -> dict:
@@ -170,7 +187,7 @@ def build_missing_report(
     """
     players = latest.get("players", [])
     rows = []
-    active_map = dict(zip(alliance_df["canon"], alliance_df["Active"]))
+    active_map = dict(zip(alliance_df["canon"], alliance_df["InAlliance"]))
     display_map = dict(zip(alliance_df["canon"], alliance_df["DisplayName"]))
 
     seen_map = dict(zip(events_seen_df["canon"], events_seen_df["SeenEvents"]))
@@ -200,7 +217,7 @@ def build_missing_report(
 
         # Alliance-Status
         active_flag = int(active_map.get(canon, 0))
-        in_alliance = 1 if canon in active_map else 0
+        in_alliance = 1 if active_flag == 1 else 0
 
         # Reason
         if (math.isnan(ns_overall) and math.isnan(ns_rolling)):

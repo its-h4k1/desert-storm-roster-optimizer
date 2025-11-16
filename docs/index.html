@@ -257,10 +257,10 @@
       return new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()));
     }
 
-    function parseActiveFlag(value) {
+    function parseInAllianceFlag(value) {
       if (value == null) return false;
       const normalized = String(value).trim().toLowerCase();
-      // "Active" ist das Allianz-Membership-Flag (1 = noch in der Allianz, 0 = ausgetreten).
+      // "InAlliance" kennzeichnet die Allianz-Mitgliedschaft (1 = im Roster, 0 = ausgetreten).
       return ["1","true","yes","y","aktiv","active"].includes(normalized);
     }
 
@@ -269,7 +269,8 @@
       const from = (row?.From ?? row?.from ?? "").toString().trim();
       const to = (row?.To ?? row?.to ?? "").toString().trim();
       const reason = (row?.Reason ?? row?.reason ?? "").toString().trim();
-      const activeFlag = row?.Active ?? row?.active;
+      const activeFlag =
+        row?.InAlliance ?? row?.inalliance ?? row?.Active ?? row?.active;
       return {
         playerName,
         canon: canonicalNameJS(playerName),
@@ -278,7 +279,7 @@
         fromDate: parseDateOnly(from),
         toDate: parseDateOnly(to),
         reason,
-        active: parseActiveFlag(activeFlag),
+        inAlliance: parseInAllianceFlag(activeFlag),
       };
     }
 
@@ -291,7 +292,7 @@
       const today = todayDateUTC();
       const todayMs = today.getTime();
       return entries.filter(entry => {
-        if (!entry.active) {
+        if (!entry.inAlliance) {
           return false; // Nur Spieler, die noch zur Allianz gehören, tauchen in der Übersicht auf.
         }
         if (entry.fromDate && entry.fromDate.getTime() > todayMs) {
