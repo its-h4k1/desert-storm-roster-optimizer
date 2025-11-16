@@ -1,7 +1,87 @@
 # Desert Storm Roster Optimizer
 
-Ein Python-Tool, das aus Event-CSV-Dateien die Anwesenheitswahrscheinlichkeit pro Spieler schätzt
-und daraus eine optimale Aufstellung (A/B) für das Desert Storm Event berechnet.
+Ein Python-Tool, das Event-Historien der Allianz „Desert Storm“ analysiert, Empirical-Bayes-No-Show-
+Schätzungen berechnet und daraus deterministische Aufstellungen (A/B, Start/Ersatz) ableitet.
+
+## Kurzüberblick
+
+- **Zweck**: Verlässliche Aufstellungen und Risiko-Metriken für das MMO-Event „Last War – Desert Storm“
+  inkl. Präferenzen, Abwesenheiten und Alias-Auflösung.
+- **Technik**: Python-CLI (`src/main.py`) produziert strukturierte JSON/CSV-Exports, GitHub Actions
+  hält `out/latest.*` aktuell und GitHub Pages (`docs/`) visualisiert die Ergebnisse.
+
+## Build & Outputs
+
+- **Lokal bauen**
+  1. Dependencies installieren: `pip install -r requirements.txt`
+  2. Builder starten: `python -m src.main`
+  3. Die CLI liest alle CSVs aus `data/` (Events, `alliance.csv`, `aliases.csv`, `absences.csv`, …)
+     und schreibt neue Artefakte nach `out/`.
+- **CI**: `.github/workflows/roster.yml` führt denselben Schritt auf `main` aus, sobald sich Daten
+  ändern. Weitere Workflows räumen alte Artefakte auf oder validieren `latest.json`.
+- **Wichtige Artefakte (`out/`)**
+  - `latest.json` – Quelle der Web-UIs (Roster, Dashboard)
+  - `latest.csv` / `roster.csv` – tabellarischer Export je Spieler/Slot
+  - `alias_suggestions.csv`, `missing_noshow_report.csv` – Diagnose für Datenpflege
+  - `name_warnings.json` – Hinweise für unaufgelöste oder mehrdeutige Namen
+
+## UIs & Admin-Tools
+
+Alle Oberflächen liegen statisch im Ordner `docs/` und können entweder über GitHub Pages
+(`https://its-h4k1.github.io/desert-storm-roster-optimizer/…`) oder lokal per
+`python -m http.server 4173 --directory docs` geöffnet werden (danach `http://localhost:4173`).
+Jede Seite lädt die Daten direkt aus dem Repo (`out/latest.json`, `data/*.csv`) und benötigt daher
+keinen Build-Schritt.
+
+> Mehr Details zu Layout und Erweiterungsregeln stehen in [`docs/ADMIN-UI.md`](docs/ADMIN-UI.md).
+
+### Haupt-Roster-Ansicht (`docs/index.html`)
+
+- Zeigt die aktuellen Start- und Ersatzaufstellungen für Gruppen A/B inkl. No-Show-Metriken.
+- Lädt `out/latest.json` (Standard-Branch `main`, per `?branch=<name>` überschreibbar) von
+  `raw.githubusercontent.com` und rendert vollständig clientseitig.
+- Lokal: `http://localhost:4173/index.html` (Server siehe oben).
+
+### Admin Startseite & CSV-Tools (`docs/admin/index.html`)
+
+- Gemeinsame Shell mit Navigation, direktem Zugriff auf `data/alliance.csv`, `data/aliases.csv`,
+  `data/absences.csv` sowie einem Event-Upload.
+- Unterstützt schnelles Editieren/Committen über den Cloudflare-Worker `ds-commit.hak1.workers.dev`.
+- Lokal: `http://localhost:4173/admin/index.html` (setzt denselben Worker voraus wie die anderen
+  Admin-Seiten).
+
+### Events erfassen (`docs/admin/events.html`)
+
+- Tabellen-UI für Event-Dateien (`data/<EventID>.csv`). Import via Drag & Drop oder Zwischenablage,
+  Schema-Prüfung und Validierung von Slot, Rolle und Teilnahme.
+- Nutzt `data/alliance.csv` und `data/aliases.csv` (lokal oder via Raw-GitHub), um Spieler zuzuordnen
+  bzw. neue Aliase/Spieler vorzuschlagen. Exportiert bestätigte Events als CSV-Commits.
+- Lokal: `http://localhost:4173/admin/events.html` – identisch zur GitHub-Pages-Version, solange der
+  Worker-Endpunkt erreichbar ist.
+
+### Spieler, Aliase & Absenzen (`docs/admin/players.html`)
+
+- Verwalten von `data/alliance.csv`, `data/aliases.csv` und `data/absences.csv` inkl. Statusfeldern,
+  Such-/Filterfunktionen und Abwesenheitsformularen.
+- Lädt bestehende Datensätze (lokal oder via Raw-URL), erlaubt Alias-Merge, Spielerstatus-Updates und
+  schreibt Änderungen zurück über denselben Worker-Commit-Flow.
+- Lokal: `http://localhost:4173/admin/players.html`.
+
+### No-Show Analyse / Dashboard (`docs/admin/noshow-dashboard.html`)
+
+- Chart-basierte Analyse von Rolling/Overall-No-Show-Raten, Histogrammen und Gruppenvergleichen zur
+  Bewertung des Empirical-Bayes-Rosters.
+- Liest ausschließlich `out/latest.json` und bietet Filter nach Gruppe, Rolle, Historie etc.
+- Lokal: `http://localhost:4173/admin/noshow-dashboard.html`.
+
+## Admin-Flow (High Level)
+
+1. Event-Rohdaten erfassen (z. B. via Screenshot→OCR→CSV); Vorlage und Schema stehen in `docs/admin/events.html`.
+2. In der Events-UI CSV importieren, Namen auflösen (Alias anlegen oder Spieler hinzufügen) und das
+   Event nach `data/DS-YYYY-MM-DD-<Group>.csv` committen.
+3. Optional: Spieler-/Alias-/Abwesenheitsdaten in `docs/admin/players.html` pflegen.
+4. Builder läuft lokal oder via GitHub Actions → neue `out/latest.*`. Ergebnis in `docs/index.html`
+   (Roster) und `docs/admin/noshow-dashboard.html` (Analytics) prüfen.
 
 ## Gruppen-Präferenzen
 
