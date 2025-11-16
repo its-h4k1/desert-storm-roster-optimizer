@@ -1,0 +1,686 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex, nofollow">
+  <title>Gruppenpräferenzen verwalten</title>
+  <link rel="stylesheet" href="admin.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <style>
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: var(--bg);
+      color: var(--text);
+    }
+
+    .page-header {
+      background: var(--glass, rgba(255, 255, 255, 0.92));
+      padding: 1.25rem clamp(1rem, 4vw, 2rem);
+      border-radius: 1rem;
+      border: 1px solid var(--border-strong, var(--border));
+      box-shadow: var(--shadow-panel, 0 20px 45px rgba(15, 23, 42, 0.08));
+      backdrop-filter: blur(18px);
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1rem;
+      align-items: flex-end;
+    }
+
+    .page-header h1 {
+      flex-basis: 100%;
+      margin: 0;
+      font-size: 1.45rem;
+    }
+
+    .page-header .settings {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+      align-items: flex-end;
+    }
+
+    label {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      display: flex;
+      flex-direction: column;
+      gap: 0.35rem;
+    }
+
+    input[type="text"],
+    input[type="search"],
+    input[type="password"],
+    input[type="number"],
+    select,
+    textarea {
+      font: inherit;
+      padding: 0.5rem 0.65rem;
+      border-radius: 0.75rem;
+      border: 1px solid var(--border);
+      background: var(--bg-alt);
+      color: var(--text);
+      min-width: clamp(10rem, 24vw, 18rem);
+      box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+    }
+
+    input[type="search"] { min-width: 0; }
+
+    input:focus,
+    select:focus,
+    textarea:focus {
+      outline: 2px solid rgba(37, 99, 235, 0.35);
+      outline-offset: 1px;
+    }
+
+    button {
+      font: inherit;
+      border: 1px solid var(--border);
+      border-radius: 0.75rem;
+      padding: 0.55rem 1.1rem;
+      background: #fff;
+      color: var(--text);
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      transition: background 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+    }
+
+    button:hover { background: #f8fafc; box-shadow: 0 4px 12px rgba(15, 23, 42, 0.12); }
+    button.secondary { background: var(--accent); border-color: var(--accent); color: #fff; }
+    button.ghost { background: transparent; border-color: transparent; color: var(--accent); }
+    button[disabled] { opacity: 0.6; cursor: not-allowed; }
+
+    .page-main {
+      flex: 1;
+      padding: 1.5rem;
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 1.5rem;
+      align-items: start;
+    }
+
+    .panel {
+      background: var(--panel);
+      border-radius: 1rem;
+      padding: 1rem;
+      border: 1px solid var(--border);
+      box-shadow: 0 12px 28px rgba(15, 23, 42, 0.08);
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+
+    .panel h2 { margin: 0; font-size: 1.1rem; }
+
+    .table-wrapper { border: 1px solid var(--border); border-radius: 0.75rem; overflow: hidden; background: var(--panel-muted); }
+
+    table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+    thead { background: #f1f5f9; text-transform: uppercase; font-size: 0.75rem; letter-spacing: 0.04em; }
+    th, td { padding: 0.5rem 0.75rem; border-bottom: 1px solid rgba(255, 255, 255, 0.05); }
+    tbody tr:nth-child(2n) { background: #f9fafc; }
+    tbody tr:hover { background: rgba(37, 99, 235, 0.08); }
+
+    .pill {
+      padding: 0.2rem 0.55rem;
+      border-radius: 999px;
+      font-size: 0.75rem;
+      background: rgba(15, 23, 42, 0.08);
+      color: #0f172a;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.3rem;
+    }
+
+    .pill.ok { background: rgba(34, 197, 94, 0.15); color: #14532d; }
+    .pill.err { background: rgba(239, 68, 68, 0.15); color: #7f1d1d; }
+
+    .legend {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 0.75rem;
+      color: var(--text-muted);
+      font-size: 0.95rem;
+    }
+
+    .legend strong { color: var(--text); display: block; margin-bottom: 0.35rem; }
+
+    .status-bar {
+      position: sticky;
+      bottom: 0;
+      left: 0;
+      width: 100%;
+      background: var(--glass, rgba(255, 255, 255, 0.9));
+      border-top: 1px solid var(--border);
+      padding: 0.55rem 1rem;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      box-shadow: 0 -8px 20px rgba(15, 23, 42, 0.04);
+    }
+
+    .status-badge {
+      font-size: 0.8rem;
+      border-radius: 999px;
+      padding: 0.35rem 0.75rem;
+      background: #e2e8f0;
+      color: #0f172a;
+    }
+
+    .status-ok { background: rgba(34, 197, 94, 0.14); color: #14532d; }
+    .status-warn { background: rgba(234, 179, 8, 0.18); color: #854d0e; }
+    .status-error { background: rgba(239, 68, 68, 0.14); color: #7f1d1d; }
+    .status-info { background: rgba(59, 130, 246, 0.12); color: #1d4ed8; }
+
+    .controls { display: flex; flex-wrap: wrap; gap: 0.75rem; align-items: center; }
+    .controls .flex-spacer { flex: 1; min-width: 120px; }
+
+    .help-box {
+      border: 1px dashed var(--border);
+      border-radius: 0.75rem;
+      padding: 0.75rem;
+      background: rgba(255, 255, 255, 0.45);
+    }
+
+    @media (max-width: 900px) {
+      .page-header { position: static; }
+      .page-main { padding: 1rem; }
+      table { font-size: 0.85rem; }
+      label { width: 100%; }
+      input[type="text"], input[type="password"], input[type="search"], select { width: 100%; }
+      button { width: 100%; justify-content: center; }
+    }
+  </style>
+</head>
+<body class="admin-shell">
+  <header class="admin-header">
+    <div class="admin-brand">ELT Admin</div>
+    <div class="admin-header-actions">
+      <a class="btn ghost" href="../index.html">Zur Roster-Ansicht</a>
+    </div>
+  </header>
+  <div class="admin-layout">
+    <nav class="admin-nav">
+      <a href="index.html">CSV &amp; Datei-Tools</a>
+      <a href="events.html">Events erfassen</a>
+      <a href="players.html">Spieler &amp; Aliase</a>
+      <a href="absences.html">Absenzen</a>
+      <a href="group-preferences.html" class="active">Gruppenpräferenzen</a>
+      <a href="noshow-dashboard.html">No-Show Analyse</a>
+    </nav>
+
+    <main class="admin-content">
+      <section class="admin-section page-wrapper">
+        <header class="page-header">
+          <div style="flex:1;min-width:240px;">
+            <h1>Gruppenpräferenzen verwalten</h1>
+            <p style="margin:0;color:#6b7280;font-size:0.9rem">Pflege von <code>data/alliance.csv</code> (Spalten <code>PrefGroup</code>, <code>PrefMode</code>, <code>PrefBoost</code>).</p>
+          </div>
+          <div class="settings">
+            <label>Worker URL
+              <input id="workerUrl" type="text" value="https://ds-commit.hak1.workers.dev/write-file" spellcheck="false">
+            </label>
+            <label>Branch
+              <input id="branchInput" type="text" value="main" spellcheck="false">
+            </label>
+            <label>Admin-Key
+              <input id="adminKey" type="password" placeholder="r4-admin" autocomplete="off">
+            </label>
+            <button id="reloadBtn" class="ghost">Neu laden</button>
+            <button id="saveBtn">Speichern</button>
+          </div>
+        </header>
+
+        <main class="page-main">
+          <section class="panel">
+            <div style="display:flex;align-items:center;gap:0.75rem;flex-wrap:wrap;">
+              <h2 style="margin-right:auto;">Allianz-Mitglieder</h2>
+              <span class="pill" id="statsPill">–</span>
+              <div class="help-box">
+                <div class="legend">
+                  <div><strong>Feste Gruppe (hard)</strong> Spieler MUSS in der gewählten Gruppe landen.</div>
+                  <div><strong>Weiche Präferenz (soft)</strong> Bevorzugte Gruppe, Wechsel möglich wenn Slots knapp.</div>
+                  <div><strong>Keine Vorgabe</strong> Optimizer verteilt frei. PrefBoost erhöht Score bei Wunschgruppe.</div>
+                </div>
+              </div>
+            </div>
+            <div class="controls">
+              <label style="flex:1;min-width:200px;">Suche
+                <input type="search" id="searchInput" placeholder="Namen filtern…">
+              </label>
+              <label style="align-items:center;flex-direction:row;gap:0.5rem;">
+                <input type="checkbox" id="activeOnly" checked>
+                <span>Nur InAlliance = 1</span>
+              </label>
+            </div>
+            <div class="table-wrapper" aria-live="polite">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Spieler</th>
+                    <th>Status</th>
+                    <th>Feste Gruppe</th>
+                    <th>Soft-Präferenz</th>
+                    <th>Präferenztyp</th>
+                    <th>PrefBoost</th>
+                    <th>Notiz</th>
+                  </tr>
+                </thead>
+                <tbody id="tableBody"></tbody>
+              </table>
+            </div>
+            <div class="hint" id="emptyState" style="display:none;">Keine Spieler gefunden.</div>
+          </section>
+        </main>
+      </section>
+    </main>
+  </div>
+
+  <div class="status-bar">
+    <span id="statusBadge" class="status-badge status-info">Bereit</span>
+    <div id="statusText" class="status-text">Noch keine Änderungen.</div>
+  </div>
+
+  <script src="https://unpkg.com/papaparse@5.4.1/papaparse.min.js"></script>
+  <script>
+    (function(){
+      const elements = {
+        workerUrl: document.getElementById("workerUrl"),
+        branch: document.getElementById("branchInput"),
+        adminKey: document.getElementById("adminKey"),
+        reloadBtn: document.getElementById("reloadBtn"),
+        saveBtn: document.getElementById("saveBtn"),
+        searchInput: document.getElementById("searchInput"),
+        activeOnly: document.getElementById("activeOnly"),
+        tableBody: document.getElementById("tableBody"),
+        emptyState: document.getElementById("emptyState"),
+        statsPill: document.getElementById("statsPill"),
+        statusBadge: document.getElementById("statusBadge"),
+        statusText: document.getElementById("statusText"),
+      };
+
+      const state = {
+        headers: [],
+        rows: [],
+        originalCsv: "",
+        loading: false,
+        saving: false,
+      };
+
+      const SETTINGS_KEY = "dsro-group-pref-settings";
+      const repoOwner = "its-h4k1";
+      const repoName = "desert-storm-roster-optimizer";
+      const defaultBranch = "main";
+      const DEFAULT_HEADERS = ["PlayerName", "InAlliance", "Note", "PrefGroup", "PrefMode", "PrefBoost"];
+
+      function normalizeLineEndings(text) {
+        return (text || "").replace(/\r\n/g, "\n").replace(/\r/g, "\n");
+      }
+
+      function ensureTrailingNewline(text) {
+        if (!text) return "\n";
+        return /\n$/.test(text) ? text : text + "\n";
+      }
+
+      function formatCsvValue(value) {
+        if (value === null || value === undefined) return "";
+        const str = value.toString();
+        if (str.includes("\"") || str.includes(",") || str.includes("\n")) {
+          return `"${str.replace(/"/g, '""')}"`;
+        }
+        return str;
+      }
+
+      function buildCsvFromRows(headers, rows) {
+        const headerLine = headers.join(",");
+        const lines = rows.map(row => headers.map(h => formatCsvValue(row[h] ?? "")).join(","));
+        return ensureTrailingNewline([headerLine, ...lines].join("\n"));
+      }
+
+      function buildCandidatePaths(path) {
+        const cleanPath = path.replace(/^\/+/, "");
+        const prefixes = ["../../", "../", "./", ""];
+        const candidates = prefixes.map(prefix => `${prefix}${cleanPath}`.replace(/\/+/g, "/"));
+        const rawUrl = `https://raw.githubusercontent.com/${repoOwner}/${repoName}/${defaultBranch}/${cleanPath}`;
+        candidates.push(rawUrl);
+        return candidates;
+      }
+
+      async function fetchFirstAvailable(urls) {
+        for (const url of urls) {
+          try {
+            const response = await fetch(url, { cache: "no-store" });
+            if (response.ok) return await response.text();
+          } catch (err) {
+            console.warn("Fetch-Fallback fehlgeschlagen", url, err);
+          }
+        }
+        throw new Error(`Keine Quelle erreichbar (${urls.join(", ")})`);
+      }
+
+      function ensureHeaders(headers) {
+        const list = (headers || []).filter(Boolean);
+        DEFAULT_HEADERS.forEach(h => { if (!list.includes(h)) list.push(h); });
+        return list;
+      }
+
+      function toBoolFlag(value) {
+        return value === 1 || value === "1" || value === true || value === "true";
+      }
+
+      async function loadAlliance() {
+        const paths = buildCandidatePaths("data/alliance.csv");
+        const text = await fetchFirstAvailable(paths);
+        const normalized = ensureTrailingNewline(normalizeLineEndings(text));
+        state.originalCsv = normalized;
+        const parsed = Papa.parse(normalized, { header: true, skipEmptyLines: false });
+        const headers = ensureHeaders(parsed.meta.fields || []);
+        state.headers = headers;
+        const rows = parsed.data || [];
+        state.rows = rows
+          .filter(row => row && Object.values(row).some(v => (v ?? "").toString().trim() !== ""))
+          .map((row, idx) => {
+            const entry = { ...row };
+            headers.forEach(h => { if (!(h in entry)) entry[h] = ""; });
+            entry.PlayerName = (entry.PlayerName || "").trim();
+            entry.PrefGroup = (entry.PrefGroup || "").toString().toUpperCase();
+            entry.PrefMode = (entry.PrefMode || "").toString().toLowerCase();
+            entry.PrefBoost = (entry.PrefBoost || "").toString();
+            return { id: idx + 1, raw: entry };
+          });
+        renderTable();
+        setStatus("Geladen.", "ok");
+      }
+
+      function setStatus(message, tone = "info") {
+        const badge = elements.statusBadge;
+        badge.className = "status-badge status-" + tone;
+        badge.textContent = tone === "ok" ? "OK" : tone === "error" ? "Fehler" : tone === "warn" ? "Hinweis" : "Status";
+        elements.statusText.textContent = message;
+      }
+
+      function setLoading(isLoading) {
+        state.loading = isLoading;
+        elements.reloadBtn.disabled = isLoading || state.saving;
+        updateSaveButtonState();
+        if (isLoading) setStatus("Lade Allianz…", "info");
+      }
+
+      function setSaving(isSaving) {
+        state.saving = isSaving;
+        updateSaveButtonState();
+      }
+
+      function updateSaveButtonState() {
+        elements.saveBtn.disabled = state.loading || state.saving || !hasChanges();
+        elements.saveBtn.textContent = state.saving ? "Speichert…" : "Speichern";
+      }
+
+      function hasChanges() {
+        const current = buildCurrentCsv();
+        return normalizeLineEndings(current).trim() !== normalizeLineEndings(state.originalCsv).trim();
+      }
+
+      function buildCurrentCsv() {
+        const headers = state.headers.length ? state.headers : [...DEFAULT_HEADERS];
+        const rows = state.rows.map(entry => {
+          const row = {};
+          headers.forEach(h => { row[h] = entry.raw[h] ?? ""; });
+          return row;
+        });
+        return buildCsvFromRows(headers, rows);
+      }
+
+      function getFilteredRows() {
+        const query = (elements.searchInput.value || "").trim().toLowerCase();
+        const activeOnly = elements.activeOnly.checked;
+        const rows = state.rows || [];
+        return rows
+          .filter(row => {
+            const name = (row.raw.PlayerName || "").toLowerCase();
+            if (activeOnly && !toBoolFlag(row.raw.InAlliance)) return false;
+            if (query && !name.includes(query)) return false;
+            return true;
+          })
+          .sort((a, b) => (a.raw.PlayerName || "").localeCompare(b.raw.PlayerName || "", "de", { sensitivity: "base" }));
+      }
+
+      function updateStats() {
+        const total = state.rows.length;
+        const actives = state.rows.filter(r => toBoolFlag(r.raw.InAlliance)).length;
+        const hard = state.rows.filter(r => r.raw.PrefMode === "hard" && ["A","B"].includes(r.raw.PrefGroup)).length;
+        const soft = state.rows.filter(r => r.raw.PrefMode === "soft" && ["A","B"].includes(r.raw.PrefGroup)).length;
+        elements.statsPill.textContent = `${actives}/${total} aktiv · ${hard} hard · ${soft} soft`;
+      }
+
+      function createSelect(options, value, onChange) {
+        const select = document.createElement("select");
+        options.forEach(opt => {
+          const option = document.createElement("option");
+          option.value = opt.value;
+          option.textContent = opt.label;
+          if (opt.value === value) option.selected = true;
+          select.appendChild(option);
+        });
+        select.addEventListener("change", (e) => onChange(e.target.value));
+        return select;
+      }
+
+      function renderTable() {
+        const tbody = elements.tableBody;
+        tbody.innerHTML = "";
+        const rows = getFilteredRows();
+        if (!rows.length) {
+          elements.emptyState.style.display = "block";
+          updateStats();
+          updateSaveButtonState();
+          return;
+        }
+        elements.emptyState.style.display = "none";
+        rows.forEach(entry => {
+          const tr = document.createElement("tr");
+
+          const nameTd = document.createElement("td");
+          nameTd.textContent = entry.raw.PlayerName || "(unbenannt)";
+          tr.appendChild(nameTd);
+
+          const statusTd = document.createElement("td");
+          const inAlliance = toBoolFlag(entry.raw.InAlliance);
+          const pill = document.createElement("span");
+          pill.className = `pill ${inAlliance ? 'ok' : 'err'}`;
+          pill.textContent = inAlliance ? "In Allianz" : "Inaktiv";
+          statusTd.appendChild(pill);
+          tr.appendChild(statusTd);
+
+          const prefTd = document.createElement("td");
+          const fixedValue = (entry.raw.PrefMode === "hard") ? (entry.raw.PrefGroup || "").toUpperCase() : "";
+          const prefSelect = createSelect([
+            { value: "", label: "–" },
+            { value: "A", label: "A" },
+            { value: "B", label: "B" },
+          ], fixedValue, (val) => setPreference(entry.id, val.toUpperCase(), val ? "hard" : ""));
+          prefTd.appendChild(prefSelect);
+          tr.appendChild(prefTd);
+
+          const softTd = document.createElement("td");
+          const softValue = (entry.raw.PrefMode === "soft") ? (entry.raw.PrefGroup || "").toUpperCase() : "";
+          const softSelect = createSelect([
+            { value: "", label: "–" },
+            { value: "A", label: "A" },
+            { value: "B", label: "B" },
+          ], softValue, (val) => setPreference(entry.id, val.toUpperCase(), val ? "soft" : ""));
+          softTd.appendChild(softSelect);
+          tr.appendChild(softTd);
+
+          const modeTd = document.createElement("td");
+          const modeSelect = createSelect([
+            { value: "", label: "Keine" },
+            { value: "hard", label: "hard (fix)" },
+            { value: "soft", label: "soft" },
+          ], (entry.raw.PrefMode || "").toLowerCase(), (val) => updateField(entry.id, "PrefMode", val.toLowerCase()));
+          modeTd.appendChild(modeSelect);
+          tr.appendChild(modeTd);
+
+          const boostTd = document.createElement("td");
+          const boostInput = document.createElement("input");
+          boostInput.type = "number";
+          boostInput.min = "0";
+          boostInput.max = "1";
+          boostInput.step = "0.01";
+          boostInput.value = entry.raw.PrefBoost ?? "";
+          boostInput.placeholder = "0.05";
+          boostInput.addEventListener("input", () => updateField(entry.id, "PrefBoost", boostInput.value));
+          boostTd.appendChild(boostInput);
+          tr.appendChild(boostTd);
+
+          const noteTd = document.createElement("td");
+          const noteInput = document.createElement("textarea");
+          noteInput.value = entry.raw.Note ?? "";
+          noteInput.rows = 1;
+          noteInput.placeholder = "Notiz (optional)";
+          noteInput.addEventListener("input", () => updateField(entry.id, "Note", noteInput.value));
+          noteTd.appendChild(noteInput);
+          tr.appendChild(noteTd);
+
+          tbody.appendChild(tr);
+        });
+        updateStats();
+        updateSaveButtonState();
+      }
+
+      function updateField(id, field, value) {
+        const entry = state.rows.find(r => r.id === id);
+        if (!entry) return;
+        if (field === "PrefGroup") value = (value || "").toUpperCase();
+        if (field === "PrefMode") value = (value || "").toLowerCase();
+        entry.raw[field] = value;
+        if (field === "PrefMode") {
+          renderTable();
+          return;
+        }
+        updateSaveButtonState();
+      }
+
+      function setPreference(id, groupValue, modeValue) {
+        const entry = state.rows.find(r => r.id === id);
+        if (!entry) return;
+        entry.raw.PrefGroup = (groupValue || "").toUpperCase();
+        entry.raw.PrefMode = (modeValue || "").toLowerCase();
+        renderTable();
+      }
+
+      async function reloadData() {
+        setLoading(true);
+        try {
+          await loadAlliance();
+        } catch (err) {
+          console.error(err);
+          setStatus(`Laden fehlgeschlagen: ${err.message}`, "error");
+        } finally {
+          setLoading(false);
+          updateSaveButtonState();
+        }
+      }
+
+      async function saveChanges() {
+        if (state.loading || state.saving) return;
+        const workerUrl = elements.workerUrl.value.trim();
+        const adminKey = elements.adminKey.value.trim();
+        const branch = elements.branch.value.trim() || defaultBranch;
+        if (!workerUrl) { setStatus("Worker-URL fehlt.", "error"); return; }
+        if (!adminKey) { setStatus("Admin-Key erforderlich.", "error"); return; }
+        const content = buildCurrentCsv();
+        setSaving(true);
+        setStatus("Speichere Präferenzen…", "info");
+        try {
+          await writeFile(workerUrl, adminKey, {
+            path: "data/alliance.csv",
+            content,
+            branch,
+            message: "admin: update alliance.csv via group preferences ui",
+          });
+          state.originalCsv = content;
+          setStatus("Gespeichert.", "ok");
+        } catch (err) {
+          console.error(err);
+          setStatus(`Speichern fehlgeschlagen: ${err.message}`, "error");
+        } finally {
+          setSaving(false);
+          updateSaveButtonState();
+        }
+      }
+
+      async function writeFile(workerUrl, adminKey, payload) {
+        const headers = { "Content-Type": "application/json", "X-Admin-Key": adminKey };
+        const response = await fetch(workerUrl, {
+          method: "POST",
+          headers,
+          body: JSON.stringify(payload),
+        });
+        if (!response.ok) {
+          const text = await response.text().catch(() => "");
+          throw new Error(text || `HTTP ${response.status}`);
+        }
+        const result = await response.json().catch(() => ({}));
+        if (result && result.ok === false) {
+          throw new Error(result.error || "Worker-Fehler");
+        }
+        return result;
+      }
+
+      function restoreSettings() {
+        const saved = localStorage.getItem(SETTINGS_KEY);
+        if (saved) {
+          try {
+            const parsed = JSON.parse(saved);
+            if (parsed.workerUrl) elements.workerUrl.value = parsed.workerUrl;
+            if (parsed.branch) elements.branch.value = parsed.branch;
+            if (parsed.adminKey) elements.adminKey.value = parsed.adminKey;
+            return;
+          } catch (err) { console.warn("Settings konnten nicht gelesen werden", err); }
+        }
+        const shared = localStorage.getItem("dsro-admin-settings");
+        if (shared) {
+          try {
+            const parsed = JSON.parse(shared);
+            if (parsed.workerUrl) elements.workerUrl.value = parsed.workerUrl;
+            if (parsed.customBranch) { elements.branch.value = parsed.customBranch; }
+            else if (parsed.branchSelect) { elements.branch.value = parsed.branchSelect; }
+            if (parsed.adminKey) elements.adminKey.value = parsed.adminKey;
+          } catch (err) { console.warn("Shared settings konnten nicht gelesen werden", err); }
+        }
+      }
+
+      function persistSettings() {
+        const values = {
+          workerUrl: elements.workerUrl.value,
+          branch: elements.branch.value,
+          adminKey: elements.adminKey.value,
+        };
+        localStorage.setItem(SETTINGS_KEY, JSON.stringify(values));
+      }
+
+      function initEvents() {
+        elements.reloadBtn.addEventListener("click", () => reloadData());
+        elements.saveBtn.addEventListener("click", () => saveChanges());
+        elements.searchInput.addEventListener("input", () => renderTable());
+        elements.activeOnly.addEventListener("change", () => renderTable());
+        elements.workerUrl.addEventListener("change", persistSettings);
+        elements.branch.addEventListener("change", persistSettings);
+        elements.adminKey.addEventListener("change", persistSettings);
+      }
+
+      restoreSettings();
+      initEvents();
+      reloadData();
+    })();
+  </script>
+  <script src="admin.js"></script>
+</body>
+</html>
