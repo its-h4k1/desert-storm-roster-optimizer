@@ -88,15 +88,85 @@
     // Format & Styling
     const pad = (n)=> String(n).padStart(2,"0");
     const pc  = (x)=> (x==null || isNaN(x)) ? "–" : (Math.round(x*1000)/10).toFixed(1)+"%";
-    const GREEN_TH  = 0.20;
-    const YELLOW_TH = 0.35;
-    const SINGLE_MISS_GREEN_SEEN_MIN = 10;
-    const SINGLE_MISS_GREEN_RATE_MAX = 0.12;
+    const BADGE_SETTINGS = {
+      thresholds: {
+        ok: 0.20,
+        warning: 0.35,
+      },
+      singleMiss: {
+        seenMin: 10,
+        rateMax: 0.12,
+      },
+      lowNMax: 2,
+      softenBadUntilSeen: 5,
+    };
+    const GREEN_TH  = BADGE_SETTINGS.thresholds.ok;
+    const YELLOW_TH = BADGE_SETTINGS.thresholds.warning;
+    const SINGLE_MISS_GREEN_SEEN_MIN = BADGE_SETTINGS.singleMiss.seenMin;
+    const SINGLE_MISS_GREEN_RATE_MAX = BADGE_SETTINGS.singleMiss.rateMax;
     const clamp = (x)=> Math.min(1, Math.max(0, x));
     const toNumber = (v)=>{
       if (v==null) return null;
       const n = Number(v);
       return Number.isFinite(n) ? n : null;
+    };
+
+    /**
+     * Farb-Logik für No-Show-Badges (bisheriges Verhalten in Klartext):
+     * 1. Keine Historie (events_seen=0 oder unbekannt) → graue Badge ("nodata").
+     * 2. Wer nie gefehlt hat, bleibt grün, unabhängig von der Rate.
+     * 3. low-n (≤2 Teilnahmen) wird generell gelb eingeordnet, damit einzelne Ausreißer
+     *    nicht sofort rot erscheinen.
+     * 4. Single-Miss-Spieler: ab 10 Events und Rate <12 % weiterhin grün, sonst gelb.
+     * 5. Alle anderen nutzen die Schwellwerte 20 % (grün→gelb) und 35 % (gelb→rot).
+     * 6. Zusätzliche Feinjustierung: Bis 5 Events wird ein eigentlich rotes Rating
+     *    auf gelb abgeschwächt, um die geringe Stichprobe sichtbar zu machen.
+     */
+    function classifyNoShowBadge({ rate, eventsSeen, flags = {} }) {
+      const { noData=false, neverMissed=false, lowN=false, singleMiss=false } = flags;
+
+      if (noData) {
+        return { level: "nodata", reason: "no-data" };
+      }
+
+      if (neverMissed) {
+        return { level: "good", reason: "never-missed" };
+      }
+
+      if (lowN) {
+        return { level: "warning", reason: "low-n" };
+      }
+
+      const value = (rate != null && Number.isFinite(rate)) ? rate : null;
+      if (value == null) {
+        return { level: "nodata", reason: "no-rate" };
+      }
+
+      if (singleMiss) {
+        if ((eventsSeen ?? 0) >= SINGLE_MISS_GREEN_SEEN_MIN && value < SINGLE_MISS_GREEN_RATE_MAX) {
+          return { level: "good", reason: "single-miss-soft-green" };
+        }
+        return { level: "warning", reason: "single-miss-soft-warning" };
+      }
+
+      let level;
+      if (value < GREEN_TH) level = "good";
+      else if (value < YELLOW_TH) level = "warning";
+      else level = "bad";
+
+      if (level === "bad" && eventsSeen != null && eventsSeen <= BADGE_SETTINGS.softenBadUntilSeen) {
+        return { level: "warning", reason: "small-sample-soften" };
+      }
+
+      return { level, reason: "threshold" };
+    }
+
+    const BADGE_CLASS_BY_LEVEL = {
+      nodata: "chip ns-neutral",
+      neutral: "chip ns-neutral",
+      good: "chip ns-ok",
+      warning: "chip ns-mid",
+      bad: "chip ns-bad",
     };
 
     function buildChipTooltip(p, rRolling, rOverall) {
@@ -283,38 +353,24 @@
 
             const participated = (seen != null && seen > 0);
             const noData = annotate ? !participated : false;
-            const lowN = annotate ? (participated && seen <= 2) : false;
+            const lowN = annotate ? (participated && seen <= BADGE_SETTINGS.lowNMax) : false;
             const neverMissed = annotate ? (participated && misses === 0) : false;
             const singleMiss = annotate ? (participated && misses === 1) : false;
 
             const histRate = (histRolling ?? histOverall);
 
-            function chipClass() {
-              if (noData) return "chip ns-neutral";
-              if (neverMissed) return "chip ns-ok";
-              if (lowN) return "chip ns-mid";
-
-              if (singleMiss) {
-                if (seen >= SINGLE_MISS_GREEN_SEEN_MIN &&
-                    histRate != null && Number.isFinite(histRate) && histRate < SINGLE_MISS_GREEN_RATE_MAX) {
-                  return "chip ns-ok";
-                }
-                return "chip ns-mid";
-              }
-
-              const value = (histRate != null && Number.isFinite(histRate)) ? histRate : null;
-              if (value == null) return "chip ns-neutral";
-              if (value < GREEN_TH) return "chip ns-ok";
-              if (value < YELLOW_TH) return "chip ns-mid";
-              return "chip ns-bad";
-            }
-
             const tip = buildChipTooltip(p, histRolling, histOverall);
 
             const shownOverall = noData ? null : histOverall;
             const shownRolling = noData ? null : histRolling;
-            const chipKlass = chipClass();
-            const tooltip = tip.replace(/"/g, '&quot;');
+            const badge = classifyNoShowBadge({
+              rate: histRate,
+              eventsSeen: annotate ? seen : null,
+              flags: { noData, neverMissed, lowN, singleMiss },
+            });
+            const chipKlass = BADGE_CLASS_BY_LEVEL[badge.level] || BADGE_CLASS_BY_LEVEL.nodata;
+            const reasonHint = badge.reason ? ` · badge=${badge.reason}` : "";
+            const tooltip = `${tip}${reasonHint}`.replace(/"/g, '&quot;');
             let nameHTML = `${r.PlayerName || ""}`;
             if (noData) {
               nameHTML += ' <span class="tag tag-nd" title="Keine Historie – events_seen = 0">No&nbsp;Data</span>';
@@ -339,7 +395,7 @@
             const seenVal = Number.isFinite(pp.events_seen) ? Number(pp.events_seen) :
               (Object.prototype.hasOwnProperty.call(row, "EventsSeen") ? toNumber(row.EventsSeen) : null);
             if (!(seenVal > 0)) { keyCounts.nd++; return; }
-            if (seenVal <= 2) { keyCounts.lown++; return; }
+            if (seenVal <= BADGE_SETTINGS.lowNMax) { keyCounts.lown++; return; }
             keyCounts.known++;
           });
           window.__bucketCounts[key] = keyCounts;
