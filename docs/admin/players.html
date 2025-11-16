@@ -21,11 +21,12 @@
     }
 
     .page-header {
-      background: var(--panel);
+      background: var(--glass, rgba(255, 255, 255, 0.92));
       padding: 1.25rem clamp(1rem, 4vw, 2rem);
       border-radius: 1rem;
-      border: 1px solid var(--border);
-      box-shadow: 0 10px 30px rgba(2, 6, 12, 0.45);
+      border: 1px solid var(--border-strong, var(--border));
+      box-shadow: var(--shadow-panel, 0 20px 45px rgba(15, 23, 42, 0.08));
+      backdrop-filter: blur(18px);
       position: sticky;
       top: 0;
       z-index: 10;
@@ -66,8 +67,15 @@
       border: 1px solid var(--border);
       background: var(--bg-alt);
       color: var(--text);
-      min-width: 12rem;
+      min-width: clamp(12rem, 28vw, 20rem);
       box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+    }
+
+    textarea {
+      width: min(100%, 56rem);
+      min-width: 0;
+      resize: none;
+      display: block;
     }
 
     input[type="search"] {
@@ -349,7 +357,8 @@
     .modal {
       position: fixed;
       inset: 0;
-      background: rgba(15, 23, 42, 0.45);
+      background: rgba(15, 23, 42, 0.35);
+      backdrop-filter: blur(4px);
       display: none;
       align-items: center;
       justify-content: center;
