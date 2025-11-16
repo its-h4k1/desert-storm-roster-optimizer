@@ -1,0 +1,807 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8" />
+  <title>Callup-Assistent · Erinnerungen & Tracking</title>
+  <meta name="robots" content="noindex, nofollow" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="stylesheet" href="admin.css" />
+  <style>
+    body { margin: 0; }
+    .page-header { display:flex; flex-wrap:wrap; gap:0.75rem; align-items:flex-end; }
+    .page-header h1 { margin:0; flex:1 1 220px; }
+    .page-header p { margin:0; color:var(--text-muted); }
+    .page-header .settings { display:flex; flex-wrap:wrap; gap:0.75rem; align-items:flex-end; }
+    label { display:flex; flex-direction:column; gap:0.35rem; font-size:0.9rem; color:var(--text-muted); }
+    input[type="text"], input[type="search"], input[type="password"], select, textarea { font:inherit; padding:0.5rem 0.65rem; border-radius:0.75rem; border:1px solid var(--border); background:var(--bg-alt); color:var(--text); min-width:12rem; }
+    input:focus, select:focus, textarea:focus { outline:2px solid rgba(37,99,235,0.35); outline-offset:1px; }
+    button { font:inherit; border:1px solid var(--border); border-radius:0.75rem; padding:0.55rem 1rem; background:#fff; color:var(--text); cursor:pointer; display:inline-flex; align-items:center; gap:0.4rem; }
+    button:hover { background:#f8fafc; }
+    button:disabled { opacity:0.6; cursor:not-allowed; }
+    .controls { display:flex; flex-wrap:wrap; gap:0.75rem; align-items:center; }
+    .controls .spacer { flex:1; min-width:40px; }
+    .filters { display:flex; flex-wrap:wrap; gap:0.75rem; align-items:center; }
+    .hint { color:var(--text-muted); font-size:0.9rem; }
+    .card-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:0.75rem; }
+    .card { background:var(--panel-muted); border:1px solid var(--border); border-radius:0.85rem; padding:0.75rem; }
+    .table-wrapper { border:1px solid var(--border); border-radius:0.85rem; overflow:auto; box-shadow:var(--shadow-card); }
+    table { width:100%; border-collapse:collapse; min-width:1040px; }
+    thead { background:var(--bg-alt); position:sticky; top:0; z-index:5; }
+    th, td { padding:0.55rem 0.65rem; border-bottom:1px solid var(--border); text-align:left; vertical-align:top; }
+    tbody tr:nth-child(2n) td { background:var(--panel-muted); }
+    tbody tr.absent td { opacity:0.65; }
+    tbody tr.recommended td { box-shadow: inset 3px 0 0 #2563eb; }
+    .pill { display:inline-flex; align-items:center; gap:0.35rem; padding:0.25rem 0.6rem; border-radius:999px; font-size:0.85rem; }
+    .pill.info { background:#e0f2fe; color:#075985; }
+    .pill.warn { background:#fef9c3; color:#854d0e; }
+    .pill.ok { background:#dcfce7; color:#166534; }
+    .pill.bad { background:#fee2e2; color:#991b1b; }
+    .chip { display:inline-flex; align-items:center; gap:0.35rem; padding:0.25rem 0.55rem; border-radius:999px; font-weight:600; font-size:0.85rem; border:1px solid var(--border); }
+    .chip.ns-ok { background:#dcfce7; color:#14532d; border-color:#bbf7d0; }
+    .chip.ns-mid { background:#fef9c3; color:#854d0e; border-color:#fde68a; }
+    .chip.ns-bad { background:#fee2e2; color:#991b1b; border-color:#fecdd3; }
+    .chip.ns-neutral { background:#e2e8f0; color:#475569; border-color:#cbd5e1; }
+    .row-actions { display:flex; gap:0.4rem; flex-wrap:wrap; }
+    .callup-step { display:flex; flex-direction:column; gap:0.35rem; min-width:180px; }
+    .callup-step small { color:var(--text-muted); }
+    .callup-step .inline { display:flex; gap:0.4rem; align-items:center; }
+    .status-bar { position:sticky; bottom:0; background:var(--glass); border-top:1px solid var(--border); padding:0.75rem 1rem; display:flex; gap:0.6rem; align-items:center; box-shadow:0 -8px 24px rgba(15,23,42,0.08); flex-wrap:wrap; }
+    .status-badge { display:inline-flex; align-items:center; gap:0.35rem; padding:0.35rem 0.7rem; border-radius:999px; font-weight:600; font-size:0.9rem; }
+    .status-info { background:#e0f2fe; color:#075985; }
+    .status-warn { background:#fff7ed; color:#9a3412; }
+    .status-ok { background:#dcfce7; color:#14532d; }
+    .status-error { background:#fee2e2; color:#991b1b; }
+    textarea.notes { min-width:200px; min-height:48px; resize:vertical; }
+    @media (max-width: 960px) { table { min-width:900px; } .page-header .settings { width:100%; } label { width:100%; } button { width:100%; justify-content:center; } }
+  </style>
+</head>
+<body class="admin-shell">
+  <header class="admin-header">
+    <div class="admin-brand">ELT Admin</div>
+    <div class="admin-header-actions">
+      <a class="btn ghost" href="../index.html">Zur Roster-Ansicht</a>
+    </div>
+  </header>
+  <div class="admin-layout">
+    <nav class="admin-nav">
+      <a href="index.html">CSV &amp; Datei-Tools</a>
+      <a href="events.html">Events erfassen</a>
+      <a href="players.html">Spieler &amp; Aliase</a>
+      <a href="absences.html">Absenzen</a>
+      <a href="group-preferences.html">Gruppenpräferenzen</a>
+      <a href="noshow-dashboard.html">No-Show Analyse</a>
+      <a href="callup-assistant.html" class="active">Callup-Assistent</a>
+    </nav>
+
+    <main class="admin-content">
+      <section class="admin-section page-wrapper">
+        <div class="page-inner">
+          <header class="page-header">
+            <div style="flex:1;min-width:240px;">
+              <h1>Callup-Assistent</h1>
+              <p>Empfiehlt Erinnerungen basierend auf No-Show-Risiko, Absenzen &amp; Allianz-Status und trackt die Rückmeldungen.</p>
+            </div>
+            <div class="settings">
+              <label>Worker URL
+                <input id="workerUrl" type="text" value="https://ds-commit.hak1.workers.dev/write-file" spellcheck="false">
+              </label>
+              <label>Branch
+                <input id="branchInput" type="text" value="main" spellcheck="false">
+              </label>
+              <label>Admin-Key
+                <input id="adminKey" type="password" placeholder="r4-admin" autocomplete="off">
+              </label>
+              <button id="reloadBtn" class="ghost">Neu laden</button>
+              <button id="saveBtn" class="ok">Speichern</button>
+            </div>
+          </header>
+
+          <main class="page-main">
+            <section class="panel">
+              <div class="controls">
+                <label style="flex:1;min-width:240px;">Event-ID (Datalist verfügbar)
+                  <input type="text" id="eventId" list="eventOptions" placeholder="DS-2025-11-21-A" autocomplete="off">
+                </label>
+                <button id="useLastEvent" class="ghost" title="Letzten Callup oder lokale Auswahl übernehmen">Event-Vorschlag nutzen</button>
+                <div class="spacer"></div>
+                <div class="filters">
+                  <label style="flex-direction:row;align-items:center;gap:0.35rem;"> <input type="checkbox" id="recommendedOnly" checked> <span>Nur empfohlene Callups</span> </label>
+                  <label style="flex-direction:row;align-items:center;gap:0.35rem;"> <input type="checkbox" id="showAllRoster"> <span>Alle Roster-Spieler anzeigen</span> </label>
+                  <label style="flex-direction:row;align-items:center;gap:0.35rem;"> <input type="checkbox" id="showAbsent"> <span>Abwesende anzeigen</span> </label>
+                </div>
+              </div>
+              <p class="hint">Roster-Basis: optimierte Aufstellung aus <code>out/latest.json</code> (zuletzt gebaut). Event-ID steuert Absenz-Filter &amp; Speicherung in <code>data/callups.csv</code>.</p>
+              <div class="card-grid">
+                <div class="card">
+                  <strong>Regel-Set (Default)</strong>
+                  <ul class="hint" style="margin:0 0 0 1rem; padding:0 0 0 1rem;">
+                    <li>Nur Spieler im aktuellen Roster &amp; mit <code>InAlliance=1</code>.</li>
+                    <li>Absenzen mit Datums-Überlappung werden standardmäßig ausgeblendet.</li>
+                    <li>Empfohlen wenn mindestens eine Bedingung greift: High-Risk (No-Show &gt;= Schwellen, Events ≥ Mindestmenge), Low-N (≤2 Events), Rolling stark höher als Overall (kürzliche Ausfälle).</li>
+                  </ul>
+                </div>
+                <div class="card">
+                  <strong>Reminder-Schema</strong>
+                  <div class="hint">Bis zu zwei Erinnerungen pro Event &amp; Spieler. Checkbox setzt automatisch einen Zeitstempel; Ergebnisse stehen zur Auswahl (<code>zugesagt</code>/<code>abgesagt</code>/<code>keine Antwort</code>). Freie Notiz möglich.</div>
+                </div>
+                <div class="card">
+                  <strong>Schwellenwerte</strong>
+                  <div class="hint">No-Show overall ≥ <span id="thOverall"></span> oder rolling ≥ <span id="thRolling"></span> bei Events ≥ <span id="thEvents"></span>. Low-N: ≤ <span id="thLowN"></span> Events. Uptick: Rolling ≥ Overall + <span id="thDelta"></span> &amp; ≥ <span id="thUptick"></span>.</div>
+                </div>
+              </div>
+            </section>
+
+            <section class="panel" aria-live="polite">
+              <div class="controls" style="margin-bottom:0.5rem;">
+                <h2 style="margin:0;">Callup-Kandidaten</h2>
+                <span id="candidateCount" class="pill info">–</span>
+                <span class="hint" id="eventMeta"></span>
+              </div>
+              <div class="table-wrapper">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Spieler</th>
+                      <th>Gruppe/Rolle</th>
+                      <th>Events</th>
+                      <th>No-Show overall</th>
+                      <th>No-Show rolling</th>
+                      <th>Grund</th>
+                      <th>Callup 1</th>
+                      <th>Callup 2</th>
+                      <th>Final</th>
+                      <th>Notiz</th>
+                    </tr>
+                  </thead>
+                  <tbody id="candidateBody"></tbody>
+                </table>
+              </div>
+              <div class="hint" id="emptyState" style="display:none;">Keine Kandidaten für die gewählten Filter.</div>
+            </section>
+          </main>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <div class="status-bar">
+    <span id="statusBadge" class="status-badge status-info">Bereit</span>
+    <div id="statusText" class="status-text">Noch keine Änderungen.</div>
+  </div>
+
+  <datalist id="eventOptions"></datalist>
+
+  <script src="https://unpkg.com/papaparse@5.4.1/papaparse.min.js"></script>
+  <script>
+    (function(){
+      const elements = {
+        workerUrl: document.getElementById('workerUrl'),
+        branch: document.getElementById('branchInput'),
+        adminKey: document.getElementById('adminKey'),
+        reloadBtn: document.getElementById('reloadBtn'),
+        saveBtn: document.getElementById('saveBtn'),
+        eventId: document.getElementById('eventId'),
+        useLastEvent: document.getElementById('useLastEvent'),
+        recommendedOnly: document.getElementById('recommendedOnly'),
+        showAllRoster: document.getElementById('showAllRoster'),
+        showAbsent: document.getElementById('showAbsent'),
+        candidateBody: document.getElementById('candidateBody'),
+        candidateCount: document.getElementById('candidateCount'),
+        emptyState: document.getElementById('emptyState'),
+        eventOptions: document.getElementById('eventOptions'),
+        eventMeta: document.getElementById('eventMeta'),
+        statusBadge: document.getElementById('statusBadge'),
+        statusText: document.getElementById('statusText'),
+        thOverall: document.getElementById('thOverall'),
+        thRolling: document.getElementById('thRolling'),
+        thEvents: document.getElementById('thEvents'),
+        thLowN: document.getElementById('thLowN'),
+        thDelta: document.getElementById('thDelta'),
+        thUptick: document.getElementById('thUptick'),
+      };
+
+      const SETTINGS_KEY = 'dsro-callups-settings';
+      const DEFAULT_HEADERS = ['EventID','PlayerName','Reminder1SentAt','Reminder1Result','Reminder2SentAt','Reminder2Result','FinalStatus','Notes'];
+      const RAW_BASE = 'https://raw.githubusercontent.com/its-h4k1/desert-storm-roster-optimizer/main/';
+      const PATHS = { latest: 'out/latest.json', alliance: 'data/alliance.csv', absences: 'data/absences.csv', callups: 'data/callups.csv' };
+
+      /**
+       * Regel-Set für Empfehlungen:
+       * - High-Risk: noshow_overall >= HIGH_OVERALL oder noshow_rolling >= HIGH_ROLLING, wenn events_seen >= MIN_EVENTS.
+       *   Vorschlag: High-Risk ab 40 % overall oder 50 % rolling, aber erst ab 3 Events (Robustheit).
+       * - Low-N: events_seen <= LOW_N (unsichere Schätzung, lieber aktiv erinnern).
+       * - Recent Uptick: noshow_rolling deutlich höher als overall (>= DELTA_Uptick und >= ROLLING_MIN), als Proxy für kürzliche Ausfälle.
+       * Spieler ohne Historie (events_seen 0 oder fehlend) fallen automatisch unter Low-N-Heuristik und werden neutral gebadget.
+       */
+      const CONFIG = {
+        HIGH_OVERALL: 0.4,
+        HIGH_ROLLING: 0.5,
+        MIN_EVENTS: 3,
+        LOW_N: 2,
+        ROLLING_MIN: 0.25,
+        DELTA_UPTICK: 0.1,
+      };
+
+      const BADGE_CLASS_BY_LEVEL = {
+        nodata: 'chip ns-neutral',
+        neutral: 'chip ns-neutral',
+        good: 'chip ns-ok',
+        warning: 'chip ns-mid',
+        bad: 'chip ns-bad',
+      };
+
+      const state = {
+        roster: { players: [], groups: {}, generatedAt: null },
+        alliance: new Map(),
+        absences: [],
+        callups: [],
+        headers: [],
+        originalCsv: '',
+        selectedEventId: '',
+        loading: false,
+        saving: false,
+      };
+
+      const pc = (v) => (v == null || !Number.isFinite(v)) ? '–' : `${(v*100).toFixed(0)}%`;
+
+      function normalizeLineEndings(text) { return (text || '').replace(/\r\n/g, '\n').replace(/\r/g, '\n'); }
+      function ensureTrailingNewline(text) { if (!text) return '\n'; return /\n$/.test(text) ? text : text + '\n'; }
+      function formatCsvValue(value) {
+        if (value === null || value === undefined) return '';
+        const str = value.toString();
+        if (str.includes('"') || str.includes(',') || str.includes('\n')) return `"${str.replace(/"/g, '""')}"`;
+        return str;
+      }
+
+      function parseEventDate(eventId) {
+        const m = /^DS-(\d{4})-(\d{2})-(\d{2})/i.exec(eventId || '');
+        if (m) {
+          const [_, y, mth, d] = m;
+          return new Date(Date.UTC(Number(y), Number(mth)-1, Number(d)));
+        }
+        return new Date();
+      }
+
+      function isAbsenceActive(abs, refDate) {
+        if (!abs || !refDate) return false;
+        const from = abs.from ? new Date(abs.from) : null;
+        const to = abs.to ? new Date(abs.to) : null;
+        const day = new Date(refDate);
+        day.setUTCHours(12,0,0,0);
+        if (from && day < from) return false;
+        if (to && day > to) return false;
+        return true;
+      }
+
+      function classifyNoShowBadge({ rate, eventsSeen, flags = {} }) {
+        const { noData=false, neverMissed=false, lowN=false, singleMiss=false } = flags;
+        const GREEN_TH = 0.2;
+        const YELLOW_TH = 0.35;
+        const SINGLE_MISS_GREEN_SEEN_MIN = 10;
+        const SINGLE_MISS_GREEN_RATE_MAX = 0.12;
+        const BADGE_SETTINGS = { softenBadUntilSeen: 5 };
+
+        if (noData) return { level: 'nodata', reason: 'no-data' };
+        if (neverMissed) return { level: 'good', reason: 'never-missed' };
+        if (lowN) return { level: 'warning', reason: 'low-n' };
+        const value = (rate != null && Number.isFinite(rate)) ? rate : null;
+        if (value == null) return { level: 'nodata', reason: 'no-rate' };
+        if (singleMiss) {
+          if ((eventsSeen ?? 0) >= SINGLE_MISS_GREEN_SEEN_MIN && value < SINGLE_MISS_GREEN_RATE_MAX) return { level: 'good', reason: 'single-miss-soft-green' };
+          return { level: 'warning', reason: 'single-miss-soft-warning' };
+        }
+        let level;
+        if (value < GREEN_TH) level = 'good';
+        else if (value < YELLOW_TH) level = 'warning';
+        else level = 'bad';
+        if (level === 'bad' && eventsSeen != null && eventsSeen <= BADGE_SETTINGS.softenBadUntilSeen) return { level: 'warning', reason: 'small-sample-soften' };
+        return { level, reason: 'threshold' };
+      }
+
+      function detectRecommendation(player) {
+        const eventsSeen = Number.isFinite(player.events_seen) ? Number(player.events_seen) : null;
+        const overall = Number.isFinite(player.noshow_overall) ? Number(player.noshow_overall) : null;
+        const rolling = Number.isFinite(player.noshow_rolling) ? Number(player.noshow_rolling) : null;
+        const reasons = [];
+        if (eventsSeen != null && eventsSeen <= CONFIG.LOW_N) {
+          reasons.push(`Low-N (${eventsSeen} Event${eventsSeen === 1 ? '' : 's'})`);
+        }
+        if (eventsSeen != null && eventsSeen >= CONFIG.MIN_EVENTS) {
+          if (overall != null && overall >= CONFIG.HIGH_OVERALL) reasons.push(`High No-Show overall ${pc(overall)}`);
+          if (rolling != null && rolling >= CONFIG.HIGH_ROLLING) reasons.push(`High No-Show rolling ${pc(rolling)}`);
+        }
+        if (rolling != null && overall != null && rolling >= Math.max(CONFIG.ROLLING_MIN, overall + CONFIG.DELTA_UPTICK)) {
+          reasons.push(`Kürzliche Ausfälle (rolling ${pc(rolling)} vs. overall ${pc(overall)})`);
+        }
+        const recommended = reasons.length > 0;
+        return { recommended, reasons };
+      }
+
+      function buildCsvFromRows(headers, rows) {
+        const headerLine = headers.join(',');
+        const lines = rows.map(row => headers.map(h => formatCsvValue(row[h] ?? '')).join(','));
+        return ensureTrailingNewline([headerLine, ...lines].join('\n'));
+      }
+
+      function buildCurrentCsv() {
+        const headers = state.headers.length ? state.headers : [...DEFAULT_HEADERS];
+        const rows = state.callups.map(entry => {
+          const out = {};
+          headers.forEach(h => { out[h] = entry[h] ?? ''; });
+          return out;
+        });
+        rows.sort((a, b) => {
+          const ea = (a.EventID || '').toString();
+          const eb = (b.EventID || '').toString();
+          if (ea === eb) return (a.PlayerName || '').localeCompare((b.PlayerName || ''), 'de', { sensitivity:'base' });
+          return ea.localeCompare(eb, 'de', { sensitivity:'base' });
+        });
+        return buildCsvFromRows(headers, rows);
+      }
+
+      function hasChanges() {
+        const current = buildCurrentCsv();
+        return normalizeLineEndings(current).trim() !== normalizeLineEndings(state.originalCsv).trim();
+      }
+
+      function setStatus(message, tone='info') {
+        elements.statusBadge.className = 'status-badge status-' + tone;
+        elements.statusBadge.textContent = tone === 'ok' ? 'OK' : tone === 'error' ? 'Fehler' : tone === 'warn' ? 'Hinweis' : 'Status';
+        elements.statusText.textContent = message;
+      }
+
+      function setLoading(isLoading) {
+        state.loading = isLoading;
+        elements.reloadBtn.disabled = isLoading || state.saving;
+        updateSaveButtonState();
+        if (isLoading) setStatus('Lade Daten…', 'info');
+      }
+
+      function setSaving(isSaving) {
+        state.saving = isSaving;
+        updateSaveButtonState();
+      }
+
+      function updateSaveButtonState() {
+        elements.saveBtn.disabled = state.loading || state.saving || !hasChanges();
+        elements.saveBtn.textContent = state.saving ? 'Speichert…' : 'Speichern';
+      }
+
+      async function fetchJson(path) {
+        const url = RAW_BASE + path;
+        const res = await fetch(url, { cache: 'no-store' });
+        if (!res.ok) throw new Error('HTTP ' + res.status + ' ' + res.statusText);
+        return await res.json();
+      }
+
+      async function fetchText(path) {
+        const url = RAW_BASE + path;
+        const res = await fetch(url, { cache: 'no-store' });
+        if (!res.ok) throw new Error('HTTP ' + res.status + ' ' + res.statusText);
+        return await res.text();
+      }
+
+      async function loadLatest() {
+        try {
+          const data = await fetchJson(PATHS.latest);
+          const players = Array.isArray(data) ? data : (data.players || []);
+          const groups = (!Array.isArray(data) && data && data.groups) ? data.groups : {};
+          const generatedAt = (!Array.isArray(data) && data && data.generated_at) ? data.generated_at : null;
+          state.roster = { players, groups, generatedAt };
+        } catch (err) {
+          console.error('latest.json fehlgeschlagen', err);
+          state.roster = { players: [], groups: {}, generatedAt: null };
+        }
+      }
+
+      async function loadAlliance() {
+        try {
+          const text = ensureTrailingNewline(normalizeLineEndings(await fetchText(PATHS.alliance)));
+          const parsed = Papa.parse(text, { header:true, skipEmptyLines:true });
+          const nameField = (parsed.meta.fields || []).find(f => /^PlayerName$/i.test(f)) || 'PlayerName';
+          state.alliance = new Map((parsed.data || []).map(row => [row[nameField], row.InAlliance]));
+        } catch (err) {
+          console.warn('alliance.csv konnte nicht geladen werden', err);
+          state.alliance = new Map();
+        }
+      }
+
+      async function loadAbsences() {
+        try {
+          const text = ensureTrailingNewline(normalizeLineEndings(await fetchText(PATHS.absences)));
+          const parsed = Papa.parse(text, { header:true, skipEmptyLines:true });
+          state.absences = (parsed.data || []).map(row => ({
+            player: (row.PlayerName || '').trim(),
+            from: row.From ? row.From.trim() : '',
+            to: row.To ? row.To.trim() : '',
+            reason: row.Reason || '',
+          })).filter(a => a.player);
+        } catch (err) {
+          console.warn('absences.csv konnte nicht geladen werden', err);
+          state.absences = [];
+        }
+      }
+
+      async function loadCallups() {
+        let text = '';
+        try {
+          text = await fetchText(PATHS.callups);
+        } catch (err) {
+          console.warn('callups.csv fehlt, initialisiere neu', err);
+          text = DEFAULT_HEADERS.join(',') + '\n';
+        }
+        const normalized = ensureTrailingNewline(normalizeLineEndings(text));
+        state.originalCsv = normalized;
+        const parsed = Papa.parse(normalized, { header:true, skipEmptyLines:false });
+        state.headers = (parsed.meta.fields || []).filter(Boolean);
+        if (!state.headers.length) state.headers = [...DEFAULT_HEADERS];
+        state.callups = (parsed.data || [])
+          .filter(row => Object.values(row || {}).some(v => (v ?? '').toString().trim() !== ''))
+          .map(row => ({ ...row }));
+        refreshEventOptions();
+      }
+
+      function refreshEventOptions() {
+        const events = Array.from(new Set(state.callups.map(row => (row.EventID || '').trim()).filter(Boolean)));
+        events.sort((a, b) => b.localeCompare(a, 'de', { sensitivity:'base' }));
+        elements.eventOptions.innerHTML = '';
+        events.forEach(ev => {
+          const opt = document.createElement('option');
+          opt.value = ev;
+          elements.eventOptions.appendChild(opt);
+        });
+        if (!state.selectedEventId) {
+          const saved = loadSettings().eventId || '';
+          state.selectedEventId = saved || events[0] || '';
+        }
+        elements.eventId.value = state.selectedEventId;
+      }
+
+      function getAbsenceFor(playerName) {
+        const target = (playerName || '').trim();
+        const ref = parseEventDate(state.selectedEventId || '');
+        return state.absences.find(abs => abs.player === target && isAbsenceActive(abs, ref));
+      }
+
+      function ensureCallupEntry(eventId, playerName) {
+        const existing = state.callups.find(row => (row.EventID || '') === eventId && (row.PlayerName || '') === playerName);
+        if (existing) return existing;
+        const headers = state.headers.length ? state.headers : DEFAULT_HEADERS;
+        const blank = {};
+        headers.forEach(h => blank[h] = '');
+        blank.EventID = eventId;
+        blank.PlayerName = playerName;
+        state.callups.push(blank);
+        return blank;
+      }
+
+      function deriveFinal(entry) {
+        const norm = (v) => (v || '').toLowerCase();
+        const r1 = norm(entry.Reminder1Result);
+        const r2 = norm(entry.Reminder2Result);
+        if (r1 === 'zugesagt' || r2 === 'zugesagt') return 'confirmed';
+        if (r1 === 'abgesagt' || r2 === 'abgesagt') return 'declined';
+        if ((entry.Reminder2SentAt && !r2) || (entry.Reminder1SentAt && !r1)) return 'no_response';
+        return entry.FinalStatus || '';
+      }
+
+      function renderCandidates() {
+        const eventId = elements.eventId.value.trim();
+        state.selectedEventId = eventId;
+        persistSettings();
+        const recommendedOnly = elements.recommendedOnly.checked;
+        const showAll = elements.showAllRoster.checked;
+        const showAbsent = elements.showAbsent.checked;
+        const allianceMap = state.alliance;
+
+        const rosterPlayers = state.roster.players || [];
+        const candidates = [];
+        rosterPlayers.forEach(p => {
+          const name = p.display || p.PlayerName || p.player;
+          const allianceValue = allianceMap.has(name) ? allianceMap.get(name) : null;
+          const inAlliance = allianceValue != null ? String(allianceValue) === '1' : false;
+          if (!inAlliance) return;
+          const absence = getAbsenceFor(name);
+          const { recommended, reasons } = detectRecommendation(p);
+          const existingEntry = state.callups.find(row => (row.EventID || '') === eventId && (row.PlayerName || '') === name);
+          const hasData = existingEntry ? Object.values(existingEntry).some(v => (v ?? '').toString().trim() !== '') : false;
+          const include = showAll || (recommendedOnly ? recommended : (recommended || hasData));
+          if (!include) return;
+          if (absence && !showAbsent) return;
+          const eventsSeen = Number.isFinite(p.events_seen) ? Number(p.events_seen) : null;
+          const miss = Number.isFinite(p.noshow_count) ? Number(p.noshow_count) : null;
+          const badgeRolling = classifyNoShowBadge({ rate: p.noshow_rolling, eventsSeen, flags: { noData: eventsSeen == null || eventsSeen === 0, neverMissed: miss === 0, lowN: eventsSeen != null && eventsSeen > 0 && eventsSeen <= 2, singleMiss: miss === 1 } });
+          const badgeOverall = classifyNoShowBadge({ rate: p.noshow_overall, eventsSeen, flags: { noData: eventsSeen == null || eventsSeen === 0, neverMissed: miss === 0, lowN: eventsSeen != null && eventsSeen > 0 && eventsSeen <= 2, singleMiss: miss === 1 } });
+          const entry = existingEntry || ensureCallupEntry(eventId, name);
+          candidates.push({
+            name,
+            group: p.group || p.Group || '-',
+            role: p.role || p.Role || '-',
+            eventsSeen,
+            noshowOverall: p.noshow_overall,
+            noshowRolling: p.noshow_rolling,
+            recommended,
+            reasons,
+            absence,
+            badgeRolling,
+            badgeOverall,
+            callup: entry,
+          });
+        });
+
+        elements.candidateBody.innerHTML = '';
+        candidates.sort((a, b) => {
+          if (a.recommended !== b.recommended) return a.recommended ? -1 : 1;
+          if (a.group !== b.group) return (a.group || '').localeCompare((b.group || ''), 'de', { sensitivity:'base' });
+          return a.name.localeCompare(b.name, 'de', { sensitivity:'base' });
+        });
+
+        candidates.forEach(c => {
+          const tr = document.createElement('tr');
+          if (c.absence) tr.classList.add('absent');
+          if (c.recommended) tr.classList.add('recommended');
+          tr.appendChild(tdPlayer(c));
+          tr.appendChild(tdText(`${c.group || '–'} / ${c.role || '–'}`));
+          tr.appendChild(tdText(c.eventsSeen != null ? c.eventsSeen : '–'));
+          tr.appendChild(tdBadge(c.noshowOverall, c.badgeOverall));
+          tr.appendChild(tdBadge(c.noshowRolling, c.badgeRolling));
+          tr.appendChild(tdReason(c));
+          const finalCell = tdFinal(c);
+          const refresh = () => { finalCell.refresh(); updateSaveButtonState(); };
+          tr.appendChild(tdCallupStep(c, 1, refresh));
+          tr.appendChild(tdCallupStep(c, 2, refresh));
+          tr.appendChild(finalCell.td);
+          tr.appendChild(tdNotes(c, refresh));
+          elements.candidateBody.appendChild(tr);
+        });
+
+        elements.emptyState.style.display = candidates.length ? 'none' : 'block';
+        elements.candidateCount.textContent = `${candidates.length} Spieler`;
+        elements.candidateCount.className = 'pill ' + (recommendedOnly && !showAll ? 'warn' : 'info');
+        const meta = [];
+        if (state.roster.generatedAt) meta.push(`Roster gebaut: ${state.roster.generatedAt}`);
+        if (eventId) meta.push(`Event: ${eventId}`);
+        if (showAbsent) meta.push('Abwesende eingeblendet');
+        elements.eventMeta.textContent = meta.join(' · ');
+        updateSaveButtonState();
+      }
+
+      function tdText(text) {
+        const td = document.createElement('td');
+        td.textContent = text;
+        return td;
+      }
+
+      function tdPlayer(c) {
+        const td = document.createElement('td');
+        const name = document.createElement('div');
+        name.textContent = c.name;
+        const meta = document.createElement('div');
+        meta.className = 'hint';
+        const parts = [];
+        if (c.eventsSeen != null) parts.push(`${c.eventsSeen} Events`);
+        if (c.absence) parts.push(`Abwesend (${c.absence.reason || 'keine Angabe'})`);
+        meta.textContent = parts.join(' · ');
+        td.appendChild(name);
+        td.appendChild(meta);
+        return td;
+      }
+
+      function tdBadge(rate, badge) {
+        const td = document.createElement('td');
+        const chip = document.createElement('span');
+        chip.className = BADGE_CLASS_BY_LEVEL[badge.level] || BADGE_CLASS_BY_LEVEL.nodata;
+        chip.innerHTML = `<strong>${pc(rate)}</strong> <small>${badge.reason}</small>`;
+        td.appendChild(chip);
+        return td;
+      }
+
+      function tdReason(c) {
+        const td = document.createElement('td');
+        if (c.reasons.length) {
+          c.reasons.forEach(r => {
+            const pill = document.createElement('div');
+            pill.className = 'pill info';
+            pill.textContent = r;
+            td.appendChild(pill);
+          });
+        } else {
+          td.textContent = '—';
+        }
+        return td;
+      }
+
+      function tdCallupStep(c, step, onChange = () => {}) {
+        const td = document.createElement('td');
+        const wrap = document.createElement('div');
+        wrap.className = 'callup-step';
+        const sentKey = step === 1 ? 'Reminder1SentAt' : 'Reminder2SentAt';
+        const resultKey = step === 1 ? 'Reminder1Result' : 'Reminder2Result';
+        const sent = document.createElement('label');
+        sent.className = 'inline';
+        const cb = document.createElement('input');
+        cb.type = 'checkbox';
+        cb.checked = Boolean(c.callup[sentKey]);
+        const stamp = document.createElement('input');
+        stamp.type = 'text';
+        stamp.placeholder = 'YYYY-MM-DD HH:MM';
+        stamp.value = c.callup[sentKey] || '';
+        cb.addEventListener('change', () => {
+          if (cb.checked && !stamp.value) {
+            const now = new Date();
+            stamp.value = now.toISOString().replace('T', ' ').slice(0,16);
+          }
+          if (!cb.checked) stamp.value = '';
+          c.callup[sentKey] = stamp.value;
+          onChange();
+          updateSaveButtonState();
+        });
+        stamp.addEventListener('input', () => { c.callup[sentKey] = stamp.value; cb.checked = Boolean(stamp.value); onChange(); updateSaveButtonState(); });
+        sent.appendChild(cb);
+        sent.appendChild(document.createTextNode('gesendet'));
+        wrap.appendChild(sent);
+        wrap.appendChild(stamp);
+
+        const sel = document.createElement('select');
+        ['','zugesagt','abgesagt','keine Antwort'].forEach(optVal => {
+          const opt = document.createElement('option');
+          opt.value = optVal;
+          opt.textContent = optVal || 'Ergebnis wählen';
+          if ((c.callup[resultKey] || '') === optVal) opt.selected = true;
+          sel.appendChild(opt);
+        });
+        sel.addEventListener('change', () => { c.callup[resultKey] = sel.value; onChange(); updateSaveButtonState(); });
+        wrap.appendChild(sel);
+
+        if (step === 2) {
+          const note = document.createElement('small');
+          note.textContent = 'aktiv nach Callup 1';
+          wrap.appendChild(note);
+        }
+
+        td.appendChild(wrap);
+        return td;
+      }
+
+      function tdFinal(c) {
+        const td = document.createElement('td');
+        const select = document.createElement('select');
+        ['','confirmed','declined','no_response'].forEach(val => {
+          const opt = document.createElement('option');
+          opt.value = val;
+          opt.textContent = val || 'Auto (aus Ergebnissen)';
+          if ((c.callup.FinalStatus || '') === val) opt.selected = true;
+          select.appendChild(opt);
+        });
+        const hint = document.createElement('div');
+        hint.className = 'hint';
+        const refresh = () => {
+          const derived = deriveFinal(c.callup);
+          hint.textContent = derived ? `abgeleitet: ${derived}` : '—';
+        };
+        refresh();
+        select.addEventListener('change', () => { c.callup.FinalStatus = select.value; refresh(); updateSaveButtonState(); });
+        td.appendChild(select);
+        td.appendChild(hint);
+        return { td, refresh };
+      }
+
+      function tdNotes(c, onChange = () => {}) {
+        const td = document.createElement('td');
+        const ta = document.createElement('textarea');
+        ta.className = 'notes';
+        ta.value = c.callup.Notes || '';
+        ta.placeholder = 'z.B. Kontext der Erinnerung';
+        ta.addEventListener('input', () => { c.callup.Notes = ta.value; onChange(); updateSaveButtonState(); });
+        td.appendChild(ta);
+        return td;
+      }
+
+      async function reloadData() {
+        setLoading(true);
+        try {
+          await Promise.all([loadLatest(), loadAlliance(), loadAbsences(), loadCallups()]);
+          renderThresholds();
+          renderCandidates();
+          setStatus('Geladen.', 'ok');
+        } catch (err) {
+          console.error(err);
+          setStatus('Laden fehlgeschlagen: ' + err.message, 'error');
+        } finally {
+          setLoading(false);
+          updateSaveButtonState();
+        }
+      }
+
+      async function saveChanges() {
+        if (state.loading || state.saving) return;
+        const workerUrl = elements.workerUrl.value.trim();
+        const adminKey = elements.adminKey.value.trim();
+        const branch = elements.branch.value.trim() || 'main';
+        if (!workerUrl) { setStatus('Worker-URL fehlt.', 'error'); return; }
+        if (!adminKey) { setStatus('Admin-Key erforderlich.', 'error'); return; }
+        const content = buildCurrentCsv();
+        setSaving(true);
+        setStatus('Speichere Callups…', 'info');
+        try {
+          await writeFile(workerUrl, adminKey, { path: 'data/callups.csv', content, branch, message: 'admin: update callups.csv via callup assistant' });
+          state.originalCsv = content;
+          setStatus('Callups gespeichert.', 'ok');
+        } catch (err) {
+          console.error(err);
+          setStatus('Speichern fehlgeschlagen: ' + err.message, 'error');
+        } finally {
+          setSaving(false);
+          updateSaveButtonState();
+        }
+      }
+
+      async function writeFile(workerUrl, adminKey, payload) {
+        const headers = { 'Content-Type': 'application/json', 'X-Admin-Key': adminKey };
+        const res = await fetch(workerUrl, { method:'POST', headers, body: JSON.stringify(payload) });
+        if (!res.ok) {
+          const text = await res.text().catch(() => '');
+          throw new Error(text || `HTTP ${res.status}`);
+        }
+        const result = await res.json().catch(() => ({}));
+        if (result && result.ok === false) throw new Error(result.error || 'Worker-Fehler');
+        return result;
+      }
+
+      function persistSettings() {
+        const values = { workerUrl: elements.workerUrl.value, branch: elements.branch.value, adminKey: elements.adminKey.value, eventId: elements.eventId.value };
+        localStorage.setItem(SETTINGS_KEY, JSON.stringify(values));
+      }
+
+      function loadSettings() {
+        const saved = localStorage.getItem(SETTINGS_KEY);
+        if (!saved) return {};
+        try { return JSON.parse(saved); } catch (err) { return {}; }
+      }
+
+      function restoreSettings() {
+        const saved = loadSettings();
+        if (saved.workerUrl) elements.workerUrl.value = saved.workerUrl;
+        if (saved.branch) elements.branch.value = saved.branch;
+        if (saved.adminKey) elements.adminKey.value = saved.adminKey;
+        if (saved.eventId) { elements.eventId.value = saved.eventId; state.selectedEventId = saved.eventId; }
+      }
+
+      function renderThresholds() {
+        elements.thOverall.textContent = pc(CONFIG.HIGH_OVERALL);
+        elements.thRolling.textContent = pc(CONFIG.HIGH_ROLLING);
+        elements.thEvents.textContent = CONFIG.MIN_EVENTS;
+        elements.thLowN.textContent = CONFIG.LOW_N;
+        elements.thDelta.textContent = pc(CONFIG.DELTA_UPTICK);
+        elements.thUptick.textContent = pc(CONFIG.ROLLING_MIN);
+      }
+
+      function initEvents() {
+        elements.reloadBtn.addEventListener('click', reloadData);
+        elements.saveBtn.addEventListener('click', saveChanges);
+        elements.eventId.addEventListener('change', renderCandidates);
+        elements.useLastEvent.addEventListener('click', () => {
+          if (state.callups.length) {
+            const latest = state.callups[state.callups.length - 1];
+            elements.eventId.value = latest.EventID || '';
+            renderCandidates();
+          }
+        });
+        elements.recommendedOnly.addEventListener('change', () => { if (elements.recommendedOnly.checked) elements.showAllRoster.checked = false; renderCandidates(); });
+        elements.showAllRoster.addEventListener('change', () => { if (elements.showAllRoster.checked) elements.recommendedOnly.checked = false; renderCandidates(); });
+        elements.showAbsent.addEventListener('change', renderCandidates);
+        elements.workerUrl.addEventListener('change', persistSettings);
+        elements.branch.addEventListener('change', persistSettings);
+        elements.adminKey.addEventListener('change', persistSettings);
+        elements.eventId.addEventListener('change', persistSettings);
+      }
+
+      restoreSettings();
+      initEvents();
+      renderThresholds();
+      reloadData();
+    })();
+  </script>
+  <script src="admin.js"></script>
+</body>
+</html>
