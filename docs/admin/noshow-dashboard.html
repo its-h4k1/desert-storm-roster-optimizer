@@ -1,0 +1,493 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8" />
+  <title>Desert Storm · No-Show Analyse</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <style>
+    :root {
+      --bg:#05080f; --panel:#101623; --panel-2:#0c121e; --fg:#f5f8ff; --muted:#8ea0c0;
+      --line:#1e2a40; --acc:#66e0a3; --warn:#ffd56b; --bad:#ff6b6b; --ok:#52d67a; --neutral:#95a4c0;
+    }
+    *{box-sizing:border-box}
+    body {
+      margin:0;
+      font-family: "Inter",ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+      background:radial-gradient(circle at 20% 20%,rgba(62,105,255,.15),transparent 35%),
+                 radial-gradient(circle at 80% 0%,rgba(255,118,154,.15),transparent 45%),
+                 var(--bg);
+      color:var(--fg);
+      min-height:100vh;
+    }
+    header {
+      display:flex;
+      align-items:center;
+      gap:12px;
+      padding:18px 24px;
+      position:sticky;
+      top:0;
+      z-index:20;
+      backdrop-filter:blur(10px);
+      background:rgba(7,11,20,.85);
+      border-bottom:1px solid var(--line);
+    }
+    header .brand { font-size:1rem; font-weight:600; letter-spacing:.3px; }
+    header .spacer { flex:1; }
+    header a { color:var(--muted); text-decoration:none; font-size:.9rem; }
+    header a:hover { color:var(--fg); }
+    main {
+      padding:32px clamp(16px,4vw,64px) 80px;
+      max-width:1200px;
+      margin:0 auto;
+      display:flex;
+      flex-direction:column;
+      gap:24px;
+    }
+    h1 { margin:0; font-size:2rem; }
+    p { margin:0; }
+    .hint { color:var(--muted); font-size:.95rem; }
+    .panel {
+      background:var(--panel);
+      border:1px solid var(--line);
+      border-radius:18px;
+      padding:20px 24px;
+      box-shadow:0 10px 40px rgba(0,0,0,.35);
+    }
+    .filters {
+      display:flex;
+      flex-wrap:wrap;
+      gap:18px;
+    }
+    .filter {
+      flex:1 1 220px;
+    }
+    .filter label {
+      font-size:.85rem;
+      color:var(--muted);
+      display:block;
+      margin-bottom:6px;
+    }
+    .chip-group {
+      display:flex;
+      flex-wrap:wrap;
+      gap:8px;
+    }
+    .chip-group button {
+      appearance:none;
+      border:1px solid var(--line);
+      background:var(--panel-2);
+      color:var(--fg);
+      padding:6px 12px;
+      border-radius:999px;
+      font-size:.9rem;
+      cursor:pointer;
+      transition:all .15s ease;
+    }
+    .chip-group button.active {
+      border-color:var(--acc);
+      color:#041313;
+      background:var(--acc);
+      font-weight:600;
+    }
+    .cards {
+      display:grid;
+      grid-template-columns:repeat(auto-fit,minmax(180px,1fr));
+      gap:18px;
+    }
+    .card {
+      background:var(--panel-2);
+      border-radius:16px;
+      padding:16px;
+      border:1px solid var(--line);
+    }
+    .card h3 {
+      margin:0;
+      font-size:1.6rem;
+    }
+    .card span { color:var(--muted); font-size:.9rem; }
+    .chart-title { display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; font-weight:600; }
+    .stacked {
+      display:flex;
+      height:46px;
+      overflow:hidden;
+      border-radius:999px;
+      border:1px solid var(--line);
+    }
+    .stacked div { height:100%; display:flex; align-items:center; justify-content:center; font-size:.85rem; font-weight:600; }
+    .stacked .legend-label { font-size:.75rem; }
+    .stacked .nodata { background:#3a4864; }
+    .stacked .low { background:#956d1f; }
+    .stacked .good { background:#185341; }
+    .stacked .mid { background:#8c641b; }
+    .stacked .bad { background:#5a1c1f; }
+    .stacked .bad strong { color:#ffb8c3; }
+    .legend-grid {
+      display:flex; flex-wrap:wrap; gap:8px; margin-top:12px; font-size:.85rem; color:var(--muted);
+    }
+    .legend-grid span::before {
+      content:"";
+      display:inline-block;
+      width:10px; height:10px;
+      border-radius:3px;
+      margin-right:6px;
+      vertical-align:middle;
+    }
+    .legend-grid .l-nodata::before { background:#3a4864; }
+    .legend-grid .l-low::before { background:#956d1f; }
+    .legend-grid .l-good::before { background:#185341; }
+    .legend-grid .l-mid::before { background:#8c641b; }
+    .legend-grid .l-bad::before { background:#5a1c1f; }
+    .bar-grid {
+      display:grid;
+      grid-template-columns:repeat(auto-fit,minmax(160px,1fr));
+      gap:18px;
+    }
+    .bar-card {
+      background:var(--panel-2);
+      border-radius:14px;
+      border:1px solid var(--line);
+      padding:12px 14px 16px;
+    }
+    .bar-card header { display:flex; align-items:center; justify-content:space-between; font-size:.9rem; color:var(--muted); margin:0 0 12px; padding:0; border:none; background:none; position:static; }
+    .bar {
+      height:120px;
+      background:linear-gradient(180deg,rgba(255,255,255,.12),rgba(255,255,255,.04));
+      border-radius:10px;
+      border:1px solid var(--line);
+      display:flex;
+      align-items:flex-end;
+      justify-content:center;
+      position:relative;
+      overflow:hidden;
+    }
+    .bar span {
+      display:block;
+      width:60%;
+      background:var(--acc);
+      border-radius:8px 8px 0 0;
+      transition:height .25s ease;
+    }
+    .bar .label {
+      position:absolute;
+      bottom:8px;
+      right:10px;
+      font-weight:600;
+      font-variant-numeric:tabular-nums;
+    }
+    .risk-list {
+      display:grid;
+      grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
+      gap:12px;
+    }
+    .player-card {
+      background:var(--panel-2);
+      border-radius:16px;
+      border:1px solid var(--line);
+      padding:14px 16px;
+      display:flex;
+      flex-direction:column;
+      gap:6px;
+    }
+    .player-card strong { font-size:1rem; }
+    .player-card small { color:var(--muted); font-size:.8rem; }
+    .risk-pill {
+      display:inline-flex;
+      align-items:center;
+      gap:6px;
+      font-weight:600;
+      font-size:.95rem;
+      padding:4px 10px;
+      border-radius:999px;
+      border:1px solid var(--line);
+    }
+    .risk-pill.good { background:rgba(82,214,122,.15); border-color:#1b5c39; color:#8ef0b5; }
+    .risk-pill.mid { background:rgba(255,213,107,.15); border-color:#6a4a15; color:#ffd56b; }
+    .risk-pill.bad { background:rgba(255,107,107,.18); border-color:#712727; color:#ffb5b5; }
+    .risk-pill.low { background:rgba(149,109,31,.2); border-color:#5d3c10; color:#ffdfaa; }
+    .risk-pill.nodata { background:rgba(58,72,100,.45); border-color:#2f3b53; color:#b0bdd8; }
+    .empty { color:var(--muted); font-style:italic; }
+    @media(max-width:640px){
+      header { flex-wrap:wrap; }
+      header .spacer { display:none; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="brand">Desert Storm · No-Show Analyse</div>
+    <div class="spacer"></div>
+    <a href="../index.html">Zurück zur Admin-Startseite</a>
+  </header>
+  <main>
+    <section>
+      <h1>No-Show Dashboard</h1>
+      <p class="hint">Live-Daten aus <code>out/latest.json</code>. Vergleiche Gruppen, Rollen und Metriken, um den Effekt der EB-Roster zu beurteilen.</p>
+    </section>
+
+    <section class="panel">
+      <div class="filters">
+        <div class="filter">
+          <label>Metrik</label>
+          <div class="chip-group" data-filter="metric">
+            <button data-value="overall" class="active">Overall</button>
+            <button data-value="rolling">Rolling</button>
+          </div>
+        </div>
+        <div class="filter">
+          <label>Rolle</label>
+          <div class="chip-group" data-filter="role">
+            <button data-value="all" class="active">Alle</button>
+            <button data-value="Start">Start</button>
+            <button data-value="Ersatz">Ersatz</button>
+          </div>
+        </div>
+        <div class="filter">
+          <label>Gruppe</label>
+          <div class="chip-group" data-filter="group">
+            <button data-value="all" class="active">Alle</button>
+            <button data-value="A">A</button>
+            <button data-value="B">B</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel">
+      <div class="cards" id="summaryCards"></div>
+    </section>
+
+    <section class="panel">
+      <div class="chart-title">Risikoverteilung <span class="hint" id="filterLabel"></span></div>
+      <div id="riskStack" class="stacked"></div>
+      <div class="legend-grid">
+        <span class="l-nodata">Keine Historie</span>
+        <span class="l-low">Wenig Daten (≤2 Events)</span>
+        <span class="l-good">Grün &lt; 20%</span>
+        <span class="l-mid">Gelb 20–35%</span>
+        <span class="l-bad">Rot &gt; 35%</span>
+      </div>
+    </section>
+
+    <section class="panel">
+      <div class="chart-title">Gruppenvergleich</div>
+      <div class="bar-grid" id="groupBars"></div>
+    </section>
+
+    <section class="panel">
+      <div class="chart-title">Risikoreichste Spieler</div>
+      <div class="risk-list" id="playerList"></div>
+    </section>
+  </main>
+
+  <script>
+    const state = {
+      players: [],
+      groups: {},
+      filteredPlayers: [],
+      view: {
+        metric: 'overall',
+        role: 'all',
+        group: 'all',
+      },
+    };
+
+    const metricLabel = {
+      overall: 'No-Show Overall',
+      rolling: 'No-Show Rolling',
+    };
+
+    const $ = (sel) => document.querySelector(sel);
+    const $all = (sel) => Array.from(document.querySelectorAll(sel));
+
+    function initFilters(){
+      document.querySelectorAll('.chip-group').forEach(group => {
+        group.addEventListener('click', (ev) => {
+          if(ev.target.tagName !== 'BUTTON') return;
+          const value = ev.target.dataset.value;
+          const key = group.dataset.filter;
+          if(!value || !key) return;
+          state.view[key] = value;
+          group.querySelectorAll('button').forEach(btn => btn.classList.toggle('active', btn === ev.target));
+          applyFilters();
+        });
+      });
+    }
+
+    function loadData(){
+      const url = new URL(location.href);
+      const branch = url.searchParams.get('branch') || 'main';
+      const RAW = `https://raw.githubusercontent.com/its-h4k1/desert-storm-roster-optimizer/${branch}/out/latest.json?v=${Date.now()}`;
+      fetch(RAW, { cache: 'no-store' })
+        .then(res => {
+          if(!res.ok) throw new Error(res.status + ' ' + res.statusText);
+          return res.json();
+        })
+        .then(json => {
+          state.players = Array.isArray(json.players) ? json.players : [];
+          state.groups = json.groups || {};
+          applyFilters();
+        })
+        .catch(err => {
+          console.error(err);
+          $('#playerList').innerHTML = `<p class="empty">Fehler beim Laden der Daten: ${err.message}</p>`;
+        });
+    }
+
+    function classify(player, metric){
+      const rate = Number(player[`noshow_${metric}`]);
+      const seen = Number(player.events_seen ?? 0);
+      const misses = Number(player.noshow_count ?? 0);
+      if(!Number.isFinite(seen) || seen === 0){
+        return { key: 'nodata', rate: null, seen, misses };
+      }
+      if(seen <= 2){
+        return { key: 'low', rate, seen, misses };
+      }
+      if(rate === 0){
+        return { key: 'good', rate, seen, misses };
+      }
+      if(rate < 0.20) return { key: 'good', rate, seen, misses };
+      if(rate < 0.35) return { key: 'mid', rate, seen, misses };
+      return { key: 'bad', rate, seen, misses };
+    }
+
+    function applyFilters(){
+      state.filteredPlayers = state.players.filter(p => {
+        if(state.view.role !== 'all' && p.role !== state.view.role) return false;
+        if(state.view.group !== 'all' && p.group !== state.view.group) return false;
+        return true;
+      });
+      render();
+    }
+
+    function render(){
+      renderSummary();
+      renderRiskStack();
+      renderGroupBars();
+      renderTopPlayers();
+    }
+
+    function pct(value){
+      if(!Number.isFinite(value)) return '–';
+      return (value*100).toFixed(1) + '%';
+    }
+
+    function avg(arr){
+      const vals = arr.filter(v => Number.isFinite(v));
+      if(!vals.length) return null;
+      return vals.reduce((a,b)=>a+b,0)/vals.length;
+    }
+
+    function renderSummary(){
+      const players = state.filteredPlayers;
+      const metricKey = `noshow_${state.view.metric}`;
+      const rates = players.map(p => Number(p[metricKey]));
+      const seen = players.map(p => Number(p.events_seen));
+      const penalty = players.map(p => Number(p.risk_penalty));
+      const avgRate = avg(rates);
+      const avgSeen = avg(seen);
+      const avgPenalty = avg(penalty);
+      const highRisk = players.filter(p => classify(p, state.view.metric).key === 'bad').length;
+
+      const cards = [
+        { label: 'Gefilterte Spieler', value: players.length ? players.length : '0', detail: `${state.view.group === 'all' ? 'Gruppen A+B' : 'Gruppe '+state.view.group}` },
+        { label: metricLabel[state.view.metric], value: pct(avgRate), detail: 'Durchschnittliche Rate' },
+        { label: 'Ø Events gesehen', value: avgSeen ? avgSeen.toFixed(1) : '–', detail: 'Historie' },
+        { label: 'Ø Risk Penalty', value: avgPenalty ? avgPenalty.toFixed(1) : '–', detail: 'Builder-Input' },
+        { label: 'Hohe Risiken (>35%)', value: highRisk, detail: 'Anzahl Spieler' },
+      ];
+      const wrap = $('#summaryCards');
+      wrap.innerHTML = cards.map(card => `
+        <div class="card">
+          <span>${card.label}</span>
+          <h3>${card.value}</h3>
+          <span>${card.detail}</span>
+        </div>
+      `).join('');
+    }
+
+    function renderRiskStack(){
+      const bucketCounts = { nodata:0, low:0, good:0, mid:0, bad:0 };
+      state.filteredPlayers.forEach(p => {
+        const bucket = classify(p, state.view.metric).key;
+        bucketCounts[bucket]++;
+      });
+      const total = state.filteredPlayers.length || 1;
+      const wrap = $('#riskStack');
+      wrap.innerHTML = Object.entries(bucketCounts).map(([key,value]) => {
+        const width = (value/total)*100;
+        if(width === 0) return '';
+        const label = `${Math.round(width)}%`;
+        return `<div class="${key}" style="width:${width}%;">${width>8 ? `<span class="legend-label">${label}</span>` : ''}</div>`;
+      }).join('');
+      $('#filterLabel').textContent = `${state.filteredPlayers.length} Spieler · ${metricLabel[state.view.metric]}`;
+    }
+
+    function renderGroupBars(){
+      const container = $('#groupBars');
+      const groups = ['A','B'];
+      const roles = ['Start','Ersatz'];
+      const data = [];
+      groups.forEach(g => {
+        roles.forEach(r => {
+          const subset = state.players.filter(p => {
+            if(state.view.group !== 'all' && g !== state.view.group) return false;
+            if(state.view.role !== 'all' && r !== state.view.role) return false;
+            return p.group === g && p.role === r;
+          });
+          data.push({
+            group: g,
+            role: r,
+            value: avg(subset.map(p => Number(p[`noshow_${state.view.metric}`]))),
+            count: subset.length,
+          });
+        });
+      });
+      const maxVal = Math.max(...data.map(d => d.value || 0), 0.35);
+      container.innerHTML = data
+        .filter(d => d.count > 0)
+        .map(d => {
+          const height = d.value ? (d.value / maxVal) * 100 : 0;
+          return `<div class="bar-card">
+            <header><div>${d.group} · ${d.role}</div><div>${d.count} Spieler</div></header>
+            <div class="bar"><span style="height:${height}%"></span><div class="label">${pct(d.value)}</div></div>
+          </div>`;
+        }).join('');
+      if(!container.innerHTML){
+        container.innerHTML = '<p class="empty">Keine Kombination entspricht dem Filter.</p>';
+      }
+    }
+
+    function renderTopPlayers(){
+      const metricKey = state.view.metric;
+      const cards = state.filteredPlayers
+        .map(p => ({
+          player: p,
+          rate: Number(p[`noshow_${metricKey}`]),
+          bucket: classify(p, metricKey).key,
+        }))
+        .sort((a,b) => (b.rate ?? -1) - (a.rate ?? -1))
+        .slice(0, 8);
+
+      const wrap = $('#playerList');
+      if(!cards.length){
+        wrap.innerHTML = '<p class="empty">Keine Spieler im Filter.</p>';
+        return;
+      }
+      wrap.innerHTML = cards.map(({ player, rate, bucket }) => {
+        const badgeClass = `risk-pill ${bucket}`;
+        const info = [player.group, player.role, `Events ${player.events_seen ?? '–'}`].filter(Boolean).join(' · ');
+        return `<div class="player-card">
+          <strong>${player.display}</strong>
+          <small>${info}</small>
+          <div class="${badgeClass}">${pct(rate)}</div>
+          <small>No-Shows: ${player.noshow_count ?? '–'} · Risk Penalty: ${player.risk_penalty ?? '–'}</small>
+        </div>`;
+      }).join('');
+    }
+
+    initFilters();
+    loadData();
+  </script>
+</body>
+</html>
