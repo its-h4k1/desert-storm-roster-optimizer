@@ -197,24 +197,36 @@
     }
   </style>
 </head>
-<body class="admin-shell">
-  <header class="admin-header">
-    <div class="admin-brand">ELT Admin</div>
-    <div class="admin-header-actions">
-      <a class="btn ghost" href="../index.html">Zur Roster-Ansicht</a>
-    </div>
-  </header>
-  <div class="admin-layout">
-    <nav class="admin-nav">
-      <a href="index.html">CSV &amp; Datei-Tools</a>
-      <a href="events.html">Events erfassen</a>
-      <a href="players.html">Spieler &amp; Aliase</a>
-      <a href="absences.html">Absenzen</a>
-      <a href="group-preferences.html">Gruppenpräferenzen</a>
-      <a href="noshow-dashboard.html" class="active">No-Show Analyse</a>
-      <a href="callup-assistant.html">Callup-Assistent</a>
-    </nav>
-    <main class="admin-content">
+<body>
+  <div class="admin-shell">
+    <aside class="admin-sidebar">
+      <div class="admin-sidebar-header">
+        <div class="admin-logo">ELT Admin</div>
+        <button class="sidebar-close" aria-label="Navigation schließen">✕</button>
+      </div>
+      <nav class="admin-nav">
+        <a href="index.html">CSV &amp; Datei-Tools</a>
+        <a href="events.html">Events erfassen</a>
+        <a href="players.html">Spieler &amp; Aliase</a>
+        <a href="absences.html">Absenzen</a>
+        <a href="group-preferences.html">Gruppenpräferenzen</a>
+        <a href="noshow-dashboard.html" class="active">No-Show Analyse</a>
+        <a href="callup-assistant.html">Callup-Assistent</a>
+      </nav>
+    </aside>
+
+    <div class="admin-main">
+      <header class="admin-header">
+        <button class="sidebar-toggle" aria-label="Navigation öffnen">☰</button>
+        <div class="page-title">
+          <p>No-Show</p>
+          <h1>Analyse</h1>
+        </div>
+        <div class="admin-header-actions">
+          <a class="btn ghost" href="../index.html">Zur Roster-Ansicht</a>
+        </div>
+      </header>
+      <main class="admin-content">
       <section class="admin-section page-wrapper">
         <div class="page-inner">
           <header class="page-header">
@@ -325,6 +337,7 @@
       </section>
     </main>
   </div>
+  <div class="admin-overlay"></div>
 
   <script>
     const state = {

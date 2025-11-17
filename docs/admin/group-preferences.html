@@ -298,48 +298,60 @@
     }
   </style>
 </head>
-<body class="admin-shell">
-  <header class="admin-header">
-    <div class="admin-brand">ELT Admin</div>
-    <div class="admin-header-actions">
-      <a class="btn ghost" href="../index.html">Zur Roster-Ansicht</a>
-    </div>
-  </header>
-  <div class="admin-layout">
-    <nav class="admin-nav">
-      <a href="index.html">CSV &amp; Datei-Tools</a>
-      <a href="events.html">Events erfassen</a>
-      <a href="players.html">Spieler &amp; Aliase</a>
-      <a href="absences.html">Absenzen</a>
-      <a href="group-preferences.html" class="active">Gruppenpräferenzen</a>
-      <a href="noshow-dashboard.html">No-Show Analyse</a>
-      <a href="callup-assistant.html">Callup-Assistent</a>
-    </nav>
+<body>
+  <div class="admin-shell">
+    <aside class="admin-sidebar">
+      <div class="admin-sidebar-header">
+        <div class="admin-logo">ELT Admin</div>
+        <button class="sidebar-close" aria-label="Navigation schließen">✕</button>
+      </div>
+      <nav class="admin-nav">
+        <a href="index.html">CSV &amp; Datei-Tools</a>
+        <a href="events.html">Events erfassen</a>
+        <a href="players.html">Spieler &amp; Aliase</a>
+        <a href="absences.html">Absenzen</a>
+        <a href="group-preferences.html" class="active">Gruppenpräferenzen</a>
+        <a href="noshow-dashboard.html">No-Show Analyse</a>
+        <a href="callup-assistant.html">Callup-Assistent</a>
+      </nav>
+    </aside>
 
-      <main class="admin-content">
-        <section class="admin-section page-wrapper admin-groupprefs">
-          <div class="page-inner">
-          <header class="page-header">
-            <div style="flex:1;min-width:240px;">
-              <h1>Gruppenpräferenzen verwalten</h1>
-              <p style="margin:0;color:#6b7280;font-size:0.9rem">Pflege von <code>data/alliance.csv</code> (Spalten <code>PrefGroup</code>, <code>PrefMode</code>, <code>PrefBoost</code>).</p>
+    <div class="admin-main">
+      <header class="admin-header">
+        <button class="sidebar-toggle" aria-label="Navigation öffnen">☰</button>
+        <div class="page-title">
+          <p>Gruppenpräferenzen</p>
+          <h1>Verwaltung</h1>
+        </div>
+        <div class="admin-header-actions">
+          <a class="btn ghost" href="../index.html">Zur Roster-Ansicht</a>
+        </div>
+      </header>
+
+        <main class="admin-content">
+          <section class="admin-section page-wrapper admin-groupprefs">
+            <div class="page-inner">
+            <header class="page-header">
+              <div style="flex:1;min-width:240px;">
+                <h2>Gruppenpräferenzen verwalten</h2>
+                <p style="margin:0;color:#6b7280;font-size:0.9rem">Pflege von <code>data/alliance.csv</code> (Spalten <code>PrefGroup</code>, <code>PrefMode</code>, <code>PrefBoost</code>).</p>
+              </div>
+              <div class="settings">
+              <label>Worker URL
+                <input id="workerUrl" type="text" value="https://ds-commit.hak1.workers.dev/write-file" spellcheck="false">
+              </label>
+              <label>Branch
+                <input id="branchInput" type="text" value="main" spellcheck="false">
+              </label>
+              <label>Admin-Key
+                <input id="adminKey" type="password" placeholder="r4-admin" autocomplete="off">
+              </label>
+              <button id="reloadBtn" class="ghost">Neu laden</button>
+              <button id="saveBtn">Speichern</button>
             </div>
-            <div class="settings">
-            <label>Worker URL
-              <input id="workerUrl" type="text" value="https://ds-commit.hak1.workers.dev/write-file" spellcheck="false">
-            </label>
-            <label>Branch
-              <input id="branchInput" type="text" value="main" spellcheck="false">
-            </label>
-            <label>Admin-Key
-              <input id="adminKey" type="password" placeholder="r4-admin" autocomplete="off">
-            </label>
-            <button id="reloadBtn" class="ghost">Neu laden</button>
-            <button id="saveBtn">Speichern</button>
-          </div>
-          </header>
+            </header>
 
-          <main class="page-main">
+            <main class="page-main">
             <section class="panel">
               <div style="display:flex;align-items:center;gap:0.75rem;flex-wrap:wrap;">
                 <h2 style="margin-right:auto;">Allianz-Mitglieder</h2>
@@ -387,7 +399,9 @@
           </div>
         </section>
       </main>
+    </div>
   </div>
+  <div class="admin-overlay"></div>
 
   <div class="status-bar">
     <span id="statusBadge" class="status-badge status-info">Bereit</span>
