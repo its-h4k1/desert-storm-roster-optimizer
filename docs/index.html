@@ -38,6 +38,7 @@
     .tag{display:inline-block;margin-left:6px;padding:2px 7px;border-radius:999px;font-size:0.72em;font-weight:600;vertical-align:middle}
     .tag-nd{background:var(--bad);color:#fff}
     .tag-low{background:#f1e1a8;color:#111}
+    .tag-event{background:#ecfeff;border:1px solid #a5f3fc;color:#0f172a}
     .legend{font-size:0.85em;margin:12px 0 0}
     .roster-controls{margin:12px 0 20px}
     .player-meta-toggle{font-size:0.9em;color:var(--fg);display:inline-flex;align-items:center;gap:8px;cursor:pointer;user-select:none}
@@ -51,6 +52,11 @@
     #absences table{margin-top:12px}
     .absences-roster-badge{display:inline-block;margin-left:6px;padding:2px 8px;border-radius:999px;border:1px solid var(--line);font-size:0.75em;color:var(--muted);background:var(--bgth)}
     .absences-error{color:#b00}
+    .extra-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px;margin-top:8px}
+    .extra-card{border:1px solid var(--line);border-radius:10px;padding:10px;background:var(--bgth)}
+    .extra-card h3{margin:0 0 6px}
+    .extra-list{list-style:none;padding:0;margin:0;display:grid;gap:6px}
+    .extra-meta{color:var(--muted);font-size:0.85em}
   </style>
 </head>
 <body>
@@ -100,6 +106,12 @@
     </section>
   </div>
 
+  <section id="extras">
+    <h2>Zusätzliche Zusagen (Pool nächstes Event)</h2>
+    <p class="muted" id="extra-note">Lädt Zusagen …</p>
+    <div id="extra-root" class="extra-grid"></div>
+  </section>
+
   <p class="muted legend">Legende: <span class="tag tag-nd" title="Keine Historie – events_seen = 0">No&nbsp;Data</span> keine Historie · <span class="tag tag-low" title="Wenig Historie – events_seen ∈ {1,2}">low&nbsp;n</span> wenig Historie<br />Farben basieren auf Historie (rolling→overall), EB wird nur zur Sortierung verwendet.<br />No-Data = nie teilgenommen (grau). low-n ≤2 = gelb. 1 Fehltermin = nie rot.</p>
 
   <section id="absences">
@@ -129,6 +141,8 @@
     const rosterRoot = document.getElementById("roster-root");
     const playerMetaToggle = document.getElementById("player-meta-toggle");
     const absencesContainer = document.getElementById("absences-content");
+    const extraRoot = document.getElementById("extra-root");
+    const extraNote = document.getElementById("extra-note");
     if (playerMetaToggle) {
       state.showPlayerMeta = Boolean(playerMetaToggle.checked);
       playerMetaToggle.addEventListener("change", (event) => {
@@ -379,6 +393,53 @@
         });
     }
 
+    function renderExtraSignups(extraData, meta) {
+      if (!extraRoot) return;
+      const groups = ['A','B'];
+      const count = groups.reduce((sum, g) => sum + (Array.isArray(extraData[g]) ? extraData[g].length : 0), 0);
+      if (extraNote) {
+        const parts = ['Pool für nächstes Event'];
+        if (meta && typeof meta.total_entries === 'number') parts.push(`Datei-Einträge: ${meta.total_entries}`);
+        if (meta && meta.source) parts.push(`Quelle: ${meta.source}`);
+        extraNote.textContent = parts.join(' · ');
+      }
+      if (!count) {
+        extraRoot.innerHTML = '<p class="muted">Keine zusätzlichen Zusagen erfasst.</p>';
+        return;
+      }
+      extraRoot.innerHTML = '';
+      groups.forEach(group => {
+        const card = document.createElement('div');
+        card.className = 'extra-card';
+        const title = document.createElement('h3');
+        title.textContent = `Gruppe ${group}`;
+        card.appendChild(title);
+        const list = document.createElement('ul');
+        list.className = 'extra-list';
+        const entries = Array.isArray(extraData[group]) ? extraData[group] : [];
+        if (!entries.length) {
+          const li = document.createElement('li');
+          li.textContent = 'Keine Zusagen';
+          list.appendChild(li);
+        } else {
+          entries.forEach(entry => {
+            const li = document.createElement('li');
+            const name = entry.player || entry.PlayerName || 'Unbekannt';
+            const role = entry.role || entry.Role || '';
+            const note = entry.note || entry.Note || '';
+            const source = entry.source || entry.Source || '';
+            const metaText = [role, source].filter(Boolean).join(' · ');
+            li.innerHTML = `${escapeHtml(name)} <span class="tag tag-event">Event-Zusage</span>` +
+              `${metaText ? ` <span class="extra-meta">(${escapeHtml(metaText)})</span>` : ''}` +
+              `${note ? ` <span class="extra-meta">${escapeHtml(note)}</span>` : ''}`;
+            list.appendChild(li);
+          });
+        }
+        card.appendChild(list);
+        extraRoot.appendChild(card);
+      });
+    }
+
     fetchAbsences();
 
     /**
@@ -558,10 +619,16 @@
             display: p.display,
             group: p.group,
             role: p.role,
+            has_event_signup: Boolean(p.has_event_signup || p.event_signup),
+            event_signup: p.event_signup || null,
           };
         });
         state.playersByCanon = playersByCanon;
         updateAbsencesUI();
+        const extraSignups = {
+          A: (payload && payload.groups && Array.isArray(payload.groups.A?.extra_signups)) ? payload.groups.A.extra_signups : [],
+          B: (payload && payload.groups && Array.isArray(payload.groups.B?.extra_signups)) ? payload.groups.B.extra_signups : [],
+        };
         const hasEventsSeen = playersArray.some(p => p && Object.prototype.hasOwnProperty.call(p, "events_seen"));
 
         const observedFromPlayers = playersArray
@@ -703,6 +770,9 @@
             if (lowN) {
               nameHTML += ' <span class="tag tag-low" title="Wenig Historie – events_seen ∈ {1,2}">low&nbsp;n</span>';
             }
+            if (p && (p.has_event_signup || p.event_signup)) {
+              nameHTML += ' <span class="tag tag-event" title="Zusage im Event-Pool (nächstes Event)">Event-Zusage</span>';
+            }
             const noshowCountOverall = Number.isFinite(p.noshow_count_overall) ? Number(p.noshow_count_overall) :
               (Number.isFinite(p.noshow_count) ? Number(p.noshow_count) :
               (Object.prototype.hasOwnProperty.call(r, "NoShowCount") ? toNumber(r.NoShowCount) : null));
@@ -738,6 +808,8 @@
           window.__bucketCounts[key] = keyCounts;
           writeBucketCounts(key, keyCounts);
         }
+
+        renderExtraSignups(extraSignups, payload.event_signups || null);
 
         const ts = new Date().toISOString().replace('T',' ').slice(0,19) + " UTC";
         const schemaVersion = (schema && schema.version != null) ? ` · schema v${schema.version}` : "";
