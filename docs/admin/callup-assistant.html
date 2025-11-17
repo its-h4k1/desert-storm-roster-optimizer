@@ -23,6 +23,9 @@
     .controls { display:flex; flex-wrap:wrap; gap:0.75rem; align-items:center; }
     .controls .spacer { flex:1; min-width:40px; }
     .filters { display:flex; flex-wrap:wrap; gap:0.75rem; align-items:center; }
+    .autosync-toggle { display:flex; flex-direction:column; gap:0.2rem; max-width:340px; }
+    .autosync-toggle strong { display:flex; align-items:center; gap:0.4rem; font-size:0.95rem; }
+    .autosync-toggle small { color:var(--text-muted); line-height:1.35; }
     .hint { color:var(--text-muted); font-size:0.9rem; }
     .card-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:0.85rem; }
     .card { background:var(--panel-muted); border:1px solid var(--border); border-radius:0.85rem; padding:0.85rem; }
@@ -166,6 +169,10 @@
                   <label style="flex-direction:row;align-items:center;gap:0.35rem;"> <input type="checkbox" id="showAllRoster"> <span>Alle Roster-Spieler anzeigen</span> </label>
                   <label style="flex-direction:row;align-items:center;gap:0.35rem;"> <input type="checkbox" id="showAbsent"> <span>Abwesende anzeigen</span> </label>
                 </div>
+                <label class="autosync-toggle">
+                  <strong><input type="checkbox" id="autoSyncSignups" checked> Zugesagte Spieler in Zusage-Pool übernehmen</strong>
+                  <small>"Zugesagt (Roster übernehmen)" erzeugt automatisch einen Eintrag in <code>data/event_signups_next.csv</code> (Commitment=hard, Quelle=Callup). Änderungen am Ergebnis spiegeln den Pool beim Speichern.</small>
+                </label>
               </div>
               <p class="hint">Roster-Basis: optimierte Aufstellung aus <code>out/latest.json</code> (zuletzt gebaut). Event-ID steuert Absenz-Filter &amp; Speicherung in <code>data/callups.csv</code>.</p>
               <div class="card-grid">
@@ -179,11 +186,15 @@
                 </div>
                 <div class="card">
                   <strong>Reminder-Schema</strong>
-                  <div class="hint">Bis zu zwei Erinnerungen pro Event &amp; Spieler. Checkbox setzt automatisch einen Zeitstempel; Ergebnisse stehen zur Auswahl (<code>zugesagt</code>/<code>abgesagt</code>/<code>keine Antwort</code>). Freie Notiz möglich.</div>
+                  <div class="hint">Bis zu zwei Erinnerungen pro Event &amp; Spieler. Checkbox setzt automatisch einen Zeitstempel; Ergebnisse stehen zur Auswahl (<code>zugesagt</code>/<code>zugesagt (nur Info)</code>/<code>abgesagt</code>/<code>keine Antwort</code>). Freie Notiz möglich.</div>
                 </div>
                 <div class="card">
                   <strong>Schwellenwerte</strong>
                   <div class="hint">No-Show overall ≥ <span id="thOverall"></span> oder rolling ≥ <span id="thRolling"></span> bei Events ≥ <span id="thEvents"></span>. Low-N: ≤ <span id="thLowN"></span> Events. Uptick: Rolling ≥ Overall + <span id="thDelta"></span> &amp; ≥ <span id="thUptick"></span>.</div>
+                </div>
+                <div class="card">
+                  <strong>Zusage-Pool Sync</strong>
+                  <div class="hint">"Zugesagt (Roster übernehmen)" erzeugt einen Eintrag im Zusage-Pool des nächsten Events (<code>Source=callup-confirmed</code>, <code>Commitment=hard</code>). "Abgesagt"/"keine Antwort" entfernen diese Einträge wieder. Manuelle <code>Source=manual</code>-Einträge bleiben unverändert.</div>
                 </div>
               </div>
             </section>
@@ -224,6 +235,7 @@
 
   <datalist id="eventOptions"></datalist>
 
+  <script src="../shared.js"></script>
   <script src="https://unpkg.com/papaparse@5.4.1/papaparse.min.js"></script>
   <script>
     (function(){
@@ -238,6 +250,7 @@
         recommendedOnly: document.getElementById('recommendedOnly'),
         showAllRoster: document.getElementById('showAllRoster'),
         showAbsent: document.getElementById('showAbsent'),
+        autoSyncSignups: document.getElementById('autoSyncSignups'),
         candidateBody: document.getElementById('candidateBody'),
         candidateCount: document.getElementById('candidateCount'),
         emptyState: document.getElementById('emptyState'),
@@ -255,8 +268,24 @@
 
       const SETTINGS_KEY = 'dsro-callups-settings';
       const DEFAULT_HEADERS = ['EventID','PlayerName','Reminder1SentAt','Reminder1Result','Reminder2SentAt','Reminder2Result','FinalStatus','Notes'];
+      const SIGNUP_HEADERS = ['PlayerName','Group','Role','Commitment','Source','Note'];
       const RAW_BASE = 'https://raw.githubusercontent.com/its-h4k1/desert-storm-roster-optimizer/main/';
-      const PATHS = { latest: 'out/latest.json', alliance: 'data/alliance.csv', absences: 'data/absences.csv', callups: 'data/callups.csv' };
+      const PATHS = { latest: 'out/latest.json', alliance: 'data/alliance.csv', absences: 'data/absences.csv', callups: 'data/callups.csv', signups: 'data/event_signups_next.csv' };
+      const CALLOUP_SYNC_SOURCE = 'callup-confirmed';
+      const canonicalNameJS = (window.dsroShared && typeof window.dsroShared.canonicalNameJS === 'function')
+        ? window.dsroShared.canonicalNameJS
+        : (value => {
+            if (value == null) return '';
+            return String(value).toLowerCase().trim().replace(/\s+/g, ' ');
+          });
+
+      // Datenmodell-Notiz:
+      // - Callup-Ergebnisse werden pro Event & Spieler in data/callups.csv gespeichert.
+      //   Ergebnisfelder: Reminder1Result/Reminder2Result je Callup-Schritt plus FinalStatus (manuelle Überschreibung).
+      //   Der effektive Status wird aus diesen Feldern über deriveFinal()/resolveCallupDecision() abgeleitet.
+      // - Eindeutiger Schlüssel für das Syncing ist EventID + PlayerName; Gruppe/Rolle entnehmen wir dem aktuellen Roster-Kontext.
+      // - Der Zusage-Pool (data/event_signups_next.csv) füllt PlayerName/Group/Role + Source + Commitment + Note; Source=callup-confirmed
+      //   markiert automatisch erzeugte Zusagen, Commitment=hard erzwingt Slots im nächsten Build.
 
       /**
        * Regel-Set für Empfehlungen:
@@ -283,16 +312,39 @@
         bad: 'chip ns-bad',
       };
 
+      const RESULT_OPTIONS = [
+        { value: '', label: 'Ergebnis wählen' },
+        { value: 'zugesagt (roster übernehmen)', label: 'Zugesagt (Roster übernehmen)' },
+        { value: 'zugesagt (nur info)', label: 'Zugesagt (nur Info)' },
+        { value: 'zugesagt', label: 'Zugesagt (Legacy)' },
+        { value: 'abgesagt', label: 'Abgesagt' },
+        { value: 'keine antwort', label: 'Keine Antwort' },
+      ];
+
+      const FINAL_OPTIONS = [
+        { value: '', label: 'Auto (aus Ergebnissen)' },
+        { value: 'confirmed_roster', label: 'Zugesagt (Roster übernehmen)' },
+        { value: 'confirmed_info', label: 'Zugesagt (nur Info)' },
+        { value: 'confirmed', label: 'Zugesagt (Legacy)' },
+        { value: 'declined', label: 'Abgesagt' },
+        { value: 'no_response', label: 'Keine Antwort' },
+      ];
+
       const state = {
         roster: { players: [], groups: {}, generatedAt: null },
+        rosterIndex: new Map(),
         alliance: new Map(),
         absences: [],
         callups: [],
         headers: [],
         originalCsv: '',
+        signups: [],
+        signupHeaders: [],
+        originalSignupsCsv: '',
         selectedEventId: '',
         loading: false,
         saving: false,
+        autoSyncSignups: true,
         expandedPlayer: null,
       };
 
@@ -305,6 +357,47 @@
         const str = value.toString();
         if (str.includes('"') || str.includes(',') || str.includes('\n')) return `"${str.replace(/"/g, '""')}"`;
         return str;
+      }
+
+      function normalizeDecisionValue(value) {
+        const v = (value || '').toString().trim().toLowerCase();
+        if (!v) return '';
+        if (v === 'zugesagt (roster übernehmen)' || v === 'zugesagt roster übernehmen' || v === 'confirmed_roster') return 'accept_roster';
+        if (v === 'zugesagt (nur info)' || v === 'zugesagt nur info' || v === 'confirmed_info') return 'accept_info';
+        if (v === 'zugesagt' || v === 'confirmed') return 'accept_roster';
+        if (v === 'abgesagt' || v === 'declined') return 'declined';
+        if (v === 'keine antwort' || v === 'no_response' || v === 'no response') return 'no_response';
+        return '';
+      }
+
+      function describeDecision(decision) {
+        switch (decision) {
+          case 'accept_roster': return { label: 'zugesagt (Roster übernehmen)', tone: 'ok', commitment: 'hard' };
+          case 'accept_info': return { label: 'zugesagt (Info)', tone: 'ok', commitment: 'none' };
+          case 'declined': return { label: 'abgesagt', tone: 'bad' };
+          case 'no_response': return { label: 'keine Antwort', tone: 'warn' };
+          default: return { label: '–', tone: 'muted' };
+        }
+      }
+
+      function resolveCallupDecision(entry) {
+        const finalDecision = normalizeDecisionValue(entry.FinalStatus);
+        if (finalDecision) return { decision: finalDecision, source: 'FinalStatus' };
+        const r2 = normalizeDecisionValue(entry.Reminder2Result);
+        const r1 = normalizeDecisionValue(entry.Reminder1Result);
+        if (r2 === 'declined' || r1 === 'declined') {
+          return { decision: 'declined', source: r2 === 'declined' ? 'Reminder2Result' : 'Reminder1Result' };
+        }
+        if (r2 === 'no_response' || r1 === 'no_response') {
+          return { decision: 'no_response', source: r2 === 'no_response' ? 'Reminder2Result' : 'Reminder1Result' };
+        }
+        if (r2 === 'accept_roster' || r2 === 'accept_info') return { decision: r2, source: 'Reminder2Result' };
+        if (r1 === 'accept_roster' || r1 === 'accept_info') return { decision: r1, source: 'Reminder1Result' };
+        if (finalDecision === 'no_response') return { decision: 'no_response', source: 'FinalStatus' };
+        if ((entry.Reminder2SentAt && !r2) || (entry.Reminder1SentAt && !r1)) {
+          return { decision: 'no_response', source: 'derived' };
+        }
+        return { decision: '', source: '' };
       }
 
       function parseEventDate(eventId) {
@@ -377,7 +470,7 @@
         return ensureTrailingNewline([headerLine, ...lines].join('\n'));
       }
 
-      function buildCurrentCsv() {
+      function buildCurrentCallupCsv() {
         const headers = state.headers.length ? state.headers : [...DEFAULT_HEADERS];
         const rows = state.callups.map(entry => {
           const out = {};
@@ -393,9 +486,21 @@
         return buildCsvFromRows(headers, rows);
       }
 
+      function buildCurrentSignupsCsv() {
+        const headers = state.signupHeaders.length ? Array.from(new Set([...state.signupHeaders, ...SIGNUP_HEADERS])) : [...SIGNUP_HEADERS];
+        const rows = state.signups.map(entry => {
+          const out = {};
+          headers.forEach(h => { out[h] = entry[h] ?? ''; });
+          return out;
+        });
+        rows.sort((a, b) => (a.PlayerName || '').localeCompare((b.PlayerName || ''), 'de', { sensitivity:'base' }));
+        return buildCsvFromRows(headers, rows);
+      }
+
       function hasChanges() {
-        const current = buildCurrentCsv();
-        return normalizeLineEndings(current).trim() !== normalizeLineEndings(state.originalCsv).trim();
+        const callupsChanged = normalizeLineEndings(buildCurrentCallupCsv()).trim() !== normalizeLineEndings(state.originalCsv).trim();
+        const signupsChanged = normalizeLineEndings(buildCurrentSignupsCsv()).trim() !== normalizeLineEndings(state.originalSignupsCsv).trim();
+        return callupsChanged || signupsChanged;
       }
 
       function setStatus(message, tone='info') {
@@ -428,10 +533,13 @@
         return await res.json();
       }
 
-      async function fetchText(path) {
+      async function fetchText(path, { allow404 = false } = {}) {
         const url = RAW_BASE + path;
         const res = await fetch(url, { cache: 'no-store' });
-        if (!res.ok) throw new Error('HTTP ' + res.status + ' ' + res.statusText);
+        if (!res.ok) {
+          if (allow404 && res.status === 404) return '';
+          throw new Error('HTTP ' + res.status + ' ' + res.statusText);
+        }
         return await res.text();
       }
 
@@ -442,9 +550,18 @@
           const groups = (!Array.isArray(data) && data && data.groups) ? data.groups : {};
           const generatedAt = (!Array.isArray(data) && data && data.generated_at) ? data.generated_at : null;
           state.roster = { players, groups, generatedAt };
+          const index = new Map();
+          players.forEach(p => {
+            const name = p.display || p.PlayerName || p.player || '';
+            const canon = canonicalNameJS(name);
+            if (!canon) return;
+            index.set(canon, { group: p.group || p.Group || '', role: p.role || p.Role || '' });
+          });
+          state.rosterIndex = index;
         } catch (err) {
           console.error('latest.json fehlgeschlagen', err);
           state.roster = { players: [], groups: {}, generatedAt: null };
+          state.rosterIndex = new Map();
         }
       }
 
@@ -485,14 +602,40 @@
           text = DEFAULT_HEADERS.join(',') + '\n';
         }
         const normalized = ensureTrailingNewline(normalizeLineEndings(text));
-        state.originalCsv = normalized;
         const parsed = Papa.parse(normalized, { header:true, skipEmptyLines:false });
         state.headers = (parsed.meta.fields || []).filter(Boolean);
         if (!state.headers.length) state.headers = [...DEFAULT_HEADERS];
         state.callups = (parsed.data || [])
           .filter(row => Object.values(row || {}).some(v => (v ?? '').toString().trim() !== ''))
           .map(row => ({ ...row }));
+        state.originalCsv = buildCurrentCallupCsv();
         refreshEventOptions();
+      }
+
+      async function loadSignups() {
+        let text = '';
+        try {
+          text = await fetchText(PATHS.signups, { allow404: true });
+        } catch (err) {
+          console.warn('event_signups_next.csv fehlt oder nicht lesbar, starte leer', err);
+          text = '';
+        }
+        const normalized = ensureTrailingNewline(normalizeLineEndings(text || ''));
+        const parsed = Papa.parse(normalized, { header:true, skipEmptyLines:true });
+        state.signupHeaders = (parsed.meta.fields || []).filter(Boolean);
+        if (!state.signupHeaders.length) state.signupHeaders = [...SIGNUP_HEADERS];
+        const baseRow = SIGNUP_HEADERS.reduce((acc, key) => ({ ...acc, [key]: key === 'Commitment' ? 'none' : '' }), {});
+        state.signups = (parsed.data || []).map(row => {
+          let commitment = (row.Commitment || row.commitment || baseRow.Commitment || 'none').toString().trim().toLowerCase() || 'none';
+          if (commitment !== 'hard') commitment = 'none';
+          return {
+            ...baseRow,
+            ...row,
+            Source: (row.Source || row.source || baseRow.Source || 'manual').toString().trim().toLowerCase() || 'manual',
+            Commitment: commitment,
+          };
+        }).filter(r => (r.PlayerName || '').trim());
+        state.originalSignupsCsv = buildCurrentSignupsCsv();
       }
 
       function refreshEventOptions() {
@@ -530,13 +673,66 @@
       }
 
       function deriveFinal(entry) {
-        const norm = (v) => (v || '').toLowerCase();
-        const r1 = norm(entry.Reminder1Result);
-        const r2 = norm(entry.Reminder2Result);
-        if (r1 === 'zugesagt' || r2 === 'zugesagt') return 'confirmed';
-        if (r1 === 'abgesagt' || r2 === 'abgesagt') return 'declined';
-        if ((entry.Reminder2SentAt && !r2) || (entry.Reminder1SentAt && !r1)) return 'no_response';
+        const { decision } = resolveCallupDecision(entry);
+        if (decision === 'accept_roster' || decision === 'accept_info') return 'confirmed';
+        if (decision === 'declined') return 'declined';
+        if (decision === 'no_response') return 'no_response';
         return entry.FinalStatus || '';
+      }
+
+      function shouldSyncToSignupPool(entry) {
+        const { decision } = resolveCallupDecision(entry);
+        if (decision === 'accept_roster') return { sync: true, commitment: 'hard', decision };
+        // "zugesagt (nur Info)" wird nicht automatisch synchronisiert, damit nur harte Zusagen in den Pool laufen.
+        return { sync: false, commitment: 'none', decision };
+      }
+
+      function buildCallupNote(entry, decisionCode) {
+        const desc = describeDecision(decisionCode);
+        const steps = [];
+        if (entry.Reminder1Result) steps.push(`C1: ${entry.Reminder1Result}`);
+        if (entry.Reminder2Result) steps.push(`C2: ${entry.Reminder2Result}`);
+        if (entry.FinalStatus) steps.push(`Final: ${entry.FinalStatus}`);
+        const suffix = steps.length ? ` (${steps.join(' · ')})` : '';
+        return desc.label && desc.label !== '–' ? `Callup: ${desc.label}${suffix}` : (steps.join(' · ') || 'Callup');
+      }
+
+      function syncCallupsToSignupPool(eventId) {
+        if (!eventId) return;
+        const working = state.signups.map(r => ({ ...r }));
+        const touched = new Set();
+        const keep = new Set();
+        const eventCallups = state.callups.filter(row => (row.EventID || '') === eventId);
+        eventCallups.forEach(callup => {
+          const canon = canonicalNameJS(callup.PlayerName || '');
+          if (!canon) return;
+          touched.add(canon);
+          const decision = shouldSyncToSignupPool(callup);
+          const ctx = state.rosterIndex.get(canon) || {};
+          const existing = working.find(r => canonicalNameJS(r.PlayerName || '') === canon && (r.Source || '') === CALLOUP_SYNC_SOURCE);
+          if (decision.sync) {
+            const base = existing ? { ...existing } : { PlayerName: callup.PlayerName || '', Group:'', Role:'', Commitment:'none', Source: CALLOUP_SYNC_SOURCE, Note:'' };
+            base.PlayerName = base.PlayerName || callup.PlayerName || '';
+            base.Group = ctx.group || ctx.Group || base.Group || '';
+            base.Role = ctx.role || ctx.Role || base.Role || '';
+            base.Source = CALLOUP_SYNC_SOURCE;
+            base.Commitment = decision.commitment || 'hard';
+            base.Note = buildCallupNote(callup, decision.decision);
+            if (existing) {
+              const idx = working.indexOf(existing);
+              working[idx] = base;
+            } else {
+              working.push(base);
+            }
+            keep.add(canon);
+          }
+        });
+        state.signups = working.filter(entry => {
+          if ((entry.Source || '') !== CALLOUP_SYNC_SOURCE) return true;
+          const canon = canonicalNameJS(entry.PlayerName || '');
+          if (!touched.has(canon)) return true; // andere Events oder manuell eingetragen lassen
+          return keep.has(canon); // nur behalten, wenn aktueller Callup syncen soll
+        });
       }
 
       function renderCandidates() {
@@ -741,20 +937,18 @@
         return reason;
       }
 
-      function normalizeResult(value) { return (value || '').toString().toLowerCase(); }
-
       function callupStatus(entry, step) {
         const sentKey = step === 1 ? 'Reminder1SentAt' : 'Reminder2SentAt';
         const resultKey = step === 1 ? 'Reminder1Result' : 'Reminder2Result';
-        const result = normalizeResult(entry[resultKey]);
-        if (result === 'zugesagt') return { label: 'zugesagt', tone: 'ok' };
-        if (result === 'abgesagt') return { label: 'abgesagt', tone: 'bad' };
-        if (result === 'keine antwort') return { label: 'keine Antwort', tone: 'warn' };
+        const decision = normalizeDecisionValue(entry[resultKey]);
+        if (decision) return describeDecision(decision);
         if (entry[sentKey]) return { label: 'gesendet', tone: 'info' };
         return { label: '–', tone: 'muted' };
       }
 
       function finalStatus(entry) {
+        const { decision } = resolveCallupDecision(entry);
+        if (decision) return describeDecision(decision);
         const derived = deriveFinal(entry);
         const labelMap = { confirmed: 'zugesagt', declined: 'abgesagt', no_response: 'keine Antwort' };
         const toneMap = { confirmed: 'ok', declined: 'bad', no_response: 'warn' };
@@ -887,11 +1081,12 @@
         block.appendChild(firstLine);
 
         const sel = document.createElement('select');
-        ['','zugesagt','abgesagt','keine Antwort'].forEach(optVal => {
+        const currentVal = (c.callup[resultKey] || '').toString().toLowerCase();
+        RESULT_OPTIONS.forEach(({ value, label }) => {
           const opt = document.createElement('option');
-          opt.value = optVal;
-          opt.textContent = optVal || 'Ergebnis wählen';
-          if ((c.callup[resultKey] || '') === optVal) opt.selected = true;
+          opt.value = value;
+          opt.textContent = label;
+          if (currentVal === value) opt.selected = true;
           sel.appendChild(opt);
         });
         sel.addEventListener('change', () => { c.callup[resultKey] = sel.value; onChange(); });
@@ -916,16 +1111,23 @@
         label.className = 'hint';
         label.textContent = 'Final';
         const select = document.createElement('select');
-        ['','confirmed','declined','no_response'].forEach(val => {
+        const currentVal = (c.callup.FinalStatus || '').toString().toLowerCase();
+        FINAL_OPTIONS.forEach(({ value, label }) => {
           const opt = document.createElement('option');
-          opt.value = val;
-          opt.textContent = val || 'Auto (aus Ergebnissen)';
-          if ((c.callup.FinalStatus || '') === val) opt.selected = true;
+          opt.value = value;
+          opt.textContent = label;
+          if (currentVal === value) opt.selected = true;
           select.appendChild(opt);
         });
         const hint = document.createElement('div');
         hint.className = 'hint';
         const refresh = () => {
+          const { decision } = resolveCallupDecision(c.callup);
+          if (decision) {
+            const desc = describeDecision(decision);
+            hint.textContent = `abgeleitet: ${desc.label}`;
+            return;
+          }
           const derived = deriveFinal(c.callup);
           hint.textContent = derived ? `abgeleitet: ${derived}` : '—';
         };
@@ -953,7 +1155,7 @@
       async function reloadData() {
         setLoading(true);
         try {
-          await Promise.all([loadLatest(), loadAlliance(), loadAbsences(), loadCallups()]);
+          await Promise.all([loadLatest(), loadAlliance(), loadAbsences(), loadCallups(), loadSignups()]);
           renderThresholds();
           renderCandidates();
           setStatus('Geladen.', 'ok');
@@ -971,15 +1173,33 @@
         const workerUrl = elements.workerUrl.value.trim();
         const adminKey = elements.adminKey.value.trim();
         const branch = elements.branch.value.trim() || 'main';
+        const eventId = elements.eventId.value.trim();
         if (!workerUrl) { setStatus('Worker-URL fehlt.', 'error'); return; }
         if (!adminKey) { setStatus('Admin-Key erforderlich.', 'error'); return; }
-        const content = buildCurrentCsv();
+        if (state.autoSyncSignups && eventId) {
+          syncCallupsToSignupPool(eventId);
+        } else if (state.autoSyncSignups && !eventId) {
+          setStatus('Event-ID fehlt, Sync in Zusage-Pool übersprungen.', 'warn');
+        }
+
+        const callupContent = buildCurrentCallupCsv();
+        const signupsContent = buildCurrentSignupsCsv();
+        const callupsChanged = normalizeLineEndings(callupContent).trim() !== normalizeLineEndings(state.originalCsv).trim();
+        const signupsChanged = normalizeLineEndings(signupsContent).trim() !== normalizeLineEndings(state.originalSignupsCsv).trim();
+        if (!callupsChanged && !signupsChanged) { setStatus('Keine Änderungen zu speichern.', 'info'); return; }
         setSaving(true);
         setStatus('Speichere Callups…', 'info');
         try {
-          await writeFile(workerUrl, adminKey, { path: 'data/callups.csv', content, branch, message: 'admin: update callups.csv via callup assistant' });
-          state.originalCsv = content;
-          setStatus('Callups gespeichert.', 'ok');
+          if (callupsChanged) {
+            await writeFile(workerUrl, adminKey, { path: 'data/callups.csv', content: callupContent, branch, message: 'admin: update callups.csv via callup assistant' });
+            state.originalCsv = callupContent;
+          }
+          if (signupsChanged) {
+            setStatus('Synchronisiere Zusage-Pool…', 'info');
+            await writeFile(workerUrl, adminKey, { path: 'data/event_signups_next.csv', content: signupsContent, branch, message: 'admin: sync event_signups_next.csv via callup assistant' });
+            state.originalSignupsCsv = signupsContent;
+          }
+          setStatus(signupsChanged ? 'Callups & Zusage-Pool gespeichert.' : 'Callups gespeichert.', 'ok');
         } catch (err) {
           console.error(err);
           setStatus('Speichern fehlgeschlagen: ' + err.message, 'error');
@@ -1002,7 +1222,7 @@
       }
 
       function persistSettings() {
-        const values = { workerUrl: elements.workerUrl.value, branch: elements.branch.value, adminKey: elements.adminKey.value, eventId: elements.eventId.value };
+        const values = { workerUrl: elements.workerUrl.value, branch: elements.branch.value, adminKey: elements.adminKey.value, eventId: elements.eventId.value, autoSyncSignups: elements.autoSyncSignups.checked };
         localStorage.setItem(SETTINGS_KEY, JSON.stringify(values));
       }
 
@@ -1017,6 +1237,8 @@
         if (saved.workerUrl) elements.workerUrl.value = saved.workerUrl;
         if (saved.branch) elements.branch.value = saved.branch;
         if (saved.adminKey) elements.adminKey.value = saved.adminKey;
+        if (saved.autoSyncSignups !== undefined) elements.autoSyncSignups.checked = Boolean(saved.autoSyncSignups);
+        state.autoSyncSignups = elements.autoSyncSignups.checked;
         if (saved.eventId) { elements.eventId.value = saved.eventId; state.selectedEventId = saved.eventId; }
       }
 
@@ -1046,6 +1268,7 @@
         elements.workerUrl.addEventListener('change', persistSettings);
         elements.branch.addEventListener('change', persistSettings);
         elements.adminKey.addEventListener('change', persistSettings);
+        elements.autoSyncSignups.addEventListener('change', () => { state.autoSyncSignups = elements.autoSyncSignups.checked; persistSettings(); });
         elements.eventId.addEventListener('change', persistSettings);
       }
 

@@ -39,6 +39,8 @@
     .tags { display:flex; gap:0.35rem; flex-wrap:wrap; }
     .tag { padding:0.25rem 0.55rem; border-radius:0.65rem; border:1px solid var(--border); background:var(--bg-alt); font-size:0.8rem; color:var(--text-muted); }
     .tag-hard { background:#fef2f2; border-color:#fecaca; color:#991b1b; font-weight:600; }
+    .tag-callup { background:#eff6ff; border-color:#bfdbfe; color:#1d4ed8; font-weight:600; }
+    tr.from-callup td { background:linear-gradient(90deg, rgba(239,246,255,0.6), rgba(255,255,255,0)); }
     .status-bar { position:sticky; bottom:0; background:var(--glass); border-top:1px solid var(--border); padding:0.75rem 1rem; display:flex; gap:0.6rem; align-items:center; box-shadow:0 -8px 24px rgba(15,23,42,0.08); flex-wrap:wrap; }
     .status-badge { display:inline-flex; align-items:center; gap:0.35rem; padding:0.35rem 0.7rem; border-radius:999px; font-weight:600; font-size:0.9rem; }
     .status-info { background:#e0f2fe; color:#075985; }
@@ -123,6 +125,10 @@
                   <div class="help-card">
                     <strong>Verbindlichkeit &amp; Trennung</strong>
                     <p><code>Commitment=hard</code> wird beim nächsten Roster-Build als Forced-Slot behandelt. Event-Zusagen in <code>data/event_signups_next.csv</code> sind unabhängig von <code>PrefGroup</code>; Reset leert nur den Zusage-Pool.</p>
+                  </div>
+                  <div class="help-card">
+                    <strong>Sync aus Callup-Assistent</strong>
+                    <p>Einträge mit <code>Source=callup-confirmed</code> stammen aus dem Callup-Assistenten (Option „Zugesagt (Roster übernehmen)“) und werden beim Speichern dort automatisch aktualisiert. Normalerweise müssen R4s hier keine Quelle/Commitment für diese Einträge anfassen.</p>
                   </div>
                 </div>
               </section>
@@ -489,6 +495,8 @@
         elements.emptyState.style.display = rows.length ? 'none' : 'block';
         rows.forEach((row, idx) => {
           const tr = document.createElement('tr');
+          const fromCallup = (row.Source || '') === 'callup-confirmed';
+          if (fromCallup) tr.classList.add('from-callup');
           const playerTd = document.createElement('td');
           playerTd.textContent = row.PlayerName || '–';
           tr.appendChild(playerTd);
@@ -547,6 +555,7 @@
           const sourceTd = document.createElement('td');
           const sourceText = document.createElement('span');
           sourceText.textContent = formatSourceLabel(row.Source);
+          if (fromCallup) sourceText.className = 'tag tag-callup';
           sourceTd.appendChild(sourceText);
           tr.appendChild(sourceTd);
 
@@ -554,7 +563,7 @@
           const noteInput = document.createElement('input');
           noteInput.type = 'text';
           noteInput.value = row.Note || '';
-          noteInput.placeholder = 'z.B. Discord-Zusage';
+          noteInput.placeholder = fromCallup ? 'Aus Callup; optional ergänzen' : 'z.B. Discord-Zusage';
           noteInput.addEventListener('input', () => { row.Note = noteInput.value; updateSaveButtonState(); });
           noteTd.appendChild(noteInput);
           tr.appendChild(noteTd);
