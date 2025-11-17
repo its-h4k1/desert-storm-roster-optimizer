@@ -38,6 +38,7 @@
     .row-actions { display:flex; gap:0.4rem; flex-wrap:wrap; }
     .tags { display:flex; gap:0.35rem; flex-wrap:wrap; }
     .tag { padding:0.25rem 0.55rem; border-radius:0.65rem; border:1px solid var(--border); background:var(--bg-alt); font-size:0.8rem; color:var(--text-muted); }
+    .tag-hard { background:#fef2f2; border-color:#fecaca; color:#991b1b; font-weight:600; }
     .status-bar { position:sticky; bottom:0; background:var(--glass); border-top:1px solid var(--border); padding:0.75rem 1rem; display:flex; gap:0.6rem; align-items:center; box-shadow:0 -8px 24px rgba(15,23,42,0.08); flex-wrap:wrap; }
     .status-badge { display:inline-flex; align-items:center; gap:0.35rem; padding:0.35rem 0.7rem; border-radius:999px; font-weight:600; font-size:0.9rem; }
     .status-info { background:#e0f2fe; color:#075985; }
@@ -117,11 +118,11 @@
                   </div>
                   <div class="help-card">
                     <strong>Event-Zusagen (nächstes Event)</strong>
-                    <p>Pool für das <em>nächste</em> Event: Zusage / Wunschgruppe als Overlay zur aktuellen Aufstellung. Kein Event-Browser, der Pool gilt immer für <code>out/latest.json</code>.</p>
+                    <p>Pool für das <em>nächste</em> Event: Zusage / Wunschgruppe als Overlay zur aktuellen Aufstellung. Kein Event-Browser, der Pool gilt immer für <code>out/latest.json</code> und wird nach dem nächsten Build in <code>latest.json</code> gespiegelt.</p>
                   </div>
                   <div class="help-card">
-                    <strong>Saubere Trennung</strong>
-                    <p>Die Datei <code>data/event_signups_next.csv</code> speichert ausschließlich Zusagen für das nächste Event und wird losgelöst von <code>PrefGroup</code> gepflegt. Reset-Button leert den Pool vor dem nächsten Run.</p>
+                    <strong>Verbindlichkeit &amp; Trennung</strong>
+                    <p><code>Commitment=hard</code> wird beim nächsten Roster-Build als Forced-Slot behandelt. Event-Zusagen in <code>data/event_signups_next.csv</code> sind unabhängig von <code>PrefGroup</code>; Reset leert nur den Zusage-Pool.</p>
                   </div>
                 </div>
               </section>
@@ -132,7 +133,7 @@
                     <label style="margin:0;">Kontext
                       <div id="contextMeta" class="hint" style="color:var(--text-muted);">Lädt out/latest.json …</div>
                     </label>
-                    <small class="hint" style="color:var(--text-muted);">Alle Einträge gelten für das nächste Event (aktuelles Roster). Bei Event-Wechsel den Pool leeren.</small>
+                    <small class="hint" style="color:var(--text-muted);">Alle Einträge gelten für das nächste Event (aktuelles Roster). <code>Commitment=hard</code> = Fixplatz im nächsten Build; bei Event-Wechsel den Pool leeren.</small>
                   </div>
                   <div class="spacer"></div>
                   <button id="resetBtn" class="ghost" style="border-color:var(--border);color:#b91c1c;">Zusage-Pool für nächstes Event zurücksetzen</button>
@@ -154,6 +155,12 @@
                       <option value="">–</option>
                       <option value="Start">Start</option>
                       <option value="Ersatz">Ersatz</option>
+                    </select>
+                  </label>
+                  <label>Verbindlichkeit
+                    <select id="commitmentInput">
+                      <option value="none">Nur Info</option>
+                      <option value="hard">Verbindlich (fix in Aufstellung)</option>
                     </select>
                   </label>
                   <label>Quelle
@@ -183,6 +190,7 @@
                         <th>Spieler</th>
                         <th>Gruppe</th>
                         <th>Rolle</th>
+                        <th>Verbindlichkeit</th>
                         <th>Quelle</th>
                         <th>Notiz</th>
                         <th>Roster-Kontext</th>
@@ -231,6 +239,7 @@
         playerOptions: document.getElementById('playerOptions'),
         groupInput: document.getElementById('groupInput'),
         roleInput: document.getElementById('roleInput'),
+        commitmentInput: document.getElementById('commitmentInput'),
         sourceInput: document.getElementById('sourceInput'),
         noteInput: document.getElementById('noteInput'),
         addBtn: document.getElementById('addBtn'),
@@ -247,7 +256,8 @@
       };
 
       const SETTINGS_KEY = 'dsro-event-assignments-settings';
-      const DEFAULT_HEADERS = ['PlayerName','Group','Role','Source','Note'];
+      // Commitment existierte bereits als CSV-Spalte, wurde in dieser UI jedoch ignoriert; jetzt wird sie mitgelesen und mitgeschrieben.
+      const DEFAULT_HEADERS = ['PlayerName','Group','Role','Commitment','Source','Note'];
       const state = {
         assignments: [],
         headers: [],
@@ -291,8 +301,10 @@
         try {
           const text = await fetchText('../../data/event_signups_next.csv');
           const { headers, rows } = parseCsv(text);
-          state.headers = headers.length ? headers : [...DEFAULT_HEADERS];
-          state.assignments = rows.map(r => ({ ...DEFAULT_HEADERS.reduce((acc,k)=>({ ...acc, [k]:''}),{}), ...r }));
+          const mergedHeaders = headers.length ? Array.from(new Set([...headers, ...DEFAULT_HEADERS])) : [...DEFAULT_HEADERS];
+          state.headers = mergedHeaders;
+          const baseRow = DEFAULT_HEADERS.reduce((acc, k) => ({ ...acc, [k]: k === 'Commitment' ? 'none' : '' }), {});
+          state.assignments = rows.map(r => ({ ...baseRow, ...r, Commitment: r.Commitment || r.commitment || baseRow.Commitment }));
           state.originalCsv = buildCurrentCsv();
         } catch (err) {
           console.warn('event_signups_next.csv nicht ladbar, starte leer', err);
@@ -329,7 +341,7 @@
         }
       }
       function buildCurrentCsv() {
-        const headers = state.headers.length ? state.headers : [...DEFAULT_HEADERS];
+        const headers = state.headers.length ? Array.from(new Set([...state.headers, ...DEFAULT_HEADERS])) : [...DEFAULT_HEADERS];
         const rows = state.assignments.map(entry => {
           const out = {};
           headers.forEach(h => { out[h] = entry[h] ?? ''; });
@@ -398,7 +410,7 @@
       function ensureAssignment(playerName) {
         const existing = state.assignments.find(r => (r.PlayerName || '') === playerName);
         if (existing) return existing;
-        const blank = { PlayerName: playerName, Group:'', Role:'', Source:'manual', Note:'' };
+        const blank = { PlayerName: playerName, Group:'', Role:'', Commitment:'none', Source:'manual', Note:'' };
         state.assignments.push(blank);
         return blank;
       }
@@ -407,7 +419,7 @@
         const rows = [...state.assignments];
         elements.assignmentBody.innerHTML = '';
         elements.assignmentCount.textContent = `${rows.length} Einträge`;
-        elements.eventMeta.textContent = 'Alle Einträge beziehen sich auf das nächste Event (aktuelles Roster).';
+        elements.eventMeta.textContent = 'Alle Einträge beziehen sich auf das nächste Event (aktuelles Roster); Commitment=hard erzwingt Slots im nächsten Build.';
         elements.emptyState.style.display = rows.length ? 'none' : 'block';
         rows.forEach((row, idx) => {
           const tr = document.createElement('tr');
@@ -437,6 +449,34 @@
           roleSel.addEventListener('change', () => { row.Role = roleSel.value; updateSaveButtonState(); });
           roleTd.appendChild(roleSel);
           tr.appendChild(roleTd);
+
+          const commitmentTd = document.createElement('td');
+          const commitmentSel = document.createElement('select');
+          const commitmentBadge = document.createElement('span');
+          commitmentBadge.className = 'tag';
+          [['none','Nur Info'], ['hard','Verbindlich']].forEach(([value, label]) => {
+            const opt = document.createElement('option');
+            opt.value = value; opt.textContent = label;
+            if ((row.Commitment || 'none') === value) opt.selected = true;
+            commitmentSel.appendChild(opt);
+          });
+          const updateCommitmentBadge = () => {
+            const c = row.Commitment || 'none';
+            commitmentBadge.textContent = c === 'hard' ? 'verbindlich' : 'Info';
+            commitmentBadge.className = c === 'hard' ? 'tag tag-hard' : 'tag';
+          };
+          commitmentSel.addEventListener('change', () => {
+            row.Commitment = commitmentSel.value || 'none';
+            updateCommitmentBadge();
+            updateSaveButtonState();
+          });
+          updateCommitmentBadge();
+          commitmentTd.appendChild(commitmentSel);
+          commitmentTd.appendChild(commitmentBadge);
+          commitmentTd.style.display = 'flex';
+          commitmentTd.style.flexDirection = 'column';
+          commitmentTd.style.gap = '0.35rem';
+          tr.appendChild(commitmentTd);
 
           const sourceTd = document.createElement('td');
           const sourceSel = document.createElement('select');
@@ -573,6 +613,7 @@
         const entry = ensureAssignment(player);
         entry.Group = elements.groupInput.value;
         entry.Role = elements.roleInput.value;
+        entry.Commitment = elements.commitmentInput.value || 'none';
         entry.Source = elements.sourceInput.value || 'manual';
         entry.Note = elements.noteInput.value;
         renderAssignments();
