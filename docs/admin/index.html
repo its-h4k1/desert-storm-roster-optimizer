@@ -15,7 +15,7 @@
       margin: 0;
       color: var(--text-muted);
     }
-    .card-grid .hint {
+    .admin-card-grid .hint {
       font-size: 0.85rem;
     }
     .panel textarea {
@@ -23,173 +23,186 @@
     }
   </style>
 </head>
-<body class="admin-shell">
-  <header class="admin-header">
-    <div class="admin-brand">ELT Admin</div>
-    <div class="admin-header-actions">
-      <span id="envSite" class="pill mono"></span>
-      <div id="authEmail" class="stat"></div>
-      <button id="btnLogin" class="btn pri">Anmelden</button>
-      <button id="btnLogout" class="btn err hidden">Abmelden</button>
-      <a class="btn ghost" href="../index.html">Zur Roster-Ansicht</a>
-    </div>
-  </header>
+<body>
+  <div class="admin-shell">
+    <aside class="admin-sidebar">
+      <div class="admin-sidebar-header">
+        <div class="admin-logo">ELT Admin</div>
+        <button class="sidebar-close" aria-label="Navigation schließen">✕</button>
+      </div>
+      <nav class="admin-nav">
+        <a href="index.html" class="active">CSV &amp; Datei-Tools</a>
+        <a href="events.html">Events erfassen</a>
+        <a href="players.html">Spieler &amp; Aliase</a>
+        <a href="absences.html">Absenzen</a>
+        <a href="group-preferences.html">Gruppenpräferenzen</a>
+        <a href="noshow-dashboard.html">No-Show Analyse</a>
+        <a href="callup-assistant.html">Callup-Assistent</a>
+      </nav>
+    </aside>
 
-  <div class="admin-layout">
-    <nav class="admin-nav">
-      <a href="index.html" class="active">CSV &amp; Datei-Tools</a>
-      <a href="events.html">Events erfassen</a>
-      <a href="players.html">Spieler &amp; Aliase</a>
-      <a href="absences.html">Absenzen</a>
-      <a href="group-preferences.html">Gruppenpräferenzen</a>
-      <a href="noshow-dashboard.html">No-Show Analyse</a>
-      <a href="callup-assistant.html">Callup-Assistent</a>
-    </nav>
-
-    <main class="admin-content">
-      <section class="admin-section">
-        <h1>CSV &amp; Datei-Tools</h1>
-        <p>Direkter Zugriff auf Allianz-, Alias-, Event- und Abwesenheits-Dateien inkl. Upload/Commit-Flow.</p>
-        <div class="card-grid" style="margin-top:1.5rem;">
-          <div class="card">
-            <h3>Spieler &amp; Aliase</h3>
-            <span class="hint">Neue Oberfläche für Alias-Verknüpfungen &amp; Details.</span>
-            <a class="btn pri" href="players.html" style="margin-top:auto; width:max-content;">Zur Verwaltung</a>
-          </div>
-          <div class="card">
-            <h3>Absenzen</h3>
-            <span class="hint">Komfortable Pflege von <span class="code">data/absences.csv</span> inkl. Commit-Flow.</span>
-            <a class="btn" href="absences.html" style="margin-top:auto; width:max-content;">Absenzen öffnen</a>
-          </div>
-          <div class="card">
-            <h3>No-Show Analyse</h3>
-            <span class="hint">Dashboard auf Basis von <span class="code">out/latest.json</span>.</span>
-            <a class="btn" href="noshow-dashboard.html" style="margin-top:auto; width:max-content;">Dashboard öffnen</a>
-          </div>
+    <div class="admin-main">
+      <header class="admin-header">
+        <button class="sidebar-toggle" aria-label="Navigation öffnen">☰</button>
+        <div class="page-title">
+          <p>CSV &amp; Dateien</p>
+          <h1>Admin-Tools</h1>
         </div>
-      </section>
-
-      <section class="admin-section">
-        <div class="tabs">
-          <div class="tab active" data-tab="alliance">Allianzliste</div>
-          <div class="tab" data-tab="aliases">Aliases</div>
-          <div class="tab" data-tab="events">Event-CSV Upload</div>
-          <div class="tab" data-tab="absences">Abwesenheiten</div>
+        <div class="admin-header-actions">
+          <span id="envSite" class="pill mono"></span>
+          <div id="authEmail" class="stat"></div>
+          <button id="btnLogin" class="btn pri">Anmelden</button>
+          <button id="btnLogout" class="btn err hidden">Abmelden</button>
+          <a class="btn ghost" href="../index.html">Zur Roster-Ansicht</a>
         </div>
+      </header>
 
-        <div class="panel">
-          <!-- ALLIANCE -->
-          <section id="tab-alliance">
-            <div class="row"><div class="hint">Datei: <span class="code">data/alliance.csv</span></div></div>
-            <div class="row two">
-              <div>
-                <label>CSV-Inhalt</label>
-                <textarea id="taAlliance" rows="18" spellcheck="false" placeholder="PlayerName,InAlliance
+      <main class="admin-content">
+        <section class="admin-section">
+          <h1>CSV &amp; Datei-Tools</h1>
+          <p>Direkter Zugriff auf Allianz-, Alias-, Event- und Abwesenheits-Dateien inkl. Upload/Commit-Flow.</p>
+          <div class="admin-card-grid" style="margin-top:1.2rem;">
+            <div class="admin-card">
+              <h3>Spieler &amp; Aliase</h3>
+              <span class="hint">Neue Oberfläche für Alias-Verknüpfungen &amp; Details.</span>
+              <a class="btn pri" href="players.html" style="margin-top:auto; width:max-content;">Zur Verwaltung</a>
+            </div>
+            <div class="admin-card">
+              <h3>Absenzen</h3>
+              <span class="hint">Komfortable Pflege von <span class="code">data/absences.csv</span> inkl. Commit-Flow.</span>
+              <a class="btn" href="absences.html" style="margin-top:auto; width:max-content;">Absenzen öffnen</a>
+            </div>
+            <div class="admin-card">
+              <h3>No-Show Analyse</h3>
+              <span class="hint">Dashboard auf Basis von <span class="code">out/latest.json</span>.</span>
+              <a class="btn" href="noshow-dashboard.html" style="margin-top:auto; width:max-content;">Dashboard öffnen</a>
+            </div>
+          </div>
+        </section>
+
+        <section class="admin-section">
+          <div class="tabs">
+            <div class="tab active" data-tab="alliance">Allianzliste</div>
+            <div class="tab" data-tab="aliases">Aliases</div>
+            <div class="tab" data-tab="events">Event-CSV Upload</div>
+            <div class="tab" data-tab="absences">Abwesenheiten</div>
+          </div>
+
+          <div class="panel">
+            <!-- ALLIANCE -->
+            <section id="tab-alliance">
+              <div class="row"><div class="hint">Datei: <span class="code">data/alliance.csv</span></div></div>
+              <div class="row two">
+                <div>
+                  <label>CSV-Inhalt</label>
+                  <textarea id="taAlliance" rows="18" spellcheck="false" placeholder="PlayerName,InAlliance
 itsH4K1,1
 …"></textarea>
-                <div class="row">
-                  <button id="btnLoadAlliance" class="btn">Laden</button>
-                  <button id="btnSaveAlliance" class="btn ok">Speichern</button>
-                  <div id="msgAlliance" class="stat"></div>
+                  <div class="row">
+                    <button id="btnLoadAlliance" class="btn">Laden</button>
+                    <button id="btnSaveAlliance" class="btn ok">Speichern</button>
+                    <div id="msgAlliance" class="stat"></div>
+                  </div>
+                </div>
+                <div>
+                  <label>Format</label>
+                  <div class="hint">
+                    <div><span class="code">PlayerName,InAlliance</span> (Header Pflicht; wird bei Bedarf automatisch ergänzt)</div>
+                    <div>InAlliance kennzeichnet die Allianz-Mitgliedschaft: <span class="kbd">1</span> = In Allianz, <span class="kbd">0</span> = Ausgetreten</div>
+                    <div class="hint" style="margin-top:1rem;">Roh-Datei live lesen: <span class="code">https://raw.githubusercontent.com/its-h4k1/desert-storm-roster-optimizer/main/data/alliance.csv</span></div>
+                  </div>
                 </div>
               </div>
-              <div>
-                <label>Format</label>
-                <div class="hint">
-                  <div><span class="code">PlayerName,InAlliance</span> (Header Pflicht; wird bei Bedarf automatisch ergänzt)</div>
-                  <div>InAlliance kennzeichnet die Allianz-Mitgliedschaft: <span class="kbd">1</span> = In Allianz, <span class="kbd">0</span> = Ausgetreten</div>
-                  <div class="hint" style="margin-top:1rem;">Roh-Datei live lesen: <span class="code">https://raw.githubusercontent.com/its-h4k1/desert-storm-roster-optimizer/main/data/alliance.csv</span></div>
-                </div>
-              </div>
-            </div>
-          </section>
+            </section>
 
-          <!-- ALIASES -->
-          <section id="tab-aliases" class="hidden">
-            <div class="row"><div class="hint">Datei: <span class="code">data/aliases.csv</span></div></div>
-            <div class="row two">
-              <div>
-                <label>CSV-Inhalt</label>
-                <textarea id="taAliases" rows="18" spellcheck="false" placeholder="PlayerName,Alias,InAlliance
+            <!-- ALIASES -->
+            <section id="tab-aliases" class="hidden">
+              <div class="row"><div class="hint">Datei: <span class="code">data/aliases.csv</span></div></div>
+              <div class="row two">
+                <div>
+                  <label>CSV-Inhalt</label>
+                  <textarea id="taAliases" rows="18" spellcheck="false" placeholder="PlayerName,Alias,InAlliance
 DarkSchredder,DarkWerwolf,0
 …"></textarea>
-                <div class="row">
-                  <button id="btnLoadAliases" class="btn">Laden</button>
-                  <button id="btnSaveAliases" class="btn ok">Speichern</button>
-                  <div id="msgAliases" class="stat"></div>
+                  <div class="row">
+                    <button id="btnLoadAliases" class="btn">Laden</button>
+                    <button id="btnSaveAliases" class="btn ok">Speichern</button>
+                    <div id="msgAliases" class="stat"></div>
+                  </div>
+                </div>
+                <div>
+                  <label>Format</label>
+                  <div class="hint">
+                    <div><span class="code">PlayerName,Alias,InAlliance</span> (Header Pflicht; wird bei Bedarf automatisch ergänzt)</div>
+                    <div>Die Spalte <span class="code">InAlliance</span> entscheidet, ob der Alias aktuell zur Allianz gehört (1 = In Allianz, 0 = Ausgetreten).</div>
+                    <div>Beispiel: <span class="code">DarkSchredder,DarkWerwolf,0</span></div>
+                    <div class="hint" style="margin-top:1rem;">Notiz: Bei mehrdeutigen Namen gewinnt die erste Zeile.</div>
+                  </div>
                 </div>
               </div>
-              <div>
-                <label>Format</label>
-                <div class="hint">
-                  <div><span class="code">PlayerName,Alias,InAlliance</span> (Header Pflicht; wird bei Bedarf automatisch ergänzt)</div>
-                  <div>Die Spalte <span class="code">InAlliance</span> entscheidet, ob der Alias aktuell zur Allianz gehört (1 = In Allianz, 0 = Ausgetreten).</div>
-                  <div>Beispiel: <span class="code">DarkSchredder,DarkWerwolf,0</span></div>
-                  <div class="hint" style="margin-top:1rem;">Notiz: Bei mehrdeutigen Namen gewinnt die erste Zeile.</div>
-                </div>
-              </div>
-            </div>
-          </section>
+            </section>
 
-          <!-- EVENTS -->
-          <section id="tab-events" class="hidden">
-            <div class="row"><div class="hint">Zielpfad standardmäßig unter <span class="code">data/</span>. Der Builder ignoriert <span class="code">alliance.csv</span> &amp; <span class="code">aliases.csv</span>, alles andere wird als Event interpretiert.</div></div>
-            <div class="row">
-              <div style="flex:1">
-                <label>Event-CSV (Upload)</label>
-                <input id="eventFile" type="file" accept=".csv,text/csv" />
+            <!-- EVENTS -->
+            <section id="tab-events" class="hidden">
+              <div class="row"><div class="hint">Zielpfad standardmäßig unter <span class="code">data/</span>. Der Builder ignoriert <span class="code">alliance.csv</span> &amp; <span class="code">aliases.csv</span>, alles andere wird als Event interpretiert.</div></div>
+              <div class="row">
+                <div style="flex:1">
+                  <label>Event-CSV (Upload)</label>
+                  <input id="eventFile" type="file" accept=".csv,text/csv" />
+                </div>
               </div>
-            </div>
-            <div class="two">
-              <div>
-                <label>Vorschau Inhalt</label>
-                <textarea id="taEventPreview" rows="14" spellcheck="false" placeholder="EventID,Slot,PlayerName,RoleAtRegistration,Teilgenommen,Punkte,Warnungen
+              <div class="two">
+                <div>
+                  <label>Vorschau Inhalt</label>
+                  <textarea id="taEventPreview" rows="14" spellcheck="false" placeholder="EventID,Slot,PlayerName,RoleAtRegistration,Teilgenommen,Punkte,Warnungen
 DS-2025-11-07-A,1,itsH4K1,Start,1,1548053,"></textarea>
-              </div>
-              <div>
-                <label>Zielpfad im Repo</label>
-                <input id="eventPath" type="text" placeholder="data/DS-2025-11-07-A.csv" />
-                <div class="hint">Tipp: Der Dateiname kann von der <span class="code">EventID</span> abgeleitet werden.</div>
-                <div class="row" style="margin-top:0.75rem;">
-                  <button id="btnUploadEvent" class="btn ok">Hochladen &amp; Commit</button>
-                  <div id="msgEvent" class="stat"></div>
+                </div>
+                <div>
+                  <label>Zielpfad im Repo</label>
+                  <input id="eventPath" type="text" placeholder="data/DS-2025-11-07-A.csv" />
+                  <div class="hint">Tipp: Der Dateiname kann von der <span class="code">EventID</span> abgeleitet werden.</div>
+                  <div class="row" style="margin-top:0.75rem;">
+                    <button id="btnUploadEvent" class="btn ok">Hochladen &amp; Commit</button>
+                    <div id="msgEvent" class="stat"></div>
+                  </div>
                 </div>
               </div>
-            </div>
-          </section>
+            </section>
 
-          <!-- ABSENCES -->
-          <section id="tab-absences" class="hidden">
-            <div class="row"><div class="hint">Absenzen werden jetzt im Menüpunkt <a href="absences.html">Absenzen</a> gepflegt. Diese Ansicht ist nur noch zum Lesen gedacht.</div></div>
-            <div class="row two">
-              <div>
-                <label>CSV-Inhalt (Read-only)</label>
-                <textarea id="taAbsences" rows="18" spellcheck="false" placeholder="PlayerName,From,To,Reason,InAlliance
+            <!-- ABSENCES -->
+            <section id="tab-absences" class="hidden">
+              <div class="row"><div class="hint">Absenzen werden jetzt im Menüpunkt <a href="absences.html">Absenzen</a> gepflegt. Diese Ansicht ist nur noch zum Lesen gedacht.</div></div>
+              <div class="row two">
+                <div>
+                  <label>CSV-Inhalt (Read-only)</label>
+                  <textarea id="taAbsences" rows="18" spellcheck="false" placeholder="PlayerName,From,To,Reason,InAlliance
 itsH4K1,2025-11-14,2025-11-30,Ferien,1
 …" readonly></textarea>
-                <div class="row">
-                  <button id="btnLoadAbsences" class="btn">Laden</button>
-                  <button id="btnSaveAbsences" class="btn ok" disabled title="Bitte Absenzen-Seite nutzen">Speichern</button>
-                  <div id="msgAbsences" class="stat"></div>
+                  <div class="row">
+                    <button id="btnLoadAbsences" class="btn">Laden</button>
+                    <button id="btnSaveAbsences" class="btn ok" disabled title="Bitte Absenzen-Seite nutzen">Speichern</button>
+                    <div id="msgAbsences" class="stat"></div>
+                  </div>
+                </div>
+                <div>
+                  <label>Schnell-Eintrag</label>
+                  <div class="row">
+                    <input id="absName" type="text" placeholder="PlayerName" disabled />
+                    <input id="absFrom" type="text" placeholder="From (YYYY-MM-DD)" disabled />
+                    <input id="absTo" type="text" placeholder="To (YYYY-MM-DD)" disabled />
+                    <input id="absReason" type="text" placeholder="Reason" disabled />
+                    <button id="btnAbsAdd" class="btn" disabled title="Bitte Absenzen-Seite nutzen">Zeile anhängen</button>
+                  </div>
+                  <div class="hint" style="margin-top:0.75rem;">Bitte den neuen Editor nutzen, um Absenzen hinzuzufügen oder zu bearbeiten.</div>
                 </div>
               </div>
-              <div>
-                <label>Schnell-Eintrag</label>
-                <div class="row">
-                  <input id="absName" type="text" placeholder="PlayerName" disabled />
-                  <input id="absFrom" type="text" placeholder="From (YYYY-MM-DD)" disabled />
-                  <input id="absTo" type="text" placeholder="To (YYYY-MM-DD)" disabled />
-                  <input id="absReason" type="text" placeholder="Reason" disabled />
-                  <button id="btnAbsAdd" class="btn" disabled title="Bitte Absenzen-Seite nutzen">Zeile anhängen</button>
-                </div>
-                <div class="hint" style="margin-top:0.75rem;">Bitte den neuen Editor nutzen, um Absenzen hinzuzufügen oder zu bearbeiten.</div>
-              </div>
-            </div>
-          </section>
-        </div>
-      </section>
-    </main>
+            </section>
+          </div>
+        </section>
+      </main>
+    </div>
   </div>
+  <div class="admin-overlay"></div>
 
   <script src="admin.js"></script>
   <script>
@@ -198,7 +211,6 @@ itsH4K1,2025-11-14,2025-11-30,Ferien,1
     const WRITE_URL = API_BASE + '/write-file';
     const RAW_BASE = 'https://raw.githubusercontent.com/its-h4k1/desert-storm-roster-optimizer/main/';
     const TAB_KEY = 'ds_admin_tab';
-
     // UI helpers
     const $ = (s) => document.querySelector(s);
     const show = (el, on=true) => el.classList.toggle('hidden', !on);
@@ -397,7 +409,7 @@ itsH4K1,2025-11-14,2025-11-30,Ferien,1
       const rsn  = $('#absReason').value.trim();
       if (!name || !from || !to) { alert('PlayerName, From, To sind Pflicht.'); return; }
       const line = `${name},${from},${to},${rsn||''},1`;
-      const ta = $('#taAbsences');
+        const ta = $('#taAbsences');
       ta.value = ensureFinalNewline(ta.value.replace(/\s*$/, '')) + line + '\n';
     });
 

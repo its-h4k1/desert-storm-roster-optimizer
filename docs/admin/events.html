@@ -508,116 +508,131 @@
       color: #093a9b;
     }
   </style>
-</head>
-<body class="admin-shell">
-  <header class="admin-header">
-    <div class="admin-brand">ELT Admin</div>
-    <div class="admin-header-actions">
-      <a class="btn ghost" href="../index.html">Zur Roster-Ansicht</a>
-    </div>
-  </header>
-  <div class="admin-layout">
-    <nav class="admin-nav">
-      <a href="index.html">CSV &amp; Datei-Tools</a>
-      <a href="events.html" class="active">Events erfassen</a>
-      <a href="players.html">Spieler &amp; Aliase</a>
-      <a href="absences.html">Absenzen</a>
-      <a href="group-preferences.html">Gruppenpräferenzen</a>
-      <a href="noshow-dashboard.html">No-Show Analyse</a>
-      <a href="callup-assistant.html">Callup-Assistent</a>
-    </nav>
-    <main class="admin-content">
-      <section class="admin-section page-wrapper">
-        <div class="page-inner">
-          <header class="page-header">
-            <h1>Events hochladen (Tabellen-Editor)</h1>
-            <div class="controls-row">
-              <fieldset>
-                <legend>Event</legend>
-                <div class="flex-gap">
-                  <label>
-                    Event ID
-                    <input type="text" id="event-id" placeholder="DS-2024-05-01-A" autocomplete="off">
-                  </label>
-                  <button type="button" id="derive-event">aus Datei ableiten</button>
-                </div>
-                <small>Format: DS-YYYY-MM-DD-A/B</small>
-              </fieldset>
-              <fieldset>
-                <legend>Import</legend>
-                <div class="dropzone" id="dropzone">CSV hierher ziehen (Mehrfach möglich)</div>
-                <button type="button" id="paste-btn" style="margin-top:0.5rem; width:100%">Aus Zwischenablage einfügen</button>
-              </fieldset>
-              <fieldset>
-                <legend>Branch &amp; Commit</legend>
-                <label>
-                  Ziel-Branch
-                  <select id="branch-select">
-                    <option value="main">main</option>
-                    <option value="ops/events">ops/events</option>
-                    <option value="__custom">Custom…</option>
-                  </select>
-                </label>
-                <label id="custom-branch-wrapper" class="hidden">
-                  Custom-Branch
-                  <input type="text" id="custom-branch" placeholder="feature/my-branch">
-                </label>
-                <label>
-                  Strategie
-                  <select id="strategy-select">
-                    <option value="replace">replace (überschreiben)</option>
-                    <option value="merge">merge (zusammenführen)</option>
-                    <option value="abort-if-exists">abort-if-exists</option>
-                  </select>
-                </label>
-              </fieldset>
-              <fieldset>
-                <legend>Worker</legend>
-                <label>
-                  Worker URL
-                  <input type="url" id="worker-url" value="https://ds-commit.hak1.workers.dev/write-file">
-                </label>
-                <label>
-                  Admin Key (X-Admin-Key)
-                  <input type="password" id="admin-key" placeholder="••••••">
-                </label>
-                <label class="inline">
-                  <input type="checkbox" id="remember-settings">
-                  <span>Einstellungen merken</span>
-                </label>
-              </fieldset>
-            </div>
-            <div class="controls-row">
-              <button type="button" id="save-btn" disabled>Speichern</button>
-              <button type="button" id="build-btn" class="secondary-button" disabled>Roster neu bauen</button>
-              <button type="button" id="reset-btn" class="danger-button">Rückgängig</button>
-              <div id="actions-links" style="display:flex; align-items:center; gap:0.75rem;"></div>
-            </div>
-          </header>
-        <main class="page-main">
-            <div id="error-banner" class="error-banner hidden"></div>
-            <div id="table"></div>
-            <div class="statusbar">
-              <span id="row-count">Zeilen: 0</span>
-              <span id="duplicate-count" class="status-ok">Duplikate: 0</span>
-              <span id="error-count" class="status-ok">Fehler: 0</span>
-            </div>
-            <div id="name-validation" class="name-summary hidden">
-              <div class="name-summary-header">
-                <span>Namensvalidierung</span>
-                <span id="name-validation-status"></span>
-              </div>
-              <div id="name-validation-pending" class="name-summary-pending hidden"></div>
-              <div id="name-validation-resolutions" class="name-summary-resolutions hidden"></div>
-              <div id="name-validation-actions" class="name-summary-actions hidden">
-                <button type="button" id="force-save-btn" class="secondary-button">Speichern trotz offener Namen</button>
-              </div>
-            </div>
-          </main>
+ </head>
+<body>
+  <div class="admin-shell">
+    <aside class="admin-sidebar">
+      <div class="admin-sidebar-header">
+        <div class="admin-logo">ELT Admin</div>
+        <button class="sidebar-close" aria-label="Navigation schließen">✕</button>
+      </div>
+      <nav class="admin-nav">
+        <a href="index.html">CSV &amp; Datei-Tools</a>
+        <a href="events.html" class="active">Events erfassen</a>
+        <a href="players.html">Spieler &amp; Aliase</a>
+        <a href="absences.html">Absenzen</a>
+        <a href="group-preferences.html">Gruppenpräferenzen</a>
+        <a href="noshow-dashboard.html">No-Show Analyse</a>
+        <a href="callup-assistant.html">Callup-Assistent</a>
+      </nav>
+    </aside>
+
+    <div class="admin-main">
+      <header class="admin-header">
+        <button class="sidebar-toggle" aria-label="Navigation öffnen">☰</button>
+        <div class="page-title">
+          <p>Events</p>
+          <h1>Tabellen-Editor</h1>
         </div>
+        <div class="admin-header-actions">
+          <a class="btn ghost" href="../index.html">Zur Roster-Ansicht</a>
+        </div>
+      </header>
+
+      <main class="admin-content">
+        <section class="admin-section page-wrapper">
+          <div class="page-inner">
+            <header class="page-header">
+              <h2>Events hochladen (Tabellen-Editor)</h2>
+              <div class="controls-row">
+                <fieldset>
+                  <legend>Event</legend>
+                  <div class="flex-gap">
+                    <label>
+                      Event ID
+                      <input type="text" id="event-id" placeholder="DS-2024-05-01-A" autocomplete="off">
+                    </label>
+                    <button type="button" id="derive-event">aus Datei ableiten</button>
+                  </div>
+                  <small>Format: DS-YYYY-MM-DD-A/B</small>
+                </fieldset>
+                <fieldset>
+                  <legend>Import</legend>
+                  <div class="dropzone" id="dropzone">CSV hierher ziehen (Mehrfach möglich)</div>
+                  <button type="button" id="paste-btn" style="margin-top:0.5rem; width:100%">Aus Zwischenablage einfügen</button>
+                </fieldset>
+                <fieldset>
+                  <legend>Branch &amp; Commit</legend>
+                  <label>
+                    Ziel-Branch
+                    <select id="branch-select">
+                      <option value="main">main</option>
+                      <option value="ops/events">ops/events</option>
+                      <option value="__custom">Custom…</option>
+                    </select>
+                  </label>
+                  <label id="custom-branch-wrapper" class="hidden">
+                    Custom-Branch
+                    <input type="text" id="custom-branch" placeholder="feature/my-branch">
+                  </label>
+                  <label>
+                    Strategie
+                    <select id="strategy-select">
+                      <option value="replace">replace (überschreiben)</option>
+                      <option value="merge">merge (zusammenführen)</option>
+                      <option value="abort-if-exists">abort-if-exists</option>
+                    </select>
+                  </label>
+                </fieldset>
+                <fieldset>
+                  <legend>Worker</legend>
+                  <label>
+                    Worker URL
+                    <input type="url" id="worker-url" value="https://ds-commit.hak1.workers.dev/write-file">
+                  </label>
+                  <label>
+                    Admin Key (X-Admin-Key)
+                    <input type="password" id="admin-key" placeholder="••••••">
+                  </label>
+                  <label class="inline">
+                    <input type="checkbox" id="remember-settings">
+                    <span>Einstellungen merken</span>
+                  </label>
+                </fieldset>
+              </div>
+              <div class="controls-row">
+                <button type="button" id="save-btn" disabled>Speichern</button>
+                <button type="button" id="build-btn" class="secondary-button" disabled>Roster neu bauen</button>
+                <button type="button" id="reset-btn" class="danger-button">Rückgängig</button>
+                <div id="actions-links" style="display:flex; align-items:center; gap:0.75rem;"></div>
+              </div>
+            </header>
+            <main class="page-main">
+              <div id="error-banner" class="error-banner hidden"></div>
+              <div id="table"></div>
+              <div class="statusbar">
+                <span id="row-count">Zeilen: 0</span>
+                <span id="duplicate-count" class="status-ok">Duplikate: 0</span>
+                <span id="error-count" class="status-ok">Fehler: 0</span>
+              </div>
+              <div id="name-validation" class="name-summary hidden">
+                <div class="name-summary-header">
+                  <span>Namensvalidierung</span>
+                  <span id="name-validation-status"></span>
+                </div>
+                <div id="name-validation-pending" class="name-summary-pending hidden"></div>
+                <div id="name-validation-resolutions" class="name-summary-resolutions hidden"></div>
+                <div id="name-validation-actions" class="name-summary-actions hidden">
+                  <button type="button" id="force-save-btn" class="secondary-button">Speichern trotz offener Namen</button>
+                </div>
+              </div>
+            </main>
+          </div>
         </section>
       </main>
     </div>
+  </div>
+  <div class="admin-overlay"></div>
   <div class="toast-container" id="toast-container"></div>
 
   <div id="resolver-backdrop" class="modal-backdrop hidden"></div>
