@@ -69,7 +69,12 @@ def canonical_name(s: str) -> str:
 _CFG = get_config()
 
 
-def build_deterministic_roster(probs_df: pd.DataFrame) -> pd.DataFrame:
+def build_deterministic_roster(
+    probs_df: pd.DataFrame,
+    *,
+    forced_assignments: List[Dict[str, str]] | None = None,
+    capacities_by_group_role: Dict[str, Dict[str, int]] | None = None,
+) -> pd.DataFrame:
     """
     Baut eine eindeutige Aufstellung ohne Doppler unter Berücksichtigung von
     Gruppenpräferenzen (hard/soft) und Boosts.
@@ -81,7 +86,14 @@ def build_deterministic_roster(probs_df: pd.DataFrame) -> pd.DataFrame:
       - PrefGroup (A|B) optional
       - PrefMode  (hard|soft) optional
       - PrefBoost (0..1) optional, Standard 0.05 wenn PrefGroup passt und Boost<=0
+
+    Erweiterungen für harte Zusagen:
+      - forced_assignments: Liste vorberechneter Slots (PlayerName, Group, Role)
+        die vor dem Optimizer gesetzt werden.
+      - capacities_by_group_role: Rest-Kapazitäten pro Gruppe/Rolle für den
+        Optimizer (z. B. 15 Starter, wenn 5 Slots bereits hart belegt sind).
     """
+    forced_assignments = forced_assignments or []
     df = probs_df.copy()
     if "PlayerName" not in df.columns:
         raise ValueError("probs_df benötigt eine Spalte 'PlayerName'")
@@ -152,6 +164,33 @@ def build_deterministic_roster(probs_df: pd.DataFrame) -> pd.DataFrame:
 
     used: Set[str] = set()
     rows: List[Dict[str, str]] = []
+
+    # Vorbelegte Slots (harte Zusagen)
+    caps = {
+        g: {"Start": STARTERS_PER_GROUP, "Ersatz": SUBS_PER_GROUP}
+        for g in GROUPS
+    }
+    if capacities_by_group_role:
+        for g in GROUPS:
+            for r in ["Start", "Ersatz"]:
+                try:
+                    val = int(capacities_by_group_role.get(g, {}).get(r, caps[g][r]))
+                except Exception:
+                    val = caps[g][r]
+                caps[g][r] = max(0, val)
+
+    forced_count = {g: {"Start": 0, "Ersatz": 0} for g in GROUPS}
+    for item in forced_assignments:
+        g = str(item.get("Group", "")).strip().upper()
+        r = str(item.get("Role", "")).strip().title()
+        p = canonical_name(item.get("PlayerName", ""))
+        if not p or g not in GROUPS or r not in {"Start", "Ersatz"}:
+            continue
+        if p in used:
+            continue
+        used.add(p)
+        rows.append({"PlayerName": p, "Group": g, "Role": r})
+        forced_count[g][r] += 1
 
     start_no_data_cap = getattr(_CFG, "START_NO_DATA_CAP", 0)
     start_no_data_taken = {g: 0 for g in GROUPS}
@@ -259,10 +298,10 @@ def build_deterministic_roster(probs_df: pd.DataFrame) -> pd.DataFrame:
 
     # Slots in definierter Reihenfolge füllen
     order = [
-        ("A", "Start",  STARTERS_PER_GROUP),
-        ("B", "Start",  STARTERS_PER_GROUP),
-        ("A", "Ersatz", SUBS_PER_GROUP),
-        ("B", "Ersatz", SUBS_PER_GROUP),
+        ("A", "Start",  caps["A"]["Start"]),
+        ("B", "Start",  caps["B"]["Start"]),
+        ("A", "Ersatz", caps["A"]["Ersatz"]),
+        ("B", "Ersatz", caps["B"]["Ersatz"]),
     ]
 
     for group, role, cap in order:
@@ -273,11 +312,13 @@ def build_deterministic_roster(probs_df: pd.DataFrame) -> pd.DataFrame:
 
     out = pd.DataFrame(rows, columns=["PlayerName", "Group", "Role"])
 
-    # Safety: harte Assertions (kein Doppler, exakt 20/10 je Gruppe)
+    # Safety: harte Assertions (kein Doppler, exakt Zielanzahl inkl. forced Slots)
     assert not out.duplicated("PlayerName").any(), "Duplicate players in roster"
     for g in GROUPS:
-        assert len(out[(out["Group"] == g) & (out["Role"] == "Start")])  == STARTERS_PER_GROUP, f"Wrong starters in {g}"
-        assert len(out[(out["Group"] == g) & (out["Role"] == "Ersatz")]) == SUBS_PER_GROUP,   f"Wrong subs in {g}"
+        target_start = caps[g]["Start"] + forced_count[g]["Start"]
+        target_sub = caps[g]["Ersatz"] + forced_count[g]["Ersatz"]
+        assert len(out[(out["Group"] == g) & (out["Role"] == "Start")])  == target_start, f"Wrong starters in {g}"
+        assert len(out[(out["Group"] == g) & (out["Role"] == "Ersatz")]) == target_sub,   f"Wrong subs in {g}"
 
     return out
 

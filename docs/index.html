@@ -39,6 +39,7 @@
     .tag-nd{background:var(--bad);color:#fff}
     .tag-low{background:#f1e1a8;color:#111}
     .tag-event{background:#ecfeff;border:1px solid #a5f3fc;color:#0f172a}
+    .tag-hard{background:#fee2e2;border:1px solid #fecdd3;color:#7f1d1d}
     .legend{font-size:0.85em;margin:12px 0 0}
     .roster-controls{margin:12px 0 20px}
     .player-meta-toggle{font-size:0.9em;color:var(--fg);display:inline-flex;align-items:center;gap:8px;cursor:pointer;user-select:none}
@@ -57,6 +58,10 @@
     .extra-card h3{margin:0 0 6px}
     .extra-list{list-style:none;padding:0;margin:0;display:grid;gap:6px}
     .extra-meta{color:var(--muted);font-size:0.85em}
+    .diag{margin:10px 0 0;padding:10px;border-radius:10px;border:1px solid var(--line);background:#fff}
+    .diag h4{margin:0 0 6px;font-size:1em}
+    .diag ul{margin:0;padding-left:20px;color:#444}
+    .diag .warn{color:#7f1d1d;font-weight:600}
   </style>
 </head>
 <body>
@@ -109,6 +114,7 @@
   <section id="extras">
     <h2>Zusätzliche Zusagen (Pool nächstes Event)</h2>
     <p class="muted" id="extra-note">Lädt Zusagen …</p>
+    <div id="forced-diagnostics" class="diag"></div>
     <div id="extra-root" class="extra-grid"></div>
   </section>
 
@@ -137,6 +143,7 @@
       showPlayerMeta: false,
       absences: { entries: [], active: [], error: null, loading: true },
       playersByCanon: {},
+      forcedDiagnostics: { forced: [], invalid: [], overbooked: [] },
     };
     const rosterRoot = document.getElementById("roster-root");
     const playerMetaToggle = document.getElementById("player-meta-toggle");
@@ -440,6 +447,52 @@
       });
     }
 
+    function renderForcedDiagnostics(diag) {
+      const container = document.getElementById('forced-diagnostics');
+      if (!container) return;
+      const forced = Array.isArray(diag?.forced) ? diag.forced : [];
+      const invalid = Array.isArray(diag?.invalid) ? diag.invalid : [];
+      const overbooked = Array.isArray(diag?.overbooked) ? diag.overbooked : [];
+
+      if (!forced.length && !invalid.length && !overbooked.length) {
+        container.innerHTML = '<p class="muted">Keine verbindlichen Zusagen im Pool.</p>';
+        return;
+      }
+
+      const parts = [];
+      if (overbooked.length) {
+        const items = overbooked
+          .map(item => {
+            const cap = Number.isFinite(item.capacity) ? Number(item.capacity) : null;
+            const excess = Number.isFinite(item.excess_forced) ? Number(item.excess_forced) : null;
+            const capText = cap != null ? `Slots: ${cap}` : 'Slots unbekannt';
+            const excessText = excess != null ? `Überbuchung: +${excess}` : 'Überbuchung';
+            return `<li class="warn">${escapeHtml(item.group || '?')}/${escapeHtml(item.role || '?')}: ${excessText} (${capText})</li>`;
+          })
+          .join('');
+        parts.push(`<div><h4>Überbuchungen</h4><ul>${items}</ul></div>`);
+      }
+
+      if (invalid.length) {
+        const items = invalid
+          .map(item => `<li>${escapeHtml(item.player || item.canon || '?')} — ${escapeHtml(item.reason || 'ungültig')}</li>`)
+          .join('');
+        parts.push(`<div><h4>Ignorierte harte Zusagen</h4><ul>${items}</ul></div>`);
+      }
+
+      if (forced.length) {
+        const items = forced
+          .map(item => {
+            const over = item.overbooked ? ' · <span class="warn">(über Kapazität)</span>' : '';
+            return `<li>${escapeHtml(item.player || item.canon || '?')} → ${escapeHtml(item.group || '?')}/${escapeHtml(item.role || '?')}${over}</li>`;
+          })
+          .join('');
+        parts.push(`<div><h4>Verbindlich gesetzt</h4><ul>${items}</ul></div>`);
+      }
+
+      container.innerHTML = parts.join('');
+    }
+
     fetchAbsences();
 
     /**
@@ -621,6 +674,8 @@
             role: p.role,
             has_event_signup: Boolean(p.has_event_signup || p.event_signup),
             event_signup: p.event_signup || null,
+            has_forced_signup: Boolean(p.has_forced_signup || p.forced_signup),
+            forced_signup: p.forced_signup || null,
           };
         });
         state.playersByCanon = playersByCanon;
@@ -628,6 +683,11 @@
         const extraSignups = {
           A: (payload && payload.groups && Array.isArray(payload.groups.A?.extra_signups)) ? payload.groups.A.extra_signups : [],
           B: (payload && payload.groups && Array.isArray(payload.groups.B?.extra_signups)) ? payload.groups.B.extra_signups : [],
+        };
+        state.forcedDiagnostics = {
+          forced: Array.isArray(payload.forced_signups) ? payload.forced_signups : [],
+          invalid: Array.isArray(payload.invalid_forced_signups) ? payload.invalid_forced_signups : [],
+          overbooked: Array.isArray(payload.overbooked_forced_signups) ? payload.overbooked_forced_signups : [],
         };
         const hasEventsSeen = playersArray.some(p => p && Object.prototype.hasOwnProperty.call(p, "events_seen"));
 
@@ -770,6 +830,9 @@
             if (lowN) {
               nameHTML += ' <span class="tag tag-low" title="Wenig Historie – events_seen ∈ {1,2}">low&nbsp;n</span>';
             }
+            if (p && (p.has_forced_signup || p.forced_signup)) {
+              nameHTML += ' <span class="tag tag-hard" title="Verbindliche Zusage (hart gesetzt)">verbindlich</span>';
+            }
             if (p && (p.has_event_signup || p.event_signup)) {
               nameHTML += ' <span class="tag tag-event" title="Zusage im Event-Pool (nächstes Event)">Event-Zusage</span>';
             }
@@ -810,6 +873,7 @@
         }
 
         renderExtraSignups(extraSignups, payload.event_signups || null);
+        renderForcedDiagnostics(state.forcedDiagnostics);
 
         const ts = new Date().toISOString().replace('T',' ').slice(0,19) + " UTC";
         const schemaVersion = (schema && schema.version != null) ? ` · schema v${schema.version}` : "";

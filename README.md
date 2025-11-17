@@ -25,13 +25,17 @@ Schätzungen berechnet und daraus deterministische Aufstellungen (A/B, Start/Ers
   - `alias_suggestions.csv`, `missing_noshow_report.csv` – Diagnose für Datenpflege
   - `name_warnings.json` – Hinweise für unaufgelöste oder mehrdeutige Namen
 
-### Next-Event Signup Pool (`data/event_signups_next.csv`)
+### Next-Event-Signups und harte Zusagen (`data/event_signups_next.csv`)
 
-- Wird in `src/main.py` über `_load_event_signups()` eingelesen und den Spielern per
-  `event_signup`-Badge bzw. `extra_signups`-Listen in `out/latest.json` beigelegt.
-- Der Pool verändert **nicht** die deterministische Optimierung – Gruppen/Slots kommen weiterhin
-  ausschließlich aus dem Optimizer; Zusagen werden nur annotiert bzw. als zusätzliche Einträge
-  unterhalb der Gruppen angezeigt.
+- Wird in `src/main.py` über `_load_event_signups()` eingelesen. Spalten:
+  `PlayerName,Group,Role,Commitment,Source,Note` (Commitment default `none`).
+- `Commitment = hard` kennzeichnet verbindliche Zusagen: Spieler werden – sofern aktiv,
+  in der Allianz und nicht abwesend – **vor** dem Optimizer in den Roster gesetzt.
+  Die restlichen Slots werden anschließend optimiert.
+- Überbuchungen werden nicht heimlich verworfen: `overbooked_forced_signups` in
+  `out/latest.json` dokumentiert, wenn mehr harte Zusagen existieren als Slots.
+- Einträge ohne `Commitment = hard` bleiben Overlays/Badges (`event_signup`) oder tauchen als
+  `extra_signups` unterhalb der Gruppen auf.
 - Änderungen an `data/event_signups_next.csv` landen nach dem nächsten Build (`python -m src.main`
   lokal oder GitHub Actions auf `main`/`feat/**`) in `out/latest.json`. Der „Roster neu bauen“-Button
   im Admin-Tab „Events erfassen“ triggert optional denselben Workflow-Dispatch.
