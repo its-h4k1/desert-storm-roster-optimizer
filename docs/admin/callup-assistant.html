@@ -30,11 +30,11 @@
     .callup-page .page-inner { max-width:1400px; }
     .callup-table-wrapper { width:100%; overflow-x:auto; padding:0.25rem; }
     .table-wrapper { border:1px solid var(--border); border-radius:0.85rem; overflow:auto; box-shadow:var(--shadow-card); }
-    .callup-table { width:100%; border-collapse:collapse; min-width:1200px; table-layout:auto; }
+    .callup-table { width:100%; border-collapse:collapse; min-width:1100px; table-layout:auto; }
     thead { background:var(--bg-alt); position:sticky; top:0; z-index:5; }
     th { font-size:0.9rem; color:var(--text-muted); letter-spacing:0.01em; }
-    th, td { padding:0.95rem 1rem; border-bottom:1px solid var(--border); text-align:left; vertical-align:top; line-height:1.45; }
-    tbody tr:nth-child(2n) td { background:var(--panel-muted); }
+    th, td { padding:0.7rem 0.9rem; border-bottom:1px solid var(--border); text-align:left; vertical-align:top; line-height:1.4; }
+    tbody tr:nth-child(4n+1) td, tbody tr:nth-child(4n+2) td { background:var(--panel-muted); }
     tbody tr.absent td { opacity:0.65; }
     tbody tr.recommended td { box-shadow: inset 3px 0 0 #2563eb; }
     .pill { display:inline-flex; align-items:center; gap:0.35rem; padding:0.25rem 0.6rem; border-radius:999px; font-size:0.85rem; }
@@ -50,12 +50,12 @@
     .row-actions { display:flex; gap:0.4rem; flex-wrap:wrap; }
     .cell-stack { display:flex; flex-direction:column; gap:0.45rem; }
     .player-cell .player-name { font-weight:700; font-size:1rem; }
-    .player-cell .player-meta { display:flex; flex-wrap:wrap; gap:0.6rem; color:var(--text-muted); font-size:0.9rem; }
-    .player-cell .player-meta .tag { display:inline-flex; gap:0.3rem; align-items:center; padding:0.15rem 0.55rem; background:var(--bg-alt); border:1px solid var(--border); border-radius:0.75rem; font-size:0.85rem; }
+    .player-cell .player-meta { display:flex; flex-wrap:wrap; gap:0.4rem; color:var(--text-muted); font-size:0.88rem; }
+    .player-cell .player-meta .tag { display:inline-flex; gap:0.3rem; align-items:center; padding:0.1rem 0.5rem; background:var(--bg-alt); border:1px solid var(--border); border-radius:0.6rem; font-size:0.83rem; }
     .risk-cell .chip { width:fit-content; }
     .reason-chip { display:inline-flex; align-items:center; gap:0.35rem; padding:0.2rem 0.55rem; border-radius:0.8rem; background:var(--bg-alt); border:1px solid var(--border); font-weight:600; font-size:0.85rem; margin:0.1rem 0; }
     .callup-cell { min-width:280px; }
-    .callup-steps { display:grid; gap:0.75rem; grid-template-columns:repeat(auto-fit,minmax(240px,1fr)); }
+    .callup-steps { display:grid; gap:0.65rem; grid-template-columns:repeat(auto-fit,minmax(260px,1fr)); }
     .callup-step { padding:0.75rem 0.85rem; border:1px solid var(--border); border-radius:0.85rem; background:var(--bg-alt); box-shadow:inset 0 1px 0 rgba(255,255,255,0.45); }
     .callup-step h3 { margin:0; font-size:0.95rem; color:var(--text); }
     .callup-step .inline { display:flex; gap:0.6rem; align-items:center; justify-content:space-between; flex-wrap:wrap; }
@@ -64,14 +64,38 @@
     .callup-cell select { min-width:180px; width:fit-content; }
     .final-control { padding-top:0.35rem; margin-top:0.35rem; border-top:1px dashed var(--border); }
     .final-control .hint { font-size:0.85rem; }
-    textarea.notes { min-width:220px; min-height:64px; max-width:260px; resize:vertical; }
+    textarea.notes { min-width:220px; min-height:64px; max-width:100%; resize:vertical; }
     .status-bar { position:sticky; bottom:0; background:var(--glass); border-top:1px solid var(--border); padding:0.75rem 1rem; display:flex; gap:0.6rem; align-items:center; box-shadow:0 -8px 24px rgba(15,23,42,0.08); flex-wrap:wrap; }
     .status-badge { display:inline-flex; align-items:center; gap:0.35rem; padding:0.35rem 0.7rem; border-radius:999px; font-weight:600; font-size:0.9rem; }
     .status-info { background:#e0f2fe; color:#075985; }
     .status-warn { background:#fff7ed; color:#9a3412; }
     .status-ok { background:#dcfce7; color:#14532d; }
     .status-error { background:#fee2e2; color:#991b1b; }
-    textarea.notes { min-width:220px; min-height:64px; max-width:260px; resize:vertical; }
+    .candidate-row { cursor:pointer; }
+    .candidate-row td { padding-top:0.6rem; padding-bottom:0.6rem; }
+    .candidate-row .player-meta { font-size:0.86rem; }
+    .candidate-row .player-meta .tag { background:transparent; }
+    .no-show-stack { display:flex; flex-direction:column; gap:0.35rem; }
+    .ns-chip { display:inline-flex; align-items:center; gap:0.35rem; padding:0.25rem 0.55rem; border-radius:0.6rem; font-weight:600; font-size:0.85rem; border:1px solid var(--border); background:var(--bg-alt); }
+    .ns-chip strong { font-size:0.85rem; color:var(--text-muted); }
+    .ns-chip small { color:var(--text-muted); }
+    .reason-cell { min-width:180px; }
+    .callup-summary { display:flex; flex-wrap:wrap; gap:0.4rem; align-items:center; }
+    .status-chip { display:inline-flex; align-items:center; gap:0.35rem; padding:0.25rem 0.55rem; border-radius:0.7rem; font-weight:700; font-size:0.85rem; border:1px solid var(--border); background:var(--bg-alt); }
+    .status-chip.muted { color:var(--text-muted); background:transparent; }
+    .status-chip.info { background:#e0f2fe; border-color:#bae6fd; color:#075985; }
+    .status-chip.ok { background:#dcfce7; border-color:#bbf7d0; color:#166534; }
+    .status-chip.warn { background:#fef9c3; border-color:#fef08a; color:#854d0e; }
+    .status-chip.bad { background:#fee2e2; border-color:#fecdd3; color:#991b1b; }
+    .note-indicator { display:inline-flex; align-items:center; gap:0.35rem; color:var(--text-muted); font-weight:600; }
+    .note-indicator.has-note { color:#0f172a; }
+    .detail-row { display:none; }
+    .detail-row td { padding:0; border-bottom:none; background:transparent; }
+    .detail-card { margin:0 0.35rem 0.75rem; padding:0.9rem; border:1px solid var(--border); border-radius:0.85rem; background:var(--panel-muted); box-shadow:var(--shadow-card); }
+    .detail-header { display:flex; align-items:center; justify-content:space-between; gap:0.5rem; margin-bottom:0.6rem; }
+    .detail-header h3 { margin:0; font-size:1rem; }
+    .detail-note { margin-top:0.6rem; }
+    .callup-table .detail-row + .candidate-row td { border-top:1px solid var(--border); }
     @media (max-width: 960px) { table { min-width:1100px; } .page-header .settings { width:100%; } label { width:100%; } button { width:100%; justify-content:center; } }
   </style>
 </head>
@@ -269,6 +293,7 @@
         selectedEventId: '',
         loading: false,
         saving: false,
+        expandedPlayer: null,
       };
 
       const pc = (v) => (v == null || !Number.isFinite(v)) ? '–' : `${(v*100).toFixed(0)}%`;
@@ -565,19 +590,18 @@
           return a.name.localeCompare(b.name, 'de', { sensitivity:'base' });
         });
 
+        const availableNames = new Set(candidates.map(c => c.name));
+        if (state.expandedPlayer && !availableNames.has(state.expandedPlayer)) state.expandedPlayer = null;
+
         candidates.forEach(c => {
-          const tr = document.createElement('tr');
-          if (c.absence) tr.classList.add('absent');
-          if (c.recommended) tr.classList.add('recommended');
-          const finalControl = buildFinalControl(c);
-          const refresh = () => { finalControl.refresh(); updateSaveButtonState(); };
-          tr.appendChild(tdPlayer(c));
-          tr.appendChild(tdNoShow(c));
-          tr.appendChild(tdReason(c));
-          tr.appendChild(tdCallups(c, refresh, finalControl));
-          tr.appendChild(tdNotes(c, refresh));
-          elements.candidateBody.appendChild(tr);
+          const { summaryRow, detailRow } = buildCandidateRows(c);
+          if (c.absence) { summaryRow.classList.add('absent'); detailRow.classList.add('absent'); }
+          if (c.recommended) { summaryRow.classList.add('recommended'); detailRow.classList.add('recommended'); }
+          elements.candidateBody.appendChild(summaryRow);
+          elements.candidateBody.appendChild(detailRow);
         });
+
+        applyExpandedState();
 
         elements.emptyState.style.display = candidates.length ? 'none' : 'block';
         elements.candidateCount.textContent = `${candidates.length} Spieler`;
@@ -588,6 +612,50 @@
         if (showAbsent) meta.push('Abwesende eingeblendet');
         elements.eventMeta.textContent = meta.join(' · ');
         updateSaveButtonState();
+      }
+
+      function buildCandidateRows(c) {
+        const callupSummary = buildCallupSummaryDisplay(c.callup);
+        const notesSummary = buildNotesSummaryDisplay(c.callup);
+        let finalControl = null;
+        const refresh = () => { if (finalControl) finalControl.refresh(); callupSummary.refresh(); notesSummary.refresh(); updateSaveButtonState(); };
+        finalControl = buildFinalControl(c, refresh);
+
+        const summaryRow = document.createElement('tr');
+        summaryRow.className = 'candidate-row';
+        summaryRow.dataset.player = c.name;
+        summaryRow.appendChild(tdPlayer(c));
+        summaryRow.appendChild(tdNoShow(c));
+        summaryRow.appendChild(tdReason(c));
+        summaryRow.appendChild(tdCallupSummary(callupSummary.element));
+        summaryRow.appendChild(tdNotesSummary(notesSummary.element));
+        summaryRow.addEventListener('click', () => toggleDetails(c.name));
+
+        const detailRow = document.createElement('tr');
+        detailRow.className = 'detail-row';
+        detailRow.dataset.player = c.name;
+        const detailCell = document.createElement('td');
+        detailCell.colSpan = 5;
+        detailCell.appendChild(buildDetailCard(c, refresh, finalControl));
+        detailRow.appendChild(detailCell);
+
+        return { summaryRow, detailRow };
+      }
+
+      function toggleDetails(playerName) {
+        const next = state.expandedPlayer === playerName ? null : playerName;
+        state.expandedPlayer = next;
+        applyExpandedState();
+      }
+
+      function applyExpandedState() {
+        const open = state.expandedPlayer;
+        elements.candidateBody.querySelectorAll('.detail-row').forEach(row => {
+          row.style.display = row.dataset.player === open ? 'table-row' : 'none';
+        });
+        elements.candidateBody.querySelectorAll('.candidate-row').forEach(row => {
+          row.classList.toggle('expanded', row.dataset.player === open);
+        });
       }
 
       function tdPlayer(c) {
@@ -620,7 +688,7 @@
         const td = document.createElement('td');
         td.className = 'risk-cell';
         const wrap = document.createElement('div');
-        wrap.className = 'cell-stack';
+        wrap.className = 'no-show-stack';
         wrap.appendChild(noShowBadge('Overall', c.noshowOverall, c.badgeOverall));
         wrap.appendChild(noShowBadge('Rolling', c.noshowRolling, c.badgeRolling));
         td.appendChild(wrap);
@@ -629,9 +697,9 @@
 
       function noShowBadge(label, rate, badge) {
         const chip = document.createElement('div');
-        chip.className = BADGE_CLASS_BY_LEVEL[badge.level] || BADGE_CLASS_BY_LEVEL.nodata;
+        chip.className = 'ns-chip ' + (BADGE_CLASS_BY_LEVEL[badge.level] || BADGE_CLASS_BY_LEVEL.nodata);
         const reasonLabel = badgeReasonLabel(badge.reason);
-        chip.innerHTML = `<div><strong>${label}</strong></div><div>${pc(rate)}</div><small>${reasonLabel}</small>`;
+        chip.innerHTML = `<strong>${label}</strong><span>${pc(rate)}</span><small>${reasonLabel}</small>`;
         return chip;
       }
 
@@ -673,15 +741,113 @@
         return reason;
       }
 
-      function tdCallups(c, onChange = () => {}, finalControl = null) {
-        const td = document.createElement('td');
-        td.className = 'callup-cell';
+      function normalizeResult(value) { return (value || '').toString().toLowerCase(); }
+
+      function callupStatus(entry, step) {
+        const sentKey = step === 1 ? 'Reminder1SentAt' : 'Reminder2SentAt';
+        const resultKey = step === 1 ? 'Reminder1Result' : 'Reminder2Result';
+        const result = normalizeResult(entry[resultKey]);
+        if (result === 'zugesagt') return { label: 'zugesagt', tone: 'ok' };
+        if (result === 'abgesagt') return { label: 'abgesagt', tone: 'bad' };
+        if (result === 'keine antwort') return { label: 'keine Antwort', tone: 'warn' };
+        if (entry[sentKey]) return { label: 'gesendet', tone: 'info' };
+        return { label: '–', tone: 'muted' };
+      }
+
+      function finalStatus(entry) {
+        const derived = deriveFinal(entry);
+        const labelMap = { confirmed: 'zugesagt', declined: 'abgesagt', no_response: 'keine Antwort' };
+        const toneMap = { confirmed: 'ok', declined: 'bad', no_response: 'warn' };
+        const tone = toneMap[derived] || 'muted';
+        const label = labelMap[derived] || (entry.FinalStatus ? entry.FinalStatus : 'Auto');
+        return { label, tone };
+      }
+
+      function createStatusChip(label, status) {
+        const chip = document.createElement('div');
+        updateStatusChip(chip, label, status);
+        return chip;
+      }
+
+      function updateStatusChip(chip, label, status) {
+        chip.className = `status-chip ${status.tone || 'muted'}`;
+        chip.innerHTML = `<span>${label}:</span><span>${status.label}</span>`;
+      }
+
+      function buildCallupSummaryDisplay(entry) {
         const wrap = document.createElement('div');
-        wrap.className = 'callup-steps';
-        wrap.appendChild(callupStepBlock(c, 1, onChange));
-        wrap.appendChild(callupStepBlock(c, 2, onChange, finalControl));
-        td.appendChild(wrap);
+        wrap.className = 'callup-summary';
+        const c1 = createStatusChip('C1', callupStatus(entry, 1));
+        const c2 = createStatusChip('C2', callupStatus(entry, 2));
+        const final = createStatusChip('Final', finalStatus(entry));
+        wrap.appendChild(c1);
+        wrap.appendChild(c2);
+        wrap.appendChild(final);
+        const refresh = () => {
+          updateStatusChip(c1, 'C1', callupStatus(entry, 1));
+          updateStatusChip(c2, 'C2', callupStatus(entry, 2));
+          updateStatusChip(final, 'Final', finalStatus(entry));
+        };
+        return { element: wrap, refresh };
+      }
+
+      function buildNotesSummaryDisplay(entry) {
+        const indicator = document.createElement('div');
+        indicator.className = 'note-indicator';
+        const refresh = () => {
+          const hasNote = Boolean((entry.Notes || '').trim());
+          indicator.className = 'note-indicator' + (hasNote ? ' has-note' : '');
+          indicator.textContent = hasNote ? '📝 Notiz vorhanden' : 'keine Notiz';
+        };
+        refresh();
+        return { element: indicator, refresh };
+      }
+
+      function tdCallupSummary(element) {
+        const td = document.createElement('td');
+        td.className = 'callup-summary-cell';
+        td.appendChild(element);
         return td;
+      }
+
+      function tdNotesSummary(element) {
+        const td = document.createElement('td');
+        td.className = 'notes-summary-cell';
+        td.appendChild(element);
+        return td;
+      }
+
+      function buildDetailCard(c, onChange = () => {}, finalControl = null) {
+        const card = document.createElement('div');
+        card.className = 'detail-card';
+
+        const header = document.createElement('div');
+        header.className = 'detail-header';
+        const title = document.createElement('h3');
+        title.textContent = c.name;
+        const meta = document.createElement('div');
+        meta.className = 'player-meta';
+        const parts = [`${c.group || '–'} / ${c.role || '–'}`, `${c.eventsSeen != null ? `${c.eventsSeen} Events` : '– Events'}`];
+        if (c.absence) parts.push(`Abwesend: ${c.absence.reason || 'keine Angabe'}`);
+        meta.textContent = parts.join(' · ');
+        const closeBtn = document.createElement('button');
+        closeBtn.className = 'ghost';
+        closeBtn.type = 'button';
+        closeBtn.textContent = 'Details schließen';
+        closeBtn.addEventListener('click', (ev) => { ev.stopPropagation(); toggleDetails(c.name); });
+        header.appendChild(title);
+        header.appendChild(closeBtn);
+        card.appendChild(header);
+        card.appendChild(meta);
+
+        const steps = document.createElement('div');
+        steps.className = 'callup-steps';
+        steps.appendChild(callupStepBlock(c, 1, onChange));
+        steps.appendChild(callupStepBlock(c, 2, onChange, finalControl));
+        card.appendChild(steps);
+
+        card.appendChild(notesControl(c, onChange));
+        return card;
       }
 
       function callupStepBlock(c, step, onChange = () => {}, finalControl = null) {
@@ -710,9 +876,8 @@
           if (!cb.checked) stamp.value = '';
           c.callup[sentKey] = stamp.value;
           onChange();
-          updateSaveButtonState();
         });
-        stamp.addEventListener('input', () => { c.callup[sentKey] = stamp.value; cb.checked = Boolean(stamp.value); onChange(); updateSaveButtonState(); });
+        stamp.addEventListener('input', () => { c.callup[sentKey] = stamp.value; cb.checked = Boolean(stamp.value); onChange(); });
         sent.appendChild(cb);
         sent.appendChild(document.createTextNode('gesendet'));
         const firstLine = document.createElement('div');
@@ -729,7 +894,7 @@
           if ((c.callup[resultKey] || '') === optVal) opt.selected = true;
           sel.appendChild(opt);
         });
-        sel.addEventListener('change', () => { c.callup[resultKey] = sel.value; onChange(); updateSaveButtonState(); });
+        sel.addEventListener('change', () => { c.callup[resultKey] = sel.value; onChange(); });
         block.appendChild(sel);
 
         if (step === 2) {
@@ -744,7 +909,7 @@
         return block;
       }
 
-      function buildFinalControl(c) {
+      function buildFinalControl(c, onChange = () => {}) {
         const wrap = document.createElement('div');
         wrap.className = 'final-control cell-stack';
         const label = document.createElement('div');
@@ -765,23 +930,24 @@
           hint.textContent = derived ? `abgeleitet: ${derived}` : '—';
         };
         refresh();
-        select.addEventListener('change', () => { c.callup.FinalStatus = select.value; refresh(); updateSaveButtonState(); });
+        select.addEventListener('change', () => { c.callup.FinalStatus = select.value; onChange(); });
         wrap.appendChild(label);
         wrap.appendChild(select);
         wrap.appendChild(hint);
         return { container: wrap, refresh };
       }
 
-      function tdNotes(c, onChange = () => {}) {
-        const td = document.createElement('td');
-        td.className = 'notes-cell';
+      function notesControl(c, onChange = () => {}) {
+        const wrap = document.createElement('label');
+        wrap.className = 'detail-note cell-stack';
+        wrap.textContent = 'Notiz';
         const ta = document.createElement('textarea');
         ta.className = 'notes';
         ta.value = c.callup.Notes || '';
         ta.placeholder = 'z.B. Kontext der Erinnerung';
-        ta.addEventListener('input', () => { c.callup.Notes = ta.value; onChange(); updateSaveButtonState(); });
-        td.appendChild(ta);
-        return td;
+        ta.addEventListener('input', () => { c.callup.Notes = ta.value; onChange(); });
+        wrap.appendChild(ta);
+        return wrap;
       }
 
       async function reloadData() {
