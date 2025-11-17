@@ -1,0 +1,1850 @@
+{
+  "generated_at": "2025-11-17T22:59:05.267755+01:00",
+  "schema": {
+    "version": 3,
+    "csv": [
+      "PlayerName",
+      "Canonical",
+      "Group",
+      "Role",
+      "NoShowOverall",
+      "NoShowRolling",
+      "LastSeenDate",
+      "risk_penalty"
+    ],
+    "groups": [
+      "A",
+      "B"
+    ],
+    "roles": [
+      "Start",
+      "Ersatz"
+    ],
+    "capacities": {
+      "Start": 20,
+      "Ersatz": 10
+    },
+    "eb": {
+      "enabled": true,
+      "n0": 4.0,
+      "lambda": 0.2,
+      "winsorize": true
+    },
+    "prior": {
+      "fallback": 0.18,
+      "pad": 0.02,
+      "team_mean": 0.6642451408382455,
+      "value": 0.6842451408382455
+    },
+    "metrics": {
+      "risk_penalty": {
+        "description": "Penalty summarizing expected no-show risk (0 = best, higher = worse)",
+        "range": [
+          0.0,
+          1.0
+        ]
+      }
+    }
+  },
+  "groups": {
+    "A": {
+      "Start": [
+        "Alonzo Mosley",
+        "BobbydyBob",
+        "Damien 44",
+        "Jimmy die Robbe",
+        "KUBI01",
+        "Kurdun Laneti",
+        "LittelJoe",
+        "Maggyispass",
+        "Mahaja",
+        "Marikopopo",
+        "PAvluWKA",
+        "Re3Slim3",
+        "Schalmei3",
+        "TheFisch",
+        "Tobinho25",
+        "Zombie 666 80 420",
+        "abu47",
+        "itsH4K1",
+        "rompa ru",
+        "x Earl x"
+      ],
+      "Ersatz": [
+        "Aegolas",
+        "Amy0815",
+        "Baldurbabu",
+        "Caplap",
+        "Colombo123",
+        "DevastatorJMI",
+        "John Doe 0815",
+        "Wellsyone",
+        "Yoda0201",
+        "b1e90ff"
+      ],
+      "extra_signups": []
+    },
+    "B": {
+      "Start": [
+        "APM77",
+        "Alstermaus",
+        "BjörnBärchi",
+        "Cupra290",
+        "Dany Bossss",
+        "Darkhold",
+        "Elevn765",
+        "Evil Activities",
+        "Fenworld",
+        "Globi3000",
+        "Leraxo",
+        "Maik1234567890",
+        "Michael 3840",
+        "Nico 90",
+        "Pickopf",
+        "Schlumpfsoldat 4714",
+        "Stiegl 13",
+        "ZANGE",
+        "cindy934",
+        "ilishelbymf"
+      ],
+      "Ersatz": [
+        "CRZDR79",
+        "CS8888",
+        "CommanderPiwi",
+        "DNA16",
+        "Darkface 46",
+        "Der Mok",
+        "DerOle83",
+        "Domdom15",
+        "Doodo12",
+        "capsharky"
+      ],
+      "extra_signups": []
+    }
+  },
+  "event_signups": {
+    "scope": "next_event",
+    "source": "data/event_signups_next.csv",
+    "total_entries": 0,
+    "applied_entries": 0,
+    "ignored_entries": 0,
+    "hard_commitments": 0
+  },
+  "forced_signups": [],
+  "invalid_forced_signups": [],
+  "overbooked_forced_signups": [],
+  "alliance_pool": [
+    {
+      "display": "abu47",
+      "canon": "abu47",
+      "in_alliance": 1,
+      "pref_group": null
+    },
+    {
+      "display": "Aegolas",
+      "canon": "aegolas",
+      "in_alliance": 1,
+      "pref_group": null
+    },
+    {
+      "display": "Alonzo Mosley",
+      "canon": "alonzo mosley",
+      "in_alliance": 1,
+      "pref_group": "A"
+    },
+    {
+      "display": "Alstermaus",
+      "canon": "alstermaus",
+      "in_alliance": 1,
+      "pref_group": "B"
+    },
+    {
+      "display": "Amy0815",
+      "canon": "amy0815",
+      "in_alliance": 1,
+      "pref_group": null
+    },
+    {
+      "display": "APM77",
+      "canon": "apm77",
+      "in_alliance": 1,
+      "pref_group": null
+    },
+    {
+      "display": "b1e90ff",
+      "canon": "b1e90ff",
+      "in_alliance": 1,
+      "pref_group": null
+    },
+    {
+      "display": "Baldurbabu",
+      "canon": "baldurbabu",
+      "in_alliance": 1,
+      "pref_group": null
+    },
+    {
+      "display": "BjörnBärchi",
+      "canon": "björnbärchi",
+      "in_alliance": 1,
+      "pref_group": null
+    },
+    {
+      "display": "BobbydyBob",
+      "canon": "bobbydybob",
+      "in_alliance": 1,
+      "pref_group": "A"
+    },
+    {
+      "display": "Caplap",
+      "canon": "caplap",
+      "in_alliance": 1,
+      "pref_group": null
+    },
+    {
+      "display": "capsharky",
+      "canon": "capsharky",
+      "in_alliance": 1,
+      "pref_group": null
+    },
+    {
+      "display": "Carl2708",
+      "canon": "carl2708",
+      "in_alliance": 0,
+      "pref_group": null
+    },
+    {
+      "display": "Cheezusfries",
+      "canon": "cheezusfries",
+      "in_alliance": 1,
+      "pref_group": null
+    },
+    {
+      "display": "cindy934",
+      "canon": "cindy934",
+      "in_alliance": 1,
+      "pref_group": null
+    },
+    {
+      "display": "Colombo123",
+      "canon": "colombo123",
+      "in_alliance": 1,
+      "pref_group": null
+    },
+    {
+      "display": "CommanderPiwi",
+      "canon": "commanderpiwi",
+      "in_alliance": 1,
+      "pref_group": null
+    },
+    {
+      "display": "CRZDR79",
+      "canon": "crzdr79",
+      "in_alliance": 1,
+      "pref_group": null
+    },
+    {
+      "display": "CS8888",
+      "canon": "cs8888",
+      "in_alliance": 1,
+      "pref_group": null
+    },
+    {
+      "display": "Cupra290",
+      "canon": "cupra290",
+      "in_alliance": 1,
+      "pref_group": "B"
+    },
+    {
+      "display": "Damien 44",
+      "canon": "damien 44",
+      "in_alliance": 1,
+      "pref_group": "A"
+    },
+    {
+      "display": "Dany Bossss",
+      "canon": "dany bossss",
+      "in_alliance": 1,
+      "pref_group": null
+    },
+    {
+      "display": "Darkface 46",
+      "canon": "darkface 46",
+      "in_alliance": 1,
+      "pref_group": null
+    },
+    {
+      "display": "Darkhold",
+      "canon": "darkhold",
+      "in_alliance": 1,
+      "pref_group": null
+    },
+    {
+      "display": "Dennis388",
+      "canon": "dennis388",
+      "in_alliance": 0,
+      "pref_group": null
+    },
+    {
+      "display": "Der Mok",
+      "canon": "der mok",
+      "in_alliance": 1,
+      "pref_group": null
+    },
+    {
+      "display": "DerOle83",
+      "canon": "derole83",
+      "in_alliance": 1,
+      "pref_group": null
+    },
+    {
+      "display": "DevastatorJMI",
+      "canon": "devastatorjmi",
+      "in_alliance": 1,
+      "pref_group": null
+    },
+    {
+      "display": "DhairyaXD",
+      "canon": "dhairyaxd",
+      "in_alliance": 0,
+      "pref_group": null
+    },
+    {
+      "display": "DNA16",
+      "canon": "dna16",
+      "in_alliance": 1,
+      "pref_group": null
+    },
+    {
+      "display": "Domdom15",
+      "canon": "domdom15",
+      "in_alliance": 1,
+      "pref_group": null
+    },
+    {
+      "display": "Doodo12",
+      "canon": "doodo12",
+      "in_alliance": 1,
+      "pref_group": null
+    },
+    {
+      "display": "Dragon0407",
+      "canon": "dragon0407",
+      "in_alliance": 1,
+      "pref_group": null
+    },
+    {
+      "display": "Elevn765",
+      "canon": "elevn765",
+      "in_alliance": 1,
+      "pref_group": "B"
+    },
+    {
+      "display": "Estintore",
+      "canon": "estintore",
+      "in_alliance": 1,
+      "pref_group": null
+    },
+    {
+      "display": "Evil Activities",
+      "canon": "evil activities",
+      "in_alliance": 1,
+      "pref_group": null
+    },
+    {
+      "display": "Fenworld",
+      "canon": "fenworld",
+      "in_alliance": 1,
+      "pref_group": null
+    },
+    {
+      "display": "Globi3000",
+      "canon": "globi3000",
+      "in_alliance": 1,
+      "pref_group": "B"
+    },
+    {
+      "display": "Grizzly CHE",
+      "canon": "grizzly che",
+      "in_alliance": 1,
+      "pref_group": null
+    },
+    {
+      "display": "HANN1453",
+      "canon": "hann1453",
+      "in_alliance": 1,
+      "pref_group": null
+    },
+    {
+      "display": "Haui1986",
+      "canon": "haui1986",
+      "in_alliance": 1,
+      "pref_group": null
+    },
+    {
+      "display": "HeJoe",
+      "canon": "hejoe",
+      "in_alliance": 1,
+      "pref_group": null
+    },
+    {
+      "display": "ilishelbymf",
+      "canon": "ilishelbymf",
+      "in_alliance": 1,
+      "pref_group": null
+    },
+    {
+      "display": "itsH4K1",
+      "canon": "itsh4k1",
+      "in_alliance": 1,
+      "pref_group": "A"
+    },
+    {
+      "display": "jaymacmacjay",
+      "canon": "jaymacmacjay",
+      "in_alliance": 1,
+      "pref_group": null
+    },
+    {
+      "display": "Jimmy die Robbe",
+      "canon": "jimmy die robbe",
+      "in_alliance": 1,
+      "pref_group": "A"
+    },
+    {
+      "display": "Jo Ghurt",
+      "canon": "jo ghurt",
+      "in_alliance": 1,
+      "pref_group": null
+    },
+    {
+      "display": "John Doe 0815",
+      "canon": "john doe 0815",
+      "in_alliance": 1,
+      "pref_group": null
+    },
+    {
+      "display": "Kaiserslautern1900",
+      "canon": "kaiserslautern1900",
+      "in_alliance": 1,
+      "pref_group": null
+    },
+    {
+      "display": "Kamikaze82",
+      "canon": "kamikaze82",
+      "in_alliance": 1,
+      "pref_group": null
+    },
+    {
+      "display": "Kartoffeleis",
+      "canon": "kartoffeleis",
+      "in_alliance": 0,
+      "pref_group": null
+    },
+    {
+      "display": "King21king",
+      "canon": "king21king",
+      "in_alliance": 1,
+      "pref_group": null
+    },
+    {
+      "display": "KingKobra2",
+      "canon": "kingkobra2",
+      "in_alliance": 1,
+      "pref_group": null
+    },
+    {
+      "display": "Kinkel27",
+      "canon": "kinkel27",
+      "in_alliance": 1,
+      "pref_group": null
+    },
+    {
+      "display": "KUBI01",
+      "canon": "kubi01",
+      "in_alliance": 1,
+      "pref_group": null
+    },
+    {
+      "display": "Kurme",
+      "canon": "kurme",
+      "in_alliance": 1,
+      "pref_group": null
+    },
+    {
+      "display": "König Hoffi",
+      "canon": "könig hoffi",
+      "in_alliance": 1,
+      "pref_group": null
+    },
+    {
+      "display": "LarZde",
+      "canon": "larzde",
+      "in_alliance": 1,
+      "pref_group": null
+    },
+    {
+      "display": "Leraxo",
+      "canon": "leraxo",
+      "in_alliance": 1,
+      "pref_group": null
+    },
+    {
+      "display": "LittelJoe",
+      "canon": "litteljoe",
+      "in_alliance": 1,
+      "pref_group": null
+    },
+    {
+      "display": "lOmsen",
+      "canon": "lomsen",
+      "in_alliance": 0,
+      "pref_group": null
+    },
+    {
+      "display": "Maggyispass",
+      "canon": "maggyispass",
+      "in_alliance": 1,
+      "pref_group": null
+    },
+    {
+      "display": "Mahaja",
+      "canon": "mahaja",
+      "in_alliance": 1,
+      "pref_group": null
+    },
+    {
+      "display": "Maik1234567890",
+      "canon": "maik1234567890",
+      "in_alliance": 1,
+      "pref_group": "B"
+    },
+    {
+      "display": "Major Fibonacci",
+      "canon": "major fibonacci",
+      "in_alliance": 1,
+      "pref_group": null
+    },
+    {
+      "display": "Manu1206",
+      "canon": "manu1206",
+      "in_alliance": 1,
+      "pref_group": null
+    },
+    {
+      "display": "Marikopopo",
+      "canon": "marikopopo",
+      "in_alliance": 1,
+      "pref_group": null
+    },
+    {
+      "display": "Michael 3840",
+      "canon": "michael 3840",
+      "in_alliance": 1,
+      "pref_group": null
+    },
+    {
+      "display": "MODA33",
+      "canon": "moda33",
+      "in_alliance": 1,
+      "pref_group": null
+    },
+    {
+      "display": "Mokari2111x",
+      "canon": "mokari2111x",
+      "in_alliance": 0,
+      "pref_group": null
+    },
+    {
+      "display": "Shady city",
+      "canon": "shady city",
+      "in_alliance": 0,
+      "pref_group": null
+    },
+    {
+      "display": "Moscha",
+      "canon": "moscha",
+      "in_alliance": 1,
+      "pref_group": null
+    },
+    {
+      "display": "Nico 90",
+      "canon": "nico 90",
+      "in_alliance": 1,
+      "pref_group": null
+    },
+    {
+      "display": "nikelas69",
+      "canon": "nikelas69",
+      "in_alliance": 1,
+      "pref_group": null
+    },
+    {
+      "display": "NkTobi",
+      "canon": "nktobi",
+      "in_alliance": 1,
+      "pref_group": null
+    },
+    {
+      "display": "OGnastea",
+      "canon": "ognastea",
+      "in_alliance": 1,
+      "pref_group": null
+    },
+    {
+      "display": "Olympusbimbus",
+      "canon": "olympusbimbus",
+      "in_alliance": 1,
+      "pref_group": null
+    },
+    {
+      "display": "PAvluWKA",
+      "canon": "pavluwka",
+      "in_alliance": 1,
+      "pref_group": null
+    },
+    {
+      "display": "Pick Lussy",
+      "canon": "pick lussy",
+      "in_alliance": 1,
+      "pref_group": null
+    },
+    {
+      "display": "Pickopf",
+      "canon": "pickopf",
+      "in_alliance": 1,
+      "pref_group": null
+    },
+    {
+      "display": "PushingSky",
+      "canon": "pushingsky",
+      "in_alliance": 1,
+      "pref_group": null
+    },
+    {
+      "display": "PustxBlumx",
+      "canon": "pustxblumx",
+      "in_alliance": 1,
+      "pref_group": null
+    },
+    {
+      "display": "rompa ru",
+      "canon": "rompa ru",
+      "in_alliance": 1,
+      "pref_group": null
+    },
+    {
+      "display": "Saribaron",
+      "canon": "saribaron",
+      "in_alliance": 1,
+      "pref_group": null
+    },
+    {
+      "display": "Schalmei3",
+      "canon": "schalmei3",
+      "in_alliance": 1,
+      "pref_group": null
+    },
+    {
+      "display": "Schlumpfsoldat 4714",
+      "canon": "schlumpfsoldat 4714",
+      "in_alliance": 1,
+      "pref_group": "B"
+    },
+    {
+      "display": "Slepy83",
+      "canon": "slepy83",
+      "in_alliance": 1,
+      "pref_group": null
+    },
+    {
+      "display": "Stiegl 13",
+      "canon": "stiegl 13",
+      "in_alliance": 1,
+      "pref_group": null
+    },
+    {
+      "display": "TheFisch",
+      "canon": "thefisch",
+      "in_alliance": 1,
+      "pref_group": null
+    },
+    {
+      "display": "Tobinho25",
+      "canon": "tobinho25",
+      "in_alliance": 1,
+      "pref_group": null
+    },
+    {
+      "display": "Toto 69",
+      "canon": "toto 69",
+      "in_alliance": 1,
+      "pref_group": null
+    },
+    {
+      "display": "Wadson17",
+      "canon": "wadson17",
+      "in_alliance": 1,
+      "pref_group": null
+    },
+    {
+      "display": "Wellsyone",
+      "canon": "wellsyone",
+      "in_alliance": 1,
+      "pref_group": null
+    },
+    {
+      "display": "x Earl x",
+      "canon": "x earl x",
+      "in_alliance": 1,
+      "pref_group": null
+    },
+    {
+      "display": "x Scorpion x",
+      "canon": "x scorpion x",
+      "in_alliance": 1,
+      "pref_group": null
+    },
+    {
+      "display": "Yoda0201",
+      "canon": "yoda0201",
+      "in_alliance": 1,
+      "pref_group": null
+    },
+    {
+      "display": "Yusam 83",
+      "canon": "yusam 83",
+      "in_alliance": 1,
+      "pref_group": null
+    },
+    {
+      "display": "ZANGE",
+      "canon": "zange",
+      "in_alliance": 1,
+      "pref_group": "B"
+    },
+    {
+      "display": "Zombie 666 80 420",
+      "canon": "zombie 666 80 420",
+      "in_alliance": 1,
+      "pref_group": null
+    },
+    {
+      "display": "Kurdun Laneti",
+      "canon": "kurdun laneti",
+      "in_alliance": 1,
+      "pref_group": "A"
+    },
+    {
+      "display": "Re3Slim3",
+      "canon": "re3slim3",
+      "in_alliance": 1,
+      "pref_group": "A"
+    },
+    {
+      "display": "kalash89",
+      "canon": "kalash89",
+      "in_alliance": 0,
+      "pref_group": null
+    },
+    {
+      "display": "Joschy81",
+      "canon": "joschy81",
+      "in_alliance": 1,
+      "pref_group": null
+    },
+    {
+      "display": "Ginge4",
+      "canon": "ginge4",
+      "in_alliance": 1,
+      "pref_group": null
+    },
+    {
+      "display": "Satauman",
+      "canon": "satauman",
+      "in_alliance": 1,
+      "pref_group": null
+    }
+  ],
+  "players": [
+    {
+      "display": "Alonzo Mosley",
+      "canon": "alonzo mosley",
+      "group": "A",
+      "role": "Start",
+      "noshow_overall": 0.2727272727272727,
+      "noshow_rolling": 0.23825626239434594,
+      "last_seen": "2025-11-14",
+      "events_seen": 11,
+      "noshow_count": 3,
+      "risk_penalty": 0.024233420301572814,
+      "eb": {
+        "p0": 0.6642451408382455,
+        "n0": 4.0,
+        "p_hat": 0.3771320375568655,
+        "sigma": 0.12116710150786406
+      }
+    },
+    {
+      "display": "BobbydyBob",
+      "canon": "bobbydybob",
+      "group": "A",
+      "role": "Start",
+      "noshow_overall": 0.25,
+      "noshow_rolling": 0.2100706440940554,
+      "last_seen": "2025-11-14",
+      "events_seen": 12,
+      "noshow_count": 3,
+      "risk_penalty": 0.023190043645065828,
+      "eb": {
+        "p0": 0.6642451408382455,
+        "n0": 4.0,
+        "p_hat": 0.35356128520956137,
+        "sigma": 0.11595021822532912
+      }
+    },
+    {
+      "display": "Damien 44",
+      "canon": "damien 44",
+      "group": "A",
+      "role": "Start",
+      "noshow_overall": 0.0,
+      "noshow_rolling": 0.0,
+      "last_seen": "2025-11-14",
+      "events_seen": 5,
+      "noshow_count": 0,
+      "risk_penalty": 0.028848929077961452,
+      "eb": {
+        "p0": 0.6642451408382455,
+        "n0": 4.0,
+        "p_hat": 0.2952200625947758,
+        "sigma": 0.14424464538980725
+      }
+    },
+    {
+      "display": "Jimmy die Robbe",
+      "canon": "jimmy die robbe",
+      "group": "A",
+      "role": "Start",
+      "noshow_overall": 0.0,
+      "noshow_rolling": 0.0,
+      "last_seen": "2025-11-14",
+      "events_seen": 12,
+      "noshow_count": 0,
+      "risk_penalty": 0.018051230022558512,
+      "eb": {
+        "p0": 0.6642451408382455,
+        "n0": 4.0,
+        "p_hat": 0.16606128520956137,
+        "sigma": 0.09025615011279256
+      }
+    },
+    {
+      "display": "KUBI01",
+      "canon": "kubi01",
+      "group": "A",
+      "role": "Start",
+      "noshow_overall": 0.0,
+      "noshow_rolling": 0.0,
+      "last_seen": "2025-11-14",
+      "events_seen": 4,
+      "noshow_count": 0,
+      "risk_penalty": 0.03139831337560225,
+      "eb": {
+        "p0": 0.6642451408382455,
+        "n0": 4.0,
+        "p_hat": 0.33212257041912274,
+        "sigma": 0.15699156687801122
+      }
+    },
+    {
+      "display": "Kurdun Laneti",
+      "canon": "kurdun laneti",
+      "group": "A",
+      "role": "Start",
+      "noshow_overall": 0.0,
+      "noshow_rolling": 0.0,
+      "last_seen": "2025-11-14",
+      "events_seen": 1,
+      "noshow_count": 0,
+      "risk_penalty": 0.040744266190404034,
+      "eb": {
+        "p0": 0.6642451408382455,
+        "n0": 4.0,
+        "p_hat": 0.5313961126705964,
+        "sigma": 0.20372133095202016
+      }
+    },
+    {
+      "display": "LittelJoe",
+      "canon": "litteljoe",
+      "group": "A",
+      "role": "Start",
+      "noshow_overall": 0.0,
+      "noshow_rolling": 0.0,
+      "last_seen": "2025-11-14",
+      "events_seen": 7,
+      "noshow_count": 0,
+      "risk_penalty": 0.024711693221967188,
+      "eb": {
+        "p0": 0.6642451408382455,
+        "n0": 4.0,
+        "p_hat": 0.24154368757754383,
+        "sigma": 0.12355846610983594
+      }
+    },
+    {
+      "display": "Maggyispass",
+      "canon": "maggyispass",
+      "group": "A",
+      "role": "Start",
+      "noshow_overall": 0.33333333333333337,
+      "noshow_rolling": 0.29422927526021747,
+      "last_seen": "2025-11-14",
+      "events_seen": 12,
+      "noshow_count": 4,
+      "risk_penalty": 0.02390935294026067,
+      "eb": {
+        "p0": 0.6642451408382455,
+        "n0": 4.0,
+        "p_hat": 0.41606128520956137,
+        "sigma": 0.11954676470130335
+      }
+    },
+    {
+      "display": "Mahaja",
+      "canon": "mahaja",
+      "group": "A",
+      "role": "Start",
+      "noshow_overall": 0.09999999999999998,
+      "noshow_rolling": 0.07516501974725409,
+      "last_seen": "2025-11-14",
+      "events_seen": 10,
+      "noshow_count": 1,
+      "risk_penalty": 0.022685132847952538,
+      "eb": {
+        "p0": 0.6642451408382455,
+        "n0": 4.0,
+        "p_hat": 0.26121289738235587,
+        "sigma": 0.11342566423976269
+      }
+    },
+    {
+      "display": "Marikopopo",
+      "canon": "marikopopo",
+      "group": "A",
+      "role": "Start",
+      "noshow_overall": 0.0,
+      "noshow_rolling": 0.0,
+      "last_seen": "2025-11-14",
+      "events_seen": 9,
+      "noshow_count": 0,
+      "risk_penalty": 0.021554625649501887,
+      "eb": {
+        "p0": 0.6642451408382455,
+        "n0": 4.0,
+        "p_hat": 0.20438312025792169,
+        "sigma": 0.10777312824750943
+      }
+    },
+    {
+      "display": "PAvluWKA",
+      "canon": "pavluwka",
+      "group": "A",
+      "role": "Start",
+      "noshow_overall": 0.2727272727272727,
+      "noshow_rolling": 0.2596120656882106,
+      "last_seen": "2025-11-14",
+      "events_seen": 11,
+      "noshow_count": 3,
+      "risk_penalty": 0.024233420301572814,
+      "eb": {
+        "p0": 0.6642451408382455,
+        "n0": 4.0,
+        "p_hat": 0.3771320375568655,
+        "sigma": 0.12116710150786406
+      }
+    },
+    {
+      "display": "Re3Slim3",
+      "canon": "re3slim3",
+      "group": "A",
+      "role": "Start",
+      "noshow_overall": 0.0,
+      "noshow_rolling": 0.0,
+      "last_seen": "2025-11-14",
+      "events_seen": 1,
+      "noshow_count": 0,
+      "risk_penalty": 0.040744266190404034,
+      "eb": {
+        "p0": 0.6642451408382455,
+        "n0": 4.0,
+        "p_hat": 0.5313961126705964,
+        "sigma": 0.20372133095202016
+      }
+    },
+    {
+      "display": "Schalmei3",
+      "canon": "schalmei3",
+      "group": "A",
+      "role": "Start",
+      "noshow_overall": 0.08333333333333337,
+      "noshow_rolling": 0.06209488649891315,
+      "last_seen": "2025-11-14",
+      "events_seen": 12,
+      "noshow_count": 1,
+      "risk_penalty": 0.020368431405308095,
+      "eb": {
+        "p0": 0.6642451408382455,
+        "n0": 4.0,
+        "p_hat": 0.22856128520956137,
+        "sigma": 0.10184215702654047
+      }
+    },
+    {
+      "display": "TheFisch",
+      "canon": "thefisch",
+      "group": "A",
+      "role": "Start",
+      "noshow_overall": 0.2222222222222222,
+      "noshow_rolling": 0.1711759737149744,
+      "last_seen": "2025-11-14",
+      "events_seen": 9,
+      "noshow_count": 2,
+      "risk_penalty": 0.025629283546027844,
+      "eb": {
+        "p0": 0.6642451408382455,
+        "n0": 4.0,
+        "p_hat": 0.3582292741040755,
+        "sigma": 0.1281464177301392
+      }
+    },
+    {
+      "display": "Tobinho25",
+      "canon": "tobinho25",
+      "group": "A",
+      "role": "Start",
+      "noshow_overall": 0.0,
+      "noshow_rolling": 0.0,
+      "last_seen": "2025-11-14",
+      "events_seen": 3,
+      "noshow_count": 0,
+      "risk_penalty": 0.03431444960921271,
+      "eb": {
+        "p0": 0.6642451408382455,
+        "n0": 4.0,
+        "p_hat": 0.37956865190756883,
+        "sigma": 0.17157224804606355
+      }
+    },
+    {
+      "display": "Zombie 666 80 420",
+      "canon": "zombie 666 80 420",
+      "group": "A",
+      "role": "Start",
+      "noshow_overall": 0.0,
+      "noshow_rolling": 0.0,
+      "last_seen": "2025-11-14",
+      "events_seen": 8,
+      "noshow_count": 0,
+      "risk_penalty": 0.02303111099440836,
+      "eb": {
+        "p0": 0.6642451408382455,
+        "n0": 4.0,
+        "p_hat": 0.22141504694608183,
+        "sigma": 0.1151555549720418
+      }
+    },
+    {
+      "display": "abu47",
+      "canon": "abu47",
+      "group": "A",
+      "role": "Start",
+      "noshow_overall": 0.0,
+      "noshow_rolling": 0.0,
+      "last_seen": "2025-11-14",
+      "events_seen": 1,
+      "noshow_count": 0,
+      "risk_penalty": 0.040744266190404034,
+      "eb": {
+        "p0": 0.6642451408382455,
+        "n0": 4.0,
+        "p_hat": 0.5313961126705964,
+        "sigma": 0.20372133095202016
+      }
+    },
+    {
+      "display": "itsH4K1",
+      "canon": "itsh4k1",
+      "group": "A",
+      "role": "Start",
+      "noshow_overall": 0.0,
+      "noshow_rolling": 0.0,
+      "last_seen": "2025-11-14",
+      "events_seen": 12,
+      "noshow_count": 0,
+      "risk_penalty": 0.018051230022558512,
+      "eb": {
+        "p0": 0.6642451408382455,
+        "n0": 4.0,
+        "p_hat": 0.16606128520956137,
+        "sigma": 0.09025615011279256
+      }
+    },
+    {
+      "display": "rompa ru",
+      "canon": "rompa ru",
+      "group": "A",
+      "role": "Start",
+      "noshow_overall": 0.16666666666666663,
+      "noshow_rolling": 0.1397293206075504,
+      "last_seen": "2025-11-14",
+      "events_seen": 12,
+      "noshow_count": 2,
+      "risk_penalty": 0.02203444434418503,
+      "eb": {
+        "p0": 0.6642451408382455,
+        "n0": 4.0,
+        "p_hat": 0.29106128520956137,
+        "sigma": 0.11017222172092515
+      }
+    },
+    {
+      "display": "x Earl x",
+      "canon": "x earl x",
+      "group": "A",
+      "role": "Start",
+      "noshow_overall": 0.25,
+      "noshow_rolling": 0.18466023649694696,
+      "last_seen": "2025-11-14",
+      "events_seen": 4,
+      "noshow_count": 1,
+      "risk_penalty": 0.03321054223737041,
+      "eb": {
+        "p0": 0.6642451408382455,
+        "n0": 4.0,
+        "p_hat": 0.45712257041912274,
+        "sigma": 0.16605271118685205
+      }
+    },
+    {
+      "display": "Aegolas",
+      "canon": "aegolas",
+      "group": "A",
+      "role": "Ersatz",
+      "noshow_overall": 0.7272727272727273,
+      "noshow_rolling": 0.7525167261847586,
+      "last_seen": "2025-11-14",
+      "events_seen": 11,
+      "noshow_count": 8,
+      "risk_penalty": 0.022677319487543663,
+      "eb": {
+        "p0": 0.6642451408382455,
+        "n0": 4.0,
+        "p_hat": 0.7104653708901988,
+        "sigma": 0.11338659743771831
+      }
+    },
+    {
+      "display": "Amy0815",
+      "canon": "amy0815",
+      "group": "A",
+      "role": "Ersatz",
+      "noshow_overall": 1.0,
+      "noshow_rolling": 1.0,
+      "last_seen": "2025-11-14",
+      "events_seen": 2,
+      "noshow_count": 2,
+      "risk_penalty": 0.0315081632472845,
+      "eb": {
+        "p0": 0.6642451408382455,
+        "n0": 4.0,
+        "p_hat": 0.776163427225497,
+        "sigma": 0.15754081623642247
+      }
+    },
+    {
+      "display": "Baldurbabu",
+      "canon": "baldurbabu",
+      "group": "A",
+      "role": "Ersatz",
+      "noshow_overall": 1.0,
+      "noshow_rolling": 1.0,
+      "last_seen": "2025-11-14",
+      "events_seen": 4,
+      "noshow_count": 4,
+      "risk_penalty": 0.02491716037131348,
+      "eb": {
+        "p0": 0.6642451408382455,
+        "n0": 4.0,
+        "p_hat": 0.8321225704191227,
+        "sigma": 0.1245858018565674
+      }
+    },
+    {
+      "display": "Caplap",
+      "canon": "caplap",
+      "group": "A",
+      "role": "Ersatz",
+      "noshow_overall": 1.0,
+      "noshow_rolling": 1.0,
+      "last_seen": "2025-10-31",
+      "events_seen": 1,
+      "noshow_count": 1,
+      "risk_penalty": 0.03618985484367469,
+      "eb": {
+        "p0": 0.6642451408382455,
+        "n0": 4.0,
+        "p_hat": 0.7313961126705963,
+        "sigma": 0.18094927421837345
+      }
+    },
+    {
+      "display": "Colombo123",
+      "canon": "colombo123",
+      "group": "A",
+      "role": "Ersatz",
+      "noshow_overall": 0.6666666666666667,
+      "noshow_rolling": 0.6663535352817795,
+      "last_seen": "2025-11-14",
+      "events_seen": 6,
+      "noshow_count": 4,
+      "risk_penalty": 0.02844734556248882,
+      "eb": {
+        "p0": 0.6642451408382455,
+        "n0": 4.0,
+        "p_hat": 0.6656980563352982,
+        "sigma": 0.1422367278124441
+      }
+    },
+    {
+      "display": "DevastatorJMI",
+      "canon": "devastatorjmi",
+      "group": "A",
+      "role": "Ersatz",
+      "noshow_overall": 0.75,
+      "noshow_rolling": 0.7384546853449262,
+      "last_seen": "2025-11-14",
+      "events_seen": 8,
+      "noshow_count": 6,
+      "risk_penalty": 0.024867363658842512,
+      "eb": {
+        "p0": 0.6642451408382455,
+        "n0": 4.0,
+        "p_hat": 0.7214150469460817,
+        "sigma": 0.12433681829421254
+      }
+    },
+    {
+      "display": "John Doe 0815",
+      "canon": "john doe 0815",
+      "group": "A",
+      "role": "Ersatz",
+      "noshow_overall": 0.8,
+      "noshow_rolling": 0.777876030944451,
+      "last_seen": "2025-11-14",
+      "events_seen": 5,
+      "noshow_count": 4,
+      "risk_penalty": 0.02775326460549444,
+      "eb": {
+        "p0": 0.6642451408382455,
+        "n0": 4.0,
+        "p_hat": 0.7396645070392203,
+        "sigma": 0.1387663230274722
+      }
+    },
+    {
+      "display": "Wellsyone",
+      "canon": "wellsyone",
+      "group": "A",
+      "role": "Ersatz",
+      "noshow_overall": 0.0,
+      "noshow_rolling": 0.0,
+      "last_seen": "",
+      "events_seen": 0,
+      "noshow_count": 0,
+      "risk_penalty": 0.04223965281211719,
+      "eb": {
+        "p0": 0.6642451408382455,
+        "n0": 4.0,
+        "p_hat": 0.6642451408382455,
+        "sigma": 0.21119826406058592
+      }
+    },
+    {
+      "display": "Yoda0201",
+      "canon": "yoda0201",
+      "group": "A",
+      "role": "Ersatz",
+      "noshow_overall": 0.7142857142857143,
+      "noshow_rolling": 0.6957593452124526,
+      "last_seen": "2025-11-14",
+      "events_seen": 7,
+      "noshow_count": 5,
+      "risk_penalty": 0.02655491469524154,
+      "eb": {
+        "p0": 0.6642451408382455,
+        "n0": 4.0,
+        "p_hat": 0.6960891421229983,
+        "sigma": 0.1327745734762077
+      }
+    },
+    {
+      "display": "b1e90ff",
+      "canon": "b1e90ff",
+      "group": "A",
+      "role": "Ersatz",
+      "noshow_overall": 0.5,
+      "noshow_rolling": 0.47307036109587997,
+      "last_seen": "2025-11-14",
+      "events_seen": 2,
+      "noshow_count": 1,
+      "risk_penalty": 0.036878988166095125,
+      "eb": {
+        "p0": 0.6642451408382455,
+        "n0": 4.0,
+        "p_hat": 0.6094967605588303,
+        "sigma": 0.1843949408304756
+      }
+    },
+    {
+      "display": "APM77",
+      "canon": "apm77",
+      "group": "B",
+      "role": "Start",
+      "noshow_overall": 0.5,
+      "noshow_rolling": 0.5134745984013978,
+      "last_seen": "2025-11-07",
+      "events_seen": 2,
+      "noshow_count": 1,
+      "risk_penalty": 0.036878988166095125,
+      "eb": {
+        "p0": 0.6642451408382455,
+        "n0": 4.0,
+        "p_hat": 0.6094967605588303,
+        "sigma": 0.1843949408304756
+      }
+    },
+    {
+      "display": "Alstermaus",
+      "canon": "alstermaus",
+      "group": "B",
+      "role": "Start",
+      "noshow_overall": 0.25,
+      "noshow_rolling": 0.23016074739053205,
+      "last_seen": "2025-11-14",
+      "events_seen": 4,
+      "noshow_count": 1,
+      "risk_penalty": 0.03321054223737041,
+      "eb": {
+        "p0": 0.6642451408382455,
+        "n0": 4.0,
+        "p_hat": 0.45712257041912274,
+        "sigma": 0.16605271118685205
+      }
+    },
+    {
+      "display": "BjörnBärchi",
+      "canon": "björnbärchi",
+      "group": "B",
+      "role": "Start",
+      "noshow_overall": 0.5,
+      "noshow_rolling": 0.49927426787703155,
+      "last_seen": "2025-11-14",
+      "events_seen": 4,
+      "noshow_count": 2,
+      "risk_penalty": 0.03288065175264804,
+      "eb": {
+        "p0": 0.6642451408382455,
+        "n0": 4.0,
+        "p_hat": 0.5821225704191227,
+        "sigma": 0.1644032587632402
+      }
+    },
+    {
+      "display": "Cupra290",
+      "canon": "cupra290",
+      "group": "B",
+      "role": "Start",
+      "noshow_overall": 0.0,
+      "noshow_rolling": 0.0,
+      "last_seen": "2025-11-14",
+      "events_seen": 8,
+      "noshow_count": 0,
+      "risk_penalty": 0.02303111099440836,
+      "eb": {
+        "p0": 0.6642451408382455,
+        "n0": 4.0,
+        "p_hat": 0.22141504694608183,
+        "sigma": 0.1151555549720418
+      }
+    },
+    {
+      "display": "Dany Bossss",
+      "canon": "dany bossss",
+      "group": "B",
+      "role": "Start",
+      "noshow_overall": 0.5,
+      "noshow_rolling": 0.5134745984171158,
+      "last_seen": "2025-11-14",
+      "events_seen": 4,
+      "noshow_count": 2,
+      "risk_penalty": 0.03288065175264804,
+      "eb": {
+        "p0": 0.6642451408382455,
+        "n0": 4.0,
+        "p_hat": 0.5821225704191227,
+        "sigma": 0.1644032587632402
+      }
+    },
+    {
+      "display": "Darkhold",
+      "canon": "darkhold",
+      "group": "B",
+      "role": "Start",
+      "noshow_overall": 0.0,
+      "noshow_rolling": 0.0,
+      "last_seen": "",
+      "events_seen": 0,
+      "noshow_count": 0,
+      "risk_penalty": 0.04223965281211719,
+      "eb": {
+        "p0": 0.6642451408382455,
+        "n0": 4.0,
+        "p_hat": 0.6642451408382455,
+        "sigma": 0.21119826406058592
+      }
+    },
+    {
+      "display": "Elevn765",
+      "canon": "elevn765",
+      "group": "B",
+      "role": "Start",
+      "noshow_overall": 0.0,
+      "noshow_rolling": 0.0,
+      "last_seen": "2025-11-14",
+      "events_seen": 12,
+      "noshow_count": 0,
+      "risk_penalty": 0.018051230022558512,
+      "eb": {
+        "p0": 0.6642451408382455,
+        "n0": 4.0,
+        "p_hat": 0.16606128520956137,
+        "sigma": 0.09025615011279256
+      }
+    },
+    {
+      "display": "Evil Activities",
+      "canon": "evil activities",
+      "group": "B",
+      "role": "Start",
+      "noshow_overall": 0.6666666666666667,
+      "noshow_rolling": 0.6342392090076252,
+      "last_seen": "2025-11-14",
+      "events_seen": 9,
+      "noshow_count": 6,
+      "risk_penalty": 0.02521167692582071,
+      "eb": {
+        "p0": 0.6642451408382455,
+        "n0": 4.0,
+        "p_hat": 0.6659215817963832,
+        "sigma": 0.12605838462910354
+      }
+    },
+    {
+      "display": "Fenworld",
+      "canon": "fenworld",
+      "group": "B",
+      "role": "Start",
+      "noshow_overall": 0.25,
+      "noshow_rolling": 0.2429096136775225,
+      "last_seen": "2025-11-14",
+      "events_seen": 4,
+      "noshow_count": 1,
+      "risk_penalty": 0.03321054223737041,
+      "eb": {
+        "p0": 0.6642451408382455,
+        "n0": 4.0,
+        "p_hat": 0.45712257041912274,
+        "sigma": 0.16605271118685205
+      }
+    },
+    {
+      "display": "Globi3000",
+      "canon": "globi3000",
+      "group": "B",
+      "role": "Start",
+      "noshow_overall": 0.8333333333333334,
+      "noshow_rolling": 0.7931828527301792,
+      "last_seen": "2025-11-14",
+      "events_seen": 6,
+      "noshow_count": 5,
+      "risk_penalty": 0.025541733610960196,
+      "eb": {
+        "p0": 0.6642451408382455,
+        "n0": 4.0,
+        "p_hat": 0.7656980563352982,
+        "sigma": 0.12770866805480097
+      }
+    },
+    {
+      "display": "Leraxo",
+      "canon": "leraxo",
+      "group": "B",
+      "role": "Start",
+      "noshow_overall": 0.6666666666666667,
+      "noshow_rolling": 0.6669893703984322,
+      "last_seen": "2025-11-14",
+      "events_seen": 3,
+      "noshow_count": 2,
+      "risk_penalty": 0.033367765173224456,
+      "eb": {
+        "p0": 0.6642451408382455,
+        "n0": 4.0,
+        "p_hat": 0.6652829376218545,
+        "sigma": 0.16683882586612228
+      }
+    },
+    {
+      "display": "Maik1234567890",
+      "canon": "maik1234567890",
+      "group": "B",
+      "role": "Start",
+      "noshow_overall": 0.08333333333333337,
+      "noshow_rolling": 0.06604106365023454,
+      "last_seen": "2025-11-14",
+      "events_seen": 12,
+      "noshow_count": 1,
+      "risk_penalty": 0.020368431405308095,
+      "eb": {
+        "p0": 0.6642451408382455,
+        "n0": 4.0,
+        "p_hat": 0.22856128520956137,
+        "sigma": 0.10184215702654047
+      }
+    },
+    {
+      "display": "Michael 3840",
+      "canon": "michael 3840",
+      "group": "B",
+      "role": "Start",
+      "noshow_overall": 0.6,
+      "noshow_rolling": 0.5862097419663701,
+      "last_seen": "2025-11-14",
+      "events_seen": 5,
+      "noshow_count": 3,
+      "risk_penalty": 0.03055971363709751,
+      "eb": {
+        "p0": 0.6642451408382455,
+        "n0": 4.0,
+        "p_hat": 0.6285533959281091,
+        "sigma": 0.15279856818548754
+      }
+    },
+    {
+      "display": "Nico 90",
+      "canon": "nico 90",
+      "group": "B",
+      "role": "Start",
+      "noshow_overall": 0.5454545454545454,
+      "noshow_rolling": 0.6159653376528154,
+      "last_seen": "2025-11-14",
+      "events_seen": 11,
+      "noshow_count": 6,
+      "risk_penalty": 0.02470074132401325,
+      "eb": {
+        "p0": 0.6642451408382455,
+        "n0": 4.0,
+        "p_hat": 0.5771320375568654,
+        "sigma": 0.12350370662006624
+      }
+    },
+    {
+      "display": "Pickopf",
+      "canon": "pickopf",
+      "group": "B",
+      "role": "Start",
+      "noshow_overall": 0.6363636363636364,
+      "noshow_rolling": 0.6115774313574454,
+      "last_seen": "2025-11-14",
+      "events_seen": 11,
+      "noshow_count": 7,
+      "risk_penalty": 0.023943784823187056,
+      "eb": {
+        "p0": 0.6642451408382455,
+        "n0": 4.0,
+        "p_hat": 0.643798704223532,
+        "sigma": 0.11971892411593528
+      }
+    },
+    {
+      "display": "Schlumpfsoldat 4714",
+      "canon": "schlumpfsoldat 4714",
+      "group": "B",
+      "role": "Start",
+      "noshow_overall": 0.6666666666666667,
+      "noshow_rolling": 0.6077423383443366,
+      "last_seen": "2025-11-14",
+      "events_seen": 6,
+      "noshow_count": 4,
+      "risk_penalty": 0.02844734556248882,
+      "eb": {
+        "p0": 0.6642451408382455,
+        "n0": 4.0,
+        "p_hat": 0.6656980563352982,
+        "sigma": 0.1422367278124441
+      }
+    },
+    {
+      "display": "Stiegl 13",
+      "canon": "stiegl 13",
+      "group": "B",
+      "role": "Start",
+      "noshow_overall": 0.375,
+      "noshow_rolling": 0.35110235185356276,
+      "last_seen": "2025-11-14",
+      "events_seen": 8,
+      "noshow_count": 3,
+      "risk_penalty": 0.02768964818838679,
+      "eb": {
+        "p0": 0.6642451408382455,
+        "n0": 4.0,
+        "p_hat": 0.47141504694608183,
+        "sigma": 0.13844824094193395
+      }
+    },
+    {
+      "display": "ZANGE",
+      "canon": "zange",
+      "group": "B",
+      "role": "Start",
+      "noshow_overall": 0.36363636363636365,
+      "noshow_rolling": 0.3230477898232461,
+      "last_seen": "2025-11-14",
+      "events_seen": 11,
+      "noshow_count": 4,
+      "risk_penalty": 0.02484156870816767,
+      "eb": {
+        "p0": 0.6642451408382455,
+        "n0": 4.0,
+        "p_hat": 0.4437987042235321,
+        "sigma": 0.12420784354083834
+      }
+    },
+    {
+      "display": "cindy934",
+      "canon": "cindy934",
+      "group": "B",
+      "role": "Start",
+      "noshow_overall": 0.4285714285714286,
+      "noshow_rolling": 0.45189213516577476,
+      "last_seen": "2025-11-14",
+      "events_seen": 7,
+      "noshow_count": 3,
+      "risk_penalty": 0.02885575273043363,
+      "eb": {
+        "p0": 0.6642451408382455,
+        "n0": 4.0,
+        "p_hat": 0.5142709603048166,
+        "sigma": 0.14427876365216813
+      }
+    },
+    {
+      "display": "ilishelbymf",
+      "canon": "ilishelbymf",
+      "group": "B",
+      "role": "Start",
+      "noshow_overall": 0.0,
+      "noshow_rolling": 0.0,
+      "last_seen": "",
+      "events_seen": 0,
+      "noshow_count": 0,
+      "risk_penalty": 0.04223965281211719,
+      "eb": {
+        "p0": 0.6642451408382455,
+        "n0": 4.0,
+        "p_hat": 0.6642451408382455,
+        "sigma": 0.21119826406058592
+      }
+    },
+    {
+      "display": "CRZDR79",
+      "canon": "crzdr79",
+      "group": "B",
+      "role": "Ersatz",
+      "noshow_overall": 1.0,
+      "noshow_rolling": 1.0,
+      "last_seen": "2025-11-14",
+      "events_seen": 1,
+      "noshow_count": 1,
+      "risk_penalty": 0.03618985484367469,
+      "eb": {
+        "p0": 0.6642451408382455,
+        "n0": 4.0,
+        "p_hat": 0.7313961126705963,
+        "sigma": 0.18094927421837345
+      }
+    },
+    {
+      "display": "CS8888",
+      "canon": "cs8888",
+      "group": "B",
+      "role": "Ersatz",
+      "noshow_overall": 1.0,
+      "noshow_rolling": 1.0,
+      "last_seen": "2025-11-07",
+      "events_seen": 3,
+      "noshow_count": 3,
+      "risk_penalty": 0.027843283822350857,
+      "eb": {
+        "p0": 0.6642451408382455,
+        "n0": 4.0,
+        "p_hat": 0.8081400804789974,
+        "sigma": 0.13921641911175428
+      }
+    },
+    {
+      "display": "CommanderPiwi",
+      "canon": "commanderpiwi",
+      "group": "B",
+      "role": "Ersatz",
+      "noshow_overall": 1.0,
+      "noshow_rolling": 1.0,
+      "last_seen": "2025-10-31",
+      "events_seen": 2,
+      "noshow_count": 2,
+      "risk_penalty": 0.0315081632472845,
+      "eb": {
+        "p0": 0.6642451408382455,
+        "n0": 4.0,
+        "p_hat": 0.776163427225497,
+        "sigma": 0.15754081623642247
+      }
+    },
+    {
+      "display": "DNA16",
+      "canon": "dna16",
+      "group": "B",
+      "role": "Ersatz",
+      "noshow_overall": 1.0,
+      "noshow_rolling": 1.0,
+      "last_seen": "2025-11-07",
+      "events_seen": 2,
+      "noshow_count": 2,
+      "risk_penalty": 0.0315081632472845,
+      "eb": {
+        "p0": 0.6642451408382455,
+        "n0": 4.0,
+        "p_hat": 0.776163427225497,
+        "sigma": 0.15754081623642247
+      }
+    },
+    {
+      "display": "Darkface 46",
+      "canon": "darkface 46",
+      "group": "B",
+      "role": "Ersatz",
+      "noshow_overall": 1.0,
+      "noshow_rolling": 1.0,
+      "last_seen": "2025-11-07",
+      "events_seen": 2,
+      "noshow_count": 2,
+      "risk_penalty": 0.0315081632472845,
+      "eb": {
+        "p0": 0.6642451408382455,
+        "n0": 4.0,
+        "p_hat": 0.776163427225497,
+        "sigma": 0.15754081623642247
+      }
+    },
+    {
+      "display": "Der Mok",
+      "canon": "der mok",
+      "group": "B",
+      "role": "Ersatz",
+      "noshow_overall": 1.0,
+      "noshow_rolling": 1.0,
+      "last_seen": "2025-09-12",
+      "events_seen": 1,
+      "noshow_count": 1,
+      "risk_penalty": 0.03618985484367469,
+      "eb": {
+        "p0": 0.6642451408382455,
+        "n0": 4.0,
+        "p_hat": 0.7313961126705963,
+        "sigma": 0.18094927421837345
+      }
+    },
+    {
+      "display": "DerOle83",
+      "canon": "derole83",
+      "group": "B",
+      "role": "Ersatz",
+      "noshow_overall": 1.0,
+      "noshow_rolling": 1.0,
+      "last_seen": "2025-10-31",
+      "events_seen": 2,
+      "noshow_count": 2,
+      "risk_penalty": 0.0315081632472845,
+      "eb": {
+        "p0": 0.6642451408382455,
+        "n0": 4.0,
+        "p_hat": 0.776163427225497,
+        "sigma": 0.15754081623642247
+      }
+    },
+    {
+      "display": "Domdom15",
+      "canon": "domdom15",
+      "group": "B",
+      "role": "Ersatz",
+      "noshow_overall": 1.0,
+      "noshow_rolling": 1.0,
+      "last_seen": "2025-11-07",
+      "events_seen": 5,
+      "noshow_count": 5,
+      "risk_penalty": 0.022534991964609438,
+      "eb": {
+        "p0": 0.6642451408382455,
+        "n0": 4.0,
+        "p_hat": 0.8507756181503313,
+        "sigma": 0.11267495982304718
+      }
+    },
+    {
+      "display": "Doodo12",
+      "canon": "doodo12",
+      "group": "B",
+      "role": "Ersatz",
+      "noshow_overall": 1.0,
+      "noshow_rolling": 1.0,
+      "last_seen": "2025-09-19",
+      "events_seen": 1,
+      "noshow_count": 1,
+      "risk_penalty": 0.03618985484367469,
+      "eb": {
+        "p0": 0.6642451408382455,
+        "n0": 4.0,
+        "p_hat": 0.7313961126705963,
+        "sigma": 0.18094927421837345
+      }
+    },
+    {
+      "display": "capsharky",
+      "canon": "capsharky",
+      "group": "B",
+      "role": "Ersatz",
+      "noshow_overall": 1.0,
+      "noshow_rolling": 1.0,
+      "last_seen": "2025-11-07",
+      "events_seen": 1,
+      "noshow_count": 1,
+      "risk_penalty": 0.03618985484367469,
+      "eb": {
+        "p0": 0.6642451408382455,
+        "n0": 4.0,
+        "p_hat": 0.7313961126705963,
+        "sigma": 0.18094927421837345
+      }
+    }
+  ]
+}

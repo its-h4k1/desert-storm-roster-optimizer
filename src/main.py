@@ -338,8 +338,9 @@ def _current_local_dt() -> pd.Timestamp:
 # --------------------------
 def _write_outputs(out_dir: Path, roster_df: pd.DataFrame, json_payload: Dict):
     out_dir.mkdir(parents=True, exist_ok=True)
-    latest_dir = Path("out")
-    latest_dir.mkdir(parents=True, exist_ok=True)
+    latest_dirs = [Path("out"), Path("docs/out")]
+    for latest_dir in latest_dirs:
+        latest_dir.mkdir(parents=True, exist_ok=True)
 
     csv_cols = [
         "PlayerName",
@@ -349,12 +350,20 @@ def _write_outputs(out_dir: Path, roster_df: pd.DataFrame, json_payload: Dict):
         "NoShowRolling",
         "risk_penalty",
     ]
-    roster_df[csv_cols].to_csv(latest_dir / "latest.csv", index=False)
-    (out_dir / "roster.csv").write_text((roster_df[csv_cols]).to_csv(index=False), encoding="utf-8")
+    for latest_dir in latest_dirs:
+        roster_df[csv_cols].to_csv(latest_dir / "latest.csv", index=False)
+        (latest_dir / "latest.json").write_text(
+            json.dumps(json_payload, ensure_ascii=False, indent=2), encoding="utf-8"
+        )
 
-    (latest_dir / "latest.json").write_text(json.dumps(json_payload, ensure_ascii=False, indent=2), encoding="utf-8")
+    (out_dir / "roster.csv").write_text((roster_df[csv_cols]).to_csv(index=False), encoding="utf-8")
     (out_dir / "roster.json").write_text(json.dumps(json_payload, ensure_ascii=False, indent=2), encoding="utf-8")
-    print(f"[ok] wrote {latest_dir/'latest.csv'} and {latest_dir/'latest.json'}")
+    print(
+        "[ok] wrote "
+        + ", ".join(str(path / "latest.csv") for path in latest_dirs)
+        + " and "
+        + ", ".join(str(path / "latest.json") for path in latest_dirs)
+    )
     print(f"[ok] wrote {out_dir/'roster.csv'} and {out_dir/'roster.json'}")
 
 
