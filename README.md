@@ -25,6 +25,17 @@ Schätzungen berechnet und daraus deterministische Aufstellungen (A/B, Start/Ers
   - `alias_suggestions.csv`, `missing_noshow_report.csv` – Diagnose für Datenpflege
   - `name_warnings.json` – Hinweise für unaufgelöste oder mehrdeutige Namen
 
+### Next-Event Signup Pool (`data/event_signups_next.csv`)
+
+- Wird in `src/main.py` über `_load_event_signups()` eingelesen und den Spielern per
+  `event_signup`-Badge bzw. `extra_signups`-Listen in `out/latest.json` beigelegt.
+- Der Pool verändert **nicht** die deterministische Optimierung – Gruppen/Slots kommen weiterhin
+  ausschließlich aus dem Optimizer; Zusagen werden nur annotiert bzw. als zusätzliche Einträge
+  unterhalb der Gruppen angezeigt.
+- Änderungen an `data/event_signups_next.csv` landen nach dem nächsten Build (`python -m src.main`
+  lokal oder GitHub Actions auf `main`/`feat/**`) in `out/latest.json`. Der „Roster neu bauen“-Button
+  im Admin-Tab „Events erfassen“ triggert optional denselben Workflow-Dispatch.
+
 ## UIs & Admin-Tools
 
 Alle Oberflächen liegen statisch im Ordner `docs/` und können entweder über GitHub Pages

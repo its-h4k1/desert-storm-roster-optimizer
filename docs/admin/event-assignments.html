@@ -254,7 +254,7 @@
         originalCsv: '',
         loading: false,
         saving: false,
-        alliancePlayers: [],
+        alliancePool: [],
         rosterPlayers: [],
         rosterGroups: {},
         rosterMeta: null,
@@ -301,15 +301,11 @@
           state.originalCsv = buildCurrentCsv();
         }
       }
-      async function loadAlliance() {
-        const text = await fetchText('../../data/alliance.csv');
-        const { rows } = parseCsv(text);
-        state.alliancePlayers = rows.map(r => (r.PlayerName || '').toString()).filter(Boolean);
-      }
       async function loadRoster() {
         try {
           const data = await fetch('../../out/latest.json', { cache:'no-store' }).then(r => r.json());
           const players = Array.isArray(data?.players) ? data.players : [];
+          state.alliancePool = Array.isArray(data?.alliance_pool) ? data.alliance_pool : [];
           state.rosterPlayers = players
             .map(p => ({
               name: p.display || p.canon || '',
@@ -327,6 +323,7 @@
           state.rosterPlayers = [];
           state.rosterGroups = {};
           state.rosterMeta = null;
+          state.alliancePool = [];
           state.eventSignupsMeta = null;
           updateContextMeta();
         }
@@ -379,14 +376,15 @@
         if (state.eventSignupsMeta && typeof state.eventSignupsMeta.total_entries === 'number') {
           parts.push(`Pool laut Build: ${state.eventSignupsMeta.total_entries} Einträge`);
         }
-        const text = parts.length ? parts.join(' · ') : 'Keine Meta-Infos (latest.json nicht geladen)';
+        const rebuildHint = 'Hinweis: Änderungen an event_signups_next.csv landen nach dem nächsten Roster-Build in latest.json.';
+        const text = parts.length ? `${parts.join(' · ')} · ${rebuildHint}` : rebuildHint;
         if (elements.contextMeta) elements.contextMeta.textContent = text;
         if (elements.rosterMeta) elements.rosterMeta.textContent = text;
       }
 
       function populatePlayers() {
         const set = new Set();
-        state.alliancePlayers.forEach(n => set.add(n));
+        state.alliancePool.forEach(n => set.add(n.display || n.canon || ''));
         state.rosterPlayers.forEach(p => set.add(p.name));
         const names = Array.from(set).sort((a,b) => a.localeCompare(b, 'de', { sensitivity:'base' }));
         elements.playerOptions.innerHTML = '';
@@ -463,7 +461,7 @@
           const ctxTd = document.createElement('td');
           const tags = document.createElement('div');
           tags.className = 'tags';
-          const inAlliance = state.alliancePlayers.includes(row.PlayerName);
+          const inAlliance = state.alliancePool.some(p => (p.display || '') === row.PlayerName && Number(p.in_alliance) === 1);
           const rosterEntry = state.rosterPlayers.find(p => p.name === row.PlayerName);
           if (inAlliance) { const tag = document.createElement('span'); tag.className='tag'; tag.textContent='In Allianz'; tags.appendChild(tag); }
           if (rosterEntry) { const tag = document.createElement('span'); tag.className='tag'; tag.textContent=`EB-Roster ${rosterEntry.group || ''} ${rosterEntry.role || ''}`.trim(); tags.appendChild(tag); }
@@ -586,7 +584,7 @@
         setLoading(true);
         try {
           await loadAssignments();
-          await Promise.all([loadAlliance(), loadRoster()]);
+          await loadRoster();
           populatePlayers();
           renderAssignments();
           setStatus('Daten geladen.', 'ok');
