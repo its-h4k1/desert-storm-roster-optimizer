@@ -314,8 +314,11 @@
         }
       }
       async function loadRoster() {
+        const rosterPath = '../out/latest.json';
         try {
-          const data = await fetch('../../out/latest.json', { cache:'no-store' }).then(r => r.json());
+          const response = await fetch(rosterPath, { cache:'no-store' });
+          if (!response.ok) throw new Error(`${rosterPath}: HTTP ${response.status}`);
+          const data = await response.json();
           const players = Array.isArray(data?.players) ? data.players : [];
           state.alliancePool = Array.isArray(data?.alliance_pool) ? data.alliance_pool : [];
           state.rosterPlayers = players
@@ -530,7 +533,7 @@
         if (!container) return;
         const groups = state.rosterGroups || {};
         if (!Object.keys(groups).length) {
-          container.textContent = 'Keine Aufstellung geladen (latest.json fehlt).';
+          container.textContent = 'Keine Aufstellung geladen (latest.json nicht verfügbar).';
           return;
         }
         const signupsByCanon = new Map();
