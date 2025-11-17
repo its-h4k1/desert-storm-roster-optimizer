@@ -200,12 +200,18 @@ def _load_absences(path: str) -> pd.DataFrame:
 def _load_event_signups(path: str, to_canon) -> pd.DataFrame:
     """Load the next-event signup pool (manual confirmations for the upcoming roster).
 
-    The pool intentionally has no EventID column – it always refers to the
-    roster represented by ``out/latest.json``. Columns are normalized but kept
-    permissive so that the UI can be lightweight.
+    Analyse & Konzept (Stand heute):
+    - CSV-Spalten im Repo: PlayerName, Group, Role, Source, Note.
+      → liefern nur Overlay/Badges, keine "Verbindlichkeit".
+    - Erweiterung: neue Spalte ``Commitment`` (default ``none``) mit Werten
+      ``none`` | ``hard``.
+      * none  = reine Overlay-Zusage (Badge/extra_signups), beeinflusst den
+        Builder nicht.
+      * hard  = verbindliche Zusage: Spieler soll – sofern aktiv, in der
+        Allianz und nicht abwesend – vorab in den Roster gesetzt werden.
     """
 
-    cols = ["PlayerName", "Group", "Role", "Source", "Note"]
+    cols = ["PlayerName", "Group", "Role", "Commitment", "Source", "Note"]
     try:
         df = pd.read_csv(path, dtype=str)
     except FileNotFoundError:
@@ -227,6 +233,11 @@ def _load_event_signups(path: str, to_canon) -> pd.DataFrame:
 
     df["Group"] = df["Group"].fillna("").astype(str).str.strip().str.upper()
     df["Role"] = df["Role"].fillna("").astype(str).str.strip().str.title()
+    df["Commitment"] = (
+        df["Commitment"].fillna("none").astype(str).str.strip().str.lower().replace("", "none")
+    )
+    allowed_commitments = {"none", "hard"}
+    df.loc[~df["Commitment"].isin(allowed_commitments), "Commitment"] = "none"
     df["Source"] = (
         df["Source"].fillna("manual_event_signup").astype(str).str.strip().replace("", "manual_event_signup")
     )
@@ -399,6 +410,7 @@ def main():
             print(f"[warn] preferences nicht nutzbar: {e}")
 
     abs_df = None
+    absent_now: set[str] = set()
     if args.absences:
         try:
             abs_df = _load_absences(args.absences)
@@ -553,22 +565,130 @@ def main():
     else:
         print("::notice:: Keine Alias-Hinweise gefunden (alle aktiven Spieler haben Historie).")
 
-    # 5) Input für Builder
+    # 5) Harte Zusagen → Forced-Slots vorbereiten
+    pool_idx = pool.set_index("canon")
+    in_alliance_set = set(alliance_df.loc[alliance_df["InAlliance"] == 1, "canon"])
+
+    forced_signups: List[Dict] = []
+    invalid_forced_signups: List[Dict] = []
+    capacities_remaining = {g: {"Start": STARTERS_PER_GROUP, "Ersatz": SUBS_PER_GROUP} for g in GROUPS}
+
+    hard_signups = event_signups_df[event_signups_df["Commitment"] == "hard"]
+    seen_forced: set[str] = set()
+
+    def _choose_group(canon: str, signup_group: str, pref_group: Optional[str]) -> str:
+        desired = []
+        if signup_group in GROUPS:
+            desired.append(signup_group)
+        if pref_group in GROUPS and pref_group not in desired:
+            desired.append(pref_group)
+        # Balancing-Heuristik: wähle die Gruppe mit den meisten Rest-Slots
+        if not desired:
+            desired = GROUPS
+        return max(
+            desired,
+            key=lambda g: (
+                capacities_remaining[g]["Start"] + capacities_remaining[g]["Ersatz"],
+                -GROUPS.index(g),
+            ),
+        )
+
+    def _choose_role(target_group: str, signup_role: str) -> str:
+        role_norm = signup_role if signup_role in {"Start", "Ersatz"} else None
+        if role_norm is None:
+            # Start bevorzugen, sonst Balancing
+            start_slots = capacities_remaining[target_group]["Start"]
+            sub_slots = capacities_remaining[target_group]["Ersatz"]
+            if start_slots >= sub_slots:
+                role_norm = "Start"
+            else:
+                role_norm = "Ersatz"
+        return role_norm
+
+    for row in hard_signups.itertuples(index=False):
+        canon = getattr(row, "canon", pd.NA)
+        display = getattr(row, "PlayerName", "") or ""
+        group_pref = (getattr(row, "Group", "") or "").strip().upper()
+        role_pref = (getattr(row, "Role", "") or "").strip().title()
+        source = (getattr(row, "Source", "") or "manual_event_signup").strip()
+        note = (getattr(row, "Note", "") or "").strip()
+
+        if pd.isna(canon) or not str(canon).strip():
+            invalid_forced_signups.append({"player": display, "reason": "unknown_player"})
+            continue
+        canon = str(canon)
+        if canon in seen_forced:
+            invalid_forced_signups.append({"player": display, "canon": canon, "reason": "duplicate"})
+            continue
+        if canon not in in_alliance_set:
+            invalid_forced_signups.append({"player": display, "canon": canon, "reason": "not_in_alliance"})
+            continue
+        if canon in absent_now:
+            invalid_forced_signups.append({"player": display, "canon": canon, "reason": "absent"})
+            continue
+        if canon not in pool_idx.index:
+            invalid_forced_signups.append({"player": display, "canon": canon, "reason": "inactive_or_filtered"})
+            continue
+
+        pref_group_val = pool_idx.loc[canon].get("PrefGroup") if canon in pool_idx.index else pd.NA
+        pref_group = None if pd.isna(pref_group_val) else str(pref_group_val).strip().upper()
+        target_group = _choose_group(canon, group_pref, pref_group)
+        target_role = _choose_role(target_group, role_pref)
+
+        capacities_remaining[target_group][target_role] -= 1
+        seen_forced.add(canon)
+        forced_signups.append(
+            {
+                "player": display or canon,
+                "canon": canon,
+                "group": target_group,
+                "role": target_role,
+                "source": source,
+                "note": note,
+                "commitment": "hard",
+                "overbooked": capacities_remaining[target_group][target_role] < 0,
+            }
+        )
+
+    overbooked_forced_signups: List[Dict] = []
+    for g in GROUPS:
+        for r in ["Start", "Ersatz"]:
+            remaining = capacities_remaining[g][r]
+            if remaining < 0:
+                overbooked_forced_signups.append(
+                    {
+                        "group": g,
+                        "role": r,
+                        "excess_forced": abs(remaining),
+                        "capacity": STARTERS_PER_GROUP if r == "Start" else SUBS_PER_GROUP,
+                    }
+                )
+                capacities_remaining[g][r] = 0  # Optimizer darf nicht weiter ins Minus laufen
+
+    # 6) Input für Builder (nur Rest-Slots)
+    pool_for_builder = pool[~pool["canon"].isin(seen_forced)].copy()
     probs_for_builder = pd.DataFrame({
-        "PlayerName": pool["canon"],
-        "p_start": pool["p_start"].fillna(p0),
-        "p_sub": pool["p_sub"].fillna(p0),
-        "PrefGroup": pool.get("PrefGroup", pd.Series([pd.NA]*len(pool))),
-        "PrefMode": pool.get("PrefMode", pd.Series([pd.NA]*len(pool))),
-        "PrefBoost": pool.get("PrefBoost", pd.Series([pd.NA]*len(pool))),
-        "events_seen": pool["events_seen"],
-        "risk_penalty": pool["risk_penalty"],
+        "PlayerName": pool_for_builder["canon"],
+        "p_start": pool_for_builder["p_start"].fillna(p0),
+        "p_sub": pool_for_builder["p_sub"].fillna(p0),
+        "PrefGroup": pool_for_builder.get("PrefGroup", pd.Series([pd.NA]*len(pool_for_builder))),
+        "PrefMode": pool_for_builder.get("PrefMode", pd.Series([pd.NA]*len(pool_for_builder))),
+        "PrefBoost": pool_for_builder.get("PrefBoost", pd.Series([pd.NA]*len(pool_for_builder))),
+        "events_seen": pool_for_builder["events_seen"],
+        "risk_penalty": pool_for_builder["risk_penalty"],
     })
 
-    # 6) Roster bauen
-    roster = build_deterministic_roster(probs_for_builder)  # PlayerName = canon
+    # 7) Roster bauen
+    roster = build_deterministic_roster(
+        probs_for_builder,
+        forced_assignments=[
+            {"PlayerName": f["canon"], "Group": f["group"], "Role": f["role"]}
+            for f in forced_signups
+        ],
+        capacities_by_group_role=capacities_remaining,
+    )  # PlayerName = canon
 
-    # 7) Anzeige + Kennzahlen
+    # 8) Anzeige + Kennzahlen
     disp_map = dict(zip(alliance_df["canon"], alliance_df["DisplayName"]))
     roster["DisplayName"] = roster["PlayerName"].map(lambda c: disp_map.get(c, c))
 
@@ -691,6 +811,8 @@ def main():
         },
     }
 
+    forced_by_canon = {f["canon"]: f for f in forced_signups}
+
     players_payload = []
     for row in out_df.itertuples(index=False):
         entry = {
@@ -705,6 +827,14 @@ def main():
             "noshow_count": _int_default(row.noshow_count, 0),
             "risk_penalty": _float_default(row.risk_penalty, 0.0),
         }
+        if row.Canonical in forced_by_canon:
+            entry["forced_signup"] = {
+                "commitment": forced_by_canon[row.Canonical].get("commitment", "hard"),
+                "source": forced_by_canon[row.Canonical].get("source"),
+                "note": forced_by_canon[row.Canonical].get("note"),
+                "overbooked": bool(forced_by_canon[row.Canonical].get("overbooked")),
+            }
+            entry["has_forced_signup"] = True
         if cfg.EB_ENABLE:
             entry["eb"] = {
                 "p0": float(p0),
@@ -733,20 +863,16 @@ def main():
     players_by_canon = {p["canon"]: p for p in players_payload}
 
     # --------------------------
-    # Event-Zusagen als Overlay
+    # Event-Zusagen als Overlay + harte Zusagen
     # --------------------------
     # Konzept: Der Pool in data/event_signups_next.csv gehört immer zum nächsten
     # Event (= aktuelle Aufstellung). Es gibt daher keine EventID-Spalte.
-    # Spieler, die bereits im Optimizer-Roster stehen, werden nur markiert
-    # (event_signup), nicht überschrieben. Alle übrigen Zusagen landen pro
-    # Gruppe in "extra_signups".
+    # Spieler, die bereits im Optimizer-Roster stehen, werden markiert
+    # (event_signup). Alle übrigen Zusagen landen pro Gruppe in "extra_signups".
     #
-    # Wichtig (Antwort auf die Analysefragen):
-    # - Der Zusage-Pool verändert die Optimierung NICHT; der deterministische
-    #   Roster bleibt unverändert, wir annotieren nur.
-    # - Änderungen an event_signups_next.csv schlagen beim nächsten Build in
-    #   latest.json durch (Badges/extra_signups + event_signups-Metadaten),
-    #   aber nicht in den Gruppenzuordnungen.
+    # Neu: Commitment="hard" aus dem Pool führt dazu, dass die Spieler bereits
+    # vor dem Optimizer gesetzt werden (siehe forced_signups oben). Overlay
+    # bleibt für alle anderen Signups erhalten.
     extra_signups_by_group = {g: [] for g in GROUPS}
     signups_meta = {
         "scope": "next_event",
@@ -754,6 +880,7 @@ def main():
         "total_entries": int(len(event_signups_df)),
         "applied_entries": 0,
         "ignored_entries": 0,
+        "hard_commitments": int(len(event_signups_df[event_signups_df["Commitment"] == "hard"])),
     }
 
     if not event_signups_df.empty:
@@ -814,6 +941,9 @@ def main():
             },
         },
         "event_signups": signups_meta,
+        "forced_signups": forced_signups,
+        "invalid_forced_signups": invalid_forced_signups,
+        "overbooked_forced_signups": overbooked_forced_signups,
         "alliance_pool": alliance_payload,
         "players": players_payload,
     }
