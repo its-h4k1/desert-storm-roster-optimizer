@@ -44,6 +44,12 @@
     .status-warn { background:#fff7ed; color:#9a3412; }
     .status-ok { background:#dcfce7; color:#14532d; }
     .status-error { background:#fee2e2; color:#991b1b; }
+    .roster-preview { display:grid; grid-template-columns:repeat(auto-fit,minmax(260px,1fr)); gap:0.75rem; }
+    .roster-card { border:1px solid var(--border); border-radius:0.85rem; padding:0.85rem; background:var(--panel-muted); display:grid; gap:0.4rem; }
+    .roster-card h3 { margin:0; font-size:1rem; display:flex; align-items:center; justify-content:space-between; gap:0.5rem; }
+    .roster-list { list-style:none; padding:0; margin:0.35rem 0 0; display:grid; gap:0.25rem; }
+    .roster-badge { display:inline-flex; align-items:center; gap:0.35rem; padding:0.2rem 0.55rem; border-radius:999px; background:#eef2ff; color:#312e81; border:1px solid #c7d2fe; font-size:0.78rem; }
+    .extra-pill { background:#ecfeff; border:1px solid #a5f3fc; color:#0f172a; }
     @media (max-width: 960px) { .page-header { position:static; } label { width:100%; } input, select, textarea, button { width:100%; } button { justify-content:center; } table { min-width:880px; } }
   </style>
 </head>
@@ -83,8 +89,8 @@
           <div class="page-inner">
             <header class="page-header">
               <div style="flex:1;min-width:260px;">
-                <h1>Event-spezifische Zuordnungen</h1>
-                <p>Erfasst Zusagen für ein konkretes Event (EventID) und ordnet sie Gruppe A/B zu – ohne langfristige Präferenzen zu verändern.</p>
+                <h1>Zusage-Pool fürs nächste Event</h1>
+                <p>Pflegt Zusagen und A/B-Wünsche für das kommende Event (aktuelle Aufstellung in <code>out/latest.json</code>). Kein Event-Browser – der Pool gehört immer zum nächsten Event.</p>
               </div>
               <div class="settings">
                 <label>Worker URL
@@ -110,25 +116,26 @@
                     <p>Stehen in <code>data/alliance.csv</code> (Spalten <code>PrefGroup</code>, <code>PrefMode</code>, <code>PrefBoost</code>) und beeinflussen den Optimizer über mehrere Events hinweg.</p>
                   </div>
                   <div class="help-card">
-                    <strong>Event-spezifische Zuordnung</strong>
-                    <p>Gilt nur für die ausgewählte <code>EventID</code>: Zusage / Wunschgruppe für ein einzelnes Event, z. B. zum Nachbesetzen bei kurzfristigen Änderungen.</p>
+                    <strong>Event-Zusagen (nächstes Event)</strong>
+                    <p>Pool für das <em>nächste</em> Event: Zusage / Wunschgruppe als Overlay zur aktuellen Aufstellung. Kein Event-Browser, der Pool gilt immer für <code>out/latest.json</code>.</p>
                   </div>
                   <div class="help-card">
                     <strong>Saubere Trennung</strong>
-                    <p>Die neue Datei <code>data/event_assignments.csv</code> speichert ausschließlich Event-Zusagen und wird losgelöst von <code>PrefGroup</code> gepflegt. Eigener Tab statt Misch-UI, damit langfristige Präferenzen (Optimizer) und kurzfristige Event-Zusagen klar getrennt bleiben.</p>
+                    <p>Die Datei <code>data/event_signups_next.csv</code> speichert ausschließlich Zusagen für das nächste Event und wird losgelöst von <code>PrefGroup</code> gepflegt. Reset-Button leert den Pool vor dem nächsten Run.</p>
                   </div>
                 </div>
               </section>
 
               <section class="panel">
-                <div class="controls">
-                  <div style="display:flex;flex-direction:column;gap:0.35rem;min-width:240px;flex:1;">
-                    <label style="margin:0;">Event-ID (Datalist verfügbar)
-                      <input type="text" id="eventId" list="eventOptions" placeholder="DS-2025-11-21-A" autocomplete="off">
+                <div class="controls" style="align-items:flex-start;">
+                  <div style="display:flex;flex-direction:column;gap:0.35rem;min-width:280px;flex:1;">
+                    <label style="margin:0;">Kontext
+                      <div id="contextMeta" class="hint" style="color:var(--text-muted);">Lädt out/latest.json …</div>
                     </label>
-                    <small class="hint" id="eventHint" style="color:var(--text-muted);">Wähle das Event, dessen Zusagen du bearbeiten möchtest.</small>
+                    <small class="hint" style="color:var(--text-muted);">Alle Einträge gelten für das nächste Event (aktuelles Roster). Bei Event-Wechsel den Pool leeren.</small>
                   </div>
                   <div class="spacer"></div>
+                  <button id="resetBtn" class="ghost" style="border-color:var(--border);color:#b91c1c;">Zusage-Pool für nächstes Event zurücksetzen</button>
                   <span class="pill info" id="assignmentCount">–</span>
                 </div>
                 <div class="controls" style="gap:0.5rem;">
@@ -161,12 +168,12 @@
                   </label>
                   <button id="addBtn">Hinzufügen</button>
                 </div>
-                <p class="hint" style="color:var(--text-muted);">Einträge werden in <code>data/event_assignments.csv</code> gespeichert; Sortierung erfolgt nach EventID und Spielername.</p>
+                <p class="hint" style="color:var(--text-muted);">Einträge werden in <code>data/event_signups_next.csv</code> gespeichert; Sortierung erfolgt nach Gruppe und Spielername.</p>
               </section>
 
               <section class="panel">
                 <div class="controls" style="margin-bottom:0.5rem;">
-                  <h2 style="margin:0;">Zugeordnete Teilnehmer</h2>
+                  <h2 style="margin:0;">Zugeordnete Teilnehmer (Pool nächstes Event)</h2>
                   <span id="eventMeta" class="hint" style="color:var(--text-muted);"></span>
                 </div>
                 <div class="table-wrapper">
@@ -178,14 +185,22 @@
                         <th>Rolle</th>
                         <th>Quelle</th>
                         <th>Notiz</th>
-                        <th>Kontext</th>
+                        <th>Roster-Kontext</th>
                         <th>Aktion</th>
                       </tr>
                     </thead>
                     <tbody id="assignmentBody"></tbody>
                   </table>
                 </div>
-                <div id="emptyState" class="hint" style="color:var(--text-muted);display:none;">Keine event-spezifischen Zuordnungen für diese EventID.</div>
+                <div id="emptyState" class="hint" style="color:var(--text-muted);display:none;">Noch keine Zusagen im Pool.</div>
+              </section>
+
+              <section class="panel" id="rosterPreviewPanel">
+                <div class="controls" style="margin-bottom:0.5rem;">
+                  <h2 style="margin:0;">Optimierte Aufstellung (nächstes Event)</h2>
+                  <span id="rosterMeta" class="hint" style="color:var(--text-muted);"></span>
+                </div>
+                <div id="rosterPreview" class="roster-preview"></div>
               </section>
             </main>
           </div>
@@ -200,7 +215,6 @@
     <div id="statusText" class="status-text">Noch keine Änderungen.</div>
   </div>
 
-  <datalist id="eventOptions"></datalist>
   <datalist id="playerOptions"></datalist>
 
   <script src="https://unpkg.com/papaparse@5.4.1/papaparse.min.js"></script>
@@ -213,8 +227,6 @@
         adminKey: document.getElementById('adminKey'),
         reloadBtn: document.getElementById('reloadBtn'),
         saveBtn: document.getElementById('saveBtn'),
-        eventId: document.getElementById('eventId'),
-        eventOptions: document.getElementById('eventOptions'),
         playerInput: document.getElementById('playerInput'),
         playerOptions: document.getElementById('playerOptions'),
         groupInput: document.getElementById('groupInput'),
@@ -228,25 +240,29 @@
         statusBadge: document.getElementById('statusBadge'),
         statusText: document.getElementById('statusText'),
         eventMeta: document.getElementById('eventMeta'),
-        eventHint: document.getElementById('eventHint'),
+        contextMeta: document.getElementById('contextMeta'),
+        resetBtn: document.getElementById('resetBtn'),
+        rosterPreview: document.getElementById('rosterPreview'),
+        rosterMeta: document.getElementById('rosterMeta'),
       };
 
       const SETTINGS_KEY = 'dsro-event-assignments-settings';
-      const DEFAULT_HEADERS = ['EventID','PlayerName','Group','Role','Source','Note'];
+      const DEFAULT_HEADERS = ['PlayerName','Group','Role','Source','Note'];
       const state = {
         assignments: [],
         headers: [],
         originalCsv: '',
         loading: false,
         saving: false,
-        selectedEventId: '',
         alliancePlayers: [],
         rosterPlayers: [],
-        eventList: [],
+        rosterGroups: {},
+        rosterMeta: null,
+        eventSignupsMeta: null,
       };
 
       // Konzept-Notiz: Dauerhafte Gruppenpräferenzen (data/alliance.csv: PrefGroup/PrefMode/PrefBoost) steuern den Optimizer langfristig.
-      // Event-spezifische Zuordnungen (data/event_assignments.csv) dokumentieren nur Zusagen/Plätze für eine konkrete EventID und überschreiben nichts dauerhaft.
+      // Der Zusage-Pool (data/event_signups_next.csv) gehört immer zum nächsten Event (aktuelles out/latest.json) und überschreibt den Optimizer nicht dauerhaft.
 
       function normalizeLineEndings(text) { return (text || '').replace(/\r\n/g, '\n').replace(/\r/g, '\n'); }
       function ensureTrailingNewline(text) { if (!text) return '\n'; return /\n$/.test(text) ? text : text + '\n'; }
@@ -273,13 +289,13 @@
       }
       async function loadAssignments() {
         try {
-          const text = await fetchText('../../data/event_assignments.csv');
+          const text = await fetchText('../../data/event_signups_next.csv');
           const { headers, rows } = parseCsv(text);
           state.headers = headers.length ? headers : [...DEFAULT_HEADERS];
           state.assignments = rows.map(r => ({ ...DEFAULT_HEADERS.reduce((acc,k)=>({ ...acc, [k]:''}),{}), ...r }));
           state.originalCsv = buildCurrentCsv();
         } catch (err) {
-          console.warn('event_assignments.csv nicht ladbar, starte leer', err);
+          console.warn('event_signups_next.csv nicht ladbar, starte leer', err);
           state.headers = [...DEFAULT_HEADERS];
           state.assignments = [];
           state.originalCsv = buildCurrentCsv();
@@ -294,23 +310,27 @@
         try {
           const data = await fetch('../../out/latest.json', { cache:'no-store' }).then(r => r.json());
           const players = Array.isArray(data?.players) ? data.players : [];
-          state.rosterPlayers = players.map(p => ({ name: p.display || p.canon || '', group: p.group || '', role: p.role || '' })).filter(p => p.name);
+          state.rosterPlayers = players
+            .map(p => ({
+              name: p.display || p.canon || '',
+              group: p.group || '',
+              role: p.role || '',
+              canon: canonicalNameJS(p.canon || p.display || ''),
+            }))
+            .filter(p => p.name);
+          state.rosterGroups = (data && data.groups) || {};
+          state.rosterMeta = data?.generated_at || null;
+          state.eventSignupsMeta = data?.event_signups || null;
+          updateContextMeta();
         } catch (err) {
           console.warn('latest.json nicht verfügbar', err);
           state.rosterPlayers = [];
+          state.rosterGroups = {};
+          state.rosterMeta = null;
+          state.eventSignupsMeta = null;
+          updateContextMeta();
         }
       }
-      async function loadEventList() {
-        const collected = new Set();
-        state.assignments.forEach(a => { if (a.EventID) collected.add(a.EventID); });
-        try {
-          const text = await fetchText('../../data/callups.csv');
-          const { rows } = parseCsv(text);
-          rows.forEach(r => { if (r.EventID) collected.add(r.EventID); });
-        } catch (err) { console.warn('callups.csv nicht verfügbar', err); }
-        state.eventList = Array.from(collected).sort((a,b) => b.localeCompare(a,'de',{sensitivity:'base'}));
-      }
-
       function buildCurrentCsv() {
         const headers = state.headers.length ? state.headers : [...DEFAULT_HEADERS];
         const rows = state.assignments.map(entry => {
@@ -319,10 +339,10 @@
           return out;
         });
         rows.sort((a,b) => {
-          const ea = (a.EventID || '').toString();
-          const eb = (b.EventID || '').toString();
-          if (ea === eb) return (a.PlayerName || '').localeCompare((b.PlayerName || ''), 'de', { sensitivity:'base' });
-          return ea.localeCompare(eb, 'de', { sensitivity:'base' });
+          const ga = (a.Group || '').toString();
+          const gb = (b.Group || '').toString();
+          if (ga !== gb) return ga.localeCompare(gb, 'de', { sensitivity:'base' });
+          return (a.PlayerName || '').localeCompare((b.PlayerName || ''), 'de', { sensitivity:'base' });
         });
         return buildCsv(headers, rows);
       }
@@ -339,16 +359,29 @@
       function setLoading(isLoading) {
         state.loading = isLoading;
         elements.reloadBtn.disabled = isLoading || state.saving;
+        if (elements.resetBtn) elements.resetBtn.disabled = isLoading || state.saving;
         updateSaveButtonState();
         if (isLoading) setStatus('Lade Daten…', 'info');
       }
       function setSaving(isSaving) {
         state.saving = isSaving;
+        if (elements.resetBtn) elements.resetBtn.disabled = isSaving || state.loading;
         updateSaveButtonState();
       }
       function updateSaveButtonState() {
         elements.saveBtn.disabled = state.loading || state.saving || !hasChanges();
         elements.saveBtn.textContent = state.saving ? 'Speichert…' : 'Speichern';
+      }
+
+      function updateContextMeta() {
+        const parts = [];
+        if (state.rosterMeta) parts.push(`latest.json gebaut: ${state.rosterMeta}`);
+        if (state.eventSignupsMeta && typeof state.eventSignupsMeta.total_entries === 'number') {
+          parts.push(`Pool laut Build: ${state.eventSignupsMeta.total_entries} Einträge`);
+        }
+        const text = parts.length ? parts.join(' · ') : 'Keine Meta-Infos (latest.json nicht geladen)';
+        if (elements.contextMeta) elements.contextMeta.textContent = text;
+        if (elements.rosterMeta) elements.rosterMeta.textContent = text;
       }
 
       function populatePlayers() {
@@ -363,34 +396,20 @@
           elements.playerOptions.appendChild(opt);
         });
       }
-      function populateEvents() {
-        elements.eventOptions.innerHTML = '';
-        state.eventList.forEach(ev => {
-          const opt = document.createElement('option');
-          opt.value = ev;
-          elements.eventOptions.appendChild(opt);
-        });
-        if (!elements.eventId.value && state.eventList.length) {
-          elements.eventId.value = state.eventList[0];
-          state.selectedEventId = state.eventList[0];
-        }
-      }
 
-      function ensureAssignment(eventId, playerName) {
-        const existing = state.assignments.find(r => (r.EventID || '') === eventId && (r.PlayerName || '') === playerName);
+      function ensureAssignment(playerName) {
+        const existing = state.assignments.find(r => (r.PlayerName || '') === playerName);
         if (existing) return existing;
-        const blank = { EventID: eventId, PlayerName: playerName, Group:'', Role:'', Source:'manual', Note:'' };
+        const blank = { PlayerName: playerName, Group:'', Role:'', Source:'manual', Note:'' };
         state.assignments.push(blank);
         return blank;
       }
 
       function renderAssignments() {
-        const eventId = elements.eventId.value.trim();
-        state.selectedEventId = eventId;
-        const rows = state.assignments.filter(r => (r.EventID || '') === eventId);
+        const rows = [...state.assignments];
         elements.assignmentBody.innerHTML = '';
         elements.assignmentCount.textContent = `${rows.length} Einträge`;
-        elements.eventMeta.textContent = eventId ? `Bearbeite event-spezifische Zuordnungen für ${eventId}` : 'Bitte EventID wählen.';
+        elements.eventMeta.textContent = 'Alle Einträge beziehen sich auf das nächste Event (aktuelles Roster).';
         elements.emptyState.style.display = rows.length ? 'none' : 'block';
         rows.forEach((row, idx) => {
           const tr = document.createElement('tr');
@@ -465,19 +484,99 @@
           elements.assignmentBody.appendChild(tr);
         });
         elements.emptyState.style.display = rows.length ? 'none' : 'block';
+        renderRosterPreview();
+      }
+
+      function renderRosterPreview() {
+        const container = elements.rosterPreview;
+        if (!container) return;
+        const groups = state.rosterGroups || {};
+        if (!Object.keys(groups).length) {
+          container.textContent = 'Keine Aufstellung geladen (latest.json fehlt).';
+          return;
+        }
+        const signupsByCanon = new Map();
+        state.assignments.forEach(a => {
+          const canon = canonicalNameJS(a.PlayerName || '');
+          if (!canon) return;
+          signupsByCanon.set(canon, a);
+        });
+        const rosterCanon = new Set(state.rosterPlayers.map(p => p.canon).filter(Boolean));
+        const extraByGroup = { A: [], B: [] };
+        state.assignments.forEach(a => {
+          const g = (a.Group || '').toUpperCase();
+          const canon = canonicalNameJS(a.PlayerName || '');
+          if (!canon || (g !== 'A' && g !== 'B')) return;
+          if (!rosterCanon.has(canon)) extraByGroup[g].push(a);
+        });
+
+        const makeList = (entries, { highlight }) => {
+          const ul = document.createElement('ul');
+          ul.className = 'roster-list';
+          if (!entries.length) {
+            const li = document.createElement('li');
+            li.textContent = '–';
+            ul.appendChild(li);
+            return ul;
+          }
+          entries.forEach(entry => {
+            const li = document.createElement('li');
+            const canon = canonicalNameJS(entry || entry.PlayerName || '');
+            const signup = highlight && signupsByCanon.get(canon);
+            const note = signup && signup.Note ? ` <span class="hint">${escapeHtml(signup.Note)}</span>` : '';
+            if (typeof entry === 'string') {
+              li.innerHTML = `${escapeHtml(entry)}${signup ? ' <span class="roster-badge">Event-Zusage</span>' : ''}${note}`;
+            } else {
+              const badge = `<span class="roster-badge extra-pill">Event-Zusage</span>`;
+              const details = [];
+              if (entry.Role) details.push(entry.Role);
+              if (entry.Source) details.push(entry.Source);
+              const meta = details.length ? ` <span class="hint">(${escapeHtml(details.join(' · '))})</span>` : '';
+              li.innerHTML = `${escapeHtml(entry.PlayerName || '–')} ${badge}${meta}${entry.Note ? ` <span class="hint">${escapeHtml(entry.Note)}</span>` : ''}`;
+            }
+            ul.appendChild(li);
+          });
+          return ul;
+        };
+
+        container.innerHTML = '';
+        ['A','B'].forEach(group => {
+          const card = document.createElement('div');
+          card.className = 'roster-card';
+          const header = document.createElement('h3');
+          header.textContent = `Gruppe ${group}`;
+          card.appendChild(header);
+
+          const startList = Array.isArray(groups[group]?.Start) ? groups[group].Start : [];
+          const ersatzList = Array.isArray(groups[group]?.Ersatz) ? groups[group].Ersatz : [];
+
+          const startLabel = document.createElement('div');
+          startLabel.textContent = 'Start';
+          card.appendChild(startLabel);
+          card.appendChild(makeList(startList, { highlight: true }));
+
+          const ersatzLabel = document.createElement('div');
+          ersatzLabel.textContent = 'Ersatz';
+          card.appendChild(ersatzLabel);
+          card.appendChild(makeList(ersatzList, { highlight: true }));
+
+          const extraLabel = document.createElement('div');
+          extraLabel.textContent = 'Zusätzliche Zusagen (außerhalb Optimizer)';
+          card.appendChild(extraLabel);
+          card.appendChild(makeList(extraByGroup[group] || [], { highlight: false }));
+
+          container.appendChild(card);
+        });
       }
 
       function addAssignment() {
-        const eventId = elements.eventId.value.trim();
         const player = elements.playerInput.value.trim();
-        if (!eventId) { setStatus('Bitte EventID wählen.', 'warn'); elements.eventId.focus(); return; }
         if (!player) { setStatus('Bitte Spieler auswählen.', 'warn'); elements.playerInput.focus(); return; }
-        const entry = ensureAssignment(eventId, player);
+        const entry = ensureAssignment(player);
         entry.Group = elements.groupInput.value;
         entry.Role = elements.roleInput.value;
         entry.Source = elements.sourceInput.value || 'manual';
         entry.Note = elements.noteInput.value;
-        if (!state.eventList.includes(eventId)) { state.eventList.unshift(eventId); populateEvents(); }
         renderAssignments();
         updateSaveButtonState();
         setStatus('Eintrag hinzugefügt/aktualisiert.', 'info');
@@ -488,9 +587,7 @@
         try {
           await loadAssignments();
           await Promise.all([loadAlliance(), loadRoster()]);
-          await loadEventList();
           populatePlayers();
-          populateEvents();
           renderAssignments();
           setStatus('Daten geladen.', 'ok');
         } catch (err) {
@@ -511,19 +608,52 @@
         if (!adminKey) { setStatus('Admin-Key erforderlich.', 'error'); return; }
         const content = buildCurrentCsv();
         setSaving(true);
-        setStatus('Speichere event_assignments.csv…', 'info');
+        setStatus('Speichere event_signups_next.csv…', 'info');
         try {
           await writeFile(workerUrl, adminKey, {
-            path: 'data/event_assignments.csv',
+            path: 'data/event_signups_next.csv',
             content,
             branch,
-            message: 'admin: update event_assignments.csv via event assignments ui',
+            message: 'admin: update event_signups_next.csv via event assignments ui',
           });
           state.originalCsv = content;
           setStatus('Event-Zusagen gespeichert.', 'ok');
         } catch (err) {
           console.error(err);
           setStatus(`Speichern fehlgeschlagen: ${err.message}`, 'error');
+        } finally {
+          setSaving(false);
+          updateSaveButtonState();
+        }
+      }
+
+      async function resetPool() {
+        if (state.loading || state.saving) return;
+        const workerUrl = elements.workerUrl.value.trim();
+        const adminKey = elements.adminKey.value.trim();
+        const branch = elements.branch.value.trim() || 'main';
+        if (!workerUrl) { setStatus('Worker-URL fehlt.', 'error'); return; }
+        if (!adminKey) { setStatus('Admin-Key erforderlich.', 'error'); return; }
+        const confirmReset = window.confirm('Pool wirklich leeren? Alle Zusagen für das nächste Event werden entfernt.');
+        if (!confirmReset) return;
+        const headers = state.headers.length ? state.headers : [...DEFAULT_HEADERS];
+        const emptyCsv = buildCsv(headers, []);
+        setSaving(true);
+        setStatus('Leere event_signups_next.csv…', 'info');
+        try {
+          await writeFile(workerUrl, adminKey, {
+            path: 'data/event_signups_next.csv',
+            content: emptyCsv,
+            branch,
+            message: 'admin: reset event_signups_next.csv via event assignments ui',
+          });
+          state.assignments = [];
+          state.originalCsv = emptyCsv;
+          renderAssignments();
+          setStatus('Pool geleert.', 'ok');
+        } catch (err) {
+          console.error(err);
+          setStatus(`Reset fehlgeschlagen: ${err.message}`, 'error');
         } finally {
           setSaving(false);
           updateSaveButtonState();
@@ -540,7 +670,7 @@
       }
 
       function persistSettings() {
-        const payload = { workerUrl: elements.workerUrl.value, branch: elements.branch.value, adminKey: elements.adminKey.value, eventId: elements.eventId.value };
+        const payload = { workerUrl: elements.workerUrl.value, branch: elements.branch.value, adminKey: elements.adminKey.value };
         localStorage.setItem(SETTINGS_KEY, JSON.stringify(payload));
       }
       function restoreSettings() {
@@ -551,7 +681,6 @@
             if (parsed.workerUrl) elements.workerUrl.value = parsed.workerUrl;
             if (parsed.branch) elements.branch.value = parsed.branch;
             if (parsed.adminKey) elements.adminKey.value = parsed.adminKey;
-            if (parsed.eventId) { elements.eventId.value = parsed.eventId; state.selectedEventId = parsed.eventId; }
           } catch (err) { console.warn('Settings konnten nicht gelesen werden', err); }
         } else {
           const shared = localStorage.getItem('dsro-admin-settings');
@@ -571,7 +700,7 @@
         elements.reloadBtn.addEventListener('click', reloadData);
         elements.saveBtn.addEventListener('click', saveChanges);
         elements.addBtn.addEventListener('click', addAssignment);
-        elements.eventId.addEventListener('change', () => { state.selectedEventId = elements.eventId.value.trim(); persistSettings(); renderAssignments(); });
+        if (elements.resetBtn) elements.resetBtn.addEventListener('click', resetPool);
         ['workerUrl','branch','adminKey'].forEach(key => elements[key].addEventListener('change', persistSettings));
         elements.playerInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); addAssignment(); } });
       }

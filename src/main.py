@@ -197,6 +197,43 @@ def _load_absences(path: str) -> pd.DataFrame:
     return df[["canon", "From_ts", "To_ts", "Reason"]].copy()
 
 
+def _load_event_signups(path: str, to_canon) -> pd.DataFrame:
+    """Load the next-event signup pool (manual confirmations for the upcoming roster).
+
+    The pool intentionally has no EventID column – it always refers to the
+    roster represented by ``out/latest.json``. Columns are normalized but kept
+    permissive so that the UI can be lightweight.
+    """
+
+    cols = ["PlayerName", "Group", "Role", "Source", "Note"]
+    try:
+        df = pd.read_csv(path, dtype=str)
+    except FileNotFoundError:
+        print(f"[info] event signups: {path} fehlt – starte leer")
+        return pd.DataFrame(columns=cols)
+    except Exception as e:
+        print(f"[warn] event signups: {path} nicht lesbar ({e}), starte leer")
+        return pd.DataFrame(columns=cols)
+
+    for col in cols:
+        if col not in df.columns:
+            df[col] = ""
+
+    df = df[cols].copy()
+    df["PlayerName"] = df["PlayerName"].fillna("").astype(str).str.strip()
+    df = df[df["PlayerName"] != ""]
+    df["canon"] = df["PlayerName"].map(to_canon)
+    df = df[df["canon"].notna()].copy()
+
+    df["Group"] = df["Group"].fillna("").astype(str).str.strip().str.upper()
+    df["Role"] = df["Role"].fillna("").astype(str).str.strip().str.title()
+    df["Source"] = (
+        df["Source"].fillna("manual_event_signup").astype(str).str.strip().replace("", "manual_event_signup")
+    )
+    df["Note"] = df["Note"].fillna("").astype(str)
+    return df
+
+
 def _normalize_for_match(value: str) -> str:
     """Normalisiert Namen für heuristische Alias-Erkennung."""
     if value is None:
@@ -320,6 +357,11 @@ def main():
     ap.add_argument("--aliases", default="", help="Pfad zu data/aliases.csv (optional)")
     ap.add_argument("--absences", default="", help="Pfad zu data/absences.csv (optional)")
     ap.add_argument("--preferences", default="", help="Pfad zu data/preferences.csv (optional)")
+    ap.add_argument(
+        "--event-signups",
+        default="data/event_signups_next.csv",
+        help="Pfad zum Zusage-Pool für das nächste Event (ohne EventID-Spalte)",
+    )
     ap.add_argument("--half-life-days", type=float, default=90.0, help="Halbwertszeit für Rolling-Metriken (Tage)")
     ap.add_argument("--out", default="out", help="Ausgabeverzeichnis für Run-Artefakte (zusätzlich zu out/latest.*)")
     args = ap.parse_args()
@@ -363,6 +405,9 @@ def main():
             print(f"[ok] absences loaded: {len(abs_df)} Einträge")
         except Exception as e:
             print(f"[warn] absences nicht nutzbar: {e}")
+
+    event_signups_df = _load_event_signups(args.event_signups, to_canon)
+    print(f"[info] event signups geladen: {len(event_signups_df)} Einträge (Pool für nächstes Event)")
 
     # 2) Metriken berechnen
     role_probs = compute_role_probs(
@@ -669,13 +714,83 @@ def main():
             }
         players_payload.append(entry)
 
+    players_by_canon = {p["canon"]: p for p in players_payload}
+
+    # --------------------------
+    # Event-Zusagen als Overlay
+    # --------------------------
+    # Konzept: Der Pool in data/event_signups_next.csv gehört immer zum nächsten
+    # Event (= aktuelle Aufstellung). Es gibt daher keine EventID-Spalte.
+    # Spieler, die bereits im Optimizer-Roster stehen, werden nur markiert
+    # (event_signup), nicht überschrieben. Alle übrigen Zusagen landen pro
+    # Gruppe in "extra_signups".
+    extra_signups_by_group = {g: [] for g in GROUPS}
+    signups_meta = {
+        "scope": "next_event",
+        "source": str(Path(args.event_signups)),
+        "total_entries": int(len(event_signups_df)),
+        "applied_entries": 0,
+        "ignored_entries": 0,
+    }
+
+    if not event_signups_df.empty:
+        seen_extra = set()
+        for row in event_signups_df.itertuples(index=False):
+            display = getattr(row, "PlayerName", "") or ""
+            canon = getattr(row, "canon", pd.NA)
+            group = (getattr(row, "Group", "") or "").strip().upper()
+            role = (getattr(row, "Role", "") or "").strip().title()
+            source = (getattr(row, "Source", "") or "manual_event_signup").strip()
+            note = (getattr(row, "Note", "") or "").strip()
+
+            if canon in players_by_canon:
+                base = players_by_canon[canon]
+                base["event_signup"] = {
+                    "group": group or base.get("group"),
+                    "role": role or base.get("role"),
+                    "source": source,
+                    "note": note,
+                }
+                base["has_event_signup"] = True
+                signups_meta["applied_entries"] += 1
+                continue
+
+            if group not in GROUPS:
+                signups_meta["ignored_entries"] += 1
+                continue
+
+            key = (canon, group, role or "", note or "", source)
+            if key in seen_extra:
+                continue
+            seen_extra.add(key)
+            extra_signups_by_group[group].append(
+                {
+                    "player": display,
+                    "canon": canon,
+                    "group": group,
+                    "role": role or None,
+                    "source": source,
+                    "note": note,
+                }
+            )
+            signups_meta["applied_entries"] += 1
+
     json_payload = {
         "generated_at": datetime.now(TZ).isoformat(),
         "schema": schema_block,
         "groups": {
-            "A": {"Start": _by("A", "Start"), "Ersatz": _by("A", "Ersatz")},
-            "B": {"Start": _by("B", "Start"), "Ersatz": _by("B", "Ersatz")},
+            "A": {
+                "Start": _by("A", "Start"),
+                "Ersatz": _by("A", "Ersatz"),
+                "extra_signups": extra_signups_by_group.get("A", []),
+            },
+            "B": {
+                "Start": _by("B", "Start"),
+                "Ersatz": _by("B", "Ersatz"),
+                "extra_signups": extra_signups_by_group.get("B", []),
+            },
         },
+        "event_signups": signups_meta,
         "players": players_payload,
     }
 
