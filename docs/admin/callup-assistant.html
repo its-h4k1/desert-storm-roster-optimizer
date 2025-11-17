@@ -7,6 +7,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <link rel="stylesheet" href="admin.css" />
   <style>
+    /* Layout-Notiz: Bisher begrenzten der 1200px-Wrapper und sechs Spalten die Breite. Mehr Fläche + gestapelte Callup-Blöcke
+       verhindern gequetschte Spalten und erlauben bei kleineren Screens einen horizontalen Scroll. */
     body { margin: 0; }
     .page-header { display:flex; flex-wrap:wrap; gap:0.75rem; align-items:flex-end; }
     .page-header h1 { margin:0; flex:1 1 220px; }
@@ -22,13 +24,16 @@
     .controls .spacer { flex:1; min-width:40px; }
     .filters { display:flex; flex-wrap:wrap; gap:0.75rem; align-items:center; }
     .hint { color:var(--text-muted); font-size:0.9rem; }
-    .card-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:0.75rem; }
-    .card { background:var(--panel-muted); border:1px solid var(--border); border-radius:0.85rem; padding:0.75rem; }
-    .callup-table-wrapper { width:100%; overflow-x:auto; }
+    .card-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:0.85rem; }
+    .card { background:var(--panel-muted); border:1px solid var(--border); border-radius:0.85rem; padding:0.85rem; }
+    .callup-page .admin-content { width:min(1400px,100%); }
+    .callup-page .page-inner { max-width:1400px; }
+    .callup-table-wrapper { width:100%; overflow-x:auto; padding:0.25rem; }
     .table-wrapper { border:1px solid var(--border); border-radius:0.85rem; overflow:auto; box-shadow:var(--shadow-card); }
-    .callup-table { width:100%; border-collapse:collapse; min-width:960px; }
+    .callup-table { width:100%; border-collapse:collapse; min-width:1200px; table-layout:auto; }
     thead { background:var(--bg-alt); position:sticky; top:0; z-index:5; }
-    th, td { padding:0.8rem 0.85rem; border-bottom:1px solid var(--border); text-align:left; vertical-align:top; }
+    th { font-size:0.9rem; color:var(--text-muted); letter-spacing:0.01em; }
+    th, td { padding:0.95rem 1rem; border-bottom:1px solid var(--border); text-align:left; vertical-align:top; line-height:1.45; }
     tbody tr:nth-child(2n) td { background:var(--panel-muted); }
     tbody tr.absent td { opacity:0.65; }
     tbody tr.recommended td { box-shadow: inset 3px 0 0 #2563eb; }
@@ -43,30 +48,34 @@
     .chip.ns-bad { background:#fee2e2; color:#991b1b; border-color:#fecdd3; }
     .chip.ns-neutral { background:#e2e8f0; color:#475569; border-color:#cbd5e1; }
     .row-actions { display:flex; gap:0.4rem; flex-wrap:wrap; }
-    .cell-stack { display:flex; flex-direction:column; gap:0.35rem; }
-    .player-cell .player-name { font-weight:700; font-size:0.95rem; }
-    .player-cell .player-meta { display:flex; flex-wrap:wrap; gap:0.45rem; color:var(--text-muted); font-size:0.85rem; }
+    .cell-stack { display:flex; flex-direction:column; gap:0.45rem; }
+    .player-cell .player-name { font-weight:700; font-size:1rem; }
+    .player-cell .player-meta { display:flex; flex-wrap:wrap; gap:0.6rem; color:var(--text-muted); font-size:0.9rem; }
+    .player-cell .player-meta .tag { display:inline-flex; gap:0.3rem; align-items:center; padding:0.15rem 0.55rem; background:var(--bg-alt); border:1px solid var(--border); border-radius:0.75rem; font-size:0.85rem; }
     .risk-cell .chip { width:fit-content; }
     .reason-chip { display:inline-flex; align-items:center; gap:0.35rem; padding:0.2rem 0.55rem; border-radius:0.8rem; background:var(--bg-alt); border:1px solid var(--border); font-weight:600; font-size:0.85rem; margin:0.1rem 0; }
-    .callup-cell { min-width:200px; }
-    .callup-cell .inline { display:flex; gap:0.5rem; align-items:center; justify-content:space-between; flex-wrap:wrap; }
-    .callup-cell .inline small { color:var(--text-muted); }
-    .timestamp-input { min-width:160px; max-width:200px; padding:0.4rem 0.55rem; }
-    .callup-cell select { min-width:160px; width:fit-content; }
-    .final-control { padding-top:0.25rem; border-top:1px dashed var(--border); }
-    .final-control .hint { font-size:0.8rem; }
-    textarea.notes { min-width:200px; min-height:48px; max-width:240px; resize:vertical; }
+    .callup-cell { min-width:280px; }
+    .callup-steps { display:grid; gap:0.75rem; grid-template-columns:repeat(auto-fit,minmax(240px,1fr)); }
+    .callup-step { padding:0.75rem 0.85rem; border:1px solid var(--border); border-radius:0.85rem; background:var(--bg-alt); box-shadow:inset 0 1px 0 rgba(255,255,255,0.45); }
+    .callup-step h3 { margin:0; font-size:0.95rem; color:var(--text); }
+    .callup-step .inline { display:flex; gap:0.6rem; align-items:center; justify-content:space-between; flex-wrap:wrap; }
+    .callup-step .inline small { color:var(--text-muted); }
+    .timestamp-input { min-width:180px; max-width:220px; padding:0.45rem 0.6rem; }
+    .callup-cell select { min-width:180px; width:fit-content; }
+    .final-control { padding-top:0.35rem; margin-top:0.35rem; border-top:1px dashed var(--border); }
+    .final-control .hint { font-size:0.85rem; }
+    textarea.notes { min-width:220px; min-height:64px; max-width:260px; resize:vertical; }
     .status-bar { position:sticky; bottom:0; background:var(--glass); border-top:1px solid var(--border); padding:0.75rem 1rem; display:flex; gap:0.6rem; align-items:center; box-shadow:0 -8px 24px rgba(15,23,42,0.08); flex-wrap:wrap; }
     .status-badge { display:inline-flex; align-items:center; gap:0.35rem; padding:0.35rem 0.7rem; border-radius:999px; font-weight:600; font-size:0.9rem; }
     .status-info { background:#e0f2fe; color:#075985; }
     .status-warn { background:#fff7ed; color:#9a3412; }
     .status-ok { background:#dcfce7; color:#14532d; }
     .status-error { background:#fee2e2; color:#991b1b; }
-    textarea.notes { min-width:200px; min-height:48px; resize:vertical; }
-    @media (max-width: 960px) { table { min-width:900px; } .page-header .settings { width:100%; } label { width:100%; } button { width:100%; justify-content:center; } }
+    textarea.notes { min-width:220px; min-height:64px; max-width:260px; resize:vertical; }
+    @media (max-width: 960px) { table { min-width:1100px; } .page-header .settings { width:100%; } label { width:100%; } button { width:100%; justify-content:center; } }
   </style>
 </head>
-<body class="admin-shell">
+<body class="admin-shell callup-page">
   <header class="admin-header">
     <div class="admin-brand">ELT Admin</div>
     <div class="admin-header-actions">
@@ -152,11 +161,10 @@
                 <table class="callup-table">
                   <thead>
                     <tr>
-                      <th>Spieler</th>
-                      <th>No-Show &amp; Risiko</th>
-                      <th>Grund</th>
-                      <th>Callup 1</th>
-                      <th>Callup 2</th>
+                      <th>Spieler &amp; Kontext</th>
+                      <th>No-Show</th>
+                      <th>Gründe</th>
+                      <th>Callups</th>
                       <th>Notiz</th>
                     </tr>
                   </thead>
@@ -552,8 +560,7 @@
           tr.appendChild(tdPlayer(c));
           tr.appendChild(tdNoShow(c));
           tr.appendChild(tdReason(c));
-          tr.appendChild(tdCallupStep(c, 1, refresh));
-          tr.appendChild(tdCallupStep(c, 2, refresh, finalControl));
+          tr.appendChild(tdCallups(c, refresh, finalControl));
           tr.appendChild(tdNotes(c, refresh));
           elements.candidateBody.appendChild(tr);
         });
@@ -583,7 +590,12 @@
         metaParts.push(`${c.group || '–'} / ${c.role || '–'}`);
         metaParts.push(`${c.eventsSeen != null ? `${c.eventsSeen} Events` : '– Events'}`);
         if (c.absence) metaParts.push(`Abwesend: ${c.absence.reason || 'keine Angabe'}`);
-        meta.textContent = metaParts.join(' · ');
+        metaParts.forEach(part => {
+          const tag = document.createElement('span');
+          tag.className = 'tag';
+          tag.textContent = part;
+          meta.appendChild(tag);
+        });
         wrap.appendChild(name);
         wrap.appendChild(meta);
         td.appendChild(wrap);
@@ -647,11 +659,23 @@
         return reason;
       }
 
-      function tdCallupStep(c, step, onChange = () => {}, finalControl = null) {
+      function tdCallups(c, onChange = () => {}, finalControl = null) {
         const td = document.createElement('td');
         td.className = 'callup-cell';
         const wrap = document.createElement('div');
-        wrap.className = 'cell-stack';
+        wrap.className = 'callup-steps';
+        wrap.appendChild(callupStepBlock(c, 1, onChange));
+        wrap.appendChild(callupStepBlock(c, 2, onChange, finalControl));
+        td.appendChild(wrap);
+        return td;
+      }
+
+      function callupStepBlock(c, step, onChange = () => {}, finalControl = null) {
+        const block = document.createElement('div');
+        block.className = 'callup-step cell-stack';
+        const title = document.createElement('h3');
+        title.textContent = step === 1 ? 'Callup 1' : 'Callup 2';
+        block.appendChild(title);
         const sentKey = step === 1 ? 'Reminder1SentAt' : 'Reminder2SentAt';
         const resultKey = step === 1 ? 'Reminder1Result' : 'Reminder2Result';
         const sent = document.createElement('label');
@@ -681,7 +705,7 @@
         firstLine.className = 'inline';
         firstLine.appendChild(sent);
         firstLine.appendChild(stamp);
-        wrap.appendChild(firstLine);
+        block.appendChild(firstLine);
 
         const sel = document.createElement('select');
         ['','zugesagt','abgesagt','keine Antwort'].forEach(optVal => {
@@ -692,19 +716,18 @@
           sel.appendChild(opt);
         });
         sel.addEventListener('change', () => { c.callup[resultKey] = sel.value; onChange(); updateSaveButtonState(); });
-        wrap.appendChild(sel);
+        block.appendChild(sel);
 
         if (step === 2) {
           const note = document.createElement('small');
           note.textContent = 'aktiv nach Callup 1';
-          wrap.appendChild(note);
+          block.appendChild(note);
           if (finalControl) {
-            wrap.appendChild(finalControl.container);
+            block.appendChild(finalControl.container);
           }
         }
 
-        td.appendChild(wrap);
-        return td;
+        return block;
       }
 
       function buildFinalControl(c) {
