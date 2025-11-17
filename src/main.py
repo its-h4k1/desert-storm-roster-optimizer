@@ -714,6 +714,22 @@ def main():
             }
         players_payload.append(entry)
 
+    alliance_payload = []
+    for row in alliance_df.itertuples(index=False):
+        pref_group_val = getattr(row, "PrefGroup", pd.NA)
+        if pd.isna(pref_group_val):
+            pref_group_val = None
+        else:
+            pref_group_val = str(pref_group_val)
+        alliance_payload.append(
+            {
+                "display": row.DisplayName,
+                "canon": row.canon,
+                "in_alliance": int(getattr(row, "InAlliance", 0)),
+                "pref_group": pref_group_val,
+            }
+        )
+
     players_by_canon = {p["canon"]: p for p in players_payload}
 
     # --------------------------
@@ -724,6 +740,13 @@ def main():
     # Spieler, die bereits im Optimizer-Roster stehen, werden nur markiert
     # (event_signup), nicht überschrieben. Alle übrigen Zusagen landen pro
     # Gruppe in "extra_signups".
+    #
+    # Wichtig (Antwort auf die Analysefragen):
+    # - Der Zusage-Pool verändert die Optimierung NICHT; der deterministische
+    #   Roster bleibt unverändert, wir annotieren nur.
+    # - Änderungen an event_signups_next.csv schlagen beim nächsten Build in
+    #   latest.json durch (Badges/extra_signups + event_signups-Metadaten),
+    #   aber nicht in den Gruppenzuordnungen.
     extra_signups_by_group = {g: [] for g in GROUPS}
     signups_meta = {
         "scope": "next_event",
@@ -791,6 +814,7 @@ def main():
             },
         },
         "event_signups": signups_meta,
+        "alliance_pool": alliance_payload,
         "players": players_payload,
     }
 
