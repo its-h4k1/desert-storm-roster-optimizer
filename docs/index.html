@@ -130,9 +130,20 @@
   <script>
     // Quelle (mit Cache-Buster)
     const url = new URL(location.href);
-    const branch = url.searchParams.get('branch') || 'main';
-    const RAW = `https://raw.githubusercontent.com/its-h4k1/desert-storm-roster-optimizer/${branch}/out/latest.json?v=${Date.now()}`;
-    const ABSENCES_RAW = `https://raw.githubusercontent.com/its-h4k1/desert-storm-roster-optimizer/${branch}/data/absences.csv?v=${Date.now()}`;
+    const branchOverride = url.searchParams.get('branch');
+    const branch = branchOverride || 'main';
+    const cacheBuster = `?v=${Date.now()}`;
+    const SITE_ROOT = (() => {
+      const path = location.pathname || '/';
+      const adminIdx = path.indexOf('/admin/');
+      if (adminIdx !== -1) return path.slice(0, adminIdx + 1);
+      return path.endsWith('/') ? path : path.replace(/[^/]*$/, '/');
+    })();
+    const LATEST_JSON_URL = branchOverride
+      ? `https://raw.githubusercontent.com/its-h4k1/desert-storm-roster-optimizer/${branch}/out/latest.json${cacheBuster}`
+      : `${SITE_ROOT}out/latest.json${cacheBuster}`;
+    // Main roster UI expects latest.json at: docs/out/latest.json (served as out/latest.json on GitHub Pages).
+    const ABSENCES_RAW = `https://raw.githubusercontent.com/its-h4k1/desert-storm-roster-optimizer/${branch}/data/absences.csv${cacheBuster}`;
 
     // Konfiguration: Prior-Defaults (werden durch schema.prior überschrieben)
     const DEFAULT_PRIOR_FALLBACK = 0.18;
@@ -617,7 +628,7 @@
       h2.innerHTML = `${base}<span class="counts">${suffix}</span>`;
     }
 
-    fetch(RAW, { cache: "no-store" })
+    fetch(LATEST_JSON_URL, { cache: "no-store" })
       .then(r=>{ if(!r.ok) throw new Error(r.status+" "+r.statusText); return r.json(); })
       .then(payload => {
         const schema = (!Array.isArray(payload) && payload && typeof payload === "object") ? (payload.schema || {}) : {};

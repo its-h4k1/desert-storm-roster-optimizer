@@ -258,6 +258,18 @@
       const SETTINGS_KEY = 'dsro-event-assignments-settings';
       // Commitment existierte bereits als CSV-Spalte, wurde in dieser UI jedoch ignoriert; jetzt wird sie mitgelesen und mitgeschrieben.
       const DEFAULT_HEADERS = ['PlayerName','Group','Role','Commitment','Source','Note'];
+      const branchOverride = (new URL(location.href)).searchParams.get('branch');
+      const cacheBuster = `?v=${Date.now()}`;
+      const SITE_ROOT = (() => {
+        const path = location.pathname || '/';
+        const adminIdx = path.indexOf('/admin/');
+        if (adminIdx !== -1) return path.slice(0, adminIdx + 1);
+        return path.endsWith('/') ? path : path.replace(/[^/]*$/, '/');
+      })();
+      const LATEST_JSON_URL = branchOverride
+        ? `https://raw.githubusercontent.com/its-h4k1/desert-storm-roster-optimizer/${branchOverride}/out/latest.json${cacheBuster}`
+        : `${SITE_ROOT}out/latest.json${cacheBuster}`;
+      // Admin Event Assignments uses the same latest.json source as the main roster UI: docs/out/latest.json via GitHub Pages (raw URL only when ?branch=<name> is set).
       const state = {
         assignments: [],
         headers: [],
@@ -314,7 +326,7 @@
         }
       }
       async function loadRoster() {
-        const rosterPath = '../out/latest.json';
+        const rosterPath = LATEST_JSON_URL;
         try {
           const response = await fetch(rosterPath, { cache:'no-store' });
           if (!response.ok) throw new Error(`${rosterPath}: HTTP ${response.status}`);
