@@ -225,6 +225,7 @@
 
   <datalist id="playerOptions"></datalist>
 
+  <script src="../shared.js"></script>
   <script src="https://unpkg.com/papaparse@5.4.1/papaparse.min.js"></script>
   <script src="admin.js"></script>
   <script>
@@ -260,15 +261,41 @@
       const DEFAULT_HEADERS = ['PlayerName','Group','Role','Commitment','Source','Note'];
       const branchOverride = (new URL(location.href)).searchParams.get('branch');
       const cacheBuster = `?v=${Date.now()}`;
-      const SITE_ROOT = (() => {
-        const path = location.pathname || '/';
-        const adminIdx = path.indexOf('/admin/');
-        if (adminIdx !== -1) return path.slice(0, adminIdx + 1);
-        return path.endsWith('/') ? path : path.replace(/[^/]*$/, '/');
-      })();
-      const LATEST_JSON_URL = branchOverride
-        ? `https://raw.githubusercontent.com/its-h4k1/desert-storm-roster-optimizer/${branchOverride}/out/latest.json${cacheBuster}`
-        : `${SITE_ROOT}out/latest.json${cacheBuster}`;
+      const canonicalNameJS = (window.dsroShared && typeof window.dsroShared.canonicalNameJS === 'function')
+        ? window.dsroShared.canonicalNameJS
+        : (value => {
+            if (value == null) return '';
+            return String(value).toLowerCase().trim().replace(/\s+/g, ' ');
+          });
+      const escapeHtml = (window.dsroShared && typeof window.dsroShared.escapeHtml === 'function')
+        ? window.dsroShared.escapeHtml
+        : (value => value == null ? '' : String(value)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#39;'));
+      const computeSiteRoot = (window.dsroShared && typeof window.dsroShared.computeSiteRoot === 'function')
+        ? window.dsroShared.computeSiteRoot
+        : (pathname => {
+            const path = pathname || '/';
+            const adminIdx = path.indexOf('/admin/');
+            if (adminIdx !== -1) return path.slice(0, adminIdx + 1);
+            return path.endsWith('/') ? path : path.replace(/[^/]*$/, '/');
+          });
+      const buildLatestJsonUrl = (window.dsroShared && typeof window.dsroShared.buildLatestJsonUrl === 'function')
+        ? window.dsroShared.buildLatestJsonUrl
+        : ({ branchOverride: bOverride, cacheBuster: buster, siteRoot }) => {
+            const base = siteRoot || computeSiteRoot(location.pathname || '/');
+            if (bOverride) {
+              return `https://raw.githubusercontent.com/its-h4k1/desert-storm-roster-optimizer/${bOverride}/out/latest.json${buster}`;
+            }
+            return `${base}out/latest.json${buster}`;
+          };
+      const SITE_ROOT = computeSiteRoot(location.pathname || '/');
+      const LATEST_JSON_URL = buildLatestJsonUrl({ branchOverride, cacheBuster, siteRoot: SITE_ROOT });
+      const REPO_OWNER = 'its-h4k1';
+      const REPO_NAME = 'desert-storm-roster-optimizer';
       // Admin Event Assignments uses the same latest.json source as the main roster UI: docs/out/latest.json via GitHub Pages (raw URL only when ?branch=<name> is set).
       const state = {
         assignments: [],
@@ -304,14 +331,35 @@
         const lines = rows.map(row => headers.map(h => formatCsvValue(row[h] ?? '')).join(','));
         return ensureTrailingNewline([headerLine, ...lines].join('\n'));
       }
-      async function fetchText(path) {
+      function safeBranchName(value) {
+        const trimmed = (value || '').trim();
+        const cleaned = trimmed.replace(/[^\w\-\/]/g, '');
+        return cleaned || 'main';
+      }
+      function buildRawDataUrl(relativePath, branchValue) {
+        const cleanPath = (relativePath || '').replace(/^\//, '');
+        const branch = safeBranchName(branchValue || 'main');
+        return `https://raw.githubusercontent.com/${REPO_OWNER}/${REPO_NAME}/${branch}/${cleanPath}${cacheBuster}`;
+      }
+      async function fetchText(path, { allow404 = false } = {}) {
         const res = await fetch(path, { cache:'no-store' });
-        if (!res.ok) throw new Error(`${path}: HTTP ${res.status}`);
+        if (!res.ok) {
+          if (allow404 && res.status === 404) return null;
+          throw new Error(`${path}: HTTP ${res.status}`);
+        }
         return await res.text();
       }
       async function loadAssignments() {
+        const branch = branchOverride || elements.branch.value || 'main';
+        const csvUrl = buildRawDataUrl('data/event_signups_next.csv', branch);
         try {
-          const text = await fetchText('../../data/event_signups_next.csv');
+          const text = await fetchText(csvUrl, { allow404: true });
+          if (!text) {
+            state.headers = [...DEFAULT_HEADERS];
+            state.assignments = [];
+            state.originalCsv = buildCurrentCsv();
+            return;
+          }
           const { headers, rows } = parseCsv(text);
           const mergedHeaders = headers.length ? Array.from(new Set([...headers, ...DEFAULT_HEADERS])) : [...DEFAULT_HEADERS];
           state.headers = mergedHeaders;
@@ -319,7 +367,7 @@
           state.assignments = rows.map(r => ({ ...baseRow, ...r, Commitment: r.Commitment || r.commitment || baseRow.Commitment }));
           state.originalCsv = buildCurrentCsv();
         } catch (err) {
-          console.warn('event_signups_next.csv nicht ladbar, starte leer', err);
+          console.warn('event_signups_next.csv konnte nicht geladen werden, starte leer', err);
           state.headers = [...DEFAULT_HEADERS];
           state.assignments = [];
           state.originalCsv = buildCurrentCsv();
