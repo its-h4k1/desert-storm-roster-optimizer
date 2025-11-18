@@ -139,6 +139,8 @@
   <p class="muted legend">Legende: <span class="tag tag-nd" title="Keine Historie – events_seen = 0">No&nbsp;Data</span> keine Historie · <span class="tag tag-low" title="Wenig Historie – events_seen ∈ {1,2}">low&nbsp;n</span> wenig Historie · <span class="tag tag-fix">🔒 verbindlich</span> verbindliche Zusage (Commitment=hard) · <span class="tag tag-callup callup-badge">🔔 Callup</span> Spieler, für die eine Erinnerung empfohlen wird<br />Farben basieren auf Historie (rolling→overall), EB wird nur zur Sortierung verwendet.<br />No-Data = nie teilgenommen (grau). low-n ≤2 = gelb. 1 Fehltermin = nie rot.</p>
   <p class="muted legend" id="signup-inline"></p>
 
+  <section id="absence-diagnostics" class="diag" style="display:none"></section>
+
   <section id="absences">
     <h2>Absenzen</h2>
     <div id="absences-content" class="muted">Wird geladen …</div>
@@ -167,6 +169,8 @@
       showPlayerMeta: false,
       showCallups: true,
       absences: { entries: [], active: [], error: null, loading: true },
+      absenceDebug: null,
+      absenceConflicts: [],
       playersByCanon: {},
       forcedDiagnostics: { forced: [], invalid: [], overbooked: [] },
       callupMeta: { available: false, recommendedTotal: null, reasonCounts: {}, fromStats: false, hasStats: false },
@@ -180,6 +184,7 @@
     const callupNote = document.getElementById("callup-note");
     const callupExportBtn = document.getElementById("callup-export");
     const absencesContainer = document.getElementById("absences-content");
+    const absenceDiag = document.getElementById("absence-diagnostics");
     const extraRoot = document.getElementById("extra-root");
     const extraNote = document.getElementById("extra-note");
     const signupInline = document.getElementById("signup-inline");
@@ -632,6 +637,7 @@
       const inAlliance = row?.in_alliance ?? row?.InAlliance ?? row?.Active ?? row?.active ?? 1;
       const activeFlagRaw = row?.is_active_next_event ?? row?.isActive ?? row?.active;
       const isActiveNextEvent = typeof activeFlagRaw === 'boolean' ? activeFlagRaw : null;
+      const scopeRaw = (row?.scope ?? row?.Scope ?? '').toString().trim().toLowerCase();
       return {
         playerName,
         canon: canonicalNameJS(row?.canonical || playerName),
@@ -641,7 +647,7 @@
         toDate: parseDateOnly(to),
         reason,
         inAlliance: parseInAllianceFlag(inAlliance),
-        scope: row?.scope || 'next_event',
+        scope: scopeRaw || 'next_event',
         isActiveNextEvent,
       };
     }
@@ -653,6 +659,7 @@
       const reason = (row?.Reason ?? row?.reason ?? "").toString().trim();
       const activeFlag =
         row?.InAlliance ?? row?.inalliance ?? row?.Active ?? row?.active;
+      const scopeRaw = (row?.Scope ?? row?.scope ?? '').toString().trim().toLowerCase();
       return {
         playerName,
         canon: canonicalNameJS(playerName),
@@ -662,6 +669,7 @@
         toDate: parseDateOnly(to),
         reason,
         inAlliance: parseInAllianceFlag(activeFlag),
+        scope: scopeRaw,
       };
     }
 
@@ -676,6 +684,11 @@
       return entries.filter(entry => {
         if (!entry.inAlliance) {
           return false; // Nur Spieler, die noch zur Allianz gehören, tauchen in der Übersicht auf.
+        }
+        const scopeNext = (entry.scope || '').toString().trim().toLowerCase() === 'next_event';
+        const openRange = !entry.fromDate && !entry.toDate;
+        if (scopeNext || openRange) {
+          return true;
         }
         if (entry.fromDate && entry.fromDate.getTime() > todayMs) {
           return false;
@@ -743,7 +756,59 @@
       `;
     }
 
+    function renderAbsenceDiagnostics(debugBlock, conflicts = []) {
+      if (!absenceDiag) return;
+      const hasDebug = debugBlock && typeof debugBlock === 'object';
+      if (!hasDebug) {
+        absenceDiag.style.display = 'none';
+        absenceDiag.innerHTML = '';
+        return;
+      }
+
+      const rawCount = Number(debugBlock.raw_count ?? debugBlock.rawCount ?? debugBlock.total_entries ?? 0);
+      const activeCount = Number(debugBlock.active_for_next_event ?? debugBlock.activeEntries ?? debugBlock.active_entries ?? 0);
+      const players = Array.isArray(debugBlock.players) ? debugBlock.players : [];
+      const source = (debugBlock.source || '').toString();
+      const summaryParts = [];
+      if (!Number.isNaN(rawCount)) summaryParts.push(`Datei-Einträge: ${rawCount}`);
+      if (!Number.isNaN(activeCount)) summaryParts.push(`für nächstes Event aktiv: ${activeCount}`);
+      if (source) summaryParts.push(`Quelle: ${escapeHtml(source)}`);
+
+      let html = '<h4>Absenzen (nächstes Event – Diagnostik)</h4>';
+      html += `<p>${summaryParts.join(' · ')}</p>`;
+
+      if (activeCount > 0 && players.length) {
+        const items = players.map(p => {
+          const canon = canonicalNameJS(p?.canonical || '');
+          const display = p?.display || p?.name || canon || 'Unbekannt';
+          const reason = p?.reason ? ` — ${escapeHtml(p.reason)}` : '';
+          const scope = (p?.scope || '').toString().trim();
+          const scopeLabel = scope ? ` (${escapeHtml(scope)})` : '';
+          return `<li><strong>${escapeHtml(canon || display)}</strong> → ${escapeHtml(display)}${scopeLabel}${reason}</li>`;
+        }).join('');
+        html += `<ul>${items}</ul>`;
+      } else if (activeCount === 0) {
+        html += '<p class="muted">Keine aktiven Absenzen für das nächste Event laut Builder.</p>';
+      }
+
+      const conflictsSafe = Array.isArray(conflicts) ? conflicts : [];
+      if (conflictsSafe.length) {
+        const items = conflictsSafe.map(c => {
+          const canon = canonicalNameJS(c?.canonical || '');
+          const label = c?.display || canon || 'Unbekannt';
+          return `<li class="warn">${escapeHtml(label)} — hard commitment + Absenz</li>`;
+        }).join('');
+        html += `<p class="warn">Konflikte: Fixplatz & Absenzen</p><ul>${items}</ul>`;
+      }
+
+      absenceDiag.innerHTML = html;
+      absenceDiag.style.display = 'block';
+    }
+
     function fetchAbsences() {
+      state.absenceDebug = null;
+      state.absenceConflicts = [];
+      renderAbsenceDiagnostics(null, []);
       state.absences.loading = true;
       state.absences.error = null;
       updateAbsencesUI();
@@ -1206,6 +1271,9 @@
           };
         });
         state.playersByCanon = playersByCanon;
+        state.absenceDebug = payload.absence_debug || null;
+        state.absenceConflicts = Array.isArray(payload.absence_conflicts) ? payload.absence_conflicts : [];
+        renderAbsenceDiagnostics(state.absenceDebug, state.absenceConflicts);
         const absencesApplied = applyAbsencesFromPayload(payload.absences);
         if (!absencesApplied) {
           fetchAbsences();
