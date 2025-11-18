@@ -46,7 +46,7 @@
     .accordion summary::-webkit-details-marker { display:none; }
     .accordion[open] { background:var(--panel); }
     .accordion .accordion-body { padding:0 1rem 1rem; display:grid; gap:0.75rem; }
-    .layout-two-col { display:grid; grid-template-columns:repeat(auto-fit,minmax(320px,1fr)); gap:1rem; align-items:start; }
+    .layout-two-col { display:flex; flex-direction:column; gap:1rem; align-items:stretch; }
     .add-help { color:var(--text-muted); font-size:0.9rem; }
     .controls { display:flex; flex-wrap:wrap; gap:0.75rem; align-items:center; }
     .spacer { flex:1; min-width:40px; }
@@ -148,7 +148,7 @@
                 <div class="toolbar">
                   <div style="display:grid; gap:0.35rem; min-width:280px;">
                     <strong>Kontext nächstes Event</strong>
-                    <small class="hint" style="color:var(--text-muted);">Alle Einträge gelten für das kommende Event (aktuelles Roster). <code>Commitment=hard</code> = Fixplatz im nächsten Build; bei Event-Wechsel den Pool leeren.</small>
+                    <small class="hint" style="color:var(--text-muted);">Alle Einträge gelten für das kommende Event (aktuelles Roster). <code>Commitment=hard</code> = verbindliche Zusage / Fixplatz im nächsten Build; bei Event-Wechsel den Pool leeren.</small>
                   </div>
                   <div class="toolbar-meta">
                     <button id="resetBtn" class="ghost" style="border-color:var(--border);color:#b91c1c;">Zusage-Pool leeren</button>
@@ -184,7 +184,7 @@
                     <label>Verbindlichkeit
                       <select id="commitmentInput">
                         <option value="none">Nur Info</option>
-                        <option value="hard">Verbindlich (Fixplatz)</option>
+                        <option value="hard">Verbindlich (Commitment=hard)</option>
                       </select>
                     </label>
                     <label style="flex:1;min-width:200px;">Notiz (optional)
@@ -259,7 +259,7 @@
                     <div class="help-card">
                       <strong>Verbindlichkeit &amp; Trennung</strong>
                       <ul>
-                        <li><code>Commitment=hard</code> = Fixplatz im nächsten Roster-Build.</li>
+                        <li><code>Commitment=hard</code> = verbindliche Zusage / Fixplatz im nächsten Roster-Build.</li>
                         <li>Event-Zusagen sind unabhängig von <code>PrefGroup</code>; Reset leert nur den Zusage-Pool.</li>
                       </ul>
                     </div>
@@ -399,7 +399,7 @@
         const normalized = normalizeForcedSignup(forcedSignup);
         if (!normalized) return '';
         const sourceLabel = normalized.source ? (FORCED_SOURCE_LABELS[normalized.source] || normalized.source) : '';
-        const label = sourceLabel ? `Fixplatz · ${sourceLabel}` : 'Fixplatz';
+        const label = sourceLabel ? `verbindlich · ${sourceLabel}` : 'verbindlich';
         const tooltipParts = ['Verbindliche Zusage aus event_signups_next.csv'];
         if (sourceLabel) tooltipParts.push(`Quelle: ${sourceLabel}`);
         if (normalized.overbooked) tooltipParts.push('über Kapazität');
