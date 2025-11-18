@@ -28,6 +28,7 @@ from src.utils import (
     STARTERS_PER_GROUP,
     SUBS_PER_GROUP,
     GROUPS,
+    parse_event_date,
 )
 from src.alias_utils import load_alias_map, AliasResolutionError
 
@@ -363,6 +364,47 @@ def _current_local_dt() -> pd.Timestamp:
     return pd.Timestamp(datetime.now(TZ))
 
 
+def _infer_next_event_ts(events_df: pd.DataFrame) -> tuple[pd.Timestamp, Dict[str, object]]:
+    """Return a best-effort timestamp for the next DS event.
+
+    Heuristik:
+    - Nutze das maximale Event-Datum aus der Historie (EventID → Datum via
+      parse_event_date) und addiere das häufigste Intervall zwischen Events.
+    - Fallback auf 7 Tage, falls keine Intervalle vorhanden sind.
+    - Immer in lokale Zeitzone konvertieren.
+    """
+
+    parsed_dates = pd.to_datetime(
+        events_df["EventID"].map(parse_event_date), errors="coerce", utc=True
+    )
+    df = pd.DataFrame({"event_id": events_df["EventID"], "event_dt": parsed_dates})
+    df = df.dropna(subset=["event_dt"]).drop_duplicates(subset=["event_id"])
+    if df.empty:
+        ts = _current_local_dt()
+        return ts, {"source": "fallback_now", "last_event_id": None, "last_event_date": None}
+
+    df = df.sort_values("event_dt")
+    last_row = df.iloc[-1]
+    unique_dates = df["event_dt"].drop_duplicates().reset_index(drop=True)
+    if len(unique_dates) >= 2:
+        deltas = unique_dates.diff().dropna()
+        mode_delta = deltas.mode()
+        delta = mode_delta.iloc[0] if not mode_delta.empty else deltas.median()
+    else:
+        delta = pd.Timedelta(days=7)
+    if not isinstance(delta, pd.Timedelta) or delta <= pd.Timedelta(0):
+        delta = pd.Timedelta(days=7)
+
+    next_event_ts = (last_row.event_dt + delta).tz_convert(TZ)
+    meta = {
+        "source": "history_plus_interval",
+        "last_event_id": str(last_row.event_id),
+        "last_event_date": last_row.event_dt.isoformat(),
+        "interval_days": float(delta / pd.Timedelta(days=1)),
+    }
+    return next_event_ts, meta
+
+
 def _mark_absences_for_next_event(abs_df: pd.DataFrame, *, reference_ts: pd.Timestamp) -> pd.DataFrame:
     """Annotate absences with a stable "next event" rule.
 
@@ -460,6 +502,7 @@ def main():
     # 1) Daten laden
     norm_patterns = _normalize_event_patterns(args.events)
     events_df = _load_events(norm_patterns)
+    next_event_ts, next_event_meta = _infer_next_event_ts(events_df)
     alliance_df = _load_alliance(args.alliance)
 
     alias_map: Dict[str, str] = {}
@@ -487,6 +530,7 @@ def main():
             print(f"[warn] preferences nicht nutzbar: {e}")
 
     abs_df = None
+    active_abs_meta: Dict[str, Dict[str, str]] = {}
     absent_now: set[str] = set()
     absences_payload = {
         "schema": 1,
@@ -501,6 +545,12 @@ def main():
         "raw_count": 0,
         "active_for_next_event": 0,
         "players": [],
+    }
+    absence_debug["reference_event"] = {
+        "event_date": next_event_ts.isoformat(),
+        "source": next_event_meta.get("source"),
+        "last_event_id": next_event_meta.get("last_event_id"),
+        "last_event_date": next_event_meta.get("last_event_date"),
     }
     absence_conflicts: List[Dict] = []
     if args.absences:
@@ -561,7 +611,7 @@ def main():
     # 4) Abwesenheiten (nächstes Event) filtern
     if abs_df is not None and not abs_df.empty:
         now_ts = _current_local_dt()
-        abs_df = _mark_absences_for_next_event(abs_df, reference_ts=now_ts)
+        abs_df = _mark_absences_for_next_event(abs_df, reference_ts=next_event_ts)
 
         absences_payload["players"] = [
             {
@@ -582,14 +632,23 @@ def main():
         absence_debug["raw_count"] = int(len(abs_df))
         absence_debug["active_for_next_event"] = int(abs_df["is_absent_next_event"].sum())
         absence_debug["players"] = []
+        active_abs_meta: Dict[str, Dict[str, str]] = {}
         for row in abs_df.itertuples(index=False):
             if not getattr(row, "is_absent_next_event", False):
                 continue
             scope_norm = getattr(row, "scope_norm", "") or ""
             scope_label = scope_norm or ("open_range" if ((getattr(row, "From", "") or "") == "" and (getattr(row, "To", "") or "") == "") else "date_range")
+            canon_val = getattr(row, "canon", pd.NA)
+            if canon_val is not pd.NA and str(canon_val) not in active_abs_meta:
+                active_abs_meta[str(canon_val)] = {
+                    "reason": getattr(row, "Reason", "") or "",
+                    "from": getattr(row, "From", "") or "",
+                    "to": getattr(row, "To", "") or "",
+                    "scope": scope_norm,
+                }
             absence_debug["players"].append(
                 {
-                    "canonical": getattr(row, "canon", pd.NA),
+                    "canonical": canon_val,
                     "display": getattr(row, "DisplayName", "") or "",
                     "reason": getattr(row, "Reason", "") or "",
                     "scope": scope_label,
@@ -597,12 +656,27 @@ def main():
                 }
             )
 
+        probe_canon = to_canon("ilishelbymf")
+        probe_rows = abs_df[abs_df["canon"] == probe_canon] if probe_canon is not pd.NA else abs_df.iloc[0:0]
+        probe_from = probe_rows["From"].iloc[0] if not probe_rows.empty else ""
+        probe_to = probe_rows["To"].iloc[0] if not probe_rows.empty else ""
+        absence_debug["probe_ilishelbymf"] = {
+            "canonical": probe_canon if probe_canon is not pd.NA else "",
+            "found_in_csv": bool(len(probe_rows) > 0),
+            "active_for_next_event": bool(
+                probe_rows["is_absent_next_event"].any() if not probe_rows.empty else False
+            ),
+            "event_date": next_event_ts.isoformat(),
+            "from": probe_from or "",
+            "to": probe_to or "",
+        }
+
         absent_now = set(abs_df.loc[abs_df["is_absent_next_event"], "canon"].tolist())
         before = len(pool)
         pool = pool[~pool["canon"].isin(absent_now)].copy()
         print(
             "[info] absences filter: "
-            f"{before - len(pool)} ausgeschlossen (now={now_ts.isoformat()}, raw={absence_debug['raw_count']}, active={absence_debug['active_for_next_event']})"
+            f"{before - len(pool)} ausgeschlossen (ref_event={next_event_ts.isoformat()}, now={now_ts.isoformat()}, raw={absence_debug['raw_count']}, active={absence_debug['active_for_next_event']})"
         )
 
     hist_cols = [
@@ -1040,6 +1114,7 @@ def main():
             "noshow_count": _int_default(row.noshow_count, 0),
             "risk_penalty": _float_default(row.risk_penalty, 0.0),
         }
+        entry["is_absent_next_event"] = bool(row.Canonical in absent_now)
         callup_info = _detect_callup_recommendation(
             noshow_overall=_float_or_none(row.NoShowOverall),
             noshow_rolling=_float_or_none(row.NoShowRolling),
@@ -1096,6 +1171,27 @@ def main():
         )
 
     players_by_canon = {p["canon"]: p for p in players_payload}
+
+    if absent_now:
+        for canon in sorted(absent_now):
+            if canon in players_by_canon:
+                players_by_canon[canon]["is_absent_next_event"] = True
+                continue
+            meta = active_abs_meta.get(canon, {}) if active_abs_meta else {}
+            players_payload.append(
+                {
+                    "display": disp_map.get(canon, canon),
+                    "canon": canon,
+                    "group": None,
+                    "role": None,
+                    "is_absent_next_event": True,
+                    "absence_reason": meta.get("reason", ""),
+                    "absence_scope": meta.get("scope", ""),
+                    "absence_from": meta.get("from", ""),
+                    "absence_to": meta.get("to", ""),
+                }
+            )
+        players_by_canon = {p["canon"]: p for p in players_payload}
 
     if absent_now and not event_signups_df.empty:
         hard_conflicts = event_signups_df[

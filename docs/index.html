@@ -791,6 +791,16 @@
         html += '<p class="muted">Keine aktiven Absenzen für das nächste Event laut Builder.</p>';
       }
 
+      const probe = debugBlock.probe_ilishelbymf;
+      if (probe && typeof probe === 'object') {
+        const canon = canonicalNameJS(probe.canonical || '');
+        const found = probe.found_in_csv ? 'ja' : 'nein';
+        const active = probe.active_for_next_event ? 'ja' : 'nein';
+        const range = `${probe.from || '–'} → ${probe.to || '–'}`;
+        const eventLabel = probe.event_date ? `, Ref-Event: ${escapeHtml(probe.event_date)}` : '';
+        html += `<p class="muted">Probe ilishelbymf — gefunden: ${escapeHtml(found)}, aktiv: ${escapeHtml(active)}, canon: ${escapeHtml(canon)}, Zeitraum: ${escapeHtml(range)}${eventLabel}</p>`;
+      }
+
       const conflictsSafe = Array.isArray(conflicts) ? conflicts : [];
       if (conflictsSafe.length) {
         const items = conflictsSafe.map(c => {
@@ -1268,6 +1278,7 @@
             forced_signup: p.forced_signup || null,
             callup: normalizedCallup,
             callup_recommended: normalizedCallup ? Boolean(normalizedCallup.recommended) : Boolean(p.callup_recommended),
+            is_absent_next_event: Boolean(p.is_absent_next_event),
           };
         });
         state.playersByCanon = playersByCanon;
@@ -1278,6 +1289,12 @@
         if (!absencesApplied) {
           fetchAbsences();
         }
+        const activeAbsenceSet = new Set([
+          ...((state.absences.active || []).map(a => canonicalNameJS(a?.canon || a?.playerName || ''))),
+          ...(playersArray
+            .filter(p => p && p.is_absent_next_event)
+            .map(p => canonicalNameJS(p.canon || p.display || ''))),
+        ].filter(Boolean));
         const extraSignups = {
           A: (payload && payload.groups && Array.isArray(payload.groups.A?.extra_signups)) ? payload.groups.A.extra_signups : [],
           B: (payload && payload.groups && Array.isArray(payload.groups.B?.extra_signups)) ? payload.groups.B.extra_signups : [],
@@ -1362,6 +1379,8 @@
         const targets = ["A-Start","A-Ersatz","B-Start","B-Ersatz"];
         const buckets = Object.fromEntries(targets.map(k => [k, []]));
         rows.forEach(r=>{
+          const canonRow = canonicalNameJS(r.PlayerName || '');
+          if (canonRow && activeAbsenceSet.has(canonRow)) return;
           const key = `${r.Group}-${r.Role}`;
           if (buckets[key]) buckets[key].push(r);
         });
@@ -1480,7 +1499,17 @@
         }
 
         const signupMeta = payload.signup_pool || payload.event_signups || null;
-        renderExtraSignups(extraSignups, signupMeta, state.forcedDiagnostics);
+        const filteredExtraSignups = {
+          A: (extraSignups.A || []).filter(item => {
+            const canon = canonicalNameJS(item?.canon || item?.player || '');
+            return !(canon && activeAbsenceSet.has(canon));
+          }),
+          B: (extraSignups.B || []).filter(item => {
+            const canon = canonicalNameJS(item?.canon || item?.player || '');
+            return !(canon && activeAbsenceSet.has(canon));
+          }),
+        };
+        renderExtraSignups(filteredExtraSignups, signupMeta, state.forcedDiagnostics);
         renderForcedDiagnostics(state.forcedDiagnostics, signupMeta);
         updateCallupNote(state.callupMeta);
         updateCallupExportButton(state.callupMeta, state.callupCandidates);

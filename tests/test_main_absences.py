@@ -284,3 +284,89 @@ def test_absence_conflict_with_hard_commitment(monkeypatch, tmp_path):
     conflicts = payload.get("absence_conflicts") or []
     assert {c.get("canonical") for c in conflicts} == {"presentone"}
     assert captured["player_names"] == []
+
+
+def test_absence_debug_probe_and_roster_flag(monkeypatch, tmp_path):
+    data_dir = tmp_path / "data"
+    data_dir.mkdir()
+
+    _write_csv(
+        data_dir / "events.csv",
+        ["EventID", "Slot", "PlayerName", "RoleAtRegistration", "Teilgenommen"],
+        [["DS-2025-11-14-A", 1, "ilishelbymf", "Damage", 1]],
+    )
+
+    _write_csv(
+        data_dir / "alliance.csv",
+        ["PlayerName", "InAlliance"],
+        [["ilishelbymf", 1], ["PresentOne", 1]],
+    )
+
+    _write_csv(
+        data_dir / "absences.csv",
+        ["PlayerName", "From", "To", "InAlliance", "Reason"],
+        [["ilishelbymf", "2025-11-18", "2026-02-18", 1, "Trip"]],
+    )
+
+    captured: dict[str, object] = {}
+
+    def _fake_builder(df: pd.DataFrame, **kwargs) -> pd.DataFrame:
+        captured["player_names"] = sorted(df["PlayerName"].tolist())
+        return pd.DataFrame(
+            {
+                "PlayerName": df["PlayerName"],
+                "Group": ["A"] * len(df),
+                "Role": ["Start"] * len(df),
+                "NoShowOverall": [0.0] * len(df),
+                "NoShowRolling": [0.0] * len(df),
+                "risk_penalty": [0.0] * len(df),
+            }
+        )
+
+    def _capture_writer(out_dir, roster_df, json_payload):
+        captured["payload"] = json_payload
+        captured["roster"] = roster_df
+
+    # Erzwinge stabile Event-Referenz für Absenzen
+    monkeypatch.setattr(
+        main_mod, "_infer_next_event_ts", lambda df: (pd.Timestamp("2025-11-21", tz=main_mod.TZ), {"source": "test"})
+    )
+    monkeypatch.setattr(main_mod, "build_deterministic_roster", _fake_builder)
+    monkeypatch.setattr(main_mod, "_write_outputs", _capture_writer)
+
+    argv = [
+        "prog",
+        "--events",
+        "data/events.csv",
+        "--alliance",
+        "data/alliance.csv",
+        "--absences",
+        "data/absences.csv",
+        "--out",
+        "generated",
+    ]
+
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.setattr(sys, "argv", argv)
+
+    main_mod.main()
+
+    payload = captured.get("payload") or {}
+    groups = payload.get("groups", {})
+    players_in_groups = set()
+    for g in ["A", "B"]:
+        for role in ["Start", "Ersatz"]:
+            players_in_groups.update(groups.get(g, {}).get(role, []))
+
+    assert "ilishelbymf" not in players_in_groups
+
+    absence_debug = payload.get("absence_debug", {})
+    probe = absence_debug.get("probe_ilishelbymf", {})
+    assert probe.get("found_in_csv") is True
+    assert probe.get("active_for_next_event") is True
+    assert "2025-11-21" in str(probe.get("event_date"))
+
+    players = payload.get("players") or []
+    il_entries = [p for p in players if (p.get("canon") == "ilishelbymf")]
+    assert il_entries, "absent player metadata missing from payload"
+    assert all(p.get("is_absent_next_event") for p in il_entries)
