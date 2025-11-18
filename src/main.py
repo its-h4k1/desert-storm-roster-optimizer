@@ -21,6 +21,7 @@ from typing import List, Dict, Optional
 import pandas as pd
 
 from src.config import get_config
+from src.callup_config import load_callup_config
 from src.utils import (
     canonical_name,
     build_deterministic_roster,
@@ -39,21 +40,6 @@ from src.stats import (
 
 EVENT_RE = re.compile(r"^DS-\d{4}-\d{2}-\d{2}-[A-Z]$", re.IGNORECASE)
 TZ = ZoneInfo("Europe/Zurich")
-
-CALLUP_RULES = {
-    # Mindestmenge an Events, ab der Rolling/Overall-Metriken ernst genommen werden
-    "min_events": 3,
-    # Low-N-Heuristik (<= low_n_max_events → vorsorgliche Callup-Empfehlung)
-    "low_n_max_events": 2,
-    # High overall: No-Show-Rate über die gesamte Historie ist hoch
-    "overall_high": 0.40,
-    # High rolling: No-Show-Rate der letzten Events (gewichtet) ist hoch
-    "rolling_high": 0.50,
-    # Rolling-Uptick: Rolling klar schlechter als Overall
-    "rolling_uptick_delta": 0.10,
-    # Rolling-Uptick nur bewerten, wenn Rolling mindestens dieses Niveau erreicht
-    "rolling_uptick_min": 0.25,
-}
 
 
 # --------------------------
@@ -413,6 +399,7 @@ def main():
     args = ap.parse_args()
 
     cfg = get_config()
+    callup_config, callup_config_meta = load_callup_config()
     out_dir = Path(args.out)
 
     # 1) Daten laden
@@ -847,7 +834,7 @@ def main():
         overall = noshow_overall if noshow_overall is not None else None
         rolling = noshow_rolling if noshow_rolling is not None else None
 
-        if ev is not None and ev <= CALLUP_RULES["low_n_max_events"]:
+        if ev is not None and ev <= callup_config.low_n_max_events:
             reasons.append(
                 {
                     "code": "low_n",
@@ -855,9 +842,9 @@ def main():
                 }
             )
 
-        meets_event_min = ev is not None and ev >= CALLUP_RULES["min_events"]
+        meets_event_min = ev is not None and ev >= callup_config.min_events
 
-        if meets_event_min and overall is not None and overall >= CALLUP_RULES["overall_high"]:
+        if meets_event_min and overall is not None and overall >= callup_config.high_overall_threshold:
             reasons.append(
                 {
                     "code": "high_overall",
@@ -865,7 +852,7 @@ def main():
                 }
             )
 
-        if meets_event_min and rolling is not None and rolling >= CALLUP_RULES["rolling_high"]:
+        if meets_event_min and rolling is not None and rolling >= callup_config.high_rolling_threshold:
             reasons.append(
                 {
                     "code": "high_rolling",
@@ -877,8 +864,8 @@ def main():
             meets_event_min
             and rolling is not None
             and overall is not None
-            and rolling >= CALLUP_RULES["rolling_uptick_min"]
-            and rolling >= overall + CALLUP_RULES["rolling_uptick_delta"]
+            and rolling >= callup_config.rolling_uptick_min
+            and rolling >= overall + callup_config.rolling_uptick_delta
         ):
             reasons.append(
                 {
@@ -1101,11 +1088,23 @@ def main():
         "extra_entries_by_group": signups_meta["extra_entries_by_group"],
     }
 
+    callup_config_snapshot = callup_config.to_snapshot()
+    callup_rules_legacy = {
+        "min_events": callup_config.min_events,
+        "low_n_max_events": callup_config.low_n_max_events,
+        "overall_high": callup_config.high_overall_threshold,
+        "rolling_high": callup_config.high_rolling_threshold,
+        "rolling_uptick_delta": callup_config.rolling_uptick_delta,
+        "rolling_uptick_min": callup_config.rolling_uptick_min,
+    }
+
     callup_stats = {
-        "schema": 1,
+        "schema": 2,
         "recommended_total": int(callup_recommended_total),
         "reasons": callup_reason_counts,
-        "rules": CALLUP_RULES,
+        "rules": callup_rules_legacy,
+        "config_snapshot": callup_config_snapshot,
+        "config_source": callup_config_meta,
     }
 
     json_payload = {

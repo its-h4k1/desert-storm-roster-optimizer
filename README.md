@@ -59,12 +59,16 @@ keinen Build-Schritt.
 
 ### Callup-Logik & CSV-Export
 
-- Die Callup-Regeln sind in `src/main.py` als `CALLUP_RULES` gebündelt. Defaults:
-  - `min_events = 3` (ab hier werden Raten ernst genommen)
+- Die Callup-Regeln liegen versioniert in `data/callup_config.yml` (YAML/JSON). Felder (Defaults entsprechen der bisherigen
+  Logik):
+  - `min_events = 3` (ab hier werden Rolling/Overall-Raten ernst genommen)
   - `low_n_max_events = 2` (≤2 Events werden vorsorglich als Callup markiert)
-  - `overall_high = 0.40` (overall ≥40 % löst Callup aus)
-  - `rolling_high = 0.50` (rolling ≥50 % löst Callup aus)
+  - `high_overall_threshold = 0.40` (overall ≥40 % löst Callup aus)
+  - `high_rolling_threshold = 0.50` (rolling ≥50 % löst Callup aus)
   - `rolling_uptick_min = 0.25` + `rolling_uptick_delta = 0.10` (rolling mindestens 25 % und ≥10 pp über overall)
+- Der Builder lädt die Datei beim Start. Fehlende Datei oder Felder → Defaults + Warnung, Build läuft weiter. Die genutzte
+  Konfiguration landet als Snapshot in `callup_stats.config_snapshot` (inkl. `config_source` für Metadaten), sodass UIs die
+  Schwellen anzeigen können.
 - Rolling wird stärker gewichtet: Sowohl „high rolling“ als auch „rolling uptick“ können eine Empfehlung auslösen,
   auch wenn overall noch unterhalb der 40 %-Schwelle liegt. `callup_reason` codiert u. a. `high_rolling`,
   `rolling_uptick`, `high_overall` und `low_n`; `callup_stats.reasons` zählt diese Gründe.
