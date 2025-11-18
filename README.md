@@ -57,6 +57,22 @@ keinen Build-Schritt.
   `raw.githubusercontent.com` und rendert vollständig clientseitig.
 - Lokal: `http://localhost:4173/index.html` (Server siehe oben).
 
+### Callup-Logik & CSV-Export
+
+- Die Callup-Regeln sind in `src/main.py` als `CALLUP_RULES` gebündelt. Defaults:
+  - `min_events = 3` (ab hier werden Raten ernst genommen)
+  - `low_n_max_events = 2` (≤2 Events werden vorsorglich als Callup markiert)
+  - `overall_high = 0.40` (overall ≥40 % löst Callup aus)
+  - `rolling_high = 0.50` (rolling ≥50 % löst Callup aus)
+  - `rolling_uptick_min = 0.25` + `rolling_uptick_delta = 0.10` (rolling mindestens 25 % und ≥10 pp über overall)
+- Rolling wird stärker gewichtet: Sowohl „high rolling“ als auch „rolling uptick“ können eine Empfehlung auslösen,
+  auch wenn overall noch unterhalb der 40 %-Schwelle liegt. `callup_reason` codiert u. a. `high_rolling`,
+  `rolling_uptick`, `high_overall` und `low_n`; `callup_stats.reasons` zählt diese Gründe.
+- In der Roster-UI steht ein Button „Callup-Kandidaten als CSV exportieren“ (neben dem Callup-Toggle):
+  - Exportiert alle empfohlenen Spieler (laut `latest.json`) direkt aus dem geladenen Payload als CSV.
+  - Spaltenreihenfolge: `PlayerName,Group,Role,EventsSeen,NoShowsTotal,NoShowOverall,NoShowRolling,CallupReason,LastSeenDate,LastNoShowDate`.
+  - Nützlich, um Callup-Listen in anderen Tools weiterzugeben oder separat zu filtern.
+
 ### Admin Startseite & CSV-Tools (`docs/admin/index.html`)
 
 - Gemeinsame Shell mit Navigation, direktem Zugriff auf `data/alliance.csv`, `data/aliases.csv`,

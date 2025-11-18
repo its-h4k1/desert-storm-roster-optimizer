@@ -41,12 +41,18 @@ EVENT_RE = re.compile(r"^DS-\d{4}-\d{2}-\d{2}-[A-Z]$", re.IGNORECASE)
 TZ = ZoneInfo("Europe/Zurich")
 
 CALLUP_RULES = {
-    "HIGH_OVERALL": 0.4,
-    "HIGH_ROLLING": 0.5,
-    "MIN_EVENTS": 3,
-    "LOW_N": 2,
-    "ROLLING_MIN": 0.25,
-    "DELTA_UPTICK": 0.1,
+    # Mindestmenge an Events, ab der Rolling/Overall-Metriken ernst genommen werden
+    "min_events": 3,
+    # Low-N-Heuristik (<= low_n_max_events → vorsorgliche Callup-Empfehlung)
+    "low_n_max_events": 2,
+    # High overall: No-Show-Rate über die gesamte Historie ist hoch
+    "overall_high": 0.40,
+    # High rolling: No-Show-Rate der letzten Events (gewichtet) ist hoch
+    "rolling_high": 0.50,
+    # Rolling-Uptick: Rolling klar schlechter als Overall
+    "rolling_uptick_delta": 0.10,
+    # Rolling-Uptick nur bewerten, wenn Rolling mindestens dieses Niveau erreicht
+    "rolling_uptick_min": 0.25,
 }
 
 
@@ -517,6 +523,7 @@ def main():
         "w_show_rate",
         "w_noshow_rate",
         "last_event",
+        "last_noshow_event",
     ]
     pool = pool.merge(hist[hist_cols], on="canon", how="left")
 
@@ -757,6 +764,15 @@ def main():
         .dt.strftime("%Y-%m-%d")
         .fillna("")
     )
+    roster["last_noshow_event"] = pd.to_datetime(
+        _map_from_pool("last_noshow_event"), utc=True, errors="coerce"
+    )
+    roster["LastNoShowDate"] = (
+        roster["last_noshow_event"]
+        .dt.tz_convert(TZ)
+        .dt.strftime("%Y-%m-%d")
+        .fillna("")
+    )
 
     out_df = roster[
         [
@@ -767,6 +783,7 @@ def main():
             "NoShowOverall",
             "NoShowRolling",
             "LastSeenDate",
+            "LastNoShowDate",
             "events_seen",
             "noshow_count",
             "risk_penalty",
@@ -830,7 +847,7 @@ def main():
         overall = noshow_overall if noshow_overall is not None else None
         rolling = noshow_rolling if noshow_rolling is not None else None
 
-        if ev is not None and ev <= CALLUP_RULES["LOW_N"]:
+        if ev is not None and ev <= CALLUP_RULES["low_n_max_events"]:
             reasons.append(
                 {
                     "code": "low_n",
@@ -838,34 +855,40 @@ def main():
                 }
             )
 
-        if ev is not None and ev >= CALLUP_RULES["MIN_EVENTS"]:
-            if overall is not None and overall >= CALLUP_RULES["HIGH_OVERALL"]:
-                reasons.append(
-                    {
-                        "code": "high_overall",
-                        "label": f"High No-Show overall {_pct_label(overall)}",
-                    }
-                )
-            if rolling is not None and rolling >= CALLUP_RULES["HIGH_ROLLING"]:
-                reasons.append(
-                    {
-                        "code": "high_rolling",
-                        "label": f"High No-Show rolling {_pct_label(rolling)}",
-                    }
-                )
+        meets_event_min = ev is not None and ev >= CALLUP_RULES["min_events"]
 
-        if rolling is not None and overall is not None:
-            uptick_ref = max(CALLUP_RULES["ROLLING_MIN"], overall + CALLUP_RULES["DELTA_UPTICK"])
-            if rolling >= uptick_ref:
-                reasons.append(
-                    {
-                        "code": "recent_uptick",
-                        "label": (
-                            "Kürzliche Ausfälle: "
-                            f"rolling {_pct_label(rolling)} vs. overall {_pct_label(overall)}"
-                        ),
-                    }
-                )
+        if meets_event_min and overall is not None and overall >= CALLUP_RULES["overall_high"]:
+            reasons.append(
+                {
+                    "code": "high_overall",
+                    "label": f"High No-Show overall {_pct_label(overall)}",
+                }
+            )
+
+        if meets_event_min and rolling is not None and rolling >= CALLUP_RULES["rolling_high"]:
+            reasons.append(
+                {
+                    "code": "high_rolling",
+                    "label": f"High No-Show rolling {_pct_label(rolling)}",
+                }
+            )
+
+        if (
+            meets_event_min
+            and rolling is not None
+            and overall is not None
+            and rolling >= CALLUP_RULES["rolling_uptick_min"]
+            and rolling >= overall + CALLUP_RULES["rolling_uptick_delta"]
+        ):
+            reasons.append(
+                {
+                    "code": "rolling_uptick",
+                    "label": (
+                        "Rolling-Uptick: "
+                        f"rolling {_pct_label(rolling)} vs. overall {_pct_label(overall)}"
+                    ),
+                }
+            )
 
         return {"recommended": bool(reasons), "reasons": reasons}
 
@@ -918,6 +941,7 @@ def main():
             "noshow_overall": _float_default(row.NoShowOverall, 0.0),
             "noshow_rolling": _float_default(row.NoShowRolling, 0.0),
             "last_seen": row.LastSeenDate,
+            "last_noshow_date": row.LastNoShowDate or None,
             "events_seen": _int_default(row.events_seen, 0),
             "noshow_count": _int_default(row.noshow_count, 0),
             "risk_penalty": _float_default(row.risk_penalty, 0.0),
