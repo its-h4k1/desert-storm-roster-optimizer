@@ -176,12 +176,13 @@ def _load_absences(path: str) -> pd.DataFrame:
     df = pd.read_csv(path, dtype=str)
     if "PlayerName" not in df.columns:
         raise SystemExit("[fatal] absences.csv benötigt Spalte 'PlayerName']")
-    for col in ["From", "To"]:
+    for col in ["From", "To", "Reason"]:
         if col not in df.columns:
             df[col] = ""
 
     _ensure_in_alliance_column(df, context="absences.csv")
     df = df[df["InAlliance"] == 1].copy()
+    df["DisplayName"] = df["PlayerName"].fillna("").astype(str)
     df["canon"] = df["PlayerName"].map(canonical_name)
 
     def _parse_local(s: str) -> Optional[pd.Timestamp]:
@@ -195,7 +196,7 @@ def _load_absences(path: str) -> pd.DataFrame:
 
     df["From_ts"] = df["From"].map(_parse_local)
     df["To_ts"] = df["To"].map(_parse_local)
-    return df[["canon", "From_ts", "To_ts", "Reason"]].copy()
+    return df[["DisplayName", "canon", "From", "To", "From_ts", "To_ts", "Reason", "InAlliance"]].copy()
 
 
 def _load_event_signups(path: str, to_canon) -> tuple[pd.DataFrame, Dict[str, int]]:
@@ -433,9 +434,18 @@ def main():
 
     abs_df = None
     absent_now: set[str] = set()
+    absences_payload = {
+        "schema": 1,
+        "source": str(Path(args.absences)) if args.absences else "",
+        "total_entries": 0,
+        "active_entries": 0,
+        "players": [],
+    }
     if args.absences:
         try:
             abs_df = _load_absences(args.absences)
+            abs_df["canon"] = abs_df["canon"].map(to_canon)
+            abs_df = abs_df[abs_df["canon"].notna()].copy()
             print(f"[ok] absences loaded: {len(abs_df)} Einträge")
         except Exception as e:
             print(f"[warn] absences nicht nutzbar: {e}")
@@ -485,6 +495,7 @@ def main():
     # 4) Abwesenheiten (heute) filtern
     if abs_df is not None and not abs_df.empty:
         now_ts = _current_local_dt()
+
         def _in_range(row) -> bool:
             f, t = row["From_ts"], row["To_ts"]
             if f is not None and pd.notna(f) and now_ts < f:
@@ -492,8 +503,25 @@ def main():
             if t is not None and pd.notna(t) and now_ts > t:
                 return False
             return True
-        abs_df["is_absent_now"] = abs_df.apply(_in_range, axis=1)
-        absent_now = set(abs_df.loc[abs_df["is_absent_now"], "canon"].tolist())
+
+        abs_df["is_absent_next_event"] = abs_df.apply(_in_range, axis=1)
+        absences_payload["players"] = [
+            {
+                "name": getattr(row, "DisplayName", ""),
+                "canonical": getattr(row, "canon", pd.NA),
+                "reason": getattr(row, "Reason", "") or "",
+                "scope": "next_event",
+                "from": getattr(row, "From", "") or "",
+                "to": getattr(row, "To", "") or "",
+                "in_alliance": int(getattr(row, "InAlliance", 0)),
+                "is_active_next_event": bool(getattr(row, "is_absent_next_event", False)),
+            }
+            for row in abs_df.itertuples(index=False)
+        ]
+        absences_payload["total_entries"] = int(len(abs_df))
+        absences_payload["active_entries"] = int(abs_df["is_absent_next_event"].sum())
+
+        absent_now = set(abs_df.loc[abs_df["is_absent_next_event"], "canon"].tolist())
         before = len(pool)
         pool = pool[~pool["canon"].isin(absent_now)].copy()
         print(f"[info] absences filter: {before - len(pool)} ausgeschlossen (now={now_ts.isoformat()})")
@@ -1015,6 +1043,11 @@ def main():
         "hard_commitments": hard_signup_total,
     }
 
+    if absences_payload.get("players"):
+        absences_payload["conflicting_forced_signups"] = [
+            item for item in invalid_forced_signups if item.get("reason") == "absent"
+        ]
+
     if not event_signups_df.empty:
         seen_extra = set()
         for row in event_signups_df.itertuples(index=False):
@@ -1130,6 +1163,7 @@ def main():
         "alliance_pool": alliance_payload,
         "players": players_payload,
         "callup_stats": callup_stats,
+        "absences": absences_payload,
     }
 
     _write_outputs(out_dir, out_df, json_payload)
