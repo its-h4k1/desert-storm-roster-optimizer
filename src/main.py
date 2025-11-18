@@ -922,17 +922,27 @@ def main():
             "noshow_count": _int_default(row.noshow_count, 0),
             "risk_penalty": _float_default(row.risk_penalty, 0.0),
         }
-        entry["callup"] = _detect_callup_recommendation(
+        callup_info = _detect_callup_recommendation(
             noshow_overall=_float_or_none(row.NoShowOverall),
             noshow_rolling=_float_or_none(row.NoShowRolling),
             events_seen=_int_default(row.events_seen, None),
         )
-        if entry["callup"].get("recommended"):
+        entry["callup"] = callup_info
+        entry["callup_recommended"] = bool(callup_info.get("recommended"))
+
+        callup_reason_codes: List[str] = []
+        for reason in callup_info.get("reasons", []):
+            if not isinstance(reason, dict):
+                continue
+            code = str(reason.get("code") or "unknown")
+            callup_reason_codes.append(code)
+
+        entry["callup_reason_codes"] = callup_reason_codes
+        entry["callup_reason"] = callup_reason_codes[0] if callup_reason_codes else None
+
+        if entry["callup_recommended"]:
             callup_recommended_total += 1
-            for reason in entry["callup"].get("reasons", []):
-                if not isinstance(reason, dict):
-                    continue
-                code = str(reason.get("code") or "unknown")
+            for code in callup_reason_codes:
                 callup_reason_counts[code] = callup_reason_counts.get(code, 0) + 1
         if row.Canonical in forced_by_canon:
             entry["forced_signup"] = {

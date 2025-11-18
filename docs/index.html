@@ -166,7 +166,7 @@
       absences: { entries: [], active: [], error: null, loading: true },
       playersByCanon: {},
       forcedDiagnostics: { forced: [], invalid: [], overbooked: [] },
-      callupMeta: { available: false, recommendedTotal: null, reasonCounts: {}, fromStats: false },
+      callupMeta: { available: false, recommendedTotal: null, reasonCounts: {}, fromStats: false, hasStats: false },
     };
     const rosterRoot = document.getElementById("roster-root");
     const playerMetaToggle = document.getElementById("player-meta-toggle");
@@ -240,6 +240,48 @@
       return labels.join(" · ");
     }
 
+    function normalizeCallup(player) {
+      const p = (player && typeof player === 'object') ? player : null;
+      const rawCallup = (p && p.callup && typeof p.callup === 'object') ? p.callup : null;
+      const base = rawCallup && typeof rawCallup === 'object' ? { ...rawCallup } : {};
+      const recommendedRaw = (rawCallup && typeof rawCallup.recommended === 'boolean') ? Boolean(rawCallup.recommended) : null;
+      const recommendedFlag = (p && typeof p.callup_recommended === 'boolean') ? Boolean(p.callup_recommended) : null;
+
+      const normalizedReasons = [];
+      const seenCodes = new Set();
+      const rawReasons = Array.isArray(rawCallup?.reasons) ? rawCallup.reasons : [];
+      rawReasons.forEach(reason => {
+        if (!reason || typeof reason !== 'object') return;
+        const code = String(reason.code || '').trim();
+        const label = reason.label || code || 'Callup empfohlen';
+        if (code) seenCodes.add(code);
+        normalizedReasons.push({ code: code || 'unknown', label });
+      });
+
+      const reasonCodes = Array.isArray(p?.callup_reason_codes) ? p.callup_reason_codes : [];
+      const singleReason = (p && typeof p.callup_reason === 'string' && p.callup_reason.trim()) ? [p.callup_reason] : [];
+      [...reasonCodes, ...singleReason].forEach(code => {
+        if (code === null || code === undefined) return;
+        const normalized = String(code || 'unknown').trim() || 'unknown';
+        if (normalized && !seenCodes.has(normalized)) {
+          seenCodes.add(normalized);
+          normalizedReasons.push({ code: normalized, label: normalized });
+        }
+      });
+
+      const recommended = (recommendedRaw !== null)
+        ? recommendedRaw
+        : (recommendedFlag !== null ? recommendedFlag : normalizedReasons.length > 0);
+
+      if (!recommended && normalizedReasons.length === 0 && !rawCallup && recommendedFlag === null) {
+        return null;
+      }
+
+      base.recommended = Boolean(recommended);
+      base.reasons = normalizedReasons;
+      return base;
+    }
+
     function buildCallupBadge(callup) {
       if (!callup || !callup.recommended) return "";
       const reasonText = formatCallupReasons(callup);
@@ -257,12 +299,13 @@
         : null;
       const statsCount = Number.isFinite(statsCountRaw) ? statsCountRaw : null;
       const statsReasons = (stats && stats.reasons && typeof stats.reasons === 'object') ? stats.reasons : null;
+      const hasStats = Boolean(stats);
 
       let derivedCount = 0;
       const derivedReasons = {};
       playersArray.forEach(p => {
         if (!p || typeof p !== 'object') return;
-        const callup = p.callup;
+        const callup = normalizeCallup(p);
         const recommended = Boolean(callup && callup.recommended === true);
         if (!recommended) return;
         derivedCount += 1;
@@ -277,9 +320,9 @@
 
       const recommendedTotal = statsCount != null ? statsCount : derivedCount;
       const reasonCounts = statsReasons || derivedReasons;
-      const available = Boolean(stats || derivedCount > 0 || playersArray.some(p => p && p.callup));
+      const available = Boolean(hasStats || derivedCount > 0 || playersArray.some(p => normalizeCallup(p)));
 
-      return { available, recommendedTotal, reasonCounts, fromStats: Boolean(stats), schemaVersion };
+      return { available, recommendedTotal, reasonCounts, fromStats: Boolean(hasStats && statsCount != null), hasStats, schemaVersion };
     }
 
     function updateCallupNote(meta) {
@@ -290,13 +333,13 @@
         return;
       }
 
-      const available = Boolean(meta && meta.available);
+      const hasStats = Boolean(meta && meta.hasStats);
       const recommendedTotal = Number.isFinite(meta?.recommendedTotal) ? Number(meta.recommendedTotal) : null;
       let text = '';
-      if (!available) {
-        text = 'Callup-Empfehlungen: nicht im latest.json enthalten.';
+      if (!hasStats) {
+        text = 'Callup-Empfehlungen: nicht verfügbar (ältere schema-Version).';
       } else if (recommendedTotal === 0) {
-        text = 'Callup-Empfehlungen: keine Spieler empfohlen (laut latest.json).';
+        text = 'Callup-Empfehlungen: keine Spieler empfohlen.';
       } else if (recommendedTotal != null && recommendedTotal > 0) {
         text = `Callup-Empfehlungen: ${recommendedTotal} Spieler empfohlen.`;
       }
@@ -872,7 +915,12 @@
         const playersMap = Object.fromEntries(
           playersArray
             .filter(p => p && typeof p === "object" && typeof p.display === "string")
-            .map(p => [p.display, p])
+            .map(p => {
+              const normalizedCallup = normalizeCallup(p);
+              const merged = { ...p };
+              if (normalizedCallup) merged.callup = normalizedCallup;
+              return [p.display, merged];
+            })
         );
         const playersByCanon = {};
         playersArray.forEach(p => {
@@ -880,6 +928,7 @@
           const canonSource = typeof p.canon === "string" && p.canon.trim() ? p.canon : p.display;
           const canon = canonicalNameJS(canonSource || "");
           if (!canon) return;
+          const normalizedCallup = normalizeCallup(p);
           playersByCanon[canon] = {
             display: p.display,
             group: p.group,
@@ -888,7 +937,8 @@
             event_signup: p.event_signup || null,
             has_forced_signup: Boolean(p.has_forced_signup || p.forced_signup),
             forced_signup: p.forced_signup || null,
-            callup: p.callup || null,
+            callup: normalizedCallup,
+            callup_recommended: normalizedCallup ? Boolean(normalizedCallup.recommended) : Boolean(p.callup_recommended),
           };
         });
         state.playersByCanon = playersByCanon;
@@ -1037,8 +1087,9 @@
             const reasonHint = badge.reason ? ` · badge=${badge.reason}` : "";
             const tooltip = `${tip}${reasonHint}`.replace(/"/g, '&quot;');
             let nameHTML = `${r.PlayerName || ""}`;
+            const normalizedCallup = normalizeCallup(p);
             const forcedBadge = p ? buildFixBadge(p.forced_signup || (p.has_forced_signup ? { commitment: 'hard', source: p.event_signup?.source } : null)) : '';
-            const callupBadge = p ? buildCallupBadge(p.callup) : '';
+            const callupBadge = p ? buildCallupBadge(normalizedCallup) : '';
             if (noData) {
               nameHTML += ' <span class="tag tag-nd" title="Keine Historie – events_seen = 0">No&nbsp;Data</span>';
             }
