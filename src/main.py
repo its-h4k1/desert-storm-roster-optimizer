@@ -176,7 +176,7 @@ def _load_absences(path: str) -> pd.DataFrame:
     df = pd.read_csv(path, dtype=str)
     if "PlayerName" not in df.columns:
         raise SystemExit("[fatal] absences.csv benötigt Spalte 'PlayerName']")
-    for col in ["From", "To", "Reason"]:
+    for col in ["From", "To", "Reason", "Scope"]:
         if col not in df.columns:
             df[col] = ""
 
@@ -186,6 +186,10 @@ def _load_absences(path: str) -> pd.DataFrame:
     df["canon"] = df["PlayerName"].map(canonical_name)
 
     def _parse_local(s: str) -> Optional[pd.Timestamp]:
+        if pd.isna(s):
+            return None
+        if not isinstance(s, str):
+            s = str(s)
         s = (s or "").strip()
         if not s:
             return None
@@ -196,7 +200,20 @@ def _load_absences(path: str) -> pd.DataFrame:
 
     df["From_ts"] = df["From"].map(_parse_local)
     df["To_ts"] = df["To"].map(_parse_local)
-    return df[["DisplayName", "canon", "From", "To", "From_ts", "To_ts", "Reason", "InAlliance"]].copy()
+    df["Scope"] = df["Scope"].fillna("").astype(str)
+    return df[
+        [
+            "DisplayName",
+            "canon",
+            "From",
+            "To",
+            "From_ts",
+            "To_ts",
+            "Reason",
+            "InAlliance",
+            "Scope",
+        ]
+    ].copy()
 
 
 def _load_event_signups(path: str, to_canon) -> tuple[pd.DataFrame, Dict[str, int]]:
@@ -346,6 +363,39 @@ def _current_local_dt() -> pd.Timestamp:
     return pd.Timestamp(datetime.now(TZ))
 
 
+def _mark_absences_for_next_event(abs_df: pd.DataFrame, *, reference_ts: pd.Timestamp) -> pd.DataFrame:
+    """Annotate absences with a stable "next event" rule.
+
+    Regel (explizit dokumentiert, da Admin-UI das genauso kommunizieren soll):
+    - Falls die optionale Spalte ``Scope`` (case-insensitive) den Wert
+      ``next_event`` trägt → Absenz gilt immer für das nächste DS-Event.
+    - Falls weder ``From`` noch ``To`` gesetzt sind → ebenfalls "next_event"
+      (Kurz-Notiz ohne Datumsbindung).
+    - Ansonsten gilt die Datums-Spanne relativ zum Build-Zeitpunkt
+      ``reference_ts`` (lokale Zeitzone): Von/To werden als inklusiv gewertet.
+    """
+
+    df = abs_df.copy()
+    df["scope_norm"] = df["Scope"].fillna("").astype(str).str.strip().str.lower()
+    scope_next = df["scope_norm"] == "next_event"
+
+    from_blank = df["From"].fillna("").astype(str).str.strip() == ""
+    to_blank = df["To"].fillna("").astype(str).str.strip() == ""
+    scope_empty = from_blank & to_blank
+
+    def _range_active(row) -> bool:
+        f, t = row["From_ts"], row["To_ts"]
+        if f is not None and pd.notna(f) and reference_ts < f:
+            return False
+        if t is not None and pd.notna(t) and reference_ts > t:
+            return False
+        return True
+
+    in_range = df.apply(_range_active, axis=1)
+    df["is_absent_next_event"] = scope_next | scope_empty | in_range
+    return df
+
+
 # --------------------------
 # Writer
 # --------------------------
@@ -388,7 +438,11 @@ def main():
     ap.add_argument("--events", nargs="+", required=True, help="Glob-Pattern(s) für Event-CSV(s), z. B. data/*.csv (multiline erlaubt)")
     ap.add_argument("--alliance", required=True, help="Pfad zu data/alliance.csv")
     ap.add_argument("--aliases", default="", help="Pfad zu data/aliases.csv (optional)")
-    ap.add_argument("--absences", default="", help="Pfad zu data/absences.csv (optional)")
+    ap.add_argument(
+        "--absences",
+        default="data/absences.csv",
+        help="Pfad zu data/absences.csv (optional)",
+    )
     ap.add_argument("--preferences", default="", help="Pfad zu data/preferences.csv (optional)")
     ap.add_argument(
         "--event-signups",
@@ -441,14 +495,26 @@ def main():
         "active_entries": 0,
         "players": [],
     }
+    absence_debug = {
+        "schema": 1,
+        "source": str(Path(args.absences)) if args.absences else "",
+        "raw_count": 0,
+        "active_for_next_event": 0,
+        "players": [],
+    }
+    absence_conflicts: List[Dict] = []
     if args.absences:
-        try:
-            abs_df = _load_absences(args.absences)
-            abs_df["canon"] = abs_df["canon"].map(to_canon)
-            abs_df = abs_df[abs_df["canon"].notna()].copy()
-            print(f"[ok] absences loaded: {len(abs_df)} Einträge")
-        except Exception as e:
-            print(f"[warn] absences nicht nutzbar: {e}")
+        abs_path = Path(args.absences)
+        if not abs_path.exists():
+            print(f"[info] absences: {abs_path} fehlt – überspringe")
+        else:
+            try:
+                abs_df = _load_absences(args.absences)
+                abs_df["canon"] = abs_df["canon"].map(to_canon)
+                abs_df = abs_df[abs_df["canon"].notna()].copy()
+                print(f"[ok] absences loaded: {len(abs_df)} Einträge")
+            except Exception as e:
+                print(f"[warn] absences nicht nutzbar: {e}")
 
     event_signups_df, event_signup_load_meta = _load_event_signups(args.event_signups, to_canon)
     print(
@@ -492,25 +558,17 @@ def main():
         pool = pool.drop(columns=["PrefGroup", "PrefMode", "PrefBoost"])
         pool = pool.merge(prefs_df, on="canon", how="left")
 
-    # 4) Abwesenheiten (heute) filtern
+    # 4) Abwesenheiten (nächstes Event) filtern
     if abs_df is not None and not abs_df.empty:
         now_ts = _current_local_dt()
+        abs_df = _mark_absences_for_next_event(abs_df, reference_ts=now_ts)
 
-        def _in_range(row) -> bool:
-            f, t = row["From_ts"], row["To_ts"]
-            if f is not None and pd.notna(f) and now_ts < f:
-                return False
-            if t is not None and pd.notna(t) and now_ts > t:
-                return False
-            return True
-
-        abs_df["is_absent_next_event"] = abs_df.apply(_in_range, axis=1)
         absences_payload["players"] = [
             {
                 "name": getattr(row, "DisplayName", ""),
                 "canonical": getattr(row, "canon", pd.NA),
                 "reason": getattr(row, "Reason", "") or "",
-                "scope": "next_event",
+                "scope": getattr(row, "scope_norm", "") or "",  # vgl. _mark_absences_for_next_event
                 "from": getattr(row, "From", "") or "",
                 "to": getattr(row, "To", "") or "",
                 "in_alliance": int(getattr(row, "InAlliance", 0)),
@@ -521,10 +579,31 @@ def main():
         absences_payload["total_entries"] = int(len(abs_df))
         absences_payload["active_entries"] = int(abs_df["is_absent_next_event"].sum())
 
+        absence_debug["raw_count"] = int(len(abs_df))
+        absence_debug["active_for_next_event"] = int(abs_df["is_absent_next_event"].sum())
+        absence_debug["players"] = []
+        for row in abs_df.itertuples(index=False):
+            if not getattr(row, "is_absent_next_event", False):
+                continue
+            scope_norm = getattr(row, "scope_norm", "") or ""
+            scope_label = scope_norm or ("open_range" if ((getattr(row, "From", "") or "") == "" and (getattr(row, "To", "") or "") == "") else "date_range")
+            absence_debug["players"].append(
+                {
+                    "canonical": getattr(row, "canon", pd.NA),
+                    "display": getattr(row, "DisplayName", "") or "",
+                    "reason": getattr(row, "Reason", "") or "",
+                    "scope": scope_label,
+                    "source": str(Path(args.absences)) if args.absences else "",
+                }
+            )
+
         absent_now = set(abs_df.loc[abs_df["is_absent_next_event"], "canon"].tolist())
         before = len(pool)
         pool = pool[~pool["canon"].isin(absent_now)].copy()
-        print(f"[info] absences filter: {before - len(pool)} ausgeschlossen (now={now_ts.isoformat()})")
+        print(
+            "[info] absences filter: "
+            f"{before - len(pool)} ausgeschlossen (now={now_ts.isoformat()}, raw={absence_debug['raw_count']}, active={absence_debug['active_for_next_event']})"
+        )
 
     hist_cols = [
         "canon",
@@ -1018,6 +1097,23 @@ def main():
 
     players_by_canon = {p["canon"]: p for p in players_payload}
 
+    if absent_now and not event_signups_df.empty:
+        hard_conflicts = event_signups_df[
+            (event_signups_df["Commitment"] == "hard") & (event_signups_df["canon"].isin(absent_now))
+        ]
+        for row in hard_conflicts.itertuples(index=False):
+            canon_val = getattr(row, "canon", pd.NA)
+            display = players_by_canon.get(canon_val, {}).get("display") if canon_val in players_by_canon else None
+            absence_conflicts.append(
+                {
+                    "canonical": canon_val,
+                    "display": display or getattr(row, "PlayerName", "") or canon_val,
+                    "has_hard_commitment": True,
+                    "is_absent": True,
+                    "note": "hard commitment + absence_next_event",
+                }
+            )
+
     # --------------------------
     # Event-Zusagen als Overlay + harte Zusagen
     # --------------------------
@@ -1164,6 +1260,8 @@ def main():
         "players": players_payload,
         "callup_stats": callup_stats,
         "absences": absences_payload,
+        "absence_debug": absence_debug,
+        "absence_conflicts": absence_conflicts,
     }
 
     _write_outputs(out_dir, out_df, json_payload)

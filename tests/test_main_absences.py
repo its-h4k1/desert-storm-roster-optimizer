@@ -151,10 +151,10 @@ def test_absences_export_and_filter(monkeypatch, tmp_path):
 
     _write_csv(
         data_dir / "absences.csv",
-        ["PlayerName", "From", "To", "InAlliance", "Reason"],
+        ["PlayerName", "From", "To", "InAlliance", "Reason", "Scope"],
         [
-            ["AbsentOne", "2000-01-01", "2100-01-01", 1, "Vacation"],
-            ["FutureAway", "2100-01-01", "2100-02-01", 1, "Later"],
+            ["AbsentOne", "", "", 1, "Vacation", "next_event"],
+            ["FutureAway", "2100-01-01", "2100-02-01", 1, "Later", ""],
         ],
     )
 
@@ -204,3 +204,83 @@ def test_absences_export_and_filter(monkeypatch, tmp_path):
     active_canon = {p["canonical"] for p in absences_block.get("players", []) if p.get("is_active_next_event")}
     assert "absentone" in active_canon
     assert "futureaway" not in captured["player_names"]
+    debug_block = payload.get("absence_debug")
+    assert debug_block["raw_count"] == 2
+    assert debug_block["active_for_next_event"] == 1
+    assert {p.get("canonical") for p in debug_block.get("players", [])} == {"absentone"}
+
+
+def test_absence_conflict_with_hard_commitment(monkeypatch, tmp_path):
+    data_dir = tmp_path / "data"
+    data_dir.mkdir()
+
+    _write_csv(
+        data_dir / "events.csv",
+        ["EventID", "Slot", "PlayerName", "RoleAtRegistration", "Teilgenommen"],
+        [["DS-2024-01-01-A", 1, "PresentOne", "Damage", 1]],
+    )
+
+    _write_csv(
+        data_dir / "alliance.csv",
+        ["PlayerName", "InAlliance"],
+        [["PresentOne", 1]],
+    )
+
+    _write_csv(
+        data_dir / "absences.csv",
+        ["PlayerName", "From", "To", "InAlliance", "Reason", "Scope"],
+        [["PresentOne", "", "", 1, "Trip", "next_event"]],
+    )
+
+    _write_csv(
+        data_dir / "event_signups_next.csv",
+        ["PlayerName", "Group", "Role", "Commitment", "Source", "Note"],
+        [["PresentOne", "A", "Start", "hard", "manual", ""]],
+    )
+
+    captured: dict[str, object] = {}
+
+    def _fake_builder(df: pd.DataFrame, **kwargs) -> pd.DataFrame:
+        captured["player_names"] = sorted(df["PlayerName"].tolist())
+        return pd.DataFrame(
+            {
+                "PlayerName": df["PlayerName"],
+                "Group": ["A"] * len(df),
+                "Role": ["Start"] * len(df),
+                "NoShowOverall": [0.0] * len(df),
+                "NoShowRolling": [0.0] * len(df),
+                "risk_penalty": [0.0] * len(df),
+            }
+        )
+
+    def _capture_writer(out_dir, roster_df, json_payload):
+        captured["payload"] = json_payload
+        captured["roster"] = roster_df
+
+    monkeypatch.setattr(main_mod, "build_deterministic_roster", _fake_builder)
+    monkeypatch.setattr(main_mod, "_write_outputs", _capture_writer)
+
+    argv = [
+        "prog",
+        "--events",
+        "data/events.csv",
+        "--alliance",
+        "data/alliance.csv",
+        "--absences",
+        "data/absences.csv",
+        "--event-signups",
+        "data/event_signups_next.csv",
+        "--out",
+        "generated",
+    ]
+
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.setattr(sys, "argv", argv)
+
+    main_mod.main()
+
+    payload = captured.get("payload")
+    assert payload, "json payload not captured"
+    conflicts = payload.get("absence_conflicts") or []
+    assert {c.get("canonical") for c in conflicts} == {"presentone"}
+    assert captured["player_names"] == []
