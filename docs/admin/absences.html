@@ -393,6 +393,11 @@
       const defaultBranch = "main";
       const DEFAULT_HEADERS = ["PlayerName", "From", "To", "Reason", "InAlliance"];
 
+      function getBranch() {
+        const raw = elements.branch.value.trim();
+        return raw || defaultBranch;
+      }
+
       function normalizeLineEndings(text) {
         return (text || "").replace(/\r\n/g, "\n").replace(/\r/g, "\n");
       }
@@ -462,7 +467,7 @@
         const cleanPath = path.replace(/^\/+/, "");
         const prefixes = ["../../", "../", "./", ""];
         const candidates = prefixes.map(prefix => `${prefix}${cleanPath}`.replace(/\/+/g, "/"));
-        const rawUrl = `https://raw.githubusercontent.com/${repoOwner}/${repoName}/${defaultBranch}/${cleanPath}`;
+        const rawUrl = `https://raw.githubusercontent.com/${repoOwner}/${repoName}/${getBranch()}/${cleanPath}`;
         candidates.push(rawUrl);
         return candidates;
       }
@@ -713,7 +718,7 @@
         if (state.loading || state.saving) return;
         const workerUrl = elements.workerUrl.value.trim();
         const adminKey = elements.adminKey.value.trim();
-        const branch = elements.branch.value.trim() || defaultBranch;
+        const branch = getBranch();
         if (!workerUrl) { setStatus("Worker-URL fehlt.", "error"); return; }
         if (!adminKey) { setStatus("Admin-Key erforderlich.", "error"); return; }
         const content = buildCurrentCsv();

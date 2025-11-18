@@ -158,8 +158,6 @@
     const canonicalNameJS = dsroShared.canonicalNameJS;
     const escapeHtml = dsroShared.escapeHtml;
     // Main roster UI expects latest.json at: docs/out/latest.json (served as out/latest.json on GitHub Pages).
-    const ABSENCES_RAW = `https://raw.githubusercontent.com/its-h4k1/desert-storm-roster-optimizer/${branch}/data/absences.csv${cacheBuster}`;
-
     // Konfiguration: Prior-Defaults (werden durch schema.prior überschrieben)
     const DEFAULT_PRIOR_FALLBACK = 0.18;
     const DEFAULT_PRIOR_PAD = 0.02;
@@ -624,6 +622,30 @@
       return ["1","true","yes","y","aktiv","active"].includes(normalized);
     }
 
+    function normalizeAbsenceFromPayload(row) {
+      const playerName = (
+        row?.name ?? row?.Name ?? row?.player ?? row?.PlayerName ?? row?.display ?? ""
+      ).toString().trim();
+      const from = (row?.from ?? row?.From ?? "").toString().trim();
+      const to = (row?.to ?? row?.To ?? "").toString().trim();
+      const reason = (row?.reason ?? row?.Reason ?? "").toString().trim();
+      const inAlliance = row?.in_alliance ?? row?.InAlliance ?? row?.Active ?? row?.active ?? 1;
+      const activeFlagRaw = row?.is_active_next_event ?? row?.isActive ?? row?.active;
+      const isActiveNextEvent = typeof activeFlagRaw === 'boolean' ? activeFlagRaw : null;
+      return {
+        playerName,
+        canon: canonicalNameJS(row?.canonical || playerName),
+        from,
+        to,
+        fromDate: parseDateOnly(from),
+        toDate: parseDateOnly(to),
+        reason,
+        inAlliance: parseInAllianceFlag(inAlliance),
+        scope: row?.scope || 'next_event',
+        isActiveNextEvent,
+      };
+    }
+
     function normalizeAbsenceRow(row) {
       const playerName = (row?.PlayerName ?? row?.playername ?? "").toString().trim();
       const from = (row?.From ?? row?.from ?? "").toString().trim();
@@ -701,12 +723,13 @@
         const rosterMeta = state.playersByCanon[entry.canon];
         const label = rosterMeta?.display || entry.playerName || "Unbekannt";
         const badge = rosterBadgeFor(entry);
+        const status = entry.isActiveNextEvent === false ? "geplant" : "aktiv";
         return `
           <tr>
             <td>${escapeHtml(label)}${badge}</td>
             <td>${escapeHtml(formatAbsenceRange(entry))}</td>
             <td>${entry.reason ? escapeHtml(entry.reason) : "–"}</td>
-            <td>aktiv</td>
+            <td>${escapeHtml(status)}</td>
           </tr>
         `;
       }).join("");
@@ -724,7 +747,8 @@
       state.absences.loading = true;
       state.absences.error = null;
       updateAbsencesUI();
-      fetch(ABSENCES_RAW, { cache: "no-store" })
+      const absencesUrl = `https://raw.githubusercontent.com/its-h4k1/desert-storm-roster-optimizer/${branch}/data/absences.csv${cacheBuster}`;
+      fetch(absencesUrl, { cache: "no-store" })
         .then(r => { if (!r.ok) throw new Error(r.status + " " + r.statusText); return r.text(); })
         .then(text => {
           const parsed = parseCsv(text);
@@ -742,6 +766,28 @@
           state.absences.loading = false;
           updateAbsencesUI();
         });
+    }
+
+    function applyAbsencesFromPayload(absencesBlock) {
+      if (!absencesBlock || typeof absencesBlock !== 'object' || !Array.isArray(absencesBlock.players)) {
+        return false;
+      }
+      const normalized = absencesBlock.players
+        .map(normalizeAbsenceFromPayload)
+        .filter(entry => entry.playerName);
+      const activeFallback = computeActiveAbsences(normalized);
+      const activeSet = new Set(activeFallback.map(item => item.canon));
+      const active = normalized.filter(entry => {
+        if (typeof entry.isActiveNextEvent === 'boolean') return entry.isActiveNextEvent;
+        if (entry.scope === 'next_event') return true;
+        return activeSet.has(entry.canon);
+      });
+      state.absences.entries = normalized;
+      state.absences.active = active;
+      state.absences.error = null;
+      state.absences.loading = false;
+      updateAbsencesUI();
+      return true;
     }
 
     function extractSignupStats(meta) {
@@ -926,8 +972,6 @@
       const summary = summaryParts.length ? `<p class="muted">${summaryParts.join(' · ')}</p>` : '';
       container.innerHTML = summary + parts.join('');
     }
-
-    fetchAbsences();
 
     /**
      * Farb-Logik für No-Show-Badges (bisheriges Verhalten in Klartext):
@@ -1162,7 +1206,10 @@
           };
         });
         state.playersByCanon = playersByCanon;
-        updateAbsencesUI();
+        const absencesApplied = applyAbsencesFromPayload(payload.absences);
+        if (!absencesApplied) {
+          fetchAbsences();
+        }
         const extraSignups = {
           A: (payload && payload.groups && Array.isArray(payload.groups.A?.extra_signups)) ? payload.groups.A.extra_signups : [],
           B: (payload && payload.groups && Array.isArray(payload.groups.B?.extra_signups)) ? payload.groups.B.extra_signups : [],
