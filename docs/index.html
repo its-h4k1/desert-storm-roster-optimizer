@@ -358,6 +358,7 @@
       const statsCount = Number.isFinite(statsCountRaw) ? statsCountRaw : null;
       const statsReasons = (stats && stats.reasons && typeof stats.reasons === 'object') ? stats.reasons : null;
       const hasStats = Boolean(stats);
+      const configSnapshot = (stats && typeof stats.config_snapshot === 'object') ? stats.config_snapshot : null;
 
       let derivedCount = 0;
       const derivedReasons = {};
@@ -380,7 +381,7 @@
       const reasonCounts = statsReasons || derivedReasons;
       const available = Boolean(hasStats || derivedCount > 0 || playersArray.some(p => normalizeCallup(p)));
 
-      return { available, recommendedTotal, reasonCounts, fromStats: Boolean(hasStats && statsCount != null), hasStats, schemaVersion };
+      return { available, recommendedTotal, reasonCounts, fromStats: Boolean(hasStats && statsCount != null), hasStats, schemaVersion, configSnapshot };
     }
 
     function updateCallupNote(meta) {
@@ -394,6 +395,7 @@
       const hasStats = Boolean(meta && meta.hasStats);
       const recommendedTotal = Number.isFinite(meta?.recommendedTotal) ? Number(meta.recommendedTotal) : null;
       const reasonCounts = meta?.reasonCounts || {};
+      const configSnapshot = meta?.configSnapshot;
 
       let text = '';
       if (!hasStats) {
@@ -418,13 +420,55 @@
         text += ` — Gründe: ${breakdown.join(' · ')}`;
       }
 
-      if (text) {
-        callupNote.textContent = text;
+      const rulesText = buildConfigSnapshotText(configSnapshot);
+      const parts = [];
+      if (text) parts.push(text);
+      if (rulesText) parts.push(rulesText);
+
+      if (parts.length) {
+        callupNote.textContent = parts.join(' — ');
         callupNote.style.display = 'block';
       } else {
         callupNote.textContent = '';
         callupNote.style.display = 'none';
       }
+    }
+
+    function formatPercentShort(value) {
+      const n = Number(value);
+      if (!Number.isFinite(n)) return null;
+      return `${Math.round(n * 100)} %`;
+    }
+
+    function formatPercentPointsShort(value) {
+      const n = Number(value);
+      if (!Number.isFinite(n)) return null;
+      return `${Math.round(n * 100)} pp`;
+    }
+
+    function buildConfigSnapshotText(snapshot) {
+      if (!snapshot || typeof snapshot !== 'object') return '';
+      const overall = formatPercentShort(snapshot.high_overall_threshold);
+      const rolling = formatPercentShort(snapshot.high_rolling_threshold);
+      const rollingMin = formatPercentShort(snapshot.rolling_uptick_min);
+      const rollingDelta = formatPercentPointsShort(snapshot.rolling_uptick_delta);
+      const lowN = Number.isFinite(Number(snapshot.low_n_max_events)) ? Number(snapshot.low_n_max_events) : null;
+      const minEvents = Number.isFinite(Number(snapshot.min_events)) ? Number(snapshot.min_events) : null;
+
+      const parts = [];
+      if (overall || rolling) {
+        const suffix = minEvents != null ? ` (ab ≥ ${minEvents} Events)` : '';
+        if (overall) parts.push(`High overall ≥ ${overall}${suffix}`);
+        if (rolling) parts.push(`High rolling ≥ ${rolling}${suffix}`);
+      }
+      const uptickParts = [];
+      if (rollingMin) uptickParts.push(rollingMin);
+      if (rollingDelta) uptickParts.push(`+${rollingDelta}`);
+      if (uptickParts.length) parts.push(`Rolling-Uptick ≥ ${uptickParts.join(' & ')}`);
+      if (lowN != null) parts.push(`Low-N ≤ ${lowN} Events`);
+
+      if (!parts.length) return '';
+      return `Regeln: ${parts.join(', ')}`;
     }
 
     function updateCallupExportButton(meta, candidates = []) {
