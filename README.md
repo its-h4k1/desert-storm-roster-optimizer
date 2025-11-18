@@ -66,6 +66,8 @@ keinen Build-Schritt.
   - `high_overall_threshold = 0.40` (overall ≥40 % löst Callup aus)
   - `high_rolling_threshold = 0.50` (rolling ≥50 % löst Callup aus)
   - `rolling_uptick_min = 0.25` + `rolling_uptick_delta = 0.10` (rolling mindestens 25 % und ≥10 pp über overall)
+- Die Werte lassen sich vollständig im Admin-Tab „Callup-Assistent“ pflegen (Bereich „Callup-Regeln“). Dort können die Schwellen
+  geladen, angepasst, auf Standardwerte zurückgesetzt und direkt in `data/callup_config.yml` geschrieben werden.
 - Der Builder lädt die Datei beim Start. Fehlende Datei oder Felder → Defaults + Warnung, Build läuft weiter. Die genutzte
   Konfiguration landet als Snapshot in `callup_stats.config_snapshot` (inkl. `config_source` für Metadaten), sodass UIs die
   Schwellen anzeigen können.

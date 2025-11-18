@@ -31,6 +31,14 @@
     .card { background:var(--panel-muted); border:1px solid var(--border); border-radius:0.85rem; padding:0.85rem; }
     .callup-page .admin-content { width:min(1400px,100%); }
     .callup-page .page-inner { max-width:1400px; }
+    .callup-config { margin-top:0.25rem; display:grid; gap:0.85rem; }
+    .callup-config .card-grid { grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); }
+    .callup-config .controls { justify-content:flex-end; }
+    .config-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:0.65rem; }
+    .config-status { display:flex; gap:0.5rem; align-items:center; color:var(--text-muted); font-size:0.9rem; }
+    .badge { display:inline-flex; align-items:center; gap:0.35rem; padding:0.2rem 0.6rem; border-radius:999px; font-weight:700; font-size:0.85rem; border:1px solid var(--border); }
+    .badge.warn { background:#fef9c3; color:#854d0e; border-color:#fde68a; }
+    .badge.info { background:#e0f2fe; color:#075985; border-color:#bae6fd; }
     .callup-table-wrapper { width:100%; overflow-x:auto; padding:0.25rem; }
     .table-wrapper { border:1px solid var(--border); border-radius:0.85rem; overflow:auto; box-shadow:var(--shadow-card); }
     .callup-table { width:100%; border-collapse:collapse; min-width:1100px; table-layout:auto; }
@@ -92,6 +100,11 @@
     .status-chip.bad { background:#fee2e2; border-color:#fecdd3; color:#991b1b; }
     .note-indicator { display:inline-flex; align-items:center; gap:0.35rem; color:var(--text-muted); font-weight:600; }
     .note-indicator.has-note { color:#0f172a; }
+    .toast-container { position:fixed; inset:auto 1rem 1rem auto; display:grid; gap:0.5rem; z-index:100; }
+    .toast { padding:0.65rem 0.85rem; border-radius:0.8rem; background:#0f172a; color:#e2e8f0; box-shadow:var(--shadow-card); border:1px solid rgba(15,23,42,0.3); opacity:0.96; transition:opacity 0.3s ease; max-width:320px; }
+    .toast.error { background:#991b1b; color:#fef2f2; border-color:#fecdd3; }
+    .toast.success { background:#166534; color:#ecfdf3; border-color:#bbf7d0; }
+    .toast.fade-out { opacity:0; }
     .detail-row { display:none; }
     .detail-row td { padding:0; border-bottom:none; background:transparent; }
     .detail-card { margin:0 0.35rem 0.75rem; padding:0.9rem; border:1px solid var(--border); border-radius:0.85rem; background:var(--panel-muted); box-shadow:var(--shadow-card); }
@@ -155,6 +168,43 @@
               <button id="saveBtn" class="ok">Speichern</button>
             </div>
           </header>
+
+          <section class="panel callup-config" aria-labelledby="callup-config-heading">
+            <div class="controls" style="align-items:flex-start; gap:1rem;">
+              <div style="flex:1; min-width:280px;">
+                <p class="hint" style="margin:0;">Änderungen wirken nach dem nächsten Roster-Build in <code>latest.json</code> und der Roster-Ansicht.</p>
+                <h2 id="callup-config-heading" style="margin:0.35rem 0 0.2rem;">Callup-Regeln</h2>
+                <div class="config-status">
+                  <span id="configStatusBadge" class="badge info">Geladen</span>
+                  <span id="configStatusText">Aus <code>data/callup_config.yml</code> geladen.</span>
+                </div>
+              </div>
+              <div class="controls" style="justify-content:flex-end;">
+                <button id="configResetBtn" class="ghost" type="button">Auf Standardwerte zurücksetzen</button>
+                <button id="configSaveBtn" class="ok" type="button">Speichern</button>
+              </div>
+            </div>
+            <div class="config-grid">
+              <label>Minimale Events (für Rolling/Overall)
+                <input id="configMinEvents" type="number" min="0" max="50" step="1" inputmode="numeric">
+              </label>
+              <label>Low-N bis max. Events
+                <input id="configLowN" type="number" min="0" max="20" step="1" inputmode="numeric">
+              </label>
+              <label>High Overall (in %)
+                <input id="configHighOverall" type="number" min="0" max="100" step="1" inputmode="decimal">
+              </label>
+              <label>High Rolling (in %)
+                <input id="configHighRolling" type="number" min="0" max="100" step="1" inputmode="decimal">
+              </label>
+              <label>Rolling-Uptick Minimum (in %)
+                <input id="configRollingMin" type="number" min="0" max="100" step="1" inputmode="decimal">
+              </label>
+              <label>Rolling-Uptick Delta (in %-Punkten)
+                <input id="configRollingDelta" type="number" min="0" max="100" step="1" inputmode="decimal">
+              </label>
+            </div>
+          </section>
 
           <main class="page-main">
             <section class="panel">
@@ -227,6 +277,7 @@
     </main>
   </div>
   <div class="admin-overlay"></div>
+  <div class="toast-container" id="toastContainer"></div>
 
   <div class="status-bar">
     <span id="statusBadge" class="status-badge status-info">Bereit</span>
@@ -245,6 +296,16 @@
         adminKey: document.getElementById('adminKey'),
         reloadBtn: document.getElementById('reloadBtn'),
         saveBtn: document.getElementById('saveBtn'),
+        configSaveBtn: document.getElementById('configSaveBtn'),
+        configResetBtn: document.getElementById('configResetBtn'),
+        configStatusBadge: document.getElementById('configStatusBadge'),
+        configStatusText: document.getElementById('configStatusText'),
+        configMinEvents: document.getElementById('configMinEvents'),
+        configLowN: document.getElementById('configLowN'),
+        configHighOverall: document.getElementById('configHighOverall'),
+        configHighRolling: document.getElementById('configHighRolling'),
+        configRollingMin: document.getElementById('configRollingMin'),
+        configRollingDelta: document.getElementById('configRollingDelta'),
         eventId: document.getElementById('eventId'),
         useLastEvent: document.getElementById('useLastEvent'),
         recommendedOnly: document.getElementById('recommendedOnly'),
@@ -258,6 +319,7 @@
         eventMeta: document.getElementById('eventMeta'),
         statusBadge: document.getElementById('statusBadge'),
         statusText: document.getElementById('statusText'),
+        toastContainer: document.getElementById('toastContainer'),
         thOverall: document.getElementById('thOverall'),
         thRolling: document.getElementById('thRolling'),
         thEvents: document.getElementById('thEvents'),
@@ -295,13 +357,14 @@
        * - Recent Uptick: noshow_rolling deutlich höher als overall (>= DELTA_Uptick und >= ROLLING_MIN), als Proxy für kürzliche Ausfälle.
        * Spieler ohne Historie (events_seen 0 oder fehlend) fallen automatisch unter Low-N-Heuristik und werden neutral gebadget.
        */
-      const CONFIG = {
-        HIGH_OVERALL: 0.4,
-        HIGH_ROLLING: 0.5,
-        MIN_EVENTS: 3,
-        LOW_N: 2,
-        ROLLING_MIN: 0.25,
-        DELTA_UPTICK: 0.1,
+      const DEFAULT_CALLOUP_CONFIG = {
+        version: 1,
+        min_events: 3,
+        low_n_max_events: 2,
+        high_overall_threshold: 0.4,
+        high_rolling_threshold: 0.5,
+        rolling_uptick_min: 0.25,
+        rolling_uptick_delta: 0.1,
       };
 
       const BADGE_CLASS_BY_LEVEL = {
@@ -346,9 +409,103 @@
         saving: false,
         autoSyncSignups: true,
         expandedPlayer: null,
+        callupConfig: { ...DEFAULT_CALLOUP_CONFIG },
+        configMeta: { source: 'default', usedDefaults: true, warning: '' },
+        configSaving: false,
       };
 
       const pc = (v) => (v == null || !Number.isFinite(v)) ? '–' : `${(v*100).toFixed(0)}%`;
+      const getActiveConfig = () => state.callupConfig || { ...DEFAULT_CALLOUP_CONFIG };
+
+      function showToast(message, tone = 'info') {
+        if (!elements.toastContainer) return;
+        const toast = document.createElement('div');
+        toast.className = 'toast' + (tone === 'error' ? ' error' : tone === 'success' ? ' success' : '');
+        toast.textContent = message;
+        elements.toastContainer.appendChild(toast);
+        requestAnimationFrame(() => {
+          setTimeout(() => toast.classList.add('fade-out'), 3200);
+          toast.addEventListener('transitionend', () => toast.remove(), { once: true });
+        });
+      }
+
+      function parseCallupConfigYaml(text) {
+        const lines = (text || '').split(/\r?\n/);
+        const out = {};
+        lines.forEach(line => {
+          const trimmed = line.trim();
+          if (!trimmed || trimmed.startsWith('#')) return;
+          const m = /^([A-Za-z0-9_]+)\s*:\s*(.+)$/.exec(line);
+          if (m) out[m[1]] = m[2].trim();
+        });
+        return out;
+      }
+
+      function normalizeCallupConfig(raw = {}) {
+        const cfg = { ...DEFAULT_CALLOUP_CONFIG };
+        let usedDefaults = false;
+        const num = (value) => {
+          const n = Number(value);
+          return Number.isFinite(n) ? n : null;
+        };
+        const clamp = (value, min, max) => Math.min(Math.max(value, min), max);
+        const assignPercent = (key) => {
+          if (raw[key] == null) { usedDefaults = true; return; }
+          const n = num(raw[key]);
+          if (n == null) { usedDefaults = true; return; }
+          cfg[key] = clamp(n, 0, 1);
+        };
+        const assignInt = (key, min, max) => {
+          if (raw[key] == null) { usedDefaults = true; return; }
+          const n = num(raw[key]);
+          if (n == null) { usedDefaults = true; return; }
+          cfg[key] = clamp(Math.round(n), min, max);
+        };
+
+        assignInt('version', 1, 99);
+        assignInt('min_events', 0, 999);
+        assignInt('low_n_max_events', 0, 999);
+        assignPercent('high_overall_threshold');
+        assignPercent('high_rolling_threshold');
+        assignPercent('rolling_uptick_min');
+        assignPercent('rolling_uptick_delta');
+
+        return { config: cfg, meta: { usedDefaults } };
+      }
+
+      function renderConfigInputs() {
+        const cfg = getActiveConfig();
+        if (elements.configMinEvents) elements.configMinEvents.value = cfg.min_events ?? DEFAULT_CALLOUP_CONFIG.min_events;
+        if (elements.configLowN) elements.configLowN.value = cfg.low_n_max_events ?? DEFAULT_CALLOUP_CONFIG.low_n_max_events;
+        if (elements.configHighOverall) elements.configHighOverall.value = Math.round((cfg.high_overall_threshold ?? 0) * 100);
+        if (elements.configHighRolling) elements.configHighRolling.value = Math.round((cfg.high_rolling_threshold ?? 0) * 100);
+        if (elements.configRollingMin) elements.configRollingMin.value = Math.round((cfg.rolling_uptick_min ?? 0) * 100);
+        if (elements.configRollingDelta) elements.configRollingDelta.value = Math.round((cfg.rolling_uptick_delta ?? 0) * 100);
+
+        const meta = state.configMeta || {};
+        if (elements.configStatusBadge) {
+          elements.configStatusBadge.className = 'badge ' + (meta.usedDefaults ? 'warn' : 'info');
+          elements.configStatusBadge.textContent = meta.usedDefaults ? 'Standardwerte' : 'Konfiguration aktiv';
+        }
+        if (elements.configStatusText) {
+          const warning = meta.warning || '';
+          if (warning) {
+            elements.configStatusText.textContent = warning;
+          } else if (meta.usedDefaults) {
+            elements.configStatusText.textContent = 'Standardwerte aus eingebautem Regel-Set.';
+          } else {
+            elements.configStatusText.innerHTML = 'Aus <code>data/callup_config.yml</code> geladen.';
+          }
+        }
+      }
+
+      function applyConfigDraftFromInputs() {
+        state.callupConfig = buildConfigFromInputs({ useDefaults: false });
+        state.configMeta = { source: 'draft', usedDefaults: false, warning: 'Entwurf (noch nicht gespeichert).' };
+        renderConfigInputs();
+        renderThresholds();
+        renderCandidates();
+      }
 
       function normalizeLineEndings(text) { return (text || '').replace(/\r\n/g, '\n').replace(/\r/g, '\n'); }
       function ensureTrailingNewline(text) { if (!text) return '\n'; return /\n$/.test(text) ? text : text + '\n'; }
@@ -357,6 +514,58 @@
         const str = value.toString();
         if (str.includes('"') || str.includes(',') || str.includes('\n')) return `"${str.replace(/"/g, '""')}"`;
         return str;
+      }
+
+      function buildConfigFromInputs({ useDefaults = false } = {}) {
+        const cfg = useDefaults ? { ...DEFAULT_CALLOUP_CONFIG } : { ...getActiveConfig() };
+        const clamp = (value, min, max) => Math.min(Math.max(value, min), max);
+        const readInt = (el, fallback, min = 0, max = 999) => {
+          if (!el) return fallback;
+          const n = Number(el.value);
+          if (!Number.isFinite(n)) return fallback;
+          return clamp(Math.round(n), min, max);
+        };
+        const readPercent = (el, fallback) => {
+          if (!el) return fallback;
+          const n = Number(el.value);
+          if (!Number.isFinite(n)) return fallback;
+          return clamp(n, 0, 100) / 100;
+        };
+
+        cfg.min_events = readInt(elements.configMinEvents, cfg.min_events, 0, 50);
+        cfg.low_n_max_events = readInt(elements.configLowN, cfg.low_n_max_events, 0, 50);
+        cfg.high_overall_threshold = readPercent(elements.configHighOverall, cfg.high_overall_threshold);
+        cfg.high_rolling_threshold = readPercent(elements.configHighRolling, cfg.high_rolling_threshold);
+        cfg.rolling_uptick_min = readPercent(elements.configRollingMin, cfg.rolling_uptick_min);
+        cfg.rolling_uptick_delta = readPercent(elements.configRollingDelta, cfg.rolling_uptick_delta);
+        cfg.version = cfg.version || DEFAULT_CALLOUP_CONFIG.version;
+        return cfg;
+      }
+
+      function formatPercentValue(value) {
+        if (value == null || !Number.isFinite(value)) return '0.00';
+        return Number(value).toFixed(2);
+      }
+
+      function buildCallupConfigYaml(cfg) {
+        const lines = [
+          '# Konfiguration für Callup-Empfehlungen.',
+          '# - version: Schema-Version der Datei (nur informativ)',
+          '# - min_events: Ab wie vielen absolvierten Events Rolling/Overall-Raten ausgewertet werden.',
+          '# - low_n_max_events: Bis zu dieser Event-Anzahl werden Spieler vorsorglich als Callup markiert.',
+          '# - high_overall_threshold: No-Show-Rate (gesamt), ab der automatisch ein Callup empfohlen wird.',
+          '# - high_rolling_threshold: Rolling-No-Show-Rate, ab der automatisch ein Callup empfohlen wird.',
+          '# - rolling_uptick_min: Minimaler Rolling-Wert, bevor ein Rolling-Uptick geprüft wird.',
+          '# - rolling_uptick_delta: Zusätzliche Differenz, die Rolling gegenüber Overall haben muss (in Prozentpunkten).',
+          `version: ${cfg.version ?? DEFAULT_CALLOUP_CONFIG.version}`,
+          `min_events: ${cfg.min_events ?? DEFAULT_CALLOUP_CONFIG.min_events}`,
+          `low_n_max_events: ${cfg.low_n_max_events ?? DEFAULT_CALLOUP_CONFIG.low_n_max_events}`,
+          `high_overall_threshold: ${formatPercentValue(cfg.high_overall_threshold ?? DEFAULT_CALLOUP_CONFIG.high_overall_threshold)}`,
+          `high_rolling_threshold: ${formatPercentValue(cfg.high_rolling_threshold ?? DEFAULT_CALLOUP_CONFIG.high_rolling_threshold)}`,
+          `rolling_uptick_min: ${formatPercentValue(cfg.rolling_uptick_min ?? DEFAULT_CALLOUP_CONFIG.rolling_uptick_min)}`,
+          `rolling_uptick_delta: ${formatPercentValue(cfg.rolling_uptick_delta ?? DEFAULT_CALLOUP_CONFIG.rolling_uptick_delta)}`,
+        ];
+        return ensureTrailingNewline(lines.join('\n'));
       }
 
       function normalizeDecisionValue(value) {
@@ -446,18 +655,19 @@
       }
 
       function detectRecommendation(player) {
+        const cfg = getActiveConfig();
         const eventsSeen = Number.isFinite(player.events_seen) ? Number(player.events_seen) : null;
         const overall = Number.isFinite(player.noshow_overall) ? Number(player.noshow_overall) : null;
         const rolling = Number.isFinite(player.noshow_rolling) ? Number(player.noshow_rolling) : null;
         const reasons = [];
-        if (eventsSeen != null && eventsSeen <= CONFIG.LOW_N) {
+        if (eventsSeen != null && eventsSeen <= cfg.low_n_max_events) {
           reasons.push(`Low-N (${eventsSeen} Event${eventsSeen === 1 ? '' : 's'})`);
         }
-        if (eventsSeen != null && eventsSeen >= CONFIG.MIN_EVENTS) {
-          if (overall != null && overall >= CONFIG.HIGH_OVERALL) reasons.push(`High No-Show overall ${pc(overall)}`);
-          if (rolling != null && rolling >= CONFIG.HIGH_ROLLING) reasons.push(`High No-Show rolling ${pc(rolling)}`);
+        if (eventsSeen != null && eventsSeen >= cfg.min_events) {
+          if (overall != null && overall >= cfg.high_overall_threshold) reasons.push(`High No-Show overall ${pc(overall)}`);
+          if (rolling != null && rolling >= cfg.high_rolling_threshold) reasons.push(`High No-Show rolling ${pc(rolling)}`);
         }
-        if (rolling != null && overall != null && rolling >= Math.max(CONFIG.ROLLING_MIN, overall + CONFIG.DELTA_UPTICK)) {
+        if (rolling != null && overall != null && rolling >= Math.max(cfg.rolling_uptick_min, overall + cfg.rolling_uptick_delta)) {
           reasons.push(`Kürzliche Ausfälle (rolling ${pc(rolling)} vs. overall ${pc(overall)})`);
         }
         const recommended = reasons.length > 0;
@@ -513,6 +723,7 @@
         state.loading = isLoading;
         elements.reloadBtn.disabled = isLoading || state.saving;
         updateSaveButtonState();
+        updateConfigButtonState();
         if (isLoading) setStatus('Lade Daten…', 'info');
       }
 
@@ -524,6 +735,12 @@
       function updateSaveButtonState() {
         elements.saveBtn.disabled = state.loading || state.saving || !hasChanges();
         elements.saveBtn.textContent = state.saving ? 'Speichert…' : 'Speichern';
+      }
+
+      function updateConfigButtonState() {
+        if (elements.configSaveBtn) elements.configSaveBtn.disabled = state.loading || state.configSaving;
+        if (elements.configResetBtn) elements.configResetBtn.disabled = state.loading || state.configSaving;
+        if (elements.configSaveBtn) elements.configSaveBtn.textContent = state.configSaving ? 'Speichert…' : 'Speichern';
       }
 
       async function fetchJson(path) {
@@ -541,6 +758,23 @@
           throw new Error('HTTP ' + res.status + ' ' + res.statusText);
         }
         return await res.text();
+      }
+
+      async function loadCallupConfig() {
+        try {
+          const text = await fetchText('data/callup_config.yml', { allow404: true });
+          if (!text.trim()) throw new Error('Leer oder fehlt');
+          const parsed = parseCallupConfigYaml(text);
+          const { config, meta } = normalizeCallupConfig(parsed);
+          state.callupConfig = config;
+          state.configMeta = { ...meta, source: 'file', warning: meta.usedDefaults ? 'Teils fehlend – Standardwerte ergänzt.' : '' };
+        } catch (err) {
+          console.warn('callup_config.yml konnte nicht geladen werden, nutze Defaults', err);
+          state.callupConfig = { ...DEFAULT_CALLOUP_CONFIG };
+          state.configMeta = { source: 'default', usedDefaults: true, warning: 'Standardwerte aktiv (Datei fehlte oder war ungültig).' };
+        }
+        renderConfigInputs();
+        updateConfigButtonState();
       }
 
       async function loadLatest() {
@@ -1155,6 +1389,7 @@
       async function reloadData() {
         setLoading(true);
         try {
+          await loadCallupConfig();
           await Promise.all([loadLatest(), loadAlliance(), loadAbsences(), loadCallups(), loadSignups()]);
           renderThresholds();
           renderCandidates();
@@ -1209,6 +1444,38 @@
         }
       }
 
+      async function saveCallupConfig({ useDefaults = false } = {}) {
+        if (state.loading || state.configSaving) return;
+        const workerUrl = elements.workerUrl.value.trim();
+        const adminKey = elements.adminKey.value.trim();
+        const branch = elements.branch.value.trim() || 'main';
+        if (!workerUrl) { setStatus('Worker-URL fehlt.', 'error'); return; }
+        if (!adminKey) { setStatus('Admin-Key erforderlich.', 'error'); return; }
+
+        const cfg = buildConfigFromInputs({ useDefaults });
+        const yaml = buildCallupConfigYaml(cfg);
+        state.configSaving = true;
+        updateConfigButtonState();
+        setStatus('Speichere Callup-Regeln…', 'info');
+        try {
+          await writeFile(workerUrl, adminKey, { path: 'data/callup_config.yml', content: yaml, branch, message: 'admin: update callup_config.yml via callup assistant' });
+          state.callupConfig = cfg;
+          state.configMeta = { source: 'file', usedDefaults: useDefaults, warning: useDefaults ? 'Standardwerte aktiv.' : '' };
+          renderConfigInputs();
+          renderThresholds();
+          renderCandidates();
+          showToast(useDefaults ? 'Standardwerte gespeichert.' : 'Callup-Konfiguration gespeichert.', 'success');
+          setStatus('Callup-Konfiguration gespeichert.', 'ok');
+        } catch (err) {
+          console.error(err);
+          showToast('Speichern der Callup-Regeln fehlgeschlagen: ' + err.message, 'error');
+          setStatus('Speichern der Callup-Regeln fehlgeschlagen: ' + err.message, 'error');
+        } finally {
+          state.configSaving = false;
+          updateConfigButtonState();
+        }
+      }
+
       async function writeFile(workerUrl, adminKey, payload) {
         const headers = { 'Content-Type': 'application/json', 'X-Admin-Key': adminKey };
         const res = await fetch(workerUrl, { method:'POST', headers, body: JSON.stringify(payload) });
@@ -1243,12 +1510,13 @@
       }
 
       function renderThresholds() {
-        elements.thOverall.textContent = pc(CONFIG.HIGH_OVERALL);
-        elements.thRolling.textContent = pc(CONFIG.HIGH_ROLLING);
-        elements.thEvents.textContent = CONFIG.MIN_EVENTS;
-        elements.thLowN.textContent = CONFIG.LOW_N;
-        elements.thDelta.textContent = pc(CONFIG.DELTA_UPTICK);
-        elements.thUptick.textContent = pc(CONFIG.ROLLING_MIN);
+        const cfg = getActiveConfig();
+        elements.thOverall.textContent = pc(cfg.high_overall_threshold);
+        elements.thRolling.textContent = pc(cfg.high_rolling_threshold);
+        elements.thEvents.textContent = cfg.min_events;
+        elements.thLowN.textContent = cfg.low_n_max_events;
+        elements.thDelta.textContent = pc(cfg.rolling_uptick_delta);
+        elements.thUptick.textContent = pc(cfg.rolling_uptick_min);
       }
 
       function initEvents() {
@@ -1270,10 +1538,22 @@
         elements.adminKey.addEventListener('change', persistSettings);
         elements.autoSyncSignups.addEventListener('change', () => { state.autoSyncSignups = elements.autoSyncSignups.checked; persistSettings(); });
         elements.eventId.addEventListener('change', persistSettings);
+        [elements.configMinEvents, elements.configLowN, elements.configHighOverall, elements.configHighRolling, elements.configRollingMin, elements.configRollingDelta]
+          .forEach(el => el?.addEventListener('input', applyConfigDraftFromInputs));
+        elements.configSaveBtn?.addEventListener('click', () => saveCallupConfig({ useDefaults: false }));
+        elements.configResetBtn?.addEventListener('click', () => {
+          state.callupConfig = { ...DEFAULT_CALLOUP_CONFIG };
+          state.configMeta = { source: 'default', usedDefaults: true, warning: 'Standardwerte (noch nicht gespeichert).' };
+          renderConfigInputs();
+          renderThresholds();
+          renderCandidates();
+          saveCallupConfig({ useDefaults: true });
+        });
       }
 
       restoreSettings();
       initEvents();
+      renderConfigInputs();
       renderThresholds();
       reloadData();
     })();
