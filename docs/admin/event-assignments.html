@@ -8,10 +8,23 @@
   <link rel="stylesheet" href="admin.css" />
   <style>
     body { margin: 0; background: var(--bg); color: var(--text); }
-    .page-header { display:flex; flex-wrap:wrap; gap:0.75rem; align-items:flex-end; position:sticky; top:0; background:var(--glass); padding:1.1rem; border-bottom:1px solid var(--border); z-index:5; }
-    .page-header h1 { margin:0; flex:1 1 240px; }
-    .page-header p { margin:0; color:var(--text-muted); }
+    .page-header { display:flex; flex-wrap:wrap; gap:0.75rem; align-items:flex-start; position:sticky; top:0; background:var(--glass); padding:1rem 1.1rem; border-bottom:1px solid var(--border); z-index:5; }
+    .page-header h1 { margin:0; font-size:1.45rem; }
+    .page-header .eyebrow { margin:0; color:var(--text-muted); font-size:0.9rem; letter-spacing:0.02em; text-transform:uppercase; }
+    .page-header .meta-line { margin:0.15rem 0 0; color:var(--text-muted); font-size:0.95rem; }
+    .header-meta { display:flex; gap:0.5rem; align-items:center; flex-wrap:wrap; margin-left:auto; }
+    .labelled-value { display:flex; gap:0.4rem; align-items:center; padding:0.35rem 0.65rem; border:1px solid var(--border); border-radius:0.75rem; background:var(--panel-muted); color:var(--text-muted); font-weight:600; }
     .settings { display:flex; flex-wrap:wrap; gap:0.75rem; align-items:flex-end; }
+    .settings-toggle { border:1px solid var(--border); border-radius:0.85rem; padding:0.35rem 0.65rem; background:var(--panel-muted); }
+    .settings-toggle summary { list-style:none; cursor:pointer; display:flex; align-items:center; gap:0.4rem; font-weight:600; color:var(--text-muted); }
+    .settings-toggle summary::marker { display:none; }
+    .settings-toggle summary::-webkit-details-marker { display:none; }
+    .settings-toggle[open] { background:var(--panel); }
+    .settings-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:0.75rem; margin-top:0.75rem; }
+    .settings-actions { display:flex; gap:0.5rem; flex-wrap:wrap; align-items:center; justify-content:flex-end; margin-top:0.5rem; }
+    .toolbar { display:flex; flex-wrap:wrap; gap:0.75rem; align-items:center; justify-content:space-between; padding:0.75rem 0; }
+    .toolbar-actions { display:flex; gap:0.5rem; flex-wrap:wrap; align-items:center; }
+    .toolbar-meta { display:flex; gap:0.6rem; flex-wrap:wrap; align-items:center; }
     label { display:flex; flex-direction:column; gap:0.35rem; font-size:0.9rem; color:var(--text-muted); }
     input[type="text"], input[type="search"], input[type="password"], select, textarea { font:inherit; padding:0.5rem 0.65rem; border-radius:0.75rem; border:1px solid var(--border); background:var(--bg-alt); color:var(--text); min-width:12rem; }
     input:focus, select:focus, textarea:focus { outline:2px solid rgba(37,99,235,0.35); outline-offset:1px; }
@@ -24,14 +37,23 @@
     .admin-section { padding:1.1rem; }
     .panel { background:var(--panel); border:1px solid var(--border); border-radius:1rem; padding:1rem; box-shadow:var(--shadow-panel,0 18px 40px rgba(15,23,42,0.08)); display:grid; gap:0.75rem; }
     .panel h2 { margin:0; }
-    .help-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(260px,1fr)); gap:0.85rem; }
-    .help-card { padding:0.85rem; background:var(--panel-muted); border:1px solid var(--border); border-radius:0.85rem; display:grid; gap:0.45rem; }
+    .panel.compact { gap:0.5rem; }
+    .help-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(240px,1fr)); gap:0.75rem; }
+    .help-card { padding:0.85rem; background:var(--panel-muted); border:1px solid var(--border); border-radius:0.85rem; display:grid; gap:0.35rem; }
+    .accordion { border:1px solid var(--border); border-radius:0.9rem; background:var(--panel-muted); }
+    .accordion summary { cursor:pointer; padding:0.85rem 1rem; list-style:none; display:flex; align-items:center; justify-content:space-between; gap:0.5rem; font-weight:600; }
+    .accordion summary::marker { display:none; }
+    .accordion summary::-webkit-details-marker { display:none; }
+    .accordion[open] { background:var(--panel); }
+    .accordion .accordion-body { padding:0 1rem 1rem; display:grid; gap:0.75rem; }
+    .layout-two-col { display:grid; grid-template-columns:repeat(auto-fit,minmax(320px,1fr)); gap:1rem; align-items:start; }
+    .add-help { color:var(--text-muted); font-size:0.9rem; }
     .controls { display:flex; flex-wrap:wrap; gap:0.75rem; align-items:center; }
     .spacer { flex:1; min-width:40px; }
     .pill { display:inline-flex; align-items:center; gap:0.35rem; padding:0.25rem 0.6rem; border-radius:999px; font-size:0.85rem; background:var(--bg-alt); color:var(--text); border:1px solid var(--border); }
     .pill.info { background:#e0f2fe; color:#075985; border-color:#bae6fd; }
     .table-wrapper { border:1px solid var(--border); border-radius:0.85rem; overflow:auto; box-shadow:var(--shadow-card); background:var(--panel-muted); }
-    table { width:100%; border-collapse:collapse; min-width:960px; }
+    table { width:100%; border-collapse:collapse; min-width:860px; }
     thead { background:var(--bg-alt); position:sticky; top:0; z-index:3; text-transform:uppercase; font-size:0.8rem; letter-spacing:0.04em; }
     th, td { padding:0.7rem 0.85rem; border-bottom:1px solid var(--border); text-align:left; vertical-align:top; }
     tbody tr:nth-child(2n) td { background:var(--panel-muted); }
@@ -40,6 +62,7 @@
     .tag { padding:0.25rem 0.55rem; border-radius:0.65rem; border:1px solid var(--border); background:var(--bg-alt); font-size:0.8rem; color:var(--text-muted); }
     .tag-hard { background:#fef2f2; border-color:#fecaca; color:#991b1b; font-weight:600; }
     .tag-callup { background:#eff6ff; border-color:#bfdbfe; color:#1d4ed8; font-weight:600; }
+    .callup-note { color:#1d4ed8; font-weight:600; font-size:0.9rem; display:inline-flex; align-items:center; gap:0.3rem; }
     tr.from-callup td { background:linear-gradient(90deg, rgba(239,246,255,0.6), rgba(255,255,255,0)); }
     .status-bar { position:sticky; bottom:0; background:var(--glass); border-top:1px solid var(--border); padding:0.75rem 1rem; display:flex; gap:0.6rem; align-items:center; box-shadow:0 -8px 24px rgba(15,23,42,0.08); flex-wrap:wrap; }
     .status-badge { display:inline-flex; align-items:center; gap:0.35rem; padding:0.35rem 0.7rem; border-radius:999px; font-weight:600; font-size:0.9rem; }
@@ -53,7 +76,7 @@
     .roster-list { list-style:none; padding:0; margin:0.35rem 0 0; display:grid; gap:0.25rem; }
     .roster-badge { display:inline-flex; align-items:center; gap:0.35rem; padding:0.2rem 0.55rem; border-radius:999px; background:#eef2ff; color:#312e81; border:1px solid #c7d2fe; font-size:0.78rem; }
     .extra-pill { background:#ecfeff; border:1px solid #a5f3fc; color:#0f172a; }
-    @media (max-width: 960px) { .page-header { position:static; } label { width:100%; } input, select, textarea, button { width:100%; } button { justify-content:center; } table { min-width:880px; } }
+    @media (max-width: 960px) { .page-header { position:static; } label { width:100%; } input, select, textarea, button { width:100%; } button { justify-content:center; } table { min-width:800px; } .header-meta { width:100%; justify-content:flex-start; } .toolbar { flex-direction:column; align-items:flex-start; } }
   </style>
 </head>
 <body>
@@ -92,124 +115,164 @@
           <div class="page-inner">
             <header class="page-header">
               <div style="flex:1;min-width:260px;">
+                <p class="eyebrow">Admin · Event-Pool</p>
                 <h1>Zusage-Pool fürs nächste Event</h1>
-                <p>Pflegt Zusagen und A/B-Wünsche für das kommende Event (aktuelle Aufstellung in <code>out/latest.json</code>). Kein Event-Browser – der Pool gehört immer zum nächsten Event.</p>
+                <p id="contextMeta" class="meta-line">Lädt out/latest.json …</p>
               </div>
-              <div class="settings">
-                <label>Worker URL
-                  <input id="workerUrl" type="text" value="https://ds-commit.hak1.workers.dev/write-file" spellcheck="false">
-                </label>
-                <label>Branch
-                  <input id="branchInput" type="text" value="main" spellcheck="false">
-                </label>
-                <label>Admin-Key
-                  <input id="adminKey" type="password" placeholder="r4-admin" autocomplete="off">
-                </label>
-                <button id="reloadBtn" class="ghost">Neu laden</button>
-                <button id="saveBtn">Speichern</button>
+              <div class="header-meta">
+                <div class="labelled-value" id="eventQuickMeta">nächstes Event · lädt …</div>
+                <span class="pill info" id="assignmentCount">–</span>
+                <details class="settings-toggle">
+                  <summary>⚙️ Einstellungen</summary>
+                  <div class="settings-grid">
+                    <label>Worker URL
+                      <input id="workerUrl" type="text" value="https://ds-commit.hak1.workers.dev/write-file" spellcheck="false">
+                    </label>
+                    <label>Branch
+                      <input id="branchInput" type="text" value="main" spellcheck="false">
+                    </label>
+                    <label>Admin-Key
+                      <input id="adminKey" type="password" placeholder="r4-admin" autocomplete="off">
+                    </label>
+                  </div>
+                  <div class="settings-actions">
+                    <small class="hint" style="color:var(--text-muted);">Wird lokal gespeichert; wirkt auf Speichern/Reset.</small>
+                  </div>
+                </details>
               </div>
             </header>
 
             <main class="page-main" style="display:grid;gap:1rem;">
-              <section class="panel">
-                <h2>Konzept-Trennung</h2>
-                <div class="help-grid">
-                  <div class="help-card">
-                    <strong>Dauerhafte Gruppenpräferenzen</strong>
-                    <p>Stehen in <code>data/alliance.csv</code> (Spalten <code>PrefGroup</code>, <code>PrefMode</code>, <code>PrefBoost</code>) und beeinflussen den Optimizer über mehrere Events hinweg.</p>
+              <section class="panel compact">
+                <div class="toolbar">
+                  <div style="display:grid; gap:0.35rem; min-width:280px;">
+                    <strong>Kontext nächstes Event</strong>
+                    <small class="hint" style="color:var(--text-muted);">Alle Einträge gelten für das kommende Event (aktuelles Roster). <code>Commitment=hard</code> = Fixplatz im nächsten Build; bei Event-Wechsel den Pool leeren.</small>
                   </div>
-                  <div class="help-card">
-                    <strong>Event-Zusagen (nächstes Event)</strong>
-                    <p>Pool für das <em>nächste</em> Event: Zusage / Wunschgruppe als Overlay zur aktuellen Aufstellung. Kein Event-Browser, der Pool gilt immer für <code>out/latest.json</code> und wird nach dem nächsten Build in <code>latest.json</code> gespiegelt.</p>
-                  </div>
-                  <div class="help-card">
-                    <strong>Verbindlichkeit &amp; Trennung</strong>
-                    <p><code>Commitment=hard</code> wird beim nächsten Roster-Build als Forced-Slot behandelt. Event-Zusagen in <code>data/event_signups_next.csv</code> sind unabhängig von <code>PrefGroup</code>; Reset leert nur den Zusage-Pool.</p>
-                  </div>
-                  <div class="help-card">
-                    <strong>Sync aus Callup-Assistent</strong>
-                    <p>Einträge mit <code>Source=callup-confirmed</code> stammen aus dem Callup-Assistenten (Option „Zugesagt (Roster übernehmen)“) und werden beim Speichern dort automatisch aktualisiert. Normalerweise müssen R4s hier keine Quelle/Commitment für diese Einträge anfassen.</p>
+                  <div class="toolbar-meta">
+                    <button id="resetBtn" class="ghost" style="border-color:var(--border);color:#b91c1c;">Zusage-Pool leeren</button>
+                    <div class="toolbar-actions">
+                      <button id="reloadBtn" class="ghost">Neu laden</button>
+                      <button id="saveBtn">Speichern</button>
+                    </div>
                   </div>
                 </div>
               </section>
 
-              <section class="panel">
-                <div class="controls" style="align-items:flex-start;">
-                  <div style="display:flex;flex-direction:column;gap:0.35rem;min-width:280px;flex:1;">
-                    <label style="margin:0;">Kontext
-                      <div id="contextMeta" class="hint" style="color:var(--text-muted);">Lädt out/latest.json …</div>
+              <div class="layout-two-col">
+                <section class="panel">
+                  <h2>Spieler hinzufügen</h2>
+                  <div class="controls" style="gap:0.65rem;">
+                    <label style="min-width:220px;flex:1;">Spieler (Allianz oder Roster)
+                      <input type="search" id="playerInput" list="playerOptions" placeholder="Name eingeben…" autocomplete="off">
                     </label>
-                    <small class="hint" style="color:var(--text-muted);">Alle Einträge gelten für das nächste Event (aktuelles Roster). <code>Commitment=hard</code> = Fixplatz im nächsten Build; bei Event-Wechsel den Pool leeren.</small>
+                    <label>Gruppe
+                      <select id="groupInput">
+                        <option value="">–</option>
+                        <option value="A">A</option>
+                        <option value="B">B</option>
+                      </select>
+                    </label>
+                    <label>Rolle
+                      <select id="roleInput">
+                        <option value="">–</option>
+                        <option value="Start">Start</option>
+                        <option value="Ersatz">Ersatz</option>
+                      </select>
+                    </label>
+                    <label>Verbindlichkeit
+                      <select id="commitmentInput">
+                        <option value="none">Nur Info</option>
+                        <option value="hard">Verbindlich (Fixplatz)</option>
+                      </select>
+                    </label>
+                    <label style="flex:1;min-width:200px;">Notiz (optional)
+                      <input type="text" id="noteInput" placeholder="z.B. Discord-Zusage">
+                    </label>
+                    <button id="addBtn">Hinzufügen</button>
                   </div>
-                  <div class="spacer"></div>
-                  <button id="resetBtn" class="ghost" style="border-color:var(--border);color:#b91c1c;">Zusage-Pool für nächstes Event zurücksetzen</button>
-                  <span class="pill info" id="assignmentCount">–</span>
-                </div>
-                <div class="controls" style="gap:0.5rem;">
-                  <label style="min-width:220px;flex:1;">Spieler (Allianz oder Roster)
-                    <input type="search" id="playerInput" list="playerOptions" placeholder="Name eingeben…" autocomplete="off">
-                  </label>
-                  <label>Gruppe
-                    <select id="groupInput">
-                      <option value="">–</option>
-                      <option value="A">A</option>
-                      <option value="B">B</option>
-                    </select>
-                  </label>
-                  <label>Rolle
-                    <select id="roleInput">
-                      <option value="">–</option>
-                      <option value="Start">Start</option>
-                      <option value="Ersatz">Ersatz</option>
-                    </select>
-                  </label>
-                  <label>Verbindlichkeit
-                    <select id="commitmentInput">
-                      <option value="none">Nur Info</option>
-                      <option value="hard">Verbindlich (fix in Aufstellung)</option>
-                    </select>
-                  </label>
-                  <label style="flex:1;min-width:200px;">Notiz
-                    <input type="text" id="noteInput" placeholder="z.B. Discord-Zusage">
-                  </label>
-                  <button id="addBtn">Hinzufügen</button>
-                </div>
-                <p class="hint" style="color:var(--text-muted);">Einträge werden in <code>data/event_signups_next.csv</code> gespeichert; Sortierung erfolgt nach Gruppe und Spielername.</p>
-              </section>
+                  <p class="add-help">Quelle wird automatisch gesetzt (z.B. manuell oder aus Callup) und dient nur zur Dokumentation.</p>
+                </section>
 
-              <section class="panel">
-                <div class="controls" style="margin-bottom:0.5rem;">
-                  <h2 style="margin:0;">Zugeordnete Teilnehmer (Pool nächstes Event)</h2>
-                  <span id="eventMeta" class="hint" style="color:var(--text-muted);"></span>
-                </div>
-                <div class="table-wrapper">
-                  <table>
-                    <thead>
-                      <tr>
-                        <th>Spieler</th>
-                        <th>Gruppe</th>
-                        <th>Rolle</th>
-                        <th>Verbindlichkeit</th>
-                        <th>Quelle</th>
-                        <th>Notiz</th>
-                        <th>Roster-Kontext</th>
-                        <th>Aktion</th>
-                      </tr>
-                    </thead>
-                    <tbody id="assignmentBody"></tbody>
-                  </table>
-                </div>
-                <div id="emptyState" class="hint" style="color:var(--text-muted);display:none;">Noch keine Zusagen im Pool.</div>
-                <p class="hint" style="color:var(--text-muted);">Quelle wird automatisch gesetzt (z.B. manuell oder aus Callup) und dient nur zur Dokumentation – sie beeinflusst die Aufstellung nicht.</p>
-              </section>
+                <section class="panel">
+                  <div class="controls" style="margin-bottom:0.5rem; align-items:flex-start; gap:0.35rem;">
+                    <div style="display:grid; gap:0.25rem;">
+                      <h2 style="margin:0;">Zugeordnete Teilnehmer</h2>
+                      <span id="eventMeta" class="hint" style="color:var(--text-muted);"></span>
+                    </div>
+                  </div>
+                  <div class="table-wrapper">
+                    <table>
+                      <thead>
+                        <tr>
+                          <th>Spieler</th>
+                          <th>Gruppe</th>
+                          <th>Rolle</th>
+                          <th>Verbindlichkeit</th>
+                          <th>Quelle</th>
+                          <th>Notiz</th>
+                          <th>Roster-Kontext</th>
+                          <th>Aktion</th>
+                        </tr>
+                      </thead>
+                      <tbody id="assignmentBody"></tbody>
+                    </table>
+                  </div>
+                  <div id="emptyState" class="hint" style="color:var(--text-muted);display:none;">Noch keine Zusagen im Pool.</div>
+                  <p class="hint" style="color:var(--text-muted);">Quelle beeinflusst die Aufstellung nicht; sie zeigt nur an, ob ein Eintrag manuell oder aus dem Callup-Assistenten stammt.</p>
+                </section>
+              </div>
 
-              <section class="panel" id="rosterPreviewPanel">
-                <div class="controls" style="margin-bottom:0.5rem;">
-                  <h2 style="margin:0;">Optimierte Aufstellung (nächstes Event)</h2>
+              <details class="accordion" id="rosterPreviewPanel">
+                <summary>
+                  <div style="display:grid; gap:0.1rem;">
+                    <span>Optimierte Aufstellung (nächstes Event)</span>
+                    <small style="color:var(--text-muted);">Zeigt die aktuelle Aufstellung aus <code>latest.json</code>; wirkt nach nächstem Roster-Build.</small>
+                  </div>
                   <span id="rosterMeta" class="hint" style="color:var(--text-muted);"></span>
+                </summary>
+                <div class="accordion-body">
+                  <div id="rosterPreview" class="roster-preview"></div>
                 </div>
-                <div id="rosterPreview" class="roster-preview"></div>
-              </section>
+              </details>
+
+              <details class="accordion">
+                <summary>Hintergrund &amp; Funktionsweise</summary>
+                <div class="accordion-body">
+                  <div class="help-grid">
+                    <div class="help-card">
+                      <strong>Dauerhafte Gruppenpräferenzen</strong>
+                      <ul>
+                        <li>Quelle: <code>data/alliance.csv</code> (Spalten <code>PrefGroup</code>, <code>PrefMode</code>, <code>PrefBoost</code>).</li>
+                        <li>Wirken langfristig auf den Optimizer.</li>
+                      </ul>
+                    </div>
+                    <div class="help-card">
+                      <strong>Event-Zusagen (nächstes Event)</strong>
+                      <ul>
+                        <li>Overlay für das <em>nächste</em> Event: basiert auf <code>out/latest.json</code>.</li>
+                        <li>Kein Event-Browser; der Pool gilt immer für das nächste Build.</li>
+                        <li>Wird nach dem nächsten Build in <code>latest.json</code> gespiegelt.</li>
+                      </ul>
+                    </div>
+                    <div class="help-card">
+                      <strong>Verbindlichkeit &amp; Trennung</strong>
+                      <ul>
+                        <li><code>Commitment=hard</code> = Fixplatz im nächsten Roster-Build.</li>
+                        <li>Event-Zusagen sind unabhängig von <code>PrefGroup</code>; Reset leert nur den Zusage-Pool.</li>
+                      </ul>
+                    </div>
+                    <div class="help-card">
+                      <strong>Sync aus Callup-Assistent</strong>
+                      <ul>
+                        <li><code>Source=callup-confirmed</code> kommt vom Callup-Assistenten („Zugesagt (Roster übernehmen)“).</li>
+                        <li>Beim Speichern werden diese Einträge dort automatisch aktualisiert.</li>
+                        <li>Meist keine Anpassung nötig; Quelle bleibt zur Dokumentation erhalten.</li>
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+              </details>
             </main>
           </div>
         </section>
@@ -250,6 +313,7 @@
         statusText: document.getElementById('statusText'),
         eventMeta: document.getElementById('eventMeta'),
         contextMeta: document.getElementById('contextMeta'),
+        eventQuickMeta: document.getElementById('eventQuickMeta'),
         resetBtn: document.getElementById('resetBtn'),
         rosterPreview: document.getElementById('rosterPreview'),
         rosterMeta: document.getElementById('rosterMeta'),
@@ -464,6 +528,16 @@
         const text = parts.length ? `${parts.join(' · ')} · ${rebuildHint}` : rebuildHint;
         if (elements.contextMeta) elements.contextMeta.textContent = text;
         if (elements.rosterMeta) elements.rosterMeta.textContent = text;
+        updateQuickMeta();
+      }
+
+      function updateQuickMeta() {
+        const parts = [];
+        if (state.eventSignupsMeta?.event_id) parts.push(`Event ${state.eventSignupsMeta.event_id}`);
+        if (state.rosterMeta) parts.push(`Build: ${state.rosterMeta}`);
+        parts.push(`Pool: ${state.assignments.length}`);
+        const text = parts.length ? parts.join(' · ') : 'nächstes Event';
+        if (elements.eventQuickMeta) elements.eventQuickMeta.textContent = text;
       }
 
       function populatePlayers() {
@@ -491,7 +565,7 @@
         const rows = [...state.assignments];
         elements.assignmentBody.innerHTML = '';
         elements.assignmentCount.textContent = `${rows.length} Einträge`;
-        elements.eventMeta.textContent = 'Alle Einträge beziehen sich auf das nächste Event (aktuelles Roster); Commitment=hard erzwingt Slots im nächsten Build.';
+        elements.eventMeta.textContent = 'Alle Einträge beziehen sich auf das nächste Event (aktuelles Roster); Callup-Einträge sind blau markiert und nur zur Dokumentation.';
         elements.emptyState.style.display = rows.length ? 'none' : 'block';
         rows.forEach((row, idx) => {
           const tr = document.createElement('tr');
@@ -509,6 +583,7 @@
             if ((row.Group || '') === v) opt.selected = true;
             groupSel.appendChild(opt);
           });
+          groupSel.disabled = fromCallup;
           groupSel.addEventListener('change', () => { row.Group = groupSel.value; updateSaveButtonState(); });
           groupTd.appendChild(groupSel);
           tr.appendChild(groupTd);
@@ -520,6 +595,7 @@
             if ((row.Role || '') === v) opt.selected = true;
             roleSel.appendChild(opt);
           });
+          roleSel.disabled = fromCallup;
           roleSel.addEventListener('change', () => { row.Role = roleSel.value; updateSaveButtonState(); });
           roleTd.appendChild(roleSel);
           tr.appendChild(roleTd);
@@ -539,6 +615,7 @@
             commitmentBadge.textContent = c === 'hard' ? 'verbindlich' : 'Info';
             commitmentBadge.className = c === 'hard' ? 'tag tag-hard' : 'tag';
           };
+          commitmentSel.disabled = fromCallup;
           commitmentSel.addEventListener('change', () => {
             row.Commitment = commitmentSel.value || 'none';
             updateCommitmentBadge();
@@ -557,6 +634,12 @@
           sourceText.textContent = formatSourceLabel(row.Source);
           if (fromCallup) sourceText.className = 'tag tag-callup';
           sourceTd.appendChild(sourceText);
+          if (fromCallup) {
+            const note = document.createElement('div');
+            note.className = 'callup-note';
+            note.textContent = 'aus Callup-Assistent';
+            sourceTd.appendChild(note);
+          }
           tr.appendChild(sourceTd);
 
           const noteTd = document.createElement('td');
@@ -593,6 +676,7 @@
         });
         elements.emptyState.style.display = rows.length ? 'none' : 'block';
         renderRosterPreview();
+        updateQuickMeta();
       }
 
       function renderRosterPreview() {
