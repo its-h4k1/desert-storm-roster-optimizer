@@ -197,7 +197,7 @@ def _load_absences(path: str) -> pd.DataFrame:
     return df[["canon", "From_ts", "To_ts", "Reason"]].copy()
 
 
-def _load_event_signups(path: str, to_canon) -> pd.DataFrame:
+def _load_event_signups(path: str, to_canon) -> tuple[pd.DataFrame, Dict[str, int]]:
     """Load the next-event signup pool (manual confirmations for the upcoming roster).
 
     Analyse & Konzept (Stand heute):
@@ -212,14 +212,22 @@ def _load_event_signups(path: str, to_canon) -> pd.DataFrame:
     """
 
     cols = ["PlayerName", "Group", "Role", "Commitment", "Source", "Note"]
+    meta: Dict[str, int] = {
+        "raw_rows": 0,
+        "rows_with_playername": 0,
+        "rows_with_canon": 0,
+        "hard_commitments": 0,
+    }
     try:
         df = pd.read_csv(path, dtype=str)
     except FileNotFoundError:
         print(f"[info] event signups: {path} fehlt – starte leer")
-        return pd.DataFrame(columns=cols)
+        return pd.DataFrame(columns=cols), meta
     except Exception as e:
         print(f"[warn] event signups: {path} nicht lesbar ({e}), starte leer")
-        return pd.DataFrame(columns=cols)
+        return pd.DataFrame(columns=cols), meta
+
+    meta["raw_rows"] = int(len(df))
 
     for col in cols:
         if col not in df.columns:
@@ -228,8 +236,10 @@ def _load_event_signups(path: str, to_canon) -> pd.DataFrame:
     df = df[cols].copy()
     df["PlayerName"] = df["PlayerName"].fillna("").astype(str).str.strip()
     df = df[df["PlayerName"] != ""]
+    meta["rows_with_playername"] = int(len(df))
     df["canon"] = df["PlayerName"].map(to_canon)
     df = df[df["canon"].notna()].copy()
+    meta["rows_with_canon"] = int(len(df))
 
     df["Group"] = df["Group"].fillna("").astype(str).str.strip().str.upper()
     df["Role"] = df["Role"].fillna("").astype(str).str.strip().str.title()
@@ -238,11 +248,12 @@ def _load_event_signups(path: str, to_canon) -> pd.DataFrame:
     )
     allowed_commitments = {"none", "hard"}
     df.loc[~df["Commitment"].isin(allowed_commitments), "Commitment"] = "none"
+    meta["hard_commitments"] = int((df["Commitment"] == "hard").sum())
     df["Source"] = (
         df["Source"].fillna("manual_event_signup").astype(str).str.strip().replace("", "manual_event_signup")
     )
     df["Note"] = df["Note"].fillna("").astype(str)
-    return df
+    return df, meta
 
 
 def _normalize_for_match(value: str) -> str:
@@ -427,8 +438,15 @@ def main():
         except Exception as e:
             print(f"[warn] absences nicht nutzbar: {e}")
 
-    event_signups_df = _load_event_signups(args.event_signups, to_canon)
-    print(f"[info] event signups geladen: {len(event_signups_df)} Einträge (Pool für nächstes Event)")
+    event_signups_df, event_signup_load_meta = _load_event_signups(args.event_signups, to_canon)
+    print(
+        "[info] event signups geladen: "
+        f"{len(event_signups_df)} Einträge (Pool für nächstes Event) – "
+        f"raw={event_signup_load_meta.get('raw_rows', 0)}, "
+        f"with_name={event_signup_load_meta.get('rows_with_playername', 0)}, "
+        f"canonical={event_signup_load_meta.get('rows_with_canon', 0)}, "
+        f"hard={event_signup_load_meta.get('hard_commitments', 0)}"
+    )
 
     # 2) Metriken berechnen
     role_probs = compute_role_probs(
@@ -786,7 +804,7 @@ def main():
             return default
 
     schema_block = {
-        "version": 3,
+        "version": 4,
         "csv": [
             "PlayerName",
             "Canonical",
@@ -883,13 +901,17 @@ def main():
     # vor dem Optimizer gesetzt werden (siehe forced_signups oben). Overlay
     # bleibt für alle anderen Signups erhalten.
     extra_signups_by_group = {g: [] for g in GROUPS}
+    hard_signup_total = int((event_signups_df["Commitment"] == "hard").sum())
     signups_meta = {
         "scope": "next_event",
         "source": str(Path(args.event_signups)),
+        "raw_rows": int(event_signup_load_meta.get("raw_rows", 0)),
+        "rows_with_playername": int(event_signup_load_meta.get("rows_with_playername", 0)),
+        "rows_with_canon": int(event_signup_load_meta.get("rows_with_canon", len(event_signups_df))),
         "total_entries": int(len(event_signups_df)),
         "applied_entries": 0,
         "ignored_entries": 0,
-        "hard_commitments": int(len(event_signups_df[event_signups_df["Commitment"] == "hard"])),
+        "hard_commitments": hard_signup_total,
     }
 
     if not event_signups_df.empty:
@@ -934,9 +956,41 @@ def main():
             )
             signups_meta["applied_entries"] += 1
 
+    signups_meta["hard_commitments_applied"] = len(forced_signups)
+    signups_meta["hard_commitments_invalid"] = len(invalid_forced_signups)
+    signups_meta["hard_commitments_overbooked"] = len(overbooked_forced_signups)
+    signups_meta["extra_entries_total"] = int(sum(len(v) for v in extra_signups_by_group.values()))
+    signups_meta["extra_entries_by_group"] = {g: len(extra_signups_by_group.get(g, [])) for g in GROUPS}
+
+    hard_missing_from_roster = max(
+        0,
+        hard_signup_total
+        - signups_meta["hard_commitments_applied"]
+        - signups_meta["hard_commitments_invalid"],
+    )
+    forced_in_roster = sum(1 for p in players_payload if p.get("has_forced_signup"))
+    signup_pool_stats = {
+        "source": signups_meta["source"],
+        "raw_rows": signups_meta["raw_rows"],
+        "rows_with_playername": signups_meta["rows_with_playername"],
+        "rows_with_canon": signups_meta["rows_with_canon"],
+        "total_entries": signups_meta["total_entries"],
+        "applied_entries": signups_meta["applied_entries"],
+        "ignored_entries": signups_meta["ignored_entries"],
+        "hard_commitments_total": hard_signup_total,
+        "hard_commitments_applied": signups_meta["hard_commitments_applied"],
+        "hard_commitments_invalid": signups_meta["hard_commitments_invalid"],
+        "hard_commitments_overbooked": signups_meta["hard_commitments_overbooked"],
+        "hard_commitments_missing_from_roster": hard_missing_from_roster,
+        "in_roster_hard_commitments": forced_in_roster,
+        "extra_entries_total": signups_meta["extra_entries_total"],
+        "extra_entries_by_group": signups_meta["extra_entries_by_group"],
+    }
+
     json_payload = {
         "generated_at": datetime.now(TZ).isoformat(),
         "schema": schema_block,
+        "signup_pool": signup_pool_stats,
         "groups": {
             "A": {
                 "Start": _by("A", "Start"),
