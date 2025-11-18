@@ -378,18 +378,71 @@
         });
     }
 
+    function extractSignupStats(meta) {
+      const toNum = (value) => {
+        const n = Number(value);
+        return Number.isFinite(n) ? n : null;
+      };
+      if (!meta || typeof meta !== 'object') {
+        return {
+          source: '',
+          totalEntries: null,
+          hardTotal: null,
+          hardApplied: null,
+          hardInvalid: null,
+          hardOverbooked: null,
+          extraTotal: null,
+          extraByGroup: null,
+          missingHard: null,
+          inRosterHard: null,
+        };
+      }
+      return {
+        source: meta.source || '',
+        totalEntries: toNum(meta.rows_with_canon ?? meta.total_entries ?? meta.rows_with_playername ?? meta.raw_rows),
+        hardTotal: toNum(meta.hard_commitments_total ?? meta.hard_commitments),
+        hardApplied: toNum(meta.hard_commitments_applied),
+        hardInvalid: toNum(meta.hard_commitments_invalid),
+        hardOverbooked: toNum(meta.hard_commitments_overbooked),
+        extraTotal: toNum(meta.extra_entries_total),
+        extraByGroup: (meta.extra_entries_by_group && typeof meta.extra_entries_by_group === 'object') ? meta.extra_entries_by_group : null,
+        missingHard: toNum(meta.hard_commitments_missing_from_roster),
+        inRosterHard: toNum(meta.in_roster_hard_commitments),
+      };
+    }
+
     function renderExtraSignups(extraData, meta) {
       if (!extraRoot) return;
       const groups = ['A','B'];
-      const count = groups.reduce((sum, g) => sum + (Array.isArray(extraData[g]) ? extraData[g].length : 0), 0);
+      const stats = extractSignupStats(meta);
+      const extraCount = Number.isFinite(stats.extraTotal)
+        ? Number(stats.extraTotal)
+        : groups.reduce((sum, g) => sum + (Array.isArray(extraData[g]) ? extraData[g].length : 0), 0);
+      const totalEntries = Number.isFinite(stats.totalEntries) ? stats.totalEntries : extraCount;
+      const hardPart = Number.isFinite(stats.hardTotal)
+        ? `davon verbindliche Zusagen: ${stats.hardTotal}`
+        : null;
+      const appliedHard = Number.isFinite(stats.hardApplied)
+        ? `Fixplätze im Roster: ${stats.hardApplied}`
+        : null;
+      const outsideRosterPart = Number.isFinite(extraCount)
+        ? `Zusätzliche Zusagen (nicht im Roster): ${extraCount}`
+        : null;
       if (extraNote) {
-        const parts = ['Pool für nächstes Event'];
-        if (meta && typeof meta.total_entries === 'number') parts.push(`Datei-Einträge: ${meta.total_entries}`);
-        if (meta && meta.source) parts.push(`Quelle: ${meta.source}`);
+        const parts = [`Pool für nächstes Event · Datei-Einträge: ${Number.isFinite(totalEntries) ? totalEntries : '–'}`];
+        const hardBits = [hardPart, appliedHard].filter(Boolean);
+        if (hardBits.length) {
+          parts[0] += ` (${hardBits.join(' · ')})`;
+        }
+        if (outsideRosterPart) parts.push(outsideRosterPart);
+        if (stats.source) parts.push(`Quelle: ${stats.source}`);
         extraNote.textContent = parts.join(' · ');
       }
-      if (!count) {
-        extraRoot.innerHTML = '<p class="muted">Keine zusätzlichen Zusagen erfasst.</p>';
+      if (!extraCount) {
+        const msg = (Number.isFinite(stats.hardTotal) && stats.hardTotal > 0)
+          ? 'Keine zusätzlichen Zusagen außerhalb der Aufstellung.'
+          : 'Keine zusätzlichen Zusagen erfasst.';
+        extraRoot.innerHTML = `<p class="muted">${msg}</p>`;
         return;
       }
       extraRoot.innerHTML = '';
@@ -425,15 +478,29 @@
       });
     }
 
-    function renderForcedDiagnostics(diag) {
+    function renderForcedDiagnostics(diag, meta) {
       const container = document.getElementById('forced-diagnostics');
       if (!container) return;
       const forced = Array.isArray(diag?.forced) ? diag.forced : [];
       const invalid = Array.isArray(diag?.invalid) ? diag.invalid : [];
       const overbooked = Array.isArray(diag?.overbooked) ? diag.overbooked : [];
+      const stats = extractSignupStats(meta);
+
+      const summaryParts = [];
+      const hardTotal = Number.isFinite(stats.hardTotal) ? stats.hardTotal : null;
+      const hardApplied = Number.isFinite(stats.hardApplied) ? stats.hardApplied : forced.length;
+      const hardInvalid = Number.isFinite(stats.hardInvalid) ? stats.hardInvalid : invalid.length;
+      const hardOverbooked = Number.isFinite(stats.hardOverbooked) ? stats.hardOverbooked : overbooked.length;
+      if (Number.isFinite(stats.totalEntries)) summaryParts.push(`Datei-Einträge: ${stats.totalEntries}`);
+      if (hardTotal != null) summaryParts.push(`davon verbindliche Zusagen: ${hardTotal}`);
+      if (Number.isFinite(hardApplied)) summaryParts.push(`Fixplätze im Roster: ${hardApplied}`);
+      if (Number.isFinite(hardInvalid) && hardInvalid > 0) summaryParts.push(`ignoriert: ${hardInvalid}`);
+      if (Number.isFinite(hardOverbooked) && hardOverbooked > 0) summaryParts.push(`über Kapazität: ${hardOverbooked}`);
 
       if (!forced.length && !invalid.length && !overbooked.length) {
-        container.innerHTML = '<p class="muted">Keine verbindlichen Zusagen im Pool.</p>';
+        container.innerHTML = summaryParts.length
+          ? `<p class="muted">${summaryParts.join(' · ')}</p>`
+          : '<p class="muted">Keine verbindlichen Zusagen im Pool.</p>';
         return;
       }
 
@@ -468,7 +535,8 @@
         parts.push(`<div><h4>Verbindlich gesetzt</h4><ul>${items}</ul></div>`);
       }
 
-      container.innerHTML = parts.join('');
+      const summary = summaryParts.length ? `<p class="muted">${summaryParts.join(' · ')}</p>` : '';
+      container.innerHTML = summary + parts.join('');
     }
 
     fetchAbsences();
@@ -879,8 +947,9 @@
           writeBucketCounts(key, keyCounts);
         }
 
-        renderExtraSignups(extraSignups, payload.event_signups || null);
-        renderForcedDiagnostics(state.forcedDiagnostics);
+        const signupMeta = payload.signup_pool || payload.event_signups || null;
+        renderExtraSignups(extraSignups, signupMeta);
+        renderForcedDiagnostics(state.forcedDiagnostics, signupMeta);
 
         const ts = new Date().toISOString().replace('T',' ').slice(0,19) + " UTC";
         const schemaVersion = (schema && schema.version != null) ? ` · schema v${schema.version}` : "";
