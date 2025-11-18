@@ -131,7 +131,7 @@
     <div id="extra-root" class="extra-grid"></div>
   </section>
 
-  <p class="muted legend">Legende: <span class="tag tag-nd" title="Keine Historie – events_seen = 0">No&nbsp;Data</span> keine Historie · <span class="tag tag-low" title="Wenig Historie – events_seen ∈ {1,2}">low&nbsp;n</span> wenig Historie · <span class="tag tag-fix">🔒 verbindlich</span> verbindliche Zusage (Commitment=hard) · <span class="tag tag-callup callup-badge">🔔 Callup empfohlen</span> Spieler, für die eine Erinnerung empfohlen wird<br />Farben basieren auf Historie (rolling→overall), EB wird nur zur Sortierung verwendet.<br />No-Data = nie teilgenommen (grau). low-n ≤2 = gelb. 1 Fehltermin = nie rot.</p>
+  <p class="muted legend">Legende: <span class="tag tag-nd" title="Keine Historie – events_seen = 0">No&nbsp;Data</span> keine Historie · <span class="tag tag-low" title="Wenig Historie – events_seen ∈ {1,2}">low&nbsp;n</span> wenig Historie · <span class="tag tag-fix">🔒 verbindlich</span> verbindliche Zusage (Commitment=hard) · <span class="tag tag-callup callup-badge">🔔 Callup</span> Spieler, für die eine Erinnerung empfohlen wird<br />Farben basieren auf Historie (rolling→overall), EB wird nur zur Sortierung verwendet.<br />No-Data = nie teilgenommen (grau). low-n ≤2 = gelb. 1 Fehltermin = nie rot.</p>
   <p class="muted legend" id="signup-inline"></p>
 
   <section id="absences">
@@ -229,14 +229,45 @@
       return Number.isFinite(n) ? n : null;
     };
 
+    const CALLUP_REASON_LABELS = {
+      high_overall: "Hohe No-Show overall",
+      high_rolling: "Hohe No-Show rolling",
+      low_n: "Low-N (wenig Events)",
+    };
+
     function formatCallupReasons(callup) {
       if (!callup) return "";
-      const reasons = Array.isArray(callup.reasons) ? callup.reasons : [];
-      const labels = reasons.map(r => {
-        if (!r) return "";
-        if (typeof r === "string") return r;
-        return r.label || r.code || "";
-      }).filter(Boolean);
+      const rawReasons = Array.isArray(callup.reasons) ? callup.reasons : [];
+      const codes = new Set();
+      const fallbackLabels = [];
+      rawReasons.forEach(r => {
+        if (!r) return;
+        const code = (typeof r === "string") ? r : (r.code || r.label || "");
+        const normalized = String(code || "").trim();
+        if (normalized) {
+          codes.add(normalized);
+        } else if (typeof r.label === "string") {
+          fallbackLabels.push(r.label.trim());
+        }
+      });
+
+      const labels = [];
+      const hasHighOverall = codes.has("high_overall");
+      const hasHighRolling = codes.has("high_rolling");
+      const hasLowN = codes.has("low_n");
+
+      if (hasHighOverall && hasHighRolling) {
+        labels.push("Hohe No-Show (overall + rolling)");
+      } else {
+        if (hasHighOverall) labels.push(CALLUP_REASON_LABELS.high_overall);
+        if (hasHighRolling) labels.push(CALLUP_REASON_LABELS.high_rolling);
+      }
+      if (hasLowN) labels.push(CALLUP_REASON_LABELS.low_n);
+
+      if (!labels.length && fallbackLabels.length) {
+        labels.push(...fallbackLabels);
+      }
+
       return labels.join(" · ");
     }
 
@@ -253,7 +284,7 @@
       rawReasons.forEach(reason => {
         if (!reason || typeof reason !== 'object') return;
         const code = String(reason.code || '').trim();
-        const label = reason.label || code || 'Callup empfohlen';
+        const label = CALLUP_REASON_LABELS[code] || reason.label || code || 'Callup empfohlen';
         if (code) seenCodes.add(code);
         normalizedReasons.push({ code: code || 'unknown', label });
       });
@@ -265,7 +296,7 @@
         const normalized = String(code || 'unknown').trim() || 'unknown';
         if (normalized && !seenCodes.has(normalized)) {
           seenCodes.add(normalized);
-          normalizedReasons.push({ code: normalized, label: normalized });
+          normalizedReasons.push({ code: normalized, label: CALLUP_REASON_LABELS[normalized] || normalized });
         }
       });
 
@@ -285,8 +316,9 @@
     function buildCallupBadge(callup) {
       if (!callup || !callup.recommended) return "";
       const reasonText = formatCallupReasons(callup);
-      const label = reasonText || "Callup empfohlen";
-      return `<span class="tag tag-callup callup-badge" title="${escapeHtml(label)}">🔔 ${escapeHtml(label)}</span>`;
+      const label = "Callup";
+      const title = reasonText ? `Callup empfohlen: ${reasonText}` : "Callup empfohlen";
+      return `<span class="tag tag-callup callup-badge" title="${escapeHtml(title)}">🔔 ${escapeHtml(label)}</span>`;
     }
 
     function extractCallupMeta(payload, playersArray, schema = {}) {
@@ -335,6 +367,8 @@
 
       const hasStats = Boolean(meta && meta.hasStats);
       const recommendedTotal = Number.isFinite(meta?.recommendedTotal) ? Number(meta.recommendedTotal) : null;
+      const reasonCounts = meta?.reasonCounts || {};
+
       let text = '';
       if (!hasStats) {
         text = 'Callup-Empfehlungen: nicht verfügbar (ältere schema-Version).';
@@ -342,6 +376,20 @@
         text = 'Callup-Empfehlungen: keine Spieler empfohlen.';
       } else if (recommendedTotal != null && recommendedTotal > 0) {
         text = `Callup-Empfehlungen: ${recommendedTotal} Spieler empfohlen.`;
+      }
+
+      const breakdownOrder = ['high_overall', 'high_rolling', 'low_n'];
+      const breakdown = breakdownOrder
+        .map(code => {
+          const count = Number.isFinite(reasonCounts[code]) ? Number(reasonCounts[code]) : null;
+          if (count == null || count <= 0) return '';
+          const label = CALLUP_REASON_LABELS[code] || code;
+          return `${count}× ${label}`;
+        })
+        .filter(Boolean);
+
+      if (text && breakdown.length) {
+        text += ` — Gründe: ${breakdown.join(' · ')}`;
       }
 
       if (text) {
@@ -790,44 +838,46 @@
       return parts.join(" · ");
     }
 
+    function formatDateDisplay(value) {
+      const parsed = parseDateOnly(value);
+      if (!parsed) return null;
+      return `${pad(parsed.getUTCDate())}.${pad(parsed.getUTCMonth() + 1)}.${parsed.getUTCFullYear()}`;
+    }
+
     function buildPlayerMetaText(meta) {
       const eventsSeen = Number.isFinite(meta.eventsSeen) ? Number(meta.eventsSeen) : (meta.eventsSeen === 0 ? 0 : null);
       const noshowCountOverall = Number.isFinite(meta.noshowCountOverall) ? Number(meta.noshowCountOverall) : null;
-      const noshowRateOverall = Number.isFinite(meta.noshowRateOverall) ? Number(meta.noshowRateOverall) : null;
-      const noshowRateRolling = Number.isFinite(meta.noshowRateRolling) ? Number(meta.noshowRateRolling) : null;
-
-      if (eventsSeen === 0) {
-        return "0 Events · noch nie teilgenommen";
-      }
+      const dataNote = meta.dataNote ? meta.dataNote : "";
+      const callupReason = meta.callupReason ? meta.callupReason : "";
+      const lastSeen = meta.lastSeenDate ? formatDateDisplay(meta.lastSeenDate) : null;
 
       const parts = [];
 
-      if (eventsSeen != null) {
-        parts.push(`${eventsSeen} ${eventsSeen === 1 ? "Event" : "Events"}`);
+      if (eventsSeen === 0) {
+        parts.push("Events: 0 · keine Teilnahme bisher");
+      } else if (eventsSeen != null) {
+        parts.push(`Events: ${eventsSeen}`);
       } else {
-        parts.push("Events unbekannt");
+        parts.push("Events: –");
       }
 
       if (noshowCountOverall != null) {
-        let noshowText = `${noshowCountOverall} No-Show${noshowCountOverall === 1 ? "" : "s"} overall`;
-        if (noshowRateOverall != null) {
-          noshowText += ` (${pc(noshowRateOverall)})`;
-        }
-        parts.push(noshowText);
-      } else if (noshowRateOverall != null) {
-        parts.push(`No-Show overall ${pc(noshowRateOverall)}`);
-      } else {
-        parts.push("No-Show-Daten fehlen");
+        parts.push(`No-Shows gesamt: ${noshowCountOverall}`);
       }
 
-      if (noshowRateRolling != null) {
-        parts.push(`rolling ${pc(noshowRateRolling)}`);
+      if (lastSeen) {
+        parts.push(`letzte Teilnahme: ${lastSeen}`);
       }
 
-      if (eventsSeen != null && eventsSeen > 0 && eventsSeen <= 2) {
-        parts.push("Schätzung unsicher");
+      if (dataNote) {
+        parts.push(dataNote);
       }
 
+      if (callupReason) {
+        parts.push(`Callup: ${callupReason}`);
+      }
+
+      if (!parts.length) return "Keine zusätzlichen Daten verfügbar.";
       return parts.join(" · ");
     }
 
@@ -1072,6 +1122,10 @@
             const neverMissed = annotate ? (participated && misses === 0) : false;
             const singleMiss = annotate ? (participated && misses === 1) : false;
 
+            const historyBadge = noData
+              ? '<span class="tag tag-nd" title="Keine Historie – events_seen = 0">No&nbsp;Data</span>'
+              : (lowN ? '<span class="tag tag-low" title="Wenig Historie – events_seen ∈ {1,2}">low&nbsp;n</span>' : '');
+
             const histRate = (histRolling ?? histOverall);
 
             const tip = buildChipTooltip(p, histRolling, histOverall);
@@ -1090,12 +1144,7 @@
             const normalizedCallup = normalizeCallup(p);
             const forcedBadge = p ? buildFixBadge(p.forced_signup || (p.has_forced_signup ? { commitment: 'hard', source: p.event_signup?.source } : null)) : '';
             const callupBadge = p ? buildCallupBadge(normalizedCallup) : '';
-            if (noData) {
-              nameHTML += ' <span class="tag tag-nd" title="Keine Historie – events_seen = 0">No&nbsp;Data</span>';
-            }
-            if (lowN) {
-              nameHTML += ' <span class="tag tag-low" title="Wenig Historie – events_seen ∈ {1,2}">low&nbsp;n</span>';
-            }
+            if (historyBadge) nameHTML += ` ${historyBadge}`;
             if (forcedBadge) nameHTML += ` ${forcedBadge}`;
             if (callupBadge) nameHTML += ` ${callupBadge}`;
             if (p && (p.has_event_signup || p.event_signup)) {
@@ -1104,11 +1153,17 @@
             const noshowCountOverall = Number.isFinite(p.noshow_count_overall) ? Number(p.noshow_count_overall) :
               (Number.isFinite(p.noshow_count) ? Number(p.noshow_count) :
               (Object.prototype.hasOwnProperty.call(r, "NoShowCount") ? toNumber(r.NoShowCount) : null));
+            const dataNote = noData
+              ? "Datenlage: keine Historie"
+              : (lowN ? "Datenlage: wenig Historie" : "");
+            const callupReason = (normalizedCallup && normalizedCallup.recommended) ? formatCallupReasons(normalizedCallup) : "";
+            const lastSeenValue = p ? (p.last_seen || p.LastSeenDate) : (r.LastSeenDate || null);
             const metaText = buildPlayerMetaText({
               eventsSeen: seen,
               noshowCountOverall,
-              noshowRateOverall: histOverall,
-              noshowRateRolling: histRolling,
+              dataNote,
+              callupReason,
+              lastSeenDate: lastSeenValue,
             });
             const tr = document.createElement("tr");
             tr.innerHTML = `
