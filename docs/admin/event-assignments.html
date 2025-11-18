@@ -62,6 +62,7 @@
     .tag { padding:0.25rem 0.55rem; border-radius:0.65rem; border:1px solid var(--border); background:var(--bg-alt); font-size:0.8rem; color:var(--text-muted); }
     .tag-hard { background:#fef2f2; border-color:#fecaca; color:#991b1b; font-weight:600; }
     .tag-callup { background:#eff6ff; border-color:#bfdbfe; color:#1d4ed8; font-weight:600; }
+    .tag-fix { background:#f5f5f5; border-color:#d4d4d8; color:#3f3f46; font-weight:600; display:inline-flex; align-items:center; gap:0.35rem; }
     .callup-note { color:#1d4ed8; font-weight:600; font-size:0.9rem; display:inline-flex; align-items:center; gap:0.3rem; }
     tr.from-callup td { background:linear-gradient(90deg, rgba(239,246,255,0.6), rgba(255,255,255,0)); }
     .status-bar { position:sticky; bottom:0; background:var(--glass); border-top:1px solid var(--border); padding:0.75rem 1rem; display:flex; gap:0.6rem; align-items:center; box-shadow:0 -8px 24px rgba(15,23,42,0.08); flex-wrap:wrap; }
@@ -368,6 +369,7 @@
         saving: false,
         alliancePool: [],
         rosterPlayers: [],
+        rosterIndex: new Map(),
         rosterGroups: {},
         rosterMeta: null,
         eventSignupsMeta: null,
@@ -382,6 +384,26 @@
         if (value === 'manual') return 'Manuell';
         if (value === 'callup-confirmed') return 'Aus Callup';
         return value || '–';
+      }
+      const FORCED_SOURCE_LABELS = { manual: 'Manuell', 'callup-confirmed': 'Callup' };
+      function normalizeForcedSignup(raw) {
+        if (!raw || typeof raw !== 'object') return null;
+        const commitment = (raw.commitment || raw.Commitment || '').toString().toLowerCase();
+        if (commitment !== 'hard') return null;
+        const source = raw.source || raw.Source || '';
+        const note = raw.note || raw.Note || '';
+        const overbooked = Boolean(raw.overbooked || raw.Overbooked);
+        return { commitment, source, note, overbooked };
+      }
+      function buildFixBadge(forcedSignup) {
+        const normalized = normalizeForcedSignup(forcedSignup);
+        if (!normalized) return '';
+        const sourceLabel = normalized.source ? (FORCED_SOURCE_LABELS[normalized.source] || normalized.source) : '';
+        const label = sourceLabel ? `Fixplatz · ${sourceLabel}` : 'Fixplatz';
+        const tooltipParts = ['Verbindliche Zusage aus event_signups_next.csv'];
+        if (sourceLabel) tooltipParts.push(`Quelle: ${sourceLabel}`);
+        if (normalized.overbooked) tooltipParts.push('über Kapazität');
+        return `<span class="tag tag-fix" title="${escapeHtml(tooltipParts.join(' · '))}">🔒 ${escapeHtml(label)}</span>`;
       }
       function formatCsvValue(value) {
         if (value === null || value === undefined) return '';
@@ -454,14 +476,18 @@
           const data = await response.json();
           const players = Array.isArray(data?.players) ? data.players : [];
           state.alliancePool = Array.isArray(data?.alliance_pool) ? data.alliance_pool : [];
+          const rosterIndex = new Map();
           state.rosterPlayers = players
             .map(p => ({
               name: p.display || p.canon || '',
               group: p.group || '',
               role: p.role || '',
               canon: canonicalNameJS(p.canon || p.display || ''),
+              forcedSignup: normalizeForcedSignup(p.forced_signup || (p.has_forced_signup ? { commitment:'hard', source:p.event_signup?.source } : null)),
             }))
             .filter(p => p.name);
+          state.rosterPlayers.forEach(p => { if (p.canon) rosterIndex.set(p.canon, p); });
+          state.rosterIndex = rosterIndex;
           state.rosterGroups = (data && data.groups) || {};
           state.rosterMeta = data?.generated_at || null;
           state.eventSignupsMeta = data?.event_signups || null;
@@ -469,6 +495,7 @@
         } catch (err) {
           console.warn('latest.json nicht verfügbar', err);
           state.rosterPlayers = [];
+          state.rosterIndex = new Map();
           state.rosterGroups = {};
           state.rosterMeta = null;
           state.alliancePool = [];
@@ -694,6 +721,7 @@
           signupsByCanon.set(canon, a);
         });
         const rosterCanon = new Set(state.rosterPlayers.map(p => p.canon).filter(Boolean));
+        const forcedByCanon = new Map(state.rosterPlayers.filter(p => p.canon && p.forcedSignup).map(p => [p.canon, p.forcedSignup]));
         const extraByGroup = { A: [], B: [] };
         state.assignments.forEach(a => {
           const g = (a.Group || '').toUpperCase();
@@ -715,16 +743,17 @@
             const li = document.createElement('li');
             const canon = canonicalNameJS(entry || entry.PlayerName || '');
             const signup = highlight && signupsByCanon.get(canon);
+            const forcedBadge = buildFixBadge(forcedByCanon.get(canon));
             const note = signup && signup.Note ? ` <span class="hint">${escapeHtml(signup.Note)}</span>` : '';
             if (typeof entry === 'string') {
-              li.innerHTML = `${escapeHtml(entry)}${signup ? ' <span class="roster-badge">Event-Zusage</span>' : ''}${note}`;
+              li.innerHTML = `${escapeHtml(entry)}${forcedBadge ? ` ${forcedBadge}` : ''}${signup ? ' <span class="roster-badge">Event-Zusage</span>' : ''}${note}`;
             } else {
               const badge = `<span class="roster-badge extra-pill">Event-Zusage</span>`;
               const details = [];
               if (entry.Role) details.push(entry.Role);
               if (entry.Source) details.push(formatSourceLabel(entry.Source));
               const meta = details.length ? ` <span class="hint">(${escapeHtml(details.join(' · '))})</span>` : '';
-              li.innerHTML = `${escapeHtml(entry.PlayerName || '–')} ${badge}${meta}${entry.Note ? ` <span class="hint">${escapeHtml(entry.Note)}</span>` : ''}`;
+              li.innerHTML = `${escapeHtml(entry.PlayerName || '–')}${forcedBadge ? ` ${forcedBadge}` : ''} ${badge}${meta}${entry.Note ? ` <span class="hint">${escapeHtml(entry.Note)}</span>` : ''}`;
             }
             ul.appendChild(li);
           });
