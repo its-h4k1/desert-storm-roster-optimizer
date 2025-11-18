@@ -907,6 +907,8 @@ def main():
     forced_by_canon = {f["canon"]: f for f in forced_signups}
 
     players_payload = []
+    callup_recommended_total = 0
+    callup_reason_counts: Dict[str, int] = {}
     for row in out_df.itertuples(index=False):
         entry = {
             "display": row.PlayerName,
@@ -925,6 +927,13 @@ def main():
             noshow_rolling=_float_or_none(row.NoShowRolling),
             events_seen=_int_default(row.events_seen, None),
         )
+        if entry["callup"].get("recommended"):
+            callup_recommended_total += 1
+            for reason in entry["callup"].get("reasons", []):
+                if not isinstance(reason, dict):
+                    continue
+                code = str(reason.get("code") or "unknown")
+                callup_reason_counts[code] = callup_reason_counts.get(code, 0) + 1
         if row.Canonical in forced_by_canon:
             entry["forced_signup"] = {
                 "commitment": forced_by_canon[row.Canonical].get("commitment", "hard"),
@@ -1058,6 +1067,13 @@ def main():
         "extra_entries_by_group": signups_meta["extra_entries_by_group"],
     }
 
+    callup_stats = {
+        "schema": 1,
+        "recommended_total": int(callup_recommended_total),
+        "reasons": callup_reason_counts,
+        "rules": CALLUP_RULES,
+    }
+
     json_payload = {
         "generated_at": datetime.now(TZ).isoformat(),
         "schema": schema_block,
@@ -1080,6 +1096,7 @@ def main():
         "overbooked_forced_signups": overbooked_forced_signups,
         "alliance_pool": alliance_payload,
         "players": players_payload,
+        "callup_stats": callup_stats,
     }
 
     _write_outputs(out_dir, out_df, json_payload)
