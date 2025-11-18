@@ -40,6 +40,15 @@ from src.stats import (
 EVENT_RE = re.compile(r"^DS-\d{4}-\d{2}-\d{2}-[A-Z]$", re.IGNORECASE)
 TZ = ZoneInfo("Europe/Zurich")
 
+CALLUP_RULES = {
+    "HIGH_OVERALL": 0.4,
+    "HIGH_ROLLING": 0.5,
+    "MIN_EVENTS": 3,
+    "LOW_N": 2,
+    "ROLLING_MIN": 0.25,
+    "DELTA_UPTICK": 0.1,
+}
+
 
 # --------------------------
 # Helpers: I/O + Normalizer
@@ -803,6 +812,63 @@ def main():
         except (TypeError, ValueError):
             return default
 
+    def _pct_label(val: Optional[float]) -> str:
+        if val is None:
+            return "–"
+        try:
+            return f"{float(val):.1%}"
+        except (TypeError, ValueError):
+            return "–"
+
+    def _detect_callup_recommendation(
+        noshow_overall: Optional[float],
+        noshow_rolling: Optional[float],
+        events_seen: Optional[int],
+    ) -> Dict[str, object]:
+        reasons = []
+        ev = events_seen if events_seen is not None else None
+        overall = noshow_overall if noshow_overall is not None else None
+        rolling = noshow_rolling if noshow_rolling is not None else None
+
+        if ev is not None and ev <= CALLUP_RULES["LOW_N"]:
+            reasons.append(
+                {
+                    "code": "low_n",
+                    "label": f"Low-N ({ev} Event{'s' if ev != 1 else ''})",
+                }
+            )
+
+        if ev is not None and ev >= CALLUP_RULES["MIN_EVENTS"]:
+            if overall is not None and overall >= CALLUP_RULES["HIGH_OVERALL"]:
+                reasons.append(
+                    {
+                        "code": "high_overall",
+                        "label": f"High No-Show overall {_pct_label(overall)}",
+                    }
+                )
+            if rolling is not None and rolling >= CALLUP_RULES["HIGH_ROLLING"]:
+                reasons.append(
+                    {
+                        "code": "high_rolling",
+                        "label": f"High No-Show rolling {_pct_label(rolling)}",
+                    }
+                )
+
+        if rolling is not None and overall is not None:
+            uptick_ref = max(CALLUP_RULES["ROLLING_MIN"], overall + CALLUP_RULES["DELTA_UPTICK"])
+            if rolling >= uptick_ref:
+                reasons.append(
+                    {
+                        "code": "recent_uptick",
+                        "label": (
+                            "Kürzliche Ausfälle: "
+                            f"rolling {_pct_label(rolling)} vs. overall {_pct_label(overall)}"
+                        ),
+                    }
+                )
+
+        return {"recommended": bool(reasons), "reasons": reasons}
+
     schema_block = {
         "version": 4,
         "csv": [
@@ -854,6 +920,11 @@ def main():
             "noshow_count": _int_default(row.noshow_count, 0),
             "risk_penalty": _float_default(row.risk_penalty, 0.0),
         }
+        entry["callup"] = _detect_callup_recommendation(
+            noshow_overall=_float_or_none(row.NoShowOverall),
+            noshow_rolling=_float_or_none(row.NoShowRolling),
+            events_seen=_int_default(row.events_seen, None),
+        )
         if row.Canonical in forced_by_canon:
             entry["forced_signup"] = {
                 "commitment": forced_by_canon[row.Canonical].get("commitment", "hard"),

@@ -41,13 +41,16 @@
     .tag-event{background:#ecfeff;border:1px solid #a5f3fc;color:#0f172a}
     .tag-hard{background:#fee2e2;border:1px solid #fecdd3;color:#7f1d1d}
     .tag-fix{background:#f5f5f5;border:1px solid #d4d4d8;color:#3f3f46;display:inline-flex;align-items:center;gap:4px;letter-spacing:0.01em}
-    .legend{font-size:0.85em;margin:12px 0 0}
+    .tag-callup{background:#eff6ff;border:1px solid #bfdbfe;color:#1d4ed8;display:inline-flex;align-items:center;gap:4px;letter-spacing:0.01em;font-weight:600}
+    .legend{font-size:0.85em;margin:32px 0 0}
+    .legend + .legend{margin-top:6px}
     .roster-controls{margin:12px 0 20px}
     .player-meta-toggle{font-size:0.9em;color:var(--fg);display:inline-flex;align-items:center;gap:8px;cursor:pointer;user-select:none}
     .player-meta-toggle input{width:16px;height:16px}
     .player-name-row{font-size:14px;font-weight:600}
     .player-meta-row{font-size:11px;color:#777;margin-top:2px;display:none}
     .show-player-meta .player-meta-row{display:block}
+    .hide-callups .callup-badge{display:none}
     #absences{margin-top:48px;padding-top:24px;border-top:1px solid var(--line)}
     #absences h2{margin:0 0 8px}
     #absences .absences-empty{color:var(--muted);margin:0}
@@ -63,6 +66,9 @@
     .diag h4{margin:0 0 6px;font-size:1em}
     .diag ul{margin:0;padding-left:20px;color:#444}
     .diag .warn{color:#7f1d1d;font-weight:600}
+    #extras{margin-top:48px;padding-top:24px;border-top:1px solid var(--line)}
+    #extras h2{margin-top:0}
+    #signup-inline{display:none;margin-top:8px}
   </style>
 </head>
 <body>
@@ -78,6 +84,10 @@
     <label class="player-meta-toggle">
       <input type="checkbox" id="player-meta-toggle" />
       Detailzeile pro Spieler anzeigen
+    </label>
+    <label class="player-meta-toggle">
+      <input type="checkbox" id="callup-toggle" checked />
+      Callup-Empfehlungen anzeigen
     </label>
   </div>
 
@@ -119,7 +129,8 @@
     <div id="extra-root" class="extra-grid"></div>
   </section>
 
-  <p class="muted legend">Legende: <span class="tag tag-nd" title="Keine Historie – events_seen = 0">No&nbsp;Data</span> keine Historie · <span class="tag tag-low" title="Wenig Historie – events_seen ∈ {1,2}">low&nbsp;n</span> wenig Historie · <span class="tag tag-fix">🔒 verbindlich</span> verbindliche Zusage (Commitment=hard)<br />Farben basieren auf Historie (rolling→overall), EB wird nur zur Sortierung verwendet.<br />No-Data = nie teilgenommen (grau). low-n ≤2 = gelb. 1 Fehltermin = nie rot.</p>
+  <p class="muted legend">Legende: <span class="tag tag-nd" title="Keine Historie – events_seen = 0">No&nbsp;Data</span> keine Historie · <span class="tag tag-low" title="Wenig Historie – events_seen ∈ {1,2}">low&nbsp;n</span> wenig Historie · <span class="tag tag-fix">🔒 verbindlich</span> verbindliche Zusage (Commitment=hard) · <span class="tag tag-callup callup-badge">🔔 Callup empfohlen</span> Spieler, für die eine Erinnerung empfohlen wird<br />Farben basieren auf Historie (rolling→overall), EB wird nur zur Sortierung verwendet.<br />No-Data = nie teilgenommen (grau). low-n ≤2 = gelb. 1 Fehltermin = nie rot.</p>
+  <p class="muted legend" id="signup-inline"></p>
 
   <section id="absences">
     <h2>Absenzen</h2>
@@ -149,15 +160,18 @@
 
     const state = {
       showPlayerMeta: false,
+      showCallups: true,
       absences: { entries: [], active: [], error: null, loading: true },
       playersByCanon: {},
       forcedDiagnostics: { forced: [], invalid: [], overbooked: [] },
     };
     const rosterRoot = document.getElementById("roster-root");
     const playerMetaToggle = document.getElementById("player-meta-toggle");
+    const callupToggle = document.getElementById("callup-toggle");
     const absencesContainer = document.getElementById("absences-content");
     const extraRoot = document.getElementById("extra-root");
     const extraNote = document.getElementById("extra-note");
+    const signupInline = document.getElementById("signup-inline");
     if (playerMetaToggle) {
       state.showPlayerMeta = Boolean(playerMetaToggle.checked);
       playerMetaToggle.addEventListener("change", (event) => {
@@ -167,9 +181,21 @@
         }
       });
     }
+    if (callupToggle) {
+      state.showCallups = Boolean(callupToggle.checked);
+      callupToggle.addEventListener("change", (event) => {
+        state.showCallups = event.target.checked;
+        if (rosterRoot) {
+          rosterRoot.classList.toggle("hide-callups", !state.showCallups);
+        }
+        document.body.classList.toggle("hide-callups", !state.showCallups);
+      });
+    }
     if (rosterRoot) {
       rosterRoot.classList.toggle("show-player-meta", state.showPlayerMeta);
+      rosterRoot.classList.toggle("hide-callups", !state.showCallups);
     }
+    document.body.classList.toggle("hide-callups", !state.showCallups);
 
     // Format & Styling
     const pad = (n)=> String(n).padStart(2,"0");
@@ -196,6 +222,24 @@
       const n = Number(v);
       return Number.isFinite(n) ? n : null;
     };
+
+    function formatCallupReasons(callup) {
+      if (!callup) return "";
+      const reasons = Array.isArray(callup.reasons) ? callup.reasons : [];
+      const labels = reasons.map(r => {
+        if (!r) return "";
+        if (typeof r === "string") return r;
+        return r.label || r.code || "";
+      }).filter(Boolean);
+      return labels.join(" · ");
+    }
+
+    function buildCallupBadge(callup) {
+      if (!callup || !callup.recommended) return "";
+      const reasonText = formatCallupReasons(callup);
+      const label = reasonText || "Callup empfohlen";
+      return `<span class="tag tag-callup callup-badge" title="${escapeHtml(label)}">🔔 ${escapeHtml(label)}</span>`;
+    }
 
     function splitCsvLine(line) {
       const out = [];
@@ -411,7 +455,7 @@
       };
     }
 
-    function renderExtraSignups(extraData, meta) {
+    function renderExtraSignups(extraData, meta, diagnostics = {}) {
       if (!extraRoot) return;
       const groups = ['A','B'];
       const stats = extractSignupStats(meta);
@@ -419,32 +463,50 @@
         ? Number(stats.extraTotal)
         : groups.reduce((sum, g) => sum + (Array.isArray(extraData[g]) ? extraData[g].length : 0), 0);
       const totalEntries = Number.isFinite(stats.totalEntries) ? stats.totalEntries : extraCount;
-      const hardPart = Number.isFinite(stats.hardTotal)
-        ? `davon verbindliche Zusagen: ${stats.hardTotal}`
-        : null;
-      const appliedHard = Number.isFinite(stats.hardApplied)
-        ? `Fixplätze im Roster: ${stats.hardApplied}`
-        : null;
-      const outsideRosterPart = Number.isFinite(extraCount)
-        ? `Zusätzliche Zusagen (nicht im Roster): ${extraCount}`
-        : null;
-      if (extraNote) {
-        const parts = [`Pool für nächstes Event · Datei-Einträge: ${Number.isFinite(totalEntries) ? totalEntries : '–'}`];
-        const hardBits = [hardPart, appliedHard].filter(Boolean);
-        if (hardBits.length) {
-          parts[0] += ` (${hardBits.join(' · ')})`;
-        }
-        if (outsideRosterPart) parts.push(outsideRosterPart);
-        if (stats.source) parts.push(`Quelle: ${stats.source}`);
-        extraNote.textContent = parts.join(' · ');
+      const inRosterHard = Number.isFinite(stats.inRosterHard)
+        ? stats.inRosterHard
+        : (Number.isFinite(stats.hardApplied) ? stats.hardApplied : null);
+      const summaryParts = [];
+      if (Number.isFinite(totalEntries)) summaryParts.push(`${totalEntries} Einträge`);
+      if (Number.isFinite(stats.hardTotal)) {
+        const suffix = (inRosterHard != null) ? ` (${inRosterHard} im Roster)` : '';
+        summaryParts.push(`${stats.hardTotal} verbindliche Zusagen${suffix}`);
       }
-      if (!extraCount) {
-        const msg = (Number.isFinite(stats.hardTotal) && stats.hardTotal > 0)
-          ? 'Keine zusätzlichen Zusagen außerhalb der Aufstellung.'
-          : 'Keine zusätzlichen Zusagen erfasst.';
-        extraRoot.innerHTML = `<p class="muted">${msg}</p>`;
+      if (!extraCount) summaryParts.push('keine zusätzlichen Zusagen außerhalb des Rosters');
+      const summaryText = summaryParts.length ? `Zusage-Pool (nächstes Event): ${summaryParts.join(' · ')}` : '';
+      if (signupInline) {
+        signupInline.textContent = summaryText;
+        signupInline.style.display = (!extraCount && summaryText) ? 'block' : 'none';
+      }
+
+      const hasDiagnostics = Boolean((diagnostics.forced || []).length || (diagnostics.invalid || []).length || (diagnostics.overbooked || []).length);
+      const extrasSection = document.getElementById('extras');
+      const shouldShowSection = extraCount > 0 || hasDiagnostics;
+      if (!shouldShowSection) {
+        if (extrasSection) extrasSection.style.display = 'none';
+        extraRoot.innerHTML = '';
+        if (extraNote) extraNote.textContent = '';
         return;
       }
+      if (extrasSection) extrasSection.style.display = '';
+
+      if (extraNote) {
+        const parts = [];
+        if (Number.isFinite(totalEntries)) parts.push(`Datei-Einträge: ${totalEntries}`);
+        if (Number.isFinite(stats.hardTotal)) {
+          const applied = (inRosterHard != null) ? ` (${inRosterHard} im Roster)` : '';
+          parts.push(`verbindlich: ${stats.hardTotal}${applied}`);
+        }
+        if (Number.isFinite(extraCount) && extraCount > 0) parts.push(`außerhalb des Rosters: ${extraCount}`);
+        if (stats.source) parts.push(`Quelle: ${stats.source}`);
+        extraNote.textContent = parts.join(' · ') || 'Keine zusätzlichen Zusagen erfasst.';
+      }
+
+      if (!extraCount) {
+        extraRoot.innerHTML = '<p class="muted">Keine zusätzlichen Zusagen außerhalb der Aufstellung.</p>';
+        return;
+      }
+
       extraRoot.innerHTML = '';
       groups.forEach(group => {
         const card = document.createElement('div');
@@ -466,10 +528,14 @@
             const role = entry.role || entry.Role || '';
             const note = entry.note || entry.Note || '';
             const source = entry.source || entry.Source || '';
-            const metaText = [role, source].filter(Boolean).join(' · ');
-            li.innerHTML = `${escapeHtml(name)} <span class="tag tag-event">Event-Zusage</span>` +
-              `${metaText ? ` <span class="extra-meta">(${escapeHtml(metaText)})</span>` : ''}` +
-              `${note ? ` <span class="extra-meta">${escapeHtml(note)}</span>` : ''}`;
+            const groupPref = entry.group || entry.Group || '';
+            const metaParts = [];
+            if (groupPref) metaParts.push(`Gruppe ${groupPref}`);
+            if (role) metaParts.push(role);
+            if (source) metaParts.push(source);
+            const metaText = metaParts.length ? ` <span class="extra-meta">(${escapeHtml(metaParts.join(' · '))})</span>` : '';
+            const noteText = note ? ` <span class="extra-meta">${escapeHtml(note)}</span>` : '';
+            li.innerHTML = `${escapeHtml(name)}${metaText}${noteText}`;
             list.appendChild(li);
           });
         }
@@ -752,6 +818,7 @@
             event_signup: p.event_signup || null,
             has_forced_signup: Boolean(p.has_forced_signup || p.forced_signup),
             forced_signup: p.forced_signup || null,
+            callup: p.callup || null,
           };
         });
         state.playersByCanon = playersByCanon;
@@ -901,6 +968,7 @@
             const tooltip = `${tip}${reasonHint}`.replace(/"/g, '&quot;');
             let nameHTML = `${r.PlayerName || ""}`;
             const forcedBadge = p ? buildFixBadge(p.forced_signup || (p.has_forced_signup ? { commitment: 'hard', source: p.event_signup?.source } : null)) : '';
+            const callupBadge = p ? buildCallupBadge(p.callup) : '';
             if (noData) {
               nameHTML += ' <span class="tag tag-nd" title="Keine Historie – events_seen = 0">No&nbsp;Data</span>';
             }
@@ -908,6 +976,7 @@
               nameHTML += ' <span class="tag tag-low" title="Wenig Historie – events_seen ∈ {1,2}">low&nbsp;n</span>';
             }
             if (forcedBadge) nameHTML += ` ${forcedBadge}`;
+            if (callupBadge) nameHTML += ` ${callupBadge}`;
             if (p && (p.has_event_signup || p.event_signup)) {
               nameHTML += ' <span class="tag tag-event" title="Zusage im Event-Pool (nächstes Event)">Event-Zusage</span>';
             }
@@ -948,7 +1017,7 @@
         }
 
         const signupMeta = payload.signup_pool || payload.event_signups || null;
-        renderExtraSignups(extraSignups, signupMeta);
+        renderExtraSignups(extraSignups, signupMeta, state.forcedDiagnostics);
         renderForcedDiagnostics(state.forcedDiagnostics, signupMeta);
 
         const ts = new Date().toISOString().replace('T',' ').slice(0,19) + " UTC";
