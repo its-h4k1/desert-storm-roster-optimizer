@@ -119,7 +119,7 @@
     <div id="extra-root" class="extra-grid"></div>
   </section>
 
-  <p class="muted legend">Legende: <span class="tag tag-nd" title="Keine Historie – events_seen = 0">No&nbsp;Data</span> keine Historie · <span class="tag tag-low" title="Wenig Historie – events_seen ∈ {1,2}">low&nbsp;n</span> wenig Historie · <span class="tag tag-fix">🔒 Fixplatz</span> verbindliche Zusage (Commitment=hard)<br />Farben basieren auf Historie (rolling→overall), EB wird nur zur Sortierung verwendet.<br />No-Data = nie teilgenommen (grau). low-n ≤2 = gelb. 1 Fehltermin = nie rot.</p>
+  <p class="muted legend">Legende: <span class="tag tag-nd" title="Keine Historie – events_seen = 0">No&nbsp;Data</span> keine Historie · <span class="tag tag-low" title="Wenig Historie – events_seen ∈ {1,2}">low&nbsp;n</span> wenig Historie · <span class="tag tag-fix">🔒 verbindlich</span> verbindliche Zusage (Commitment=hard)<br />Farben basieren auf Historie (rolling→overall), EB wird nur zur Sortierung verwendet.<br />No-Data = nie teilgenommen (grau). low-n ≤2 = gelb. 1 Fehltermin = nie rot.</p>
 
   <section id="absences">
     <h2>Absenzen</h2>
@@ -672,7 +672,7 @@
       const normalized = normalizeForcedSignup(forcedSignup);
       if (!normalized) return "";
       const sourceLabel = normalized.source ? (FORCED_SOURCE_LABELS[normalized.source] || normalized.source) : "";
-      const label = sourceLabel ? `Fixplatz · ${sourceLabel}` : "Fixplatz";
+      const label = sourceLabel ? `verbindlich · ${sourceLabel}` : "verbindlich";
       const tooltipParts = ["Verbindliche Zusage aus event_signups_next.csv"];
       if (sourceLabel) tooltipParts.push(`Quelle: ${sourceLabel}`);
       if (normalized.overbooked) tooltipParts.push("über Kapazität");
