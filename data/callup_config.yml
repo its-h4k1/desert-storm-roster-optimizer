@@ -1,0 +1,15 @@
+# Konfiguration für Callup-Empfehlungen.
+# - version: Schema-Version der Datei (nur informativ)
+# - min_events: Ab wie vielen absolvierten Events Rolling/Overall-Raten ausgewertet werden.
+# - low_n_max_events: Bis zu dieser Event-Anzahl werden Spieler vorsorglich als Callup markiert.
+# - high_overall_threshold: No-Show-Rate (gesamt), ab der automatisch ein Callup empfohlen wird.
+# - high_rolling_threshold: Rolling-No-Show-Rate, ab der automatisch ein Callup empfohlen wird.
+# - rolling_uptick_min: Minimaler Rolling-Wert, bevor ein Rolling-Uptick geprüft wird.
+# - rolling_uptick_delta: Zusätzliche Differenz, die Rolling gegenüber Overall haben muss (in Prozentpunkten).
+version: 1
+min_events: 3
+low_n_max_events: 2
+high_overall_threshold: 0.40
+high_rolling_threshold: 0.50
+rolling_uptick_min: 0.25
+rolling_uptick_delta: 0.10
