@@ -91,6 +91,8 @@
     </label>
   </div>
 
+  <p class="muted" id="callup-note" style="margin:0 0 18px; display:none"></p>
+
   <div id="roster-root" class="grid">
     <section id="A-Start">
       <h2>Gruppe A · Start</h2>
@@ -164,10 +166,12 @@
       absences: { entries: [], active: [], error: null, loading: true },
       playersByCanon: {},
       forcedDiagnostics: { forced: [], invalid: [], overbooked: [] },
+      callupMeta: { available: false, recommendedTotal: null, reasonCounts: {}, fromStats: false },
     };
     const rosterRoot = document.getElementById("roster-root");
     const playerMetaToggle = document.getElementById("player-meta-toggle");
     const callupToggle = document.getElementById("callup-toggle");
+    const callupNote = document.getElementById("callup-note");
     const absencesContainer = document.getElementById("absences-content");
     const extraRoot = document.getElementById("extra-root");
     const extraNote = document.getElementById("extra-note");
@@ -189,6 +193,7 @@
           rosterRoot.classList.toggle("hide-callups", !state.showCallups);
         }
         document.body.classList.toggle("hide-callups", !state.showCallups);
+        updateCallupNote(state.callupMeta);
       });
     }
     if (rosterRoot) {
@@ -196,6 +201,7 @@
       rosterRoot.classList.toggle("hide-callups", !state.showCallups);
     }
     document.body.classList.toggle("hide-callups", !state.showCallups);
+    updateCallupNote(state.callupMeta);
 
     // Format & Styling
     const pad = (n)=> String(n).padStart(2,"0");
@@ -239,6 +245,69 @@
       const reasonText = formatCallupReasons(callup);
       const label = reasonText || "Callup empfohlen";
       return `<span class="tag tag-callup callup-badge" title="${escapeHtml(label)}">🔔 ${escapeHtml(label)}</span>`;
+    }
+
+    function extractCallupMeta(payload, playersArray, schema = {}) {
+      const schemaVersion = Number.isFinite(schema.version) ? Number(schema.version) : null;
+      const stats = payload && typeof payload === 'object' && payload.callup_stats && typeof payload.callup_stats === 'object'
+        ? payload.callup_stats
+        : null;
+      const statsCountRaw = stats && Object.prototype.hasOwnProperty.call(stats, 'recommended_total')
+        ? Number(stats.recommended_total)
+        : null;
+      const statsCount = Number.isFinite(statsCountRaw) ? statsCountRaw : null;
+      const statsReasons = (stats && stats.reasons && typeof stats.reasons === 'object') ? stats.reasons : null;
+
+      let derivedCount = 0;
+      const derivedReasons = {};
+      playersArray.forEach(p => {
+        if (!p || typeof p !== 'object') return;
+        const callup = p.callup;
+        const recommended = Boolean(callup && callup.recommended === true);
+        if (!recommended) return;
+        derivedCount += 1;
+        if (Array.isArray(callup.reasons)) {
+          callup.reasons.forEach(reason => {
+            if (!reason || typeof reason !== 'object') return;
+            const code = String(reason.code || 'unknown');
+            derivedReasons[code] = (derivedReasons[code] || 0) + 1;
+          });
+        }
+      });
+
+      const recommendedTotal = statsCount != null ? statsCount : derivedCount;
+      const reasonCounts = statsReasons || derivedReasons;
+      const available = Boolean(stats || derivedCount > 0 || playersArray.some(p => p && p.callup));
+
+      return { available, recommendedTotal, reasonCounts, fromStats: Boolean(stats), schemaVersion };
+    }
+
+    function updateCallupNote(meta) {
+      if (!callupNote) return;
+      const show = state.showCallups;
+      if (!show) {
+        callupNote.style.display = 'none';
+        return;
+      }
+
+      const available = Boolean(meta && meta.available);
+      const recommendedTotal = Number.isFinite(meta?.recommendedTotal) ? Number(meta.recommendedTotal) : null;
+      let text = '';
+      if (!available) {
+        text = 'Callup-Empfehlungen: nicht im latest.json enthalten.';
+      } else if (recommendedTotal === 0) {
+        text = 'Callup-Empfehlungen: keine Spieler empfohlen (laut latest.json).';
+      } else if (recommendedTotal != null && recommendedTotal > 0) {
+        text = `Callup-Empfehlungen: ${recommendedTotal} Spieler empfohlen.`;
+      }
+
+      if (text) {
+        callupNote.textContent = text;
+        callupNote.style.display = 'block';
+      } else {
+        callupNote.textContent = '';
+        callupNote.style.display = 'none';
+      }
     }
 
     function splitCsvLine(line) {
@@ -795,6 +864,7 @@
         const rows = toRows(payload);
 
         const playersArray = (!Array.isArray(payload) && Array.isArray(payload.players)) ? payload.players : [];
+        state.callupMeta = extractCallupMeta(payload, playersArray, schema);
         // Datengrundlage (latest.json):
         // - forced_signups (Array) sowie players[].forced_signup markieren verbindliche Zusagen aus event_signups_next.csv
         //   inkl. commitment (hard), source (manual/callup-confirmed), note & overbooked-Flag.
@@ -1019,6 +1089,7 @@
         const signupMeta = payload.signup_pool || payload.event_signups || null;
         renderExtraSignups(extraSignups, signupMeta, state.forcedDiagnostics);
         renderForcedDiagnostics(state.forcedDiagnostics, signupMeta);
+        updateCallupNote(state.callupMeta);
 
         const ts = new Date().toISOString().replace('T',' ').slice(0,19) + " UTC";
         const schemaVersion = (schema && schema.version != null) ? ` · schema v${schema.version}` : "";
