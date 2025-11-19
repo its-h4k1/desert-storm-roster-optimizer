@@ -630,16 +630,17 @@ def test_hard_commitments_from_all_sources(monkeypatch, tmp_path):
     main_mod.main()
 
     payload = captured.get("payload") or {}
-    forced_list = payload.get("forced_signups") or []
+    signup_pool_block = payload.get("signup_pool") or {}
+    forced_list = signup_pool_block.get("forced_signups") or payload.get("forced_signups") or []
     forced_sources = {item.get("canon"): item.get("source") for item in forced_list}
     assert forced_sources.get("manualhard") == "manual"
     assert forced_sources.get("calluphard") == "callup-confirmed"
     assert len(forced_sources) == 2
 
-    signup_meta = payload.get("signup_pool") or {}
-    assert signup_meta.get("hard_commitments_total") == 2
-    assert signup_meta.get("forced_total") == 2
-    assert signup_meta.get("forced_in_roster") == 2
+    stats_block = signup_pool_block.get("stats") or signup_pool_block
+    assert stats_block.get("hard_commit_total") == 2
+    assert stats_block.get("forced_total") == 2
+    assert stats_block.get("forced_in_roster") == 2
 
     players = payload.get("players") or []
     by_canon = {p.get("canon"): p for p in players}
@@ -649,3 +650,129 @@ def test_hard_commitments_from_all_sources(monkeypatch, tmp_path):
 
     forced_assignments = captured.get("forced_assignments") or []
     assert {item.get("PlayerName") for item in forced_assignments} == {"manualhard", "calluphard"}
+
+
+def test_signup_pool_reports_invalid_hard_commits(monkeypatch, tmp_path):
+    data_dir = tmp_path / "data"
+    data_dir.mkdir()
+
+    _write_csv(
+        data_dir / "events.csv",
+        ["EventID", "Slot", "PlayerName", "RoleAtRegistration", "Teilgenommen"],
+        [
+            ["DS-2024-01-01-A", 1, "ManualAlpha", "Damage", 1],
+            ["DS-2024-01-01-A", 2, "ManualBeta", "Damage", 1],
+            ["DS-2024-01-01-A", 3, "ManualGamma", "Damage", 1],
+            ["DS-2024-01-01-A", 4, "CallupDelta", "Damage", 1],
+            ["DS-2024-01-01-A", 5, "InfoOnly", "Damage", 1],
+        ],
+    )
+
+    _write_csv(
+        data_dir / "alliance.csv",
+        ["PlayerName", "InAlliance"],
+        [
+            ["ManualAlpha", 1],
+            ["ManualBeta", 1],
+            ["ManualGamma", 1],
+            ["CallupDelta", 1],
+            ["FormerZeta", 0],
+            ["InfoOnly", 1],
+        ],
+    )
+
+    _write_csv(
+        data_dir / "absences.csv",
+        ["PlayerName", "From", "To", "InAlliance", "Reason"],
+        [],
+    )
+
+    _write_csv(
+        data_dir / "event_signups_next.csv",
+        ["PlayerName", "Group", "Role", "Commitment", "Source", "Note"],
+        [
+            ["ManualAlpha", "A", "Start", "hard", "manual", "Ticket"],
+            ["ManualBeta", "A", "Start", "hard", "manual", "Ticket"],
+            ["ManualGamma", "B", "Ersatz", "hard", "manual", "Ticket"],
+            ["CallupDelta", "B", "Start", "hard", "callup-confirmed", "Callup"],
+            ["FormerZeta", "B", "Start", "hard", "manual", "Former"],
+            ["InfoOnly", "A", "Start", "none", "manual", "Info"],
+        ],
+    )
+
+    captured: dict[str, object] = {}
+
+    def _fake_builder(df: pd.DataFrame, **kwargs) -> pd.DataFrame:
+        forced_assignments = list(kwargs.get("forced_assignments") or [])
+        captured["forced_assignments"] = forced_assignments
+        if not forced_assignments:
+            players = df["PlayerName"].tolist()
+            groups = ["A"] * len(players)
+            roles = ["Start"] * len(players)
+        else:
+            players = [item["PlayerName"] for item in forced_assignments]
+            groups = [item.get("Group", "A") for item in forced_assignments]
+            roles = [item.get("Role", "Start") for item in forced_assignments]
+        return pd.DataFrame(
+            {
+                "PlayerName": players,
+                "Group": groups,
+                "Role": roles,
+                "NoShowOverall": [0.0] * len(players),
+                "NoShowRolling": [0.0] * len(players),
+                "risk_penalty": [0.0] * len(players),
+            }
+        )
+
+    def _capture_writer(out_dir, roster_df, json_payload):
+        captured["payload"] = json_payload
+        captured["roster"] = roster_df
+
+    monkeypatch.setattr(main_mod, "build_deterministic_roster", _fake_builder)
+    monkeypatch.setattr(main_mod, "_write_outputs", _capture_writer)
+
+    argv = [
+        "prog",
+        "--events",
+        "data/events.csv",
+        "--alliance",
+        "data/alliance.csv",
+        "--absences",
+        "data/absences.csv",
+        "--event-signups",
+        "data/event_signups_next.csv",
+        "--out",
+        "generated",
+    ]
+
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.setattr(sys, "argv", argv)
+
+    main_mod.main()
+
+    payload = captured.get("payload") or {}
+    signup_pool = payload.get("signup_pool") or {}
+    stats = signup_pool.get("stats") or signup_pool
+    assert stats.get("file_entries_total") == 6
+    assert stats.get("hard_commit_total") == 5
+    assert stats.get("hard_commit_invalid") == 1
+    assert stats.get("hard_commit_applied") == 4
+    assert stats.get("forced_total") == 4
+    assert stats.get("forced_in_roster") == 4
+
+    forced_entries = signup_pool.get("forced_signups") or []
+    forced_canons = {item.get("canon") for item in forced_entries}
+    assert forced_canons == {"manualalpha", "manualbeta", "manualgamma", "callupdelta"}
+
+    invalid_entries = signup_pool.get("invalid_forced_signups") or []
+    assert invalid_entries == [
+        {"player": "FormerZeta", "canon": "formerzeta", "reason": "not_in_alliance"}
+    ]
+
+    file_entries = signup_pool.get("file_entries") or []
+    status_by_player = {entry.get("player"): entry.get("status") for entry in file_entries}
+    assert status_by_player.get("FormerZeta") == "invalid"
+    assert status_by_player.get("InfoOnly") == "info_only"
+
+    forced_assignments = captured.get("forced_assignments") or []
+    assert {item.get("PlayerName") for item in forced_assignments} == forced_canons
