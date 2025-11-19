@@ -965,7 +965,7 @@
           inRosterHard: null,
         };
       }
-      const hardTotal = toNum(meta.hard_commit_total ?? meta.hard_commitments_total ?? meta.hard_commitments);
+      const hardTotal = toNum(meta.hard_commit_rows_total ?? meta.hard_commit_total ?? meta.hard_commitments_total ?? meta.hard_commitments);
       const hardApplied = toNum(meta.hard_commit_applied ?? meta.hard_commitments_applied);
       const hardInvalid = toNum(meta.hard_commit_invalid ?? meta.hard_commitments_invalid);
       const hardOverbooked = toNum(meta.hard_commit_overbooked ?? meta.hard_commitments_overbooked);
@@ -976,7 +976,15 @@
 
       return {
         source: meta.source || '',
-        totalEntries: toNum(meta.file_entries_total ?? meta.rows_with_canon ?? meta.total_entries ?? meta.rows_with_playername ?? meta.raw_rows),
+        totalEntries: toNum(
+          meta.file_rows_total
+          ?? meta.file_entries_total
+          ?? meta.processed_entries_total
+          ?? meta.total_entries
+          ?? meta.rows_with_canon
+          ?? meta.rows_with_playername
+          ?? meta.raw_rows
+        ),
         hardTotal,
         hardApplied,
         forcedTotal,

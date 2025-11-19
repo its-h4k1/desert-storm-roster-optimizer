@@ -248,18 +248,20 @@ def _load_event_signups(path: str, to_canon) -> tuple[pd.DataFrame, Dict[str, in
         return pd.DataFrame(columns=cols), meta
 
     meta["raw_rows"] = int(len(df))
+    # Merke die ursprüngliche Zeilennummer (inkl. Header) für Diagnosezwecke.
+    # Header = Zeile 1 → erste Datenzeile = 2.
+    df["RowNumber"] = df.index + 2
 
     for col in cols:
         if col not in df.columns:
             df[col] = ""
 
-    df = df[cols].copy()
+    df = df[cols + ["RowNumber"]].copy()
     df["PlayerName"] = df["PlayerName"].fillna("").astype(str).str.strip()
     df = df[df["PlayerName"] != ""]
     meta["rows_with_playername"] = int(len(df))
     df["canon"] = df["PlayerName"].map(to_canon)
-    df = df[df["canon"].notna()].copy()
-    meta["rows_with_canon"] = int(len(df))
+    meta["rows_with_canon"] = int(df["canon"].notna().sum())
 
     df["Group"] = df["Group"].fillna("").astype(str).str.strip().str.upper()
     df["Role"] = df["Role"].fillna("").astype(str).str.strip().str.title()
@@ -820,6 +822,7 @@ def main():
     hard_signup_total = int(hard_commitment_mask.sum())
     # Commitment "hard" ist die einzige Quelle für Fixplätze – Source dient nur als Dokumentation.
     seen_forced: set[str] = set()
+    hard_commit_player_labels: List[str] = []
 
     def _choose_group(canon: str, signup_group: str, pref_group: Optional[str]) -> str:
         desired = []
@@ -859,8 +862,14 @@ def main():
         note = (getattr(row, "Note", "") or "").strip()
         canon_val = getattr(row, "canon", pd.NA)
         canon = None if pd.isna(canon_val) or not str(canon_val).strip() else str(canon_val)
+        row_idx_val = getattr(row, "RowNumber", None)
+        try:
+            row_index = int(row_idx_val)
+        except (TypeError, ValueError):
+            row_index = None
 
         row_debug = {
+            "row_index": row_index,
             "player": display or canon,
             "canon": canon,
             "group_pref": group_pref or None,
@@ -873,6 +882,8 @@ def main():
             "is_absent_next_event": bool(canon and canon in absent_now),
         }
 
+        if commitment == "hard":
+            hard_commit_player_labels.append(display or canon or f"row {row_index or '?'}")
         if commitment != "hard":
             row_debug["status"] = "info_only"
             signup_file_entries.append(row_debug)
@@ -933,6 +944,13 @@ def main():
             }
         )
         signup_file_entries.append(row_debug)
+
+    if hard_commit_player_labels:
+        label_preview = ", ".join(hard_commit_player_labels)
+        print(
+            "[info] hard commitments im Zusage-Pool: "
+            f"{hard_signup_total} Spieler → {label_preview}"
+        )
 
     overbooked_forced_signups: List[Dict] = []
     for g in GROUPS:
@@ -1295,16 +1313,29 @@ def main():
     # vor dem Optimizer gesetzt werden (siehe forced_signups oben). Overlay
     # bleibt für alle anderen Signups erhalten.
     extra_signups_by_group = {g: [] for g in GROUPS}
+    file_rows_total = int(event_signup_load_meta.get("raw_rows", len(event_signups_df)))
+    file_rows_with_name = int(
+        event_signup_load_meta.get("rows_with_playername", len(event_signups_df))
+    )
+    file_rows_with_canon = int(
+        event_signup_load_meta.get("rows_with_canon", len(event_signups_df))
+    )
     signups_meta = {
         "scope": "next_event",
         "source": str(Path(args.event_signups)),
-        "raw_rows": int(event_signup_load_meta.get("raw_rows", 0)),
-        "rows_with_playername": int(event_signup_load_meta.get("rows_with_playername", 0)),
-        "rows_with_canon": int(event_signup_load_meta.get("rows_with_canon", len(event_signups_df))),
+        "raw_rows": file_rows_total,
+        "rows_with_playername": file_rows_with_name,
+        "rows_with_canon": file_rows_with_canon,
+        "file_rows_total": file_rows_total,
+        "file_rows_with_playername": file_rows_with_name,
+        "file_rows_with_canon": file_rows_with_canon,
         "total_entries": int(len(event_signups_df)),
         "applied_entries": 0,
         "ignored_entries": 0,
         "hard_commitments": hard_signup_total,
+        "hard_commit_rows_total": int(
+            event_signup_load_meta.get("hard_commitments", hard_signup_total)
+        ),
     }
 
     if absences_payload.get("players"):
@@ -1371,20 +1402,29 @@ def main():
     forced_out_of_roster = max(0, forced_signup_total - forced_in_roster)
     signups_meta["forced_total"] = forced_signup_total
     signups_meta["forced_in_roster"] = forced_in_roster
+    signups_meta["forced_out_of_roster"] = forced_out_of_roster
+    file_rows_total = signups_meta.get("file_rows_total", signups_meta["raw_rows"])
+    processed_entries_total = signups_meta["total_entries"]
+    hard_rows_total = signups_meta.get("hard_commit_rows_total", hard_signup_total)
     signup_pool_stats = {
-        "file_entries_total": signups_meta["total_entries"],
+        "file_rows_total": file_rows_total,
+        "file_entries_total": file_rows_total,
         "raw_rows": signups_meta["raw_rows"],
         "rows_with_playername": signups_meta["rows_with_playername"],
         "rows_with_canon": signups_meta["rows_with_canon"],
-        "total_entries": signups_meta["total_entries"],
+        "file_rows_with_playername": signups_meta.get("file_rows_with_playername", signups_meta["rows_with_playername"]),
+        "file_rows_with_canon": signups_meta.get("file_rows_with_canon", signups_meta["rows_with_canon"]),
+        "total_entries": processed_entries_total,
+        "processed_entries_total": processed_entries_total,
         "applied_entries": signups_meta["applied_entries"],
         "ignored_entries": signups_meta["ignored_entries"],
-        "hard_commit_total": hard_signup_total,
+        "hard_commit_rows_total": hard_rows_total,
+        "hard_commit_total": hard_rows_total,
         "hard_commit_applied": signups_meta["hard_commitments_applied"],
         "hard_commit_invalid": signups_meta["hard_commitments_invalid"],
         "hard_commit_overbooked": signups_meta["hard_commitments_overbooked"],
         "hard_commit_missing_from_roster": hard_missing_from_roster,
-        "hard_commitments_total": hard_signup_total,
+        "hard_commitments_total": hard_rows_total,
         "hard_commitments_applied": signups_meta["hard_commitments_applied"],
         "hard_commitments_invalid": signups_meta["hard_commitments_invalid"],
         "hard_commitments_overbooked": signups_meta["hard_commitments_overbooked"],

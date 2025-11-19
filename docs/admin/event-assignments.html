@@ -389,6 +389,46 @@
       const REPO_OWNER = 'its-h4k1';
       const REPO_NAME = 'desert-storm-roster-optimizer';
       // Admin Event Assignments uses the same latest.json source as the main roster UI: docs/out/latest.json via GitHub Pages (raw URL only when ?branch=<name> is set).
+      const toNumberOrNull = (value) => {
+        const n = Number(value);
+        return Number.isFinite(n) ? n : null;
+      };
+      const extractBuildRowCount = (meta) => {
+        if (!meta || typeof meta !== 'object') return null;
+        const candidates = [
+          meta.file_rows_total,
+          meta.file_entries_total,
+          meta.raw_rows,
+          meta.total_entries,
+        ];
+        for (const candidate of candidates) {
+          const num = toNumberOrNull(candidate);
+          if (num != null) return num;
+        }
+        return null;
+      };
+      const extractBuildHardCount = (meta) => {
+        if (!meta || typeof meta !== 'object') return null;
+        const candidates = [
+          meta.hard_commit_rows_total,
+          meta.hard_commit_total,
+          meta.hard_commitments_total,
+          meta.hard_commitments,
+        ];
+        for (const candidate of candidates) {
+          const num = toNumberOrNull(candidate);
+          if (num != null) return num;
+        }
+        return null;
+      };
+      const countHardCommitments = (rows) => {
+        if (!Array.isArray(rows)) return 0;
+        return rows.reduce((sum, row) => {
+          const commitment = (row.Commitment || row.commitment || '').toString().toLowerCase();
+          return sum + (commitment === 'hard' ? 1 : 0);
+        }, 0);
+      };
+
       const state = {
         assignments: [],
         headers: [],
@@ -662,8 +702,9 @@
       function updateContextMeta() {
         const parts = [];
         if (state.rosterMeta) parts.push(`latest.json gebaut: ${state.rosterMeta}`);
-        if (state.eventSignupsMeta && typeof state.eventSignupsMeta.total_entries === 'number') {
-          parts.push(`Pool laut Build: ${state.eventSignupsMeta.total_entries} Einträge`);
+        const buildCount = extractBuildRowCount(state.eventSignupsMeta);
+        if (buildCount != null) {
+          parts.push(`Pool laut Build: ${buildCount} Einträge`);
         }
         const rebuildHint = 'Hinweis: Änderungen an event_signups_next.csv landen nach dem nächsten Roster-Build in latest.json. Der Button „Roster neu bauen (nächstes Event)“ triggert denselben Workflow wie im Events-Tab.';
         const text = parts.length ? `${parts.join(' · ')} · ${rebuildHint}` : rebuildHint;
@@ -694,19 +735,25 @@
       function refreshBuildSyncState() {
         const buildMeta = state.eventSignupsMeta || {};
         const fileCount = state.assignments.length;
-        const buildCount = typeof buildMeta.total_entries === 'number' ? buildMeta.total_entries : null;
+        const buildCount = extractBuildRowCount(buildMeta);
         const fileCommit = state.eventSignupCommit?.sha || null;
         const buildCommit = extractBuildCommit(buildMeta);
         const lastBuild = state.rosterMeta || null;
+        const fileHardCount = countHardCommitments(state.assignments);
+        const buildHardCount = extractBuildHardCount(buildMeta);
         const hasCountMismatch = buildCount != null && buildCount !== fileCount;
         const hasCommitMismatch = Boolean(fileCommit && buildCommit && fileCommit !== buildCommit);
-        const needsBuild = hasCountMismatch || hasCommitMismatch;
+        const hasHardMismatch = buildHardCount != null && buildHardCount !== fileHardCount;
+        const needsBuild = hasCountMismatch || hasCommitMismatch || hasHardMismatch;
         state.buildSyncStatus = {
           fileCount,
           buildCount,
+          fileHardCount,
+          buildHardCount,
           fileCommit,
           buildCommit,
           lastBuild,
+          hasHardMismatch,
           isSynced: !needsBuild,
         };
         updateBuildBanner();
@@ -729,6 +776,11 @@
         }
         if (elements.buildBannerMeta) {
           const parts = [];
+          const hardFile = (typeof status.fileHardCount === 'number') ? status.fileHardCount : null;
+          const hardBuild = (typeof status.buildHardCount === 'number') ? status.buildHardCount : null;
+          if (hardFile != null || hardBuild != null) {
+            parts.push(`Fixplätze laut Datei: ${hardFile ?? '–'} · Fixplätze im Build: ${hardBuild ?? '–'}`);
+          }
           if (status.fileCommit) parts.push(`CSV-Commit: ${formatCommitShort(status.fileCommit)}`);
           if (status.buildCommit) parts.push(`Build-Commit: ${formatCommitShort(status.buildCommit)}`);
           if (parts.length) {
