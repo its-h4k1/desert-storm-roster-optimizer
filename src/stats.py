@@ -291,7 +291,6 @@ def compute_player_history(
     grp = dfa.groupby("PlayerName", as_index=False).agg(
         assignments_total=("Teilgenommen", "size"),
         shows_total=("Teilgenommen", "sum"),
-        last_event=("EventDate", "max"),
     )
     grp["noshows_total"] = (
         grp["assignments_total"] - grp["shows_total"]
@@ -311,6 +310,14 @@ def compute_player_history(
     ).where(wgrp["w_assignments_total"] > 0, 0.0)
     wgrp["w_noshow_rate"] = 1.0 - wgrp["w_show_rate"]
 
+    show_events = dfa[dfa["Teilgenommen"] == 1][["PlayerName", "EventDate"]]
+    if show_events.empty:
+        last_show = pd.DataFrame({"PlayerName": [], "last_event": []})
+    else:
+        last_show = show_events.groupby("PlayerName", as_index=False).agg(
+            last_event=("EventDate", "max")
+        )
+
     noshow_events = dfa[dfa["Teilgenommen"] == 0][["PlayerName", "EventDate"]]
     if noshow_events.empty:
         last_noshow = pd.DataFrame({"PlayerName": [], "last_noshow_event": []})
@@ -319,7 +326,22 @@ def compute_player_history(
             last_noshow_event=("EventDate", "max")
         )
 
-    out = pd.merge(grp, wgrp, on="PlayerName", how="outer").fillna(0.0)
+    out = pd.merge(grp, wgrp, on="PlayerName", how="outer")
+    for col in [
+        "assignments_total",
+        "shows_total",
+        "noshows_total",
+        "show_rate",
+        "noshow_rate",
+        "w_assignments_total",
+        "w_shows_total",
+        "w_show_rate",
+        "w_noshow_rate",
+    ]:
+        if col in out.columns:
+            out[col] = out[col].fillna(0.0)
+
+    out = out.merge(last_show, on="PlayerName", how="left")
     out = out.merge(last_noshow, on="PlayerName", how="left")
     out["last_event"] = pd.to_datetime(out["last_event"], utc=True, errors="coerce")
     out["last_noshow_event"] = pd.to_datetime(
