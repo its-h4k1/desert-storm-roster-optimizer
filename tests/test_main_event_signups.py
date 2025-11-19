@@ -1,4 +1,5 @@
 import sys
+import json
 from pathlib import Path
 
 import pandas as pd
@@ -328,4 +329,100 @@ def test_hard_commitment_lowercase_header(monkeypatch, tmp_path):
         if p.get("has_forced_signup") or p.get("forced_signup")
     }
     assert players_with_forced == set(players)
+
+
+def test_multiple_builds_apply_new_hard_commitments(monkeypatch, tmp_path):
+    data_dir = tmp_path / "data"
+    data_dir.mkdir()
+
+    players_round1 = ["Alpha", "Bravo", "Charlie", "Delta"]
+
+    _write_csv(
+        data_dir / "events.csv",
+        ["EventID", "Slot", "PlayerName", "RoleAtRegistration", "Teilgenommen"],
+        [["DS-2026-01-01-A", idx + 1, name, "Damage", 1] for idx, name in enumerate(players_round1)],
+    )
+
+    _write_csv(
+        data_dir / "alliance.csv",
+        ["PlayerName", "InAlliance"],
+        [[name, 1] for name in players_round1],
+    )
+
+    _write_csv(
+        data_dir / "absences.csv",
+        ["PlayerName", "From", "To", "InAlliance", "Reason"],
+        [],
+    )
+
+    def _fake_builder(df: pd.DataFrame, forced_assignments, **kwargs) -> pd.DataFrame:
+        rows = [
+            {
+                "PlayerName": item["PlayerName"],
+                "Group": item["Group"],
+                "Role": item["Role"],
+                "NoShowOverall": 0.0,
+                "NoShowRolling": 0.0,
+                "risk_penalty": 0.0,
+            }
+            for item in forced_assignments
+        ]
+        return pd.DataFrame(rows)
+
+    monkeypatch.setattr(main_mod, "build_deterministic_roster", _fake_builder)
+
+    def _run_build():
+        argv = [
+            "prog",
+            "--events",
+            "data/events.csv",
+            "--alliance",
+            "data/alliance.csv",
+            "--absences",
+            "data/absences.csv",
+            "--event-signups",
+            "data/event_signups_next.csv",
+            "--out",
+            "generated",
+        ]
+        monkeypatch.setattr(sys, "argv", argv)
+        main_mod.main()
+
+    def _load_forced_signups() -> set[str]:
+        latest = json.loads((tmp_path / "docs/out/latest.json").read_text(encoding="utf-8"))
+        signup_pool = latest.get("signup_pool") or {}
+        forced = signup_pool.get("forced_signups") or latest.get("forced_signups") or []
+        return {item.get("player") for item in forced}
+
+    # Runde 1: ein einziger Fixplatz
+    _write_csv(
+        data_dir / "event_signups_next.csv",
+        ["PlayerName", "Group", "Role", "Commitment", "Source", "Note"],
+        [["Alpha", "A", "Start", "hard", "manual", ""]],
+    )
+
+    monkeypatch.chdir(tmp_path)
+    _run_build()
+    first_forced = _load_forced_signups()
+    assert first_forced == {"Alpha"}
+
+    # Runde 2: weiteren Fixplatz hinzufügen → Superset erwartet
+    _write_csv(
+        data_dir / "event_signups_next.csv",
+        ["PlayerName", "Group", "Role", "Commitment", "Source", "Note"],
+        [
+            ["Alpha", "A", "Start", "hard", "manual", ""],
+            ["Bravo", "B", "Ersatz", "hard", "manual", ""],
+        ],
+    )
+
+    _run_build()
+    second_forced = _load_forced_signups()
+    assert second_forced == {"Alpha", "Bravo"}
+    assert first_forced.issubset(second_forced)
+
+    # Beide latest.json-Varianten müssen denselben Inhalt haben (keine Stale-Caches)
+    out_latest = (tmp_path / "out/latest.json").read_text(encoding="utf-8")
+    docs_latest = (tmp_path / "docs/out/latest.json").read_text(encoding="utf-8")
+    assert out_latest == docs_latest
 
