@@ -634,12 +634,11 @@ def main():
         absence_debug["players"] = []
         active_abs_meta: Dict[str, Dict[str, str]] = {}
         for row in abs_df.itertuples(index=False):
-            if not getattr(row, "is_absent_next_event", False):
-                continue
             scope_norm = getattr(row, "scope_norm", "") or ""
             scope_label = scope_norm or ("open_range" if ((getattr(row, "From", "") or "") == "" and (getattr(row, "To", "") or "") == "") else "date_range")
             canon_val = getattr(row, "canon", pd.NA)
-            if canon_val is not pd.NA and str(canon_val) not in active_abs_meta:
+            is_active = bool(getattr(row, "is_absent_next_event", False))
+            if is_active and canon_val is not pd.NA and str(canon_val) not in active_abs_meta:
                 active_abs_meta[str(canon_val)] = {
                     "reason": getattr(row, "Reason", "") or "",
                     "from": getattr(row, "From", "") or "",
@@ -653,23 +652,11 @@ def main():
                     "reason": getattr(row, "Reason", "") or "",
                     "scope": scope_label,
                     "source": str(Path(args.absences)) if args.absences else "",
+                    "from": getattr(row, "From", "") or "",
+                    "to": getattr(row, "To", "") or "",
+                    "is_absent_next_event": is_active,
                 }
             )
-
-        probe_canon = to_canon("ilishelbymf")
-        probe_rows = abs_df[abs_df["canon"] == probe_canon] if probe_canon is not pd.NA else abs_df.iloc[0:0]
-        probe_from = probe_rows["From"].iloc[0] if not probe_rows.empty else ""
-        probe_to = probe_rows["To"].iloc[0] if not probe_rows.empty else ""
-        absence_debug["probe_ilishelbymf"] = {
-            "canonical": probe_canon if probe_canon is not pd.NA else "",
-            "found_in_csv": bool(len(probe_rows) > 0),
-            "active_for_next_event": bool(
-                probe_rows["is_absent_next_event"].any() if not probe_rows.empty else False
-            ),
-            "event_date": next_event_ts.isoformat(),
-            "from": probe_from or "",
-            "to": probe_to or "",
-        }
 
         absent_now = set(abs_df.loc[abs_df["is_absent_next_event"], "canon"].tolist())
         before = len(pool)

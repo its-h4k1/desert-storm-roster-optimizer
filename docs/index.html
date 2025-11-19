@@ -36,6 +36,8 @@
     .wrap{display:grid;grid-template-columns:1fr;gap:28px}
     @media (min-width: 960px){ .wrap{grid-template-columns:1fr 1fr} }
     .tag{display:inline-block;margin-left:6px;padding:2px 7px;border-radius:999px;font-size:0.72em;font-weight:600;vertical-align:middle}
+    .tag-abs-active{background:#ecfdf3;border:1px solid #bbf7d0;color:#166534}
+    .tag-abs-planned{background:#eef2ff;border:1px solid #c7d2fe;color:#312e81}
     .tag-nd{background:var(--bad);color:#fff}
     .tag-low{background:#f1e1a8;color:#111}
     .tag-event{background:#ecfeff;border:1px solid #a5f3fc;color:#0f172a}
@@ -774,31 +776,31 @@
       if (!Number.isNaN(activeCount)) summaryParts.push(`für nächstes Event aktiv: ${activeCount}`);
       if (source) summaryParts.push(`Quelle: ${escapeHtml(source)}`);
 
-      let html = '<h4>Absenzen (nächstes Event – Diagnostik)</h4>';
+      let html = '<h4>Absenzen (nächstes Event – Übersicht & Diagnostik)</h4>';
       html += `<p>${summaryParts.join(' · ')}</p>`;
 
-      if (activeCount > 0 && players.length) {
-        const items = players.map(p => {
+      const activeEntries = players.filter(p => p && (p.is_absent_next_event || p.isActiveNextEvent));
+      if (activeEntries.length) {
+        const items = activeEntries.map(p => {
           const canon = canonicalNameJS(p?.canonical || '');
           const display = p?.display || p?.name || canon || 'Unbekannt';
-          const reason = p?.reason ? ` — ${escapeHtml(p.reason)}` : '';
+          const range = formatAbsenceRange({ from: p?.from, to: p?.to });
+          const reason = p?.reason ? escapeHtml(p.reason) : '–';
           const scope = (p?.scope || '').toString().trim();
-          const scopeLabel = scope ? ` (${escapeHtml(scope)})` : '';
-          return `<li><strong>${escapeHtml(canon || display)}</strong> → ${escapeHtml(display)}${scopeLabel}${reason}</li>`;
+          const isActive = Boolean(p?.is_absent_next_event || p?.isActiveNextEvent);
+          const statusLabel = isActive ? 'aktiv' : 'geplant';
+          const badgeClass = isActive ? 'tag tag-abs-active' : 'tag tag-abs-planned';
+          const scopeLabel = scope && scope !== 'next_event' ? ` · ${escapeHtml(scope)}` : '';
+          return `
+            <li>
+              <strong>${escapeHtml(display)}</strong> <span class="${badgeClass}">${statusLabel}</span><br />
+              <span class="muted">${escapeHtml(range)} · Grund: ${reason}${scopeLabel}</span>
+            </li>
+          `;
         }).join('');
-        html += `<ul>${items}</ul>`;
-      } else if (activeCount === 0) {
+        html += `<ul class="absence-list">${items}</ul>`;
+      } else {
         html += '<p class="muted">Keine aktiven Absenzen für das nächste Event laut Builder.</p>';
-      }
-
-      const probe = debugBlock.probe_ilishelbymf;
-      if (probe && typeof probe === 'object') {
-        const canon = canonicalNameJS(probe.canonical || '');
-        const found = probe.found_in_csv ? 'ja' : 'nein';
-        const active = probe.active_for_next_event ? 'ja' : 'nein';
-        const range = `${probe.from || '–'} → ${probe.to || '–'}`;
-        const eventLabel = probe.event_date ? `, Ref-Event: ${escapeHtml(probe.event_date)}` : '';
-        html += `<p class="muted">Probe ilishelbymf — gefunden: ${escapeHtml(found)}, aktiv: ${escapeHtml(active)}, canon: ${escapeHtml(canon)}, Zeitraum: ${escapeHtml(range)}${eventLabel}</p>`;
       }
 
       const conflictsSafe = Array.isArray(conflicts) ? conflicts : [];
