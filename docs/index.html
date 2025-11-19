@@ -55,10 +55,10 @@
     .player-meta-row{font-size:11px;color:#777;margin-top:2px;display:none}
     .show-player-meta .player-meta-row{display:block}
     .hide-callups .callup-badge{display:none}
-    #absences{margin-top:48px;padding-top:24px;border-top:1px solid var(--line)}
-    #absences h2{margin:0 0 8px}
-    #absences .absences-empty{color:var(--muted);margin:0}
-    #absences table{margin-top:12px}
+    #absences,#event-responses{margin-top:48px;padding-top:24px;border-top:1px solid var(--line)}
+    #absences h2,#event-responses h2{margin:0 0 8px}
+    #absences .absences-empty,#event-responses .absences-empty{color:var(--muted);margin:0}
+    #absences table,#event-responses table{margin-top:12px}
     .absences-roster-badge{display:inline-block;margin-left:6px;padding:2px 8px;border-radius:999px;border:1px solid var(--line);font-size:0.75em;color:var(--muted);background:var(--bgth)}
     .absences-error{color:#b00}
     .extra-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px;margin-top:8px}
@@ -143,6 +143,11 @@
 
   <section id="absence-diagnostics" class="diag" style="display:none"></section>
 
+  <section id="event-responses">
+    <h2>Event-Antworten (nächstes Event)</h2>
+    <div id="event-responses-content" class="muted">Wird geladen …</div>
+  </section>
+
   <section id="absences">
     <h2>Absenzen</h2>
     <div id="absences-content" class="muted">Wird geladen …</div>
@@ -173,6 +178,8 @@
       absences: { entries: [], active: [], error: null, loading: true },
       absenceDebug: null,
       absenceConflicts: [],
+      eventResponses: { entries: [], declines: [], penalties: [], stats: {}, loading: true, error: null },
+      eventResponseConflicts: [],
       playersByCanon: {},
       forcedDiagnostics: { forced: [], invalid: [], overbooked: [], rows: [] },
       callupMeta: { available: false, recommendedTotal: null, reasonCounts: {}, fromStats: false, hasStats: false },
@@ -187,6 +194,7 @@
     const callupExportBtn = document.getElementById("callup-export");
     const absencesContainer = document.getElementById("absences-content");
     const absenceDiag = document.getElementById("absence-diagnostics");
+    const eventResponsesContainer = document.getElementById("event-responses-content");
     const extraRoot = document.getElementById("extra-root");
     const extraNote = document.getElementById("extra-note");
     const signupInline = document.getElementById("signup-inline");
@@ -818,6 +826,53 @@
       `;
     }
 
+    function updateEventResponsesUI() {
+      if (!eventResponsesContainer) return;
+      const data = state.eventResponses || {};
+      if (data.loading) {
+        eventResponsesContainer.textContent = "Wird geladen …";
+        return;
+      }
+      if (data.error) {
+        eventResponsesContainer.innerHTML = `<p class="absences-error">Event-Antworten konnten nicht geladen werden (${escapeHtml(data.error.message || data.error)})</p>`;
+        return;
+      }
+      const declines = Array.isArray(data.declines) ? data.declines : [];
+      const penalties = Array.isArray(data.penalties) ? data.penalties : [];
+      const conflicts = Array.isArray(state.eventResponseConflicts) ? state.eventResponseConflicts : [];
+      if (!declines.length && !penalties.length && !conflicts.length) {
+        eventResponsesContainer.innerHTML = '<p class="absences-empty">Keine event-spezifischen Absagen oder No-Responses erfasst.</p>';
+        return;
+      }
+      let html = '';
+      if (declines.length) {
+        const items = declines.map(entry => `<li><strong>${escapeHtml(entry.display || entry.canon || 'Unbekannt')}</strong> — Absage${entry.source ? ` (${escapeHtml(entry.source)})` : ''}</li>`).join('');
+        html += `<p><strong>Absagen (${declines.length})</strong></p><ul class="absence-list">${items}</ul>`;
+      }
+      if (penalties.length) {
+        const items = penalties.map(entry => {
+          const penalty = (typeof entry.risk_penalty === 'number') ? ` · Risiko+${entry.risk_penalty.toFixed(2)}` : '';
+          return `<li><strong>${escapeHtml(entry.display || entry.canon || 'Unbekannt')}</strong> — keine Antwort${penalty}${entry.source ? ` (${escapeHtml(entry.source)})` : ''}</li>`;
+        }).join('');
+        html += `<p><strong>Keine Antwort / Unsicher (${penalties.length})</strong></p><ul class="absence-list">${items}</ul>`;
+      }
+      if (conflicts.length) {
+        const items = conflicts.map(c => `<li><strong>${escapeHtml(c.display || c.canonical || 'Unbekannt')}</strong> — Konflikt: ${escapeHtml(c.note || 'hard commitment + event response')}</li>`).join('');
+        html += `<p><strong>Konflikte</strong></p><ul class="absence-list">${items}</ul>`;
+      }
+      const stats = data.stats || {};
+      if (stats && typeof stats === 'object') {
+        const summary = [
+          stats.removed_from_pool ? `${stats.removed_from_pool} nicht berücksichtigt` : null,
+          stats.penalties ? `${stats.penalties} mit Risikoaufschlag` : null,
+        ].filter(Boolean).join(' · ');
+        if (summary) {
+          html += `<p class="muted">Wirkung im Roster: ${escapeHtml(summary)}</p>`;
+        }
+      }
+      eventResponsesContainer.innerHTML = html || '<p class="absences-empty">Keine event-spezifischen Antworten erfasst.</p>';
+    }
+
     function renderAbsenceDiagnostics(debugBlock, conflicts = []) {
       if (!absenceDiag) return;
       const hasDebug = debugBlock && typeof debugBlock === 'object';
@@ -940,6 +995,41 @@
       state.absences.error = null;
       state.absences.loading = false;
       updateAbsencesUI();
+      return true;
+    }
+
+    function applyEventResponsesFromPayload(block) {
+      if (!block || typeof block !== 'object') {
+        return false;
+      }
+      const normalizeEntry = (entry) => {
+        if (!entry || typeof entry !== 'object') return null;
+        return {
+          display: entry.display || entry.name || entry.player || '',
+          canon: canonicalNameJS(entry.canonical || entry.canon || entry.player || ''),
+          status: entry.status || '',
+          source: entry.source || '',
+          note: entry.note || entry.reason || '',
+          risk_penalty: typeof entry.risk_penalty === 'number' ? entry.risk_penalty : null,
+        };
+      };
+
+      const declines = Array.isArray(block.removed_from_pool) ? block.removed_from_pool.map(normalizeEntry).filter(Boolean) : [];
+      const penalties = Array.isArray(block.penalty_applied) ? block.penalty_applied.map(normalizeEntry).filter(Boolean) : [];
+      const entries = Array.isArray(block.file_entries) ? block.file_entries.map(normalizeEntry).filter(Boolean) : [];
+      state.eventResponses = {
+        entries,
+        declines,
+        penalties,
+        stats: block.stats || {},
+        source: block.source || '',
+        loading: false,
+        error: null,
+      };
+      state.eventResponseConflicts = Array.isArray(block.event_response_conflicts)
+        ? block.event_response_conflicts
+        : (Array.isArray(block.conflicts) ? block.conflicts : []);
+      updateEventResponsesUI();
       return true;
     }
 
@@ -1447,6 +1537,15 @@
         if (!absencesApplied) {
           fetchAbsences();
         }
+        const responsesApplied = applyEventResponsesFromPayload(payload.event_responses);
+        if (!responsesApplied) {
+          state.eventResponses.loading = false;
+          state.eventResponses.error = new Error('Keine Event-Antworten im Payload');
+          updateEventResponsesUI();
+        }
+        state.eventResponseConflicts = Array.isArray(payload.event_response_conflicts)
+          ? payload.event_response_conflicts
+          : [];
         const activeAbsenceSet = new Set([
           ...((state.absences.active || []).map(a => canonicalNameJS(a?.canon || a?.playerName || ''))),
           ...(playersArray

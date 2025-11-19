@@ -287,6 +287,72 @@ def _load_event_signups(path: str, to_canon) -> tuple[pd.DataFrame, Dict[str, in
     return df, meta
 
 
+def _load_event_responses(path: str, to_canon) -> tuple[pd.DataFrame, Dict[str, int]]:
+    """Load event-specific declines/no-responses for the next event.
+
+    Schema (case-insensitive Header akzeptiert):
+      PlayerName, Status, Source, Note
+
+    Status-Normalisierung:
+      - decline | declined | absage | no | cancel → decline
+      - no_response | none | unanswered | n/a | missing → no_response
+      Alle anderen Werte → ignoriert (Status=None).
+    """
+
+    cols = ["PlayerName", "Status", "Source", "Note"]
+    meta: Dict[str, int] = {
+        "raw_rows": 0,
+        "rows_with_playername": 0,
+        "rows_with_canon": 0,
+        "declines": 0,
+        "no_responses": 0,
+    }
+
+    try:
+        df = pd.read_csv(path, dtype=str)
+    except FileNotFoundError:
+        print(f"[info] event responses: {path} fehlt – starte leer")
+        return pd.DataFrame(columns=cols), meta
+    except Exception as e:
+        print(f"[warn] event responses: {path} nicht lesbar ({e}), starte leer")
+        return pd.DataFrame(columns=cols), meta
+
+    lower_to_expected = {c.lower(): c for c in cols}
+    for col in list(df.columns):
+        col_norm = str(col).strip().lower()
+        if col_norm in lower_to_expected and lower_to_expected[col_norm] not in df.columns:
+            df = df.rename(columns={col: lower_to_expected[col_norm]})
+
+    meta["raw_rows"] = int(len(df))
+    df["RowNumber"] = df.index + 2
+    for col in cols:
+        if col not in df.columns:
+            df[col] = ""
+
+    df = df[cols + ["RowNumber"]].copy()
+    df["PlayerName"] = df["PlayerName"].fillna("").astype(str).str.strip()
+    df = df[df["PlayerName"] != ""]
+    meta["rows_with_playername"] = int(len(df))
+    df["canon"] = df["PlayerName"].map(to_canon)
+    meta["rows_with_canon"] = int(df["canon"].notna().sum())
+
+    def _normalize_status(val: str) -> str:
+        norm = (val or "").strip().lower()
+        if norm in {"decline", "declined", "absage", "no", "cancel", "canceled", "cancelled"}:
+            return "decline"
+        if norm in {"no_response", "none", "unanswered", "n/a", "", "missing", "unknown"}:
+            return "no_response"
+        return ""
+
+    df["Status"] = df["Status"].map(_normalize_status)
+    meta["declines"] = int((df["Status"] == "decline").sum())
+    meta["no_responses"] = int((df["Status"] == "no_response").sum())
+    df["Source"] = df["Source"].fillna("manual_event_response").astype(str).str.strip().replace("", "manual_event_response")
+    df["Note"] = df["Note"].fillna("").astype(str)
+    df = df[df["Status"] != ""]
+    return df, meta
+
+
 def _normalize_for_match(value: str) -> str:
     """Normalisiert Namen für heuristische Alias-Erkennung."""
     if value is None:
@@ -502,6 +568,11 @@ def main():
         default="data/event_signups_next.csv",
         help="Pfad zum Zusage-Pool für das nächste Event (ohne EventID-Spalte)",
     )
+    ap.add_argument(
+        "--event-responses",
+        default="data/event_responses_next.csv",
+        help="Pfad zu event-spezifischen Absagen/No-Responses für das nächste Event",
+    )
     ap.add_argument("--half-life-days", type=float, default=90.0, help="Halbwertszeit für Rolling-Metriken (Tage)")
     ap.add_argument("--out", default="out", help="Ausgabeverzeichnis für Run-Artefakte (zusätzlich zu out/latest.*)")
     args = ap.parse_args()
@@ -560,8 +631,25 @@ def main():
         "stats": {
             "file_entries": 0,
             "active_for_next_event": 0,
-            "unique_active_players": 0,
+        "unique_active_players": 0,
         },
+    }
+    event_responses_payload: Dict[str, object] = {
+        "schema": 1,
+        "scope": "next_event",
+        "source": str(Path(args.event_responses)) if args.event_responses else "",
+        "file_entries": [],
+        "stats": {
+            "file_entries": 0,
+            "declines": 0,
+            "no_responses": 0,
+            "applied_entries": 0,
+            "ignored_entries": 0,
+            "removed_from_pool": 0,
+            "penalties": 0,
+        },
+        "removed_from_pool": [],
+        "penalty_applied": [],
     }
     absence_debug["reference_event"] = {
         "event_date": next_event_ts.isoformat(),
@@ -570,6 +658,7 @@ def main():
         "last_event_date": next_event_meta.get("last_event_date"),
     }
     absence_conflicts: List[Dict] = []
+    event_response_conflicts: List[Dict] = []
     if args.absences:
         abs_path = Path(args.absences)
         if not abs_path.exists():
@@ -591,6 +680,17 @@ def main():
         f"with_name={event_signup_load_meta.get('rows_with_playername', 0)}, "
         f"canonical={event_signup_load_meta.get('rows_with_canon', 0)}, "
         f"hard={event_signup_load_meta.get('hard_commitments', 0)}"
+    )
+
+    event_responses_df, event_response_meta = _load_event_responses(args.event_responses, to_canon)
+    print(
+        "[info] event responses geladen: "
+        f"{len(event_responses_df)} Einträge (Absagen/No-Response) – "
+        f"raw={event_response_meta.get('raw_rows', 0)}, "
+        f"with_name={event_response_meta.get('rows_with_playername', 0)}, "
+        f"canonical={event_response_meta.get('rows_with_canon', 0)}, "
+        f"declines={event_response_meta.get('declines', 0)}, "
+        f"no_response={event_response_meta.get('no_responses', 0)}"
     )
 
     # 2) Metriken berechnen
@@ -721,6 +821,73 @@ def main():
         }
         absence_debug["players"] = absence_debug["file_entries"]
 
+    response_penalties: Dict[str, float] = {}
+    response_by_canon: Dict[str, Dict[str, object]] = {}
+    decline_canons: set[str] = set()
+    noresp_canons: set[str] = set()
+    if not event_responses_df.empty:
+        response_penalty_value = 0.15
+        players_lookup = {
+            str(getattr(row, "canon", "")): getattr(row, "DisplayName", "")
+            for row in alliance_df.itertuples(index=False)
+        }
+        for row in event_responses_df.itertuples(index=False):
+            canon_val = getattr(row, "canon", pd.NA)
+            status_val = getattr(row, "Status", "") or ""
+            entry = {
+                "canonical": canon_val,
+                "display": getattr(row, "PlayerName", ""),
+                "status": status_val,
+                "source": getattr(row, "Source", ""),
+                "note": getattr(row, "Note", ""),
+                "row_index": int(getattr(row, "RowNumber", 0)),
+            }
+            event_responses_payload["file_entries"].append(entry)
+            event_responses_payload["stats"]["file_entries"] += 1
+
+            if pd.isna(canon_val):
+                event_responses_payload["stats"]["ignored_entries"] += 1
+                continue
+            canon_key = str(canon_val)
+            response_by_canon[canon_key] = entry
+            event_responses_payload["stats"]["applied_entries"] += 1
+            if status_val == "decline":
+                decline_canons.add(canon_key)
+                event_responses_payload["stats"]["declines"] += 1
+            elif status_val == "no_response":
+                noresp_canons.add(canon_key)
+                event_responses_payload["stats"]["no_responses"] += 1
+
+        if decline_canons:
+            before = len(pool)
+            pool = pool[~pool["canon"].isin(decline_canons)].copy()
+            removed = before - len(pool)
+            event_responses_payload["stats"]["removed_from_pool"] = removed
+            for canon_val in sorted(decline_canons):
+                event_responses_payload["removed_from_pool"].append(
+                    {
+                        "canonical": canon_val,
+                        "display": players_lookup.get(canon_val, canon_val),
+                        "status": "decline",
+                    }
+                )
+
+        if noresp_canons:
+            for canon_val in noresp_canons:
+                response_penalties[canon_val] = response_penalty_value
+                event_responses_payload["penalty_applied"].append(
+                    {
+                        "canonical": canon_val,
+                        "display": players_lookup.get(canon_val, canon_val),
+                        "status": "no_response",
+                        "risk_penalty": response_penalty_value,
+                    }
+                )
+            event_responses_payload["stats"]["penalties"] = len(noresp_canons)
+    event_responses_payload["stats"]["file_entries"] = int(
+        event_response_meta.get("raw_rows", len(event_responses_df))
+    )
+
     hist_cols = [
         "canon",
         "assignments_total",
@@ -795,6 +962,9 @@ def main():
         pd.Series(risk_vals, index=pool.index, dtype="float64").fillna(0.0)
     )
     pool["risk_penalty"] = pool["risk_penalty"].clip(lower=0.0)
+    if response_penalties:
+        penalty_series = pool["canon"].map(lambda c: response_penalties.get(str(c), 0.0))
+        pool["risk_penalty"] = (pool["risk_penalty"] + penalty_series.fillna(0.0)).clip(lower=0.0)
 
     no_data_mask = pool["events_seen"] <= 0
     pool.loc[no_data_mask, "p_start"] = p0
@@ -1245,6 +1415,14 @@ def main():
                 "overbooked": bool(forced_by_canon[row.Canonical].get("overbooked")),
             }
             entry["has_forced_signup"] = True
+        resp_meta = response_by_canon.get(str(row.Canonical))
+        if resp_meta:
+            entry["event_response"] = {
+                "status": resp_meta.get("status"),
+                "source": resp_meta.get("source"),
+                "note": resp_meta.get("note", ""),
+            }
+            entry["has_event_response"] = True
         if cfg.EB_ENABLE:
             entry["eb"] = {
                 "p0": float(p0),
@@ -1307,6 +1485,24 @@ def main():
                     "has_hard_commitment": True,
                     "is_absent": True,
                     "note": "hard commitment + absence_next_event",
+                }
+            )
+
+    if decline_canons and not event_signups_df.empty:
+        decline_conflicts = event_signups_df[
+            (event_signups_df["Commitment"] == "hard") & (event_signups_df["canon"].isin(decline_canons))
+        ]
+        for row in decline_conflicts.itertuples(index=False):
+            canon_val = getattr(row, "canon", pd.NA)
+            meta = response_by_canon.get(str(canon_val), {})
+            display = players_by_canon.get(canon_val, {}).get("display") if canon_val in players_by_canon else None
+            event_response_conflicts.append(
+                {
+                    "canonical": canon_val,
+                    "display": display or getattr(row, "PlayerName", "") or canon_val,
+                    "has_hard_commitment": True,
+                    "status": meta.get("status", "decline"),
+                    "note": "hard commitment + event_response_decline",
                 }
             )
 
@@ -1500,6 +1696,8 @@ def main():
         "absences": absences_payload,
         "absence_debug": absence_debug,
         "absence_conflicts": absence_conflicts,
+        "event_responses": event_responses_payload,
+        "event_response_conflicts": event_response_conflicts,
     }
 
     _write_outputs(out_dir, out_df, json_payload)
