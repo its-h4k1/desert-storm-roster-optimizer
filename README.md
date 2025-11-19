@@ -19,6 +19,12 @@ Schätzungen berechnet und daraus deterministische Aufstellungen (A/B, Start/Ers
      und schreibt neue Artefakte nach `out/`.
 - **CI**: `.github/workflows/roster.yml` führt denselben Schritt auf `main` aus, sobald sich Daten
   ändern. Weitere Workflows räumen alte Artefakte auf oder validieren `latest.json`.
+  - Der Commit-Step rebased automatische Builds vor dem Push auf den aktuellen Stand von `main`
+    und versucht den Push bei Bedarf bis zu drei Mal – so bleiben die generierten Artefakte
+    push-bar, selbst wenn parallel noch andere Commits auflaufen.
+  - **How to verify**: Zwei schnelle Änderungen an den Event-Zusagen (jeweils „Roster neu bauen“
+    aus dem Admin-Tab anstoßen) erzeugen zwei Actions-Runs, die beide grün durchlaufen sollten.
+    Nach jedem Run zeigt `docs/out/latest.json`/`latest.csv` den aktuellen Stand auf GitHub Pages.
 - **Wichtige Artefakte (`out/`)**
   - `latest.json` – Quelle der Web-UIs (Roster, Dashboard)
   - `latest.csv` / `roster.csv` – tabellarischer Export je Spieler/Slot

@@ -81,5 +81,25 @@ jobs:
             echo "No changes to commit."
           else
             git commit -m "chore: update roster output [skip ci]"
-            git push
+            # Hol dir vor dem Push immer den aktuellen Stand von main und rebase unsere
+            # generierten Artefakte darauf. Dadurch schlagen Pushes nicht mehr fehl,
+            # wenn seit Workflow-Start neue Commits auf main gelandet sind (z. B. durch
+            # mehrere Admin-Runs oder parallele Merges).
+            git fetch origin main
+            git rebase origin/main
+
+            # Falls main in der Zwischenzeit erneut vorgerückt ist, versuchen wir es
+            # bis zu drei Mal: rebase auf den neuen Stand und erneut pushen.
+            for attempt in 1 2 3; do
+              if git push; then
+                break
+              fi
+              if [[ "${attempt}" -eq 3 ]]; then
+                echo "Push failed after ${attempt} attempts." >&2
+                exit 1
+              fi
+              echo "Push attempt ${attempt} failed; rebasing onto latest origin/main and retrying..."
+              git fetch origin main
+              git rebase origin/main
+            done
           fi
