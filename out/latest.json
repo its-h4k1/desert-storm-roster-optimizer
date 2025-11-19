@@ -1,5 +1,5 @@
 {
-  "generated_at": "2025-11-19T18:07:09.591408+01:00",
+  "generated_at": "2025-11-19T18:26:04.133192+01:00",
   "schema": {
     "version": 4,
     "csv": [
@@ -33,8 +33,8 @@
     "prior": {
       "fallback": 0.18,
       "pad": 0.02,
-      "team_mean": 0.6642451408382439,
-      "value": 0.684245140838244
+      "team_mean": 0.6642451408382414,
+      "value": 0.6842451408382414
     },
     "metrics": {
       "risk_penalty": {
@@ -1071,12 +1071,12 @@
       "group": "A",
       "role": "Start",
       "noshow_overall": 0.2727272727272727,
-      "noshow_rolling": 0.23825626239427578,
+      "noshow_rolling": 0.23825626239449982,
       "last_seen": "2025-11-14",
       "last_noshow_date": "2025-10-24",
       "events_seen": 11,
       "noshow_count": 3,
-      "risk_penalty": 0.024233420301572807,
+      "risk_penalty": 0.024233420301572797,
       "is_absent_next_event": false,
       "callup": {
         "recommended": false,
@@ -1093,10 +1093,10 @@
       },
       "has_forced_signup": true,
       "eb": {
-        "p0": 0.6642451408382439,
+        "p0": 0.6642451408382414,
         "n0": 4.0,
-        "p_hat": 0.37713203755686503,
-        "sigma": 0.12116710150786403
+        "p_hat": 0.37713203755686436,
+        "sigma": 0.12116710150786397
       },
       "event_signup": {
         "group": "A",
@@ -1112,12 +1112,12 @@
       "group": "A",
       "role": "Start",
       "noshow_overall": 0.25,
-      "noshow_rolling": 0.21007064409411236,
+      "noshow_rolling": 0.21007064409412524,
       "last_seen": "2025-11-14",
       "last_noshow_date": "2025-10-03",
       "events_seen": 12,
       "noshow_count": 3,
-      "risk_penalty": 0.02319004364506582,
+      "risk_penalty": 0.02319004364506581,
       "is_absent_next_event": false,
       "callup": {
         "recommended": false,
@@ -1127,10 +1127,10 @@
       "callup_reason_codes": [],
       "callup_reason": null,
       "eb": {
-        "p0": 0.6642451408382439,
+        "p0": 0.6642451408382414,
         "n0": 4.0,
-        "p_hat": 0.353561285209561,
-        "sigma": 0.1159502182253291
+        "p_hat": 0.3535612852095603,
+        "sigma": 0.11595021822532904
       }
     },
     {
@@ -1144,7 +1144,7 @@
       "last_noshow_date": null,
       "events_seen": 5,
       "noshow_count": 0,
-      "risk_penalty": 0.028848929077961435,
+      "risk_penalty": 0.0288489290779614,
       "is_absent_next_event": false,
       "callup": {
         "recommended": false,
@@ -1154,10 +1154,10 @@
       "callup_reason_codes": [],
       "callup_reason": null,
       "eb": {
-        "p0": 0.6642451408382439,
+        "p0": 0.6642451408382414,
         "n0": 4.0,
-        "p_hat": 0.29522006259477507,
-        "sigma": 0.14424464538980716
+        "p_hat": 0.29522006259477396,
+        "sigma": 0.144244645389807
       }
     },
     {
@@ -1171,7 +1171,7 @@
       "last_noshow_date": null,
       "events_seen": 12,
       "noshow_count": 0,
-      "risk_penalty": 0.018051230022558498,
+      "risk_penalty": 0.018051230022558467,
       "is_absent_next_event": false,
       "callup": {
         "recommended": false,
@@ -1181,10 +1181,10 @@
       "callup_reason_codes": [],
       "callup_reason": null,
       "eb": {
-        "p0": 0.6642451408382439,
+        "p0": 0.6642451408382414,
         "n0": 4.0,
-        "p_hat": 0.16606128520956098,
-        "sigma": 0.09025615011279249
+        "p_hat": 0.16606128520956034,
+        "sigma": 0.09025615011279234
       }
     },
     {
@@ -1198,7 +1198,7 @@
       "last_noshow_date": null,
       "events_seen": 4,
       "noshow_count": 0,
-      "risk_penalty": 0.03139831337560223,
+      "risk_penalty": 0.03139831337560219,
       "is_absent_next_event": false,
       "callup": {
         "recommended": false,
@@ -1215,10 +1215,10 @@
       },
       "has_forced_signup": true,
       "eb": {
-        "p0": 0.6642451408382439,
+        "p0": 0.6642451408382414,
         "n0": 4.0,
-        "p_hat": 0.33212257041912197,
-        "sigma": 0.15699156687801114
+        "p_hat": 0.3321225704191207,
+        "sigma": 0.15699156687801097
       },
       "event_signup": {
         "group": "A",
@@ -1239,7 +1239,7 @@
       "last_noshow_date": null,
       "events_seen": 1,
       "noshow_count": 0,
-      "risk_penalty": 0.04074426619040405,
+      "risk_penalty": 0.040744266190404055,
       "is_absent_next_event": false,
       "callup": {
         "recommended": true,
@@ -1256,10 +1256,10 @@
       ],
       "callup_reason": "low_n",
       "eb": {
-        "p0": 0.6642451408382439,
+        "p0": 0.6642451408382414,
         "n0": 4.0,
-        "p_hat": 0.5313961126705952,
-        "sigma": 0.20372133095202022
+        "p_hat": 0.5313961126705931,
+        "sigma": 0.20372133095202025
       }
     },
     {
@@ -1273,7 +1273,7 @@
       "last_noshow_date": null,
       "events_seen": 7,
       "noshow_count": 0,
-      "risk_penalty": 0.02471169322196717,
+      "risk_penalty": 0.02471169322196714,
       "is_absent_next_event": false,
       "callup": {
         "recommended": false,
@@ -1290,10 +1290,10 @@
       },
       "has_forced_signup": true,
       "eb": {
-        "p0": 0.6642451408382439,
+        "p0": 0.6642451408382414,
         "n0": 4.0,
-        "p_hat": 0.24154368757754324,
-        "sigma": 0.12355846610983584
+        "p_hat": 0.24154368757754233,
+        "sigma": 0.12355846610983569
       },
       "event_signup": {
         "group": "A",
@@ -1309,12 +1309,12 @@
       "group": "A",
       "role": "Start",
       "noshow_overall": 0.33333333333333337,
-      "noshow_rolling": 0.29422927526007836,
+      "noshow_rolling": 0.29422927526013687,
       "last_seen": "2025-11-14",
       "last_noshow_date": "2025-10-17",
       "events_seen": 12,
       "noshow_count": 4,
-      "risk_penalty": 0.02390935294026067,
+      "risk_penalty": 0.023909352940260663,
       "is_absent_next_event": false,
       "callup": {
         "recommended": false,
@@ -1324,10 +1324,10 @@
       "callup_reason_codes": [],
       "callup_reason": null,
       "eb": {
-        "p0": 0.6642451408382439,
+        "p0": 0.6642451408382414,
         "n0": 4.0,
-        "p_hat": 0.416061285209561,
-        "sigma": 0.11954676470130333
+        "p_hat": 0.4160612852095603,
+        "sigma": 0.1195467647013033
       }
     },
     {
@@ -1336,12 +1336,12 @@
       "group": "A",
       "role": "Start",
       "noshow_overall": 0.09999999999999998,
-      "noshow_rolling": 0.07516501974725853,
+      "noshow_rolling": 0.07516501974723311,
       "last_seen": "2025-11-14",
       "last_noshow_date": "2025-09-05",
       "events_seen": 10,
       "noshow_count": 1,
-      "risk_penalty": 0.022685132847952524,
+      "risk_penalty": 0.022685132847952507,
       "is_absent_next_event": false,
       "callup": {
         "recommended": false,
@@ -1358,10 +1358,10 @@
       },
       "has_forced_signup": true,
       "eb": {
-        "p0": 0.6642451408382439,
+        "p0": 0.6642451408382414,
         "n0": 4.0,
-        "p_hat": 0.2612128973823554,
-        "sigma": 0.11342566423976262
+        "p_hat": 0.2612128973823547,
+        "sigma": 0.11342566423976252
       },
       "event_signup": {
         "group": "A",
@@ -1382,7 +1382,7 @@
       "last_noshow_date": null,
       "events_seen": 9,
       "noshow_count": 0,
-      "risk_penalty": 0.021554625649501866,
+      "risk_penalty": 0.021554625649501835,
       "is_absent_next_event": false,
       "callup": {
         "recommended": false,
@@ -1392,10 +1392,10 @@
       "callup_reason_codes": [],
       "callup_reason": null,
       "eb": {
-        "p0": 0.6642451408382439,
+        "p0": 0.6642451408382414,
         "n0": 4.0,
-        "p_hat": 0.2043831202579212,
-        "sigma": 0.10777312824750933
+        "p_hat": 0.20438312025792044,
+        "sigma": 0.10777312824750918
       }
     },
     {
@@ -1404,12 +1404,12 @@
       "group": "A",
       "role": "Start",
       "noshow_overall": 0.2727272727272727,
-      "noshow_rolling": 0.2596120656881383,
+      "noshow_rolling": 0.25961206568821404,
       "last_seen": "2025-11-14",
       "last_noshow_date": "2025-10-24",
       "events_seen": 11,
       "noshow_count": 3,
-      "risk_penalty": 0.024233420301572807,
+      "risk_penalty": 0.024233420301572797,
       "is_absent_next_event": false,
       "callup": {
         "recommended": false,
@@ -1419,10 +1419,10 @@
       "callup_reason_codes": [],
       "callup_reason": null,
       "eb": {
-        "p0": 0.6642451408382439,
+        "p0": 0.6642451408382414,
         "n0": 4.0,
-        "p_hat": 0.37713203755686503,
-        "sigma": 0.12116710150786403
+        "p_hat": 0.37713203755686436,
+        "sigma": 0.12116710150786397
       }
     },
     {
@@ -1436,7 +1436,7 @@
       "last_noshow_date": null,
       "events_seen": 1,
       "noshow_count": 0,
-      "risk_penalty": 0.04074426619040405,
+      "risk_penalty": 0.040744266190404055,
       "is_absent_next_event": false,
       "callup": {
         "recommended": true,
@@ -1453,10 +1453,10 @@
       ],
       "callup_reason": "low_n",
       "eb": {
-        "p0": 0.6642451408382439,
+        "p0": 0.6642451408382414,
         "n0": 4.0,
-        "p_hat": 0.5313961126705952,
-        "sigma": 0.20372133095202022
+        "p_hat": 0.5313961126705931,
+        "sigma": 0.20372133095202025
       }
     },
     {
@@ -1465,12 +1465,12 @@
       "group": "A",
       "role": "Start",
       "noshow_overall": 0.08333333333333337,
-      "noshow_rolling": 0.062094886498863855,
+      "noshow_rolling": 0.06209488649883421,
       "last_seen": "2025-11-14",
       "last_noshow_date": "2025-08-28",
       "events_seen": 12,
       "noshow_count": 1,
-      "risk_penalty": 0.02036843140530808,
+      "risk_penalty": 0.02036843140530806,
       "is_absent_next_event": false,
       "callup": {
         "recommended": false,
@@ -1480,10 +1480,10 @@
       "callup_reason_codes": [],
       "callup_reason": null,
       "eb": {
-        "p0": 0.6642451408382439,
+        "p0": 0.6642451408382414,
         "n0": 4.0,
-        "p_hat": 0.22856128520956098,
-        "sigma": 0.1018421570265404
+        "p_hat": 0.22856128520956034,
+        "sigma": 0.1018421570265403
       }
     },
     {
@@ -1492,12 +1492,12 @@
       "group": "A",
       "role": "Start",
       "noshow_overall": 0.2222222222222222,
-      "noshow_rolling": 0.17117597371484783,
+      "noshow_rolling": 0.17117597371480198,
       "last_seen": "2025-11-14",
       "last_noshow_date": "2025-08-28",
       "events_seen": 9,
       "noshow_count": 2,
-      "risk_penalty": 0.025629283546027833,
+      "risk_penalty": 0.025629283546027816,
       "is_absent_next_event": false,
       "callup": {
         "recommended": false,
@@ -1507,10 +1507,10 @@
       "callup_reason_codes": [],
       "callup_reason": null,
       "eb": {
-        "p0": 0.6642451408382439,
+        "p0": 0.6642451408382414,
         "n0": 4.0,
-        "p_hat": 0.35822927410407507,
-        "sigma": 0.12814641773013916
+        "p_hat": 0.35822927410407424,
+        "sigma": 0.12814641773013907
       }
     },
     {
@@ -1524,7 +1524,7 @@
       "last_noshow_date": null,
       "events_seen": 3,
       "noshow_count": 0,
-      "risk_penalty": 0.0343144496092127,
+      "risk_penalty": 0.03431444960921267,
       "is_absent_next_event": false,
       "callup": {
         "recommended": false,
@@ -1534,10 +1534,10 @@
       "callup_reason_codes": [],
       "callup_reason": null,
       "eb": {
-        "p0": 0.6642451408382439,
+        "p0": 0.6642451408382414,
         "n0": 4.0,
-        "p_hat": 0.37956865190756794,
-        "sigma": 0.17157224804606347
+        "p_hat": 0.3795686519075665,
+        "sigma": 0.17157224804606336
       }
     },
     {
@@ -1551,7 +1551,7 @@
       "last_noshow_date": null,
       "events_seen": 8,
       "noshow_count": 0,
-      "risk_penalty": 0.02303111099440834,
+      "risk_penalty": 0.02303111099440831,
       "is_absent_next_event": false,
       "callup": {
         "recommended": false,
@@ -1561,10 +1561,10 @@
       "callup_reason_codes": [],
       "callup_reason": null,
       "eb": {
-        "p0": 0.6642451408382439,
+        "p0": 0.6642451408382414,
         "n0": 4.0,
-        "p_hat": 0.2214150469460813,
-        "sigma": 0.11515555497204169
+        "p_hat": 0.22141504694608047,
+        "sigma": 0.11515555497204154
       }
     },
     {
@@ -1578,7 +1578,7 @@
       "last_noshow_date": null,
       "events_seen": 1,
       "noshow_count": 0,
-      "risk_penalty": 0.04074426619040405,
+      "risk_penalty": 0.040744266190404055,
       "is_absent_next_event": false,
       "callup": {
         "recommended": true,
@@ -1595,10 +1595,10 @@
       ],
       "callup_reason": "low_n",
       "eb": {
-        "p0": 0.6642451408382439,
+        "p0": 0.6642451408382414,
         "n0": 4.0,
-        "p_hat": 0.5313961126705952,
-        "sigma": 0.20372133095202022
+        "p_hat": 0.5313961126705931,
+        "sigma": 0.20372133095202025
       }
     },
     {
@@ -1612,7 +1612,7 @@
       "last_noshow_date": null,
       "events_seen": 12,
       "noshow_count": 0,
-      "risk_penalty": 0.018051230022558498,
+      "risk_penalty": 0.018051230022558467,
       "is_absent_next_event": false,
       "callup": {
         "recommended": false,
@@ -1622,10 +1622,10 @@
       "callup_reason_codes": [],
       "callup_reason": null,
       "eb": {
-        "p0": 0.6642451408382439,
+        "p0": 0.6642451408382414,
         "n0": 4.0,
-        "p_hat": 0.16606128520956098,
-        "sigma": 0.09025615011279249
+        "p_hat": 0.16606128520956034,
+        "sigma": 0.09025615011279234
       }
     },
     {
@@ -1634,12 +1634,12 @@
       "group": "A",
       "role": "Start",
       "noshow_overall": 0.16666666666666663,
-      "noshow_rolling": 0.13972932060748422,
+      "noshow_rolling": 0.13972932060744636,
       "last_seen": "2025-11-14",
       "last_noshow_date": "2025-09-26",
       "events_seen": 12,
       "noshow_count": 2,
-      "risk_penalty": 0.022034444344185024,
+      "risk_penalty": 0.022034444344185007,
       "is_absent_next_event": false,
       "callup": {
         "recommended": false,
@@ -1649,10 +1649,10 @@
       "callup_reason_codes": [],
       "callup_reason": null,
       "eb": {
-        "p0": 0.6642451408382439,
+        "p0": 0.6642451408382414,
         "n0": 4.0,
-        "p_hat": 0.291061285209561,
-        "sigma": 0.11017222172092511
+        "p_hat": 0.2910612852095603,
+        "sigma": 0.11017222172092503
       }
     },
     {
@@ -1661,7 +1661,7 @@
       "group": "A",
       "role": "Start",
       "noshow_overall": 0.25,
-      "noshow_rolling": 0.1846602364968466,
+      "noshow_rolling": 0.18466023649683438,
       "last_seen": "2025-11-14",
       "last_noshow_date": "2025-08-28",
       "events_seen": 4,
@@ -1676,10 +1676,10 @@
       "callup_reason_codes": [],
       "callup_reason": null,
       "eb": {
-        "p0": 0.6642451408382439,
+        "p0": 0.6642451408382414,
         "n0": 4.0,
-        "p_hat": 0.45712257041912197,
-        "sigma": 0.16605271118685203
+        "p_hat": 0.4571225704191207,
+        "sigma": 0.166052711186852
       }
     },
     {
@@ -1688,12 +1688,12 @@
       "group": "A",
       "role": "Ersatz",
       "noshow_overall": 0.7272727272727273,
-      "noshow_rolling": 0.7525167261848318,
+      "noshow_rolling": 0.7525167261846998,
       "last_seen": "2025-11-14",
       "last_noshow_date": "2025-11-14",
       "events_seen": 11,
       "noshow_count": 8,
-      "risk_penalty": 0.022677319487543673,
+      "risk_penalty": 0.02267731948754369,
       "is_absent_next_event": false,
       "callup": {
         "recommended": true,
@@ -1715,10 +1715,10 @@
       ],
       "callup_reason": "high_overall",
       "eb": {
-        "p0": 0.6642451408382439,
+        "p0": 0.6642451408382414,
         "n0": 4.0,
-        "p_hat": 0.7104653708901983,
-        "sigma": 0.11338659743771837
+        "p_hat": 0.7104653708901977,
+        "sigma": 0.11338659743771845
       }
     },
     {
@@ -1732,7 +1732,7 @@
       "last_noshow_date": "2025-11-14",
       "events_seen": 2,
       "noshow_count": 2,
-      "risk_penalty": 0.031508163247284546,
+      "risk_penalty": 0.03150816324728463,
       "is_absent_next_event": false,
       "callup": {
         "recommended": true,
@@ -1749,10 +1749,10 @@
       ],
       "callup_reason": "low_n",
       "eb": {
-        "p0": 0.6642451408382439,
+        "p0": 0.6642451408382414,
         "n0": 4.0,
-        "p_hat": 0.7761634272254959,
-        "sigma": 0.15754081623642271
+        "p_hat": 0.7761634272254941,
+        "sigma": 0.15754081623642313
       }
     },
     {
@@ -1766,7 +1766,7 @@
       "last_noshow_date": "2025-11-14",
       "events_seen": 4,
       "noshow_count": 4,
-      "risk_penalty": 0.02491716037131353,
+      "risk_penalty": 0.024917160371313602,
       "is_absent_next_event": false,
       "callup": {
         "recommended": true,
@@ -1788,10 +1788,10 @@
       ],
       "callup_reason": "high_overall",
       "eb": {
-        "p0": 0.6642451408382439,
+        "p0": 0.6642451408382414,
         "n0": 4.0,
-        "p_hat": 0.832122570419122,
-        "sigma": 0.12458580185656763
+        "p_hat": 0.8321225704191206,
+        "sigma": 0.12458580185656801
       }
     },
     {
@@ -1805,7 +1805,7 @@
       "last_noshow_date": "2025-10-31",
       "events_seen": 1,
       "noshow_count": 1,
-      "risk_penalty": 0.03618985484367474,
+      "risk_penalty": 0.03618985484367483,
       "is_absent_next_event": false,
       "callup": {
         "recommended": true,
@@ -1822,10 +1822,10 @@
       ],
       "callup_reason": "low_n",
       "eb": {
-        "p0": 0.6642451408382439,
+        "p0": 0.6642451408382414,
         "n0": 4.0,
-        "p_hat": 0.7313961126705951,
-        "sigma": 0.1809492742183737
+        "p_hat": 0.7313961126705931,
+        "sigma": 0.18094927421837415
       }
     },
     {
@@ -1834,12 +1834,12 @@
       "group": "A",
       "role": "Ersatz",
       "noshow_overall": 0.6666666666666667,
-      "noshow_rolling": 0.6663535352817113,
+      "noshow_rolling": 0.666353535281828,
       "last_seen": "2025-11-14",
       "last_noshow_date": "2025-11-14",
       "events_seen": 6,
       "noshow_count": 4,
-      "risk_penalty": 0.028447345562488832,
+      "risk_penalty": 0.028447345562488853,
       "is_absent_next_event": false,
       "callup": {
         "recommended": true,
@@ -1861,10 +1861,10 @@
       ],
       "callup_reason": "high_overall",
       "eb": {
-        "p0": 0.6642451408382439,
+        "p0": 0.6642451408382414,
         "n0": 4.0,
-        "p_hat": 0.6656980563352975,
-        "sigma": 0.14223672781244415
+        "p_hat": 0.6656980563352966,
+        "sigma": 0.14223672781244426
       }
     },
     {
@@ -1873,12 +1873,12 @@
       "group": "A",
       "role": "Ersatz",
       "noshow_overall": 0.75,
-      "noshow_rolling": 0.7384546853448224,
+      "noshow_rolling": 0.738454685344872,
       "last_seen": "2025-11-14",
       "last_noshow_date": "2025-11-14",
       "events_seen": 8,
       "noshow_count": 6,
-      "risk_penalty": 0.024867363658842526,
+      "risk_penalty": 0.02486736365884255,
       "is_absent_next_event": false,
       "callup": {
         "recommended": true,
@@ -1900,10 +1900,10 @@
       ],
       "callup_reason": "high_overall",
       "eb": {
-        "p0": 0.6642451408382439,
+        "p0": 0.6642451408382414,
         "n0": 4.0,
-        "p_hat": 0.7214150469460813,
-        "sigma": 0.12433681829421261
+        "p_hat": 0.7214150469460804,
+        "sigma": 0.12433681829421274
       }
     },
     {
@@ -1912,12 +1912,12 @@
       "group": "A",
       "role": "Ersatz",
       "noshow_overall": 0.6666666666666667,
-      "noshow_rolling": 0.6342392090074921,
+      "noshow_rolling": 0.6342392090076996,
       "last_seen": "2025-11-14",
       "last_noshow_date": "2025-11-14",
       "events_seen": 9,
       "noshow_count": 6,
-      "risk_penalty": 0.02521167692582072,
+      "risk_penalty": 0.02521167692582073,
       "is_absent_next_event": false,
       "callup": {
         "recommended": true,
@@ -1939,10 +1939,10 @@
       ],
       "callup_reason": "high_overall",
       "eb": {
-        "p0": 0.6642451408382439,
+        "p0": 0.6642451408382414,
         "n0": 4.0,
-        "p_hat": 0.6659215817963827,
-        "sigma": 0.1260583846291036
+        "p_hat": 0.665921581796382,
+        "sigma": 0.12605838462910365
       }
     },
     {
@@ -1951,12 +1951,12 @@
       "group": "A",
       "role": "Ersatz",
       "noshow_overall": 0.8,
-      "noshow_rolling": 0.7778760309451545,
+      "noshow_rolling": 0.777876030944511,
       "last_seen": "2025-11-14",
       "last_noshow_date": "2025-11-07",
       "events_seen": 5,
       "noshow_count": 4,
-      "risk_penalty": 0.02775326460549446,
+      "risk_penalty": 0.0277532646054945,
       "is_absent_next_event": false,
       "callup": {
         "recommended": true,
@@ -1978,10 +1978,10 @@
       ],
       "callup_reason": "high_overall",
       "eb": {
-        "p0": 0.6642451408382439,
+        "p0": 0.6642451408382414,
         "n0": 4.0,
-        "p_hat": 0.7396645070392195,
-        "sigma": 0.1387663230274723
+        "p_hat": 0.7396645070392184,
+        "sigma": 0.1387663230274725
       }
     },
     {
@@ -1990,12 +1990,12 @@
       "group": "A",
       "role": "Ersatz",
       "noshow_overall": 0.7142857142857143,
-      "noshow_rolling": 0.6957593452126414,
+      "noshow_rolling": 0.6957593452125208,
       "last_seen": "2025-11-14",
       "last_noshow_date": "2025-10-31",
       "events_seen": 7,
       "noshow_count": 5,
-      "risk_penalty": 0.026554914695241558,
+      "risk_penalty": 0.02655491469524158,
       "is_absent_next_event": false,
       "callup": {
         "recommended": true,
@@ -2017,10 +2017,10 @@
       ],
       "callup_reason": "high_overall",
       "eb": {
-        "p0": 0.6642451408382439,
+        "p0": 0.6642451408382414,
         "n0": 4.0,
-        "p_hat": 0.6960891421229978,
-        "sigma": 0.13277457347620777
+        "p_hat": 0.6960891421229968,
+        "sigma": 0.13277457347620789
       }
     },
     {
@@ -2034,7 +2034,7 @@
       "last_noshow_date": "2025-11-07",
       "events_seen": 1,
       "noshow_count": 1,
-      "risk_penalty": 0.03618985484367474,
+      "risk_penalty": 0.03618985484367483,
       "is_absent_next_event": false,
       "callup": {
         "recommended": true,
@@ -2051,10 +2051,10 @@
       ],
       "callup_reason": "low_n",
       "eb": {
-        "p0": 0.6642451408382439,
+        "p0": 0.6642451408382414,
         "n0": 4.0,
-        "p_hat": 0.7313961126705951,
-        "sigma": 0.1809492742183737
+        "p_hat": 0.7313961126705931,
+        "sigma": 0.18094927421837415
       }
     },
     {
@@ -2068,7 +2068,7 @@
       "last_noshow_date": "2025-11-07",
       "events_seen": 2,
       "noshow_count": 1,
-      "risk_penalty": 0.03687898816609514,
+      "risk_penalty": 0.03687898816609517,
       "is_absent_next_event": false,
       "callup": {
         "recommended": true,
@@ -2085,10 +2085,10 @@
       ],
       "callup_reason": "low_n",
       "eb": {
-        "p0": 0.6642451408382439,
+        "p0": 0.6642451408382414,
         "n0": 4.0,
-        "p_hat": 0.6094967605588293,
-        "sigma": 0.1843949408304757
+        "p_hat": 0.6094967605588276,
+        "sigma": 0.18439494083047583
       }
     },
     {
@@ -2097,7 +2097,7 @@
       "group": "B",
       "role": "Start",
       "noshow_overall": 0.25,
-      "noshow_rolling": 0.23016074739064063,
+      "noshow_rolling": 0.23016074739071068,
       "last_seen": "2025-11-14",
       "last_noshow_date": "2025-10-24",
       "events_seen": 4,
@@ -2112,10 +2112,10 @@
       "callup_reason_codes": [],
       "callup_reason": null,
       "eb": {
-        "p0": 0.6642451408382439,
+        "p0": 0.6642451408382414,
         "n0": 4.0,
-        "p_hat": 0.45712257041912197,
-        "sigma": 0.16605271118685203
+        "p_hat": 0.4571225704191207,
+        "sigma": 0.166052711186852
       }
     },
     {
@@ -2124,12 +2124,12 @@
       "group": "B",
       "role": "Start",
       "noshow_overall": 0.5,
-      "noshow_rolling": 0.4992742678768327,
+      "noshow_rolling": 0.49927426787676166,
       "last_seen": "2025-11-14",
       "last_noshow_date": "2025-11-07",
       "events_seen": 4,
       "noshow_count": 2,
-      "risk_penalty": 0.03288065175264805,
+      "risk_penalty": 0.03288065175264806,
       "is_absent_next_event": false,
       "callup": {
         "recommended": true,
@@ -2146,10 +2146,10 @@
       ],
       "callup_reason": "high_overall",
       "eb": {
-        "p0": 0.6642451408382439,
+        "p0": 0.6642451408382414,
         "n0": 4.0,
-        "p_hat": 0.582122570419122,
-        "sigma": 0.16440325876324025
+        "p_hat": 0.5821225704191206,
+        "sigma": 0.1644032587632403
       }
     },
     {
@@ -2163,7 +2163,7 @@
       "last_noshow_date": null,
       "events_seen": 8,
       "noshow_count": 0,
-      "risk_penalty": 0.02303111099440834,
+      "risk_penalty": 0.02303111099440831,
       "is_absent_next_event": false,
       "callup": {
         "recommended": false,
@@ -2173,10 +2173,10 @@
       "callup_reason_codes": [],
       "callup_reason": null,
       "eb": {
-        "p0": 0.6642451408382439,
+        "p0": 0.6642451408382414,
         "n0": 4.0,
-        "p_hat": 0.2214150469460813,
-        "sigma": 0.11515555497204169
+        "p_hat": 0.22141504694608047,
+        "sigma": 0.11515555497204154
       }
     },
     {
@@ -2185,12 +2185,12 @@
       "group": "B",
       "role": "Start",
       "noshow_overall": 0.5,
-      "noshow_rolling": 0.5134745984170078,
+      "noshow_rolling": 0.5134745984170761,
       "last_seen": "2025-11-14",
       "last_noshow_date": "2025-11-14",
       "events_seen": 4,
       "noshow_count": 2,
-      "risk_penalty": 0.03288065175264805,
+      "risk_penalty": 0.03288065175264806,
       "is_absent_next_event": false,
       "callup": {
         "recommended": true,
@@ -2212,10 +2212,10 @@
       ],
       "callup_reason": "high_overall",
       "eb": {
-        "p0": 0.6642451408382439,
+        "p0": 0.6642451408382414,
         "n0": 4.0,
-        "p_hat": 0.582122570419122,
-        "sigma": 0.16440325876324025
+        "p_hat": 0.5821225704191206,
+        "sigma": 0.1644032587632403
       }
     },
     {
@@ -2229,7 +2229,7 @@
       "last_noshow_date": null,
       "events_seen": 0,
       "noshow_count": 0,
-      "risk_penalty": 0.04223965281211724,
+      "risk_penalty": 0.04223965281211731,
       "is_absent_next_event": false,
       "callup": {
         "recommended": true,
@@ -2246,10 +2246,10 @@
       ],
       "callup_reason": "low_n",
       "eb": {
-        "p0": 0.6642451408382439,
+        "p0": 0.6642451408382414,
         "n0": 4.0,
-        "p_hat": 0.6642451408382439,
-        "sigma": 0.21119826406058617
+        "p_hat": 0.6642451408382414,
+        "sigma": 0.21119826406058656
       }
     },
     {
@@ -2263,7 +2263,7 @@
       "last_noshow_date": null,
       "events_seen": 12,
       "noshow_count": 0,
-      "risk_penalty": 0.018051230022558498,
+      "risk_penalty": 0.018051230022558467,
       "is_absent_next_event": false,
       "callup": {
         "recommended": false,
@@ -2273,10 +2273,10 @@
       "callup_reason_codes": [],
       "callup_reason": null,
       "eb": {
-        "p0": 0.6642451408382439,
+        "p0": 0.6642451408382414,
         "n0": 4.0,
-        "p_hat": 0.16606128520956098,
-        "sigma": 0.09025615011279249
+        "p_hat": 0.16606128520956034,
+        "sigma": 0.09025615011279234
       }
     },
     {
@@ -2285,7 +2285,7 @@
       "group": "B",
       "role": "Start",
       "noshow_overall": 0.25,
-      "noshow_rolling": 0.2429096136774722,
+      "noshow_rolling": 0.24290961367734742,
       "last_seen": "2025-11-14",
       "last_noshow_date": "2025-10-31",
       "events_seen": 4,
@@ -2300,10 +2300,10 @@
       "callup_reason_codes": [],
       "callup_reason": null,
       "eb": {
-        "p0": 0.6642451408382439,
+        "p0": 0.6642451408382414,
         "n0": 4.0,
-        "p_hat": 0.45712257041912197,
-        "sigma": 0.16605271118685203
+        "p_hat": 0.4571225704191207,
+        "sigma": 0.166052711186852
       }
     },
     {
@@ -2312,12 +2312,12 @@
       "group": "B",
       "role": "Start",
       "noshow_overall": 0.8333333333333334,
-      "noshow_rolling": 0.793182852730114,
+      "noshow_rolling": 0.7931828527301685,
       "last_seen": "2025-11-14",
       "last_noshow_date": "2025-11-07",
       "events_seen": 6,
       "noshow_count": 5,
-      "risk_penalty": 0.025541733610960217,
+      "risk_penalty": 0.02554173361096025,
       "is_absent_next_event": false,
       "callup": {
         "recommended": true,
@@ -2339,10 +2339,10 @@
       ],
       "callup_reason": "high_overall",
       "eb": {
-        "p0": 0.6642451408382439,
+        "p0": 0.6642451408382414,
         "n0": 4.0,
-        "p_hat": 0.7656980563352975,
-        "sigma": 0.12770866805480108
+        "p_hat": 0.7656980563352965,
+        "sigma": 0.12770866805480124
       }
     },
     {
@@ -2351,12 +2351,12 @@
       "group": "B",
       "role": "Start",
       "noshow_overall": 0.6666666666666667,
-      "noshow_rolling": 0.6669893703982142,
+      "noshow_rolling": 0.6669893703983196,
       "last_seen": "2025-11-14",
       "last_noshow_date": "2025-11-14",
       "events_seen": 3,
       "noshow_count": 2,
-      "risk_penalty": 0.03336776517322448,
+      "risk_penalty": 0.033367765173224505,
       "is_absent_next_event": false,
       "callup": {
         "recommended": true,
@@ -2378,10 +2378,10 @@
       ],
       "callup_reason": "high_overall",
       "eb": {
-        "p0": 0.6642451408382439,
+        "p0": 0.6642451408382414,
         "n0": 4.0,
-        "p_hat": 0.6652829376218536,
-        "sigma": 0.16683882586612236
+        "p_hat": 0.6652829376218522,
+        "sigma": 0.16683882586612253
       }
     },
     {
@@ -2390,12 +2390,12 @@
       "group": "B",
       "role": "Start",
       "noshow_overall": 0.08333333333333337,
-      "noshow_rolling": 0.06604106365025109,
+      "noshow_rolling": 0.06604106365022833,
       "last_seen": "2025-11-14",
       "last_noshow_date": "2025-09-05",
       "events_seen": 12,
       "noshow_count": 1,
-      "risk_penalty": 0.02036843140530808,
+      "risk_penalty": 0.02036843140530806,
       "is_absent_next_event": false,
       "callup": {
         "recommended": false,
@@ -2405,10 +2405,10 @@
       "callup_reason_codes": [],
       "callup_reason": null,
       "eb": {
-        "p0": 0.6642451408382439,
+        "p0": 0.6642451408382414,
         "n0": 4.0,
-        "p_hat": 0.22856128520956098,
-        "sigma": 0.1018421570265404
+        "p_hat": 0.22856128520956034,
+        "sigma": 0.1018421570265403
       }
     },
     {
@@ -2417,12 +2417,12 @@
       "group": "B",
       "role": "Start",
       "noshow_overall": 0.6,
-      "noshow_rolling": 0.5862097419660648,
+      "noshow_rolling": 0.5862097419662049,
       "last_seen": "2025-11-14",
       "last_noshow_date": "2025-11-14",
       "events_seen": 5,
       "noshow_count": 3,
-      "risk_penalty": 0.03055971363709752,
+      "risk_penalty": 0.030559713637097537,
       "is_absent_next_event": false,
       "callup": {
         "recommended": true,
@@ -2444,10 +2444,10 @@
       ],
       "callup_reason": "high_overall",
       "eb": {
-        "p0": 0.6642451408382439,
+        "p0": 0.6642451408382414,
         "n0": 4.0,
-        "p_hat": 0.6285533959281084,
-        "sigma": 0.1527985681854876
+        "p_hat": 0.6285533959281072,
+        "sigma": 0.15279856818548768
       }
     },
     {
@@ -2456,12 +2456,12 @@
       "group": "B",
       "role": "Start",
       "noshow_overall": 0.5454545454545454,
-      "noshow_rolling": 0.615965337652681,
+      "noshow_rolling": 0.6159653376528629,
       "last_seen": "2025-11-14",
       "last_noshow_date": "2025-11-14",
       "events_seen": 11,
       "noshow_count": 6,
-      "risk_penalty": 0.024700741324013252,
+      "risk_penalty": 0.02470074132401326,
       "is_absent_next_event": false,
       "callup": {
         "recommended": true,
@@ -2483,10 +2483,10 @@
       ],
       "callup_reason": "high_overall",
       "eb": {
-        "p0": 0.6642451408382439,
+        "p0": 0.6642451408382414,
         "n0": 4.0,
-        "p_hat": 0.577132037556865,
-        "sigma": 0.12350370662006625
+        "p_hat": 0.5771320375568644,
+        "sigma": 0.12350370662006628
       }
     },
     {
@@ -2495,12 +2495,12 @@
       "group": "B",
       "role": "Start",
       "noshow_overall": 0.6363636363636364,
-      "noshow_rolling": 0.6115774313573561,
+      "noshow_rolling": 0.6115774313573756,
       "last_seen": "2025-11-14",
       "last_noshow_date": "2025-11-07",
       "events_seen": 11,
       "noshow_count": 7,
-      "risk_penalty": 0.023943784823187063,
+      "risk_penalty": 0.023943784823187073,
       "is_absent_next_event": false,
       "callup": {
         "recommended": true,
@@ -2522,10 +2522,10 @@
       ],
       "callup_reason": "high_overall",
       "eb": {
-        "p0": 0.6642451408382439,
+        "p0": 0.6642451408382414,
         "n0": 4.0,
-        "p_hat": 0.6437987042235317,
-        "sigma": 0.11971892411593531
+        "p_hat": 0.643798704223531,
+        "sigma": 0.11971892411593536
       }
     },
     {
@@ -2534,12 +2534,12 @@
       "group": "B",
       "role": "Start",
       "noshow_overall": 0.6666666666666667,
-      "noshow_rolling": 0.6077423383444386,
+      "noshow_rolling": 0.6077423383443274,
       "last_seen": "2025-11-14",
       "last_noshow_date": "2025-10-31",
       "events_seen": 6,
       "noshow_count": 4,
-      "risk_penalty": 0.028447345562488832,
+      "risk_penalty": 0.028447345562488853,
       "is_absent_next_event": false,
       "callup": {
         "recommended": true,
@@ -2561,10 +2561,10 @@
       ],
       "callup_reason": "high_overall",
       "eb": {
-        "p0": 0.6642451408382439,
+        "p0": 0.6642451408382414,
         "n0": 4.0,
-        "p_hat": 0.6656980563352975,
-        "sigma": 0.14223672781244415
+        "p_hat": 0.6656980563352966,
+        "sigma": 0.14223672781244426
       }
     },
     {
@@ -2573,7 +2573,7 @@
       "group": "B",
       "role": "Start",
       "noshow_overall": 0.375,
-      "noshow_rolling": 0.3511023518537273,
+      "noshow_rolling": 0.35110235185370575,
       "last_seen": "2025-11-14",
       "last_noshow_date": "2025-10-24",
       "events_seen": 8,
@@ -2588,9 +2588,9 @@
       "callup_reason_codes": [],
       "callup_reason": null,
       "eb": {
-        "p0": 0.6642451408382439,
+        "p0": 0.6642451408382414,
         "n0": 4.0,
-        "p_hat": 0.47141504694608133,
+        "p_hat": 0.47141504694608044,
         "sigma": 0.13844824094193392
       }
     },
@@ -2605,7 +2605,7 @@
       "last_noshow_date": null,
       "events_seen": 0,
       "noshow_count": 0,
-      "risk_penalty": 0.04223965281211724,
+      "risk_penalty": 0.04223965281211731,
       "is_absent_next_event": false,
       "callup": {
         "recommended": true,
@@ -2622,10 +2622,10 @@
       ],
       "callup_reason": "low_n",
       "eb": {
-        "p0": 0.6642451408382439,
+        "p0": 0.6642451408382414,
         "n0": 4.0,
-        "p_hat": 0.6642451408382439,
-        "sigma": 0.21119826406058617
+        "p_hat": 0.6642451408382414,
+        "sigma": 0.21119826406058656
       }
     },
     {
@@ -2634,12 +2634,12 @@
       "group": "B",
       "role": "Start",
       "noshow_overall": 0.36363636363636365,
-      "noshow_rolling": 0.3230477898231796,
+      "noshow_rolling": 0.3230477898232198,
       "last_seen": "2025-11-14",
       "last_noshow_date": "2025-10-24",
       "events_seen": 11,
       "noshow_count": 4,
-      "risk_penalty": 0.024841568708167665,
+      "risk_penalty": 0.02484156870816766,
       "is_absent_next_event": false,
       "callup": {
         "recommended": false,
@@ -2656,10 +2656,10 @@
       },
       "has_forced_signup": true,
       "eb": {
-        "p0": 0.6642451408382439,
+        "p0": 0.6642451408382414,
         "n0": 4.0,
-        "p_hat": 0.44379870422353174,
-        "sigma": 0.12420784354083832
+        "p_hat": 0.443798704223531,
+        "sigma": 0.1242078435408383
       },
       "event_signup": {
         "group": "B",
@@ -2675,12 +2675,12 @@
       "group": "B",
       "role": "Start",
       "noshow_overall": 0.5,
-      "noshow_rolling": 0.4730703610960799,
+      "noshow_rolling": 0.47307036109581324,
       "last_seen": "2025-11-14",
       "last_noshow_date": "2025-10-31",
       "events_seen": 2,
       "noshow_count": 1,
-      "risk_penalty": 0.03687898816609514,
+      "risk_penalty": 0.03687898816609517,
       "is_absent_next_event": false,
       "callup": {
         "recommended": true,
@@ -2704,10 +2704,10 @@
       },
       "has_forced_signup": true,
       "eb": {
-        "p0": 0.6642451408382439,
+        "p0": 0.6642451408382414,
         "n0": 4.0,
-        "p_hat": 0.6094967605588293,
-        "sigma": 0.1843949408304757
+        "p_hat": 0.6094967605588276,
+        "sigma": 0.18439494083047583
       },
       "event_signup": {
         "group": "B",
@@ -2723,7 +2723,7 @@
       "group": "B",
       "role": "Start",
       "noshow_overall": 0.4285714285714286,
-      "noshow_rolling": 0.45189213516580296,
+      "noshow_rolling": 0.4518921351658177,
       "last_seen": "2025-11-14",
       "last_noshow_date": "2025-11-07",
       "events_seen": 7,
@@ -2745,9 +2745,9 @@
       ],
       "callup_reason": "high_overall",
       "eb": {
-        "p0": 0.6642451408382439,
+        "p0": 0.6642451408382414,
         "n0": 4.0,
-        "p_hat": 0.514270960304816,
+        "p_hat": 0.514270960304815,
         "sigma": 0.14427876365216816
       }
     },
@@ -2762,7 +2762,7 @@
       "last_noshow_date": "2025-11-14",
       "events_seen": 1,
       "noshow_count": 1,
-      "risk_penalty": 0.03618985484367474,
+      "risk_penalty": 0.03618985484367483,
       "is_absent_next_event": false,
       "callup": {
         "recommended": true,
@@ -2779,10 +2779,10 @@
       ],
       "callup_reason": "low_n",
       "eb": {
-        "p0": 0.6642451408382439,
+        "p0": 0.6642451408382414,
         "n0": 4.0,
-        "p_hat": 0.7313961126705951,
-        "sigma": 0.1809492742183737
+        "p_hat": 0.7313961126705931,
+        "sigma": 0.18094927421837415
       }
     },
     {
@@ -2796,7 +2796,7 @@
       "last_noshow_date": "2025-11-07",
       "events_seen": 3,
       "noshow_count": 3,
-      "risk_penalty": 0.027843283822350906,
+      "risk_penalty": 0.027843283822350986,
       "is_absent_next_event": false,
       "callup": {
         "recommended": true,
@@ -2818,10 +2818,10 @@
       ],
       "callup_reason": "high_overall",
       "eb": {
-        "p0": 0.6642451408382439,
+        "p0": 0.6642451408382414,
         "n0": 4.0,
-        "p_hat": 0.8081400804789965,
-        "sigma": 0.13921641911175453
+        "p_hat": 0.808140080478995,
+        "sigma": 0.13921641911175492
       }
     },
     {
@@ -2835,7 +2835,7 @@
       "last_noshow_date": "2025-10-31",
       "events_seen": 2,
       "noshow_count": 2,
-      "risk_penalty": 0.031508163247284546,
+      "risk_penalty": 0.03150816324728463,
       "is_absent_next_event": false,
       "callup": {
         "recommended": true,
@@ -2852,10 +2852,10 @@
       ],
       "callup_reason": "low_n",
       "eb": {
-        "p0": 0.6642451408382439,
+        "p0": 0.6642451408382414,
         "n0": 4.0,
-        "p_hat": 0.7761634272254959,
-        "sigma": 0.15754081623642271
+        "p_hat": 0.7761634272254941,
+        "sigma": 0.15754081623642313
       }
     },
     {
@@ -2869,7 +2869,7 @@
       "last_noshow_date": "2025-11-07",
       "events_seen": 2,
       "noshow_count": 2,
-      "risk_penalty": 0.031508163247284546,
+      "risk_penalty": 0.03150816324728463,
       "is_absent_next_event": false,
       "callup": {
         "recommended": true,
@@ -2886,10 +2886,10 @@
       ],
       "callup_reason": "low_n",
       "eb": {
-        "p0": 0.6642451408382439,
+        "p0": 0.6642451408382414,
         "n0": 4.0,
-        "p_hat": 0.7761634272254959,
-        "sigma": 0.15754081623642271
+        "p_hat": 0.7761634272254941,
+        "sigma": 0.15754081623642313
       }
     },
     {
@@ -2903,7 +2903,7 @@
       "last_noshow_date": "2025-11-07",
       "events_seen": 2,
       "noshow_count": 2,
-      "risk_penalty": 0.031508163247284546,
+      "risk_penalty": 0.03150816324728463,
       "is_absent_next_event": false,
       "callup": {
         "recommended": true,
@@ -2920,10 +2920,10 @@
       ],
       "callup_reason": "low_n",
       "eb": {
-        "p0": 0.6642451408382439,
+        "p0": 0.6642451408382414,
         "n0": 4.0,
-        "p_hat": 0.7761634272254959,
-        "sigma": 0.15754081623642271
+        "p_hat": 0.7761634272254941,
+        "sigma": 0.15754081623642313
       }
     },
     {
@@ -2937,7 +2937,7 @@
       "last_noshow_date": "2025-09-12",
       "events_seen": 1,
       "noshow_count": 1,
-      "risk_penalty": 0.03618985484367474,
+      "risk_penalty": 0.03618985484367483,
       "is_absent_next_event": false,
       "callup": {
         "recommended": true,
@@ -2954,10 +2954,10 @@
       ],
       "callup_reason": "low_n",
       "eb": {
-        "p0": 0.6642451408382439,
+        "p0": 0.6642451408382414,
         "n0": 4.0,
-        "p_hat": 0.7313961126705951,
-        "sigma": 0.1809492742183737
+        "p_hat": 0.7313961126705931,
+        "sigma": 0.18094927421837415
       }
     },
     {
@@ -2971,7 +2971,7 @@
       "last_noshow_date": "2025-10-31",
       "events_seen": 2,
       "noshow_count": 2,
-      "risk_penalty": 0.031508163247284546,
+      "risk_penalty": 0.03150816324728463,
       "is_absent_next_event": false,
       "callup": {
         "recommended": true,
@@ -2988,10 +2988,10 @@
       ],
       "callup_reason": "low_n",
       "eb": {
-        "p0": 0.6642451408382439,
+        "p0": 0.6642451408382414,
         "n0": 4.0,
-        "p_hat": 0.7761634272254959,
-        "sigma": 0.15754081623642271
+        "p_hat": 0.7761634272254941,
+        "sigma": 0.15754081623642313
       }
     },
     {
@@ -3005,7 +3005,7 @@
       "last_noshow_date": "2025-11-07",
       "events_seen": 5,
       "noshow_count": 5,
-      "risk_penalty": 0.02253499196460948,
+      "risk_penalty": 0.02253499196460955,
       "is_absent_next_event": false,
       "callup": {
         "recommended": true,
@@ -3027,10 +3027,10 @@
       ],
       "callup_reason": "high_overall",
       "eb": {
-        "p0": 0.6642451408382439,
+        "p0": 0.6642451408382414,
         "n0": 4.0,
-        "p_hat": 0.8507756181503306,
-        "sigma": 0.1126749598230474
+        "p_hat": 0.8507756181503294,
+        "sigma": 0.11267495982304775
       }
     },
     {
@@ -3044,7 +3044,7 @@
       "last_noshow_date": "2025-09-19",
       "events_seen": 1,
       "noshow_count": 1,
-      "risk_penalty": 0.03618985484367474,
+      "risk_penalty": 0.03618985484367483,
       "is_absent_next_event": false,
       "callup": {
         "recommended": true,
@@ -3061,10 +3061,10 @@
       ],
       "callup_reason": "low_n",
       "eb": {
-        "p0": 0.6642451408382439,
+        "p0": 0.6642451408382414,
         "n0": 4.0,
-        "p_hat": 0.7313961126705951,
-        "sigma": 0.1809492742183737
+        "p_hat": 0.7313961126705931,
+        "sigma": 0.18094927421837415
       }
     },
     {
@@ -3078,7 +3078,7 @@
       "last_noshow_date": "2025-11-07",
       "events_seen": 1,
       "noshow_count": 1,
-      "risk_penalty": 0.03618985484367474,
+      "risk_penalty": 0.03618985484367483,
       "is_absent_next_event": false,
       "callup": {
         "recommended": true,
@@ -3095,10 +3095,10 @@
       ],
       "callup_reason": "low_n",
       "eb": {
-        "p0": 0.6642451408382439,
+        "p0": 0.6642451408382414,
         "n0": 4.0,
-        "p_hat": 0.7313961126705951,
-        "sigma": 0.1809492742183737
+        "p_hat": 0.7313961126705931,
+        "sigma": 0.18094927421837415
       }
     },
     {
