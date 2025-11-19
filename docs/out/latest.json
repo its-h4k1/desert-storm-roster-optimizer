@@ -1,5 +1,5 @@
 {
-  "generated_at": "2025-11-19T19:58:16.450136+01:00",
+  "generated_at": "2025-11-19T21:03:46.143591+01:00",
   "schema": {
     "version": 4,
     "csv": [
@@ -33,8 +33,8 @@
     "prior": {
       "fallback": 0.18,
       "pad": 0.02,
-      "team_mean": 0.6673482633809699,
-      "value": 0.6873482633809699
+      "team_mean": 0.6642451408388083,
+      "value": 0.6842451408388083
     },
     "metrics": {
       "risk_penalty": {
@@ -49,31 +49,31 @@
   "signup_pool": {
     "source": "data/event_signups_next.csv",
     "stats": {
-      "file_rows_total": 8,
-      "file_entries_total": 8,
-      "raw_rows": 8,
-      "rows_with_playername": 8,
-      "rows_with_canon": 8,
-      "file_rows_with_playername": 8,
-      "file_rows_with_canon": 8,
-      "total_entries": 8,
-      "processed_entries_total": 8,
-      "applied_entries": 8,
+      "file_rows_total": 13,
+      "file_entries_total": 13,
+      "raw_rows": 13,
+      "rows_with_playername": 13,
+      "rows_with_canon": 13,
+      "file_rows_with_playername": 13,
+      "file_rows_with_canon": 13,
+      "total_entries": 13,
+      "processed_entries_total": 13,
+      "applied_entries": 13,
       "ignored_entries": 0,
-      "hard_commit_rows_total": 8,
-      "hard_commit_total": 8,
-      "hard_commit_applied": 8,
+      "hard_commit_rows_total": 13,
+      "hard_commit_total": 13,
+      "hard_commit_applied": 13,
       "hard_commit_invalid": 0,
       "hard_commit_overbooked": 0,
       "hard_commit_missing_from_roster": 0,
-      "hard_commitments_total": 8,
-      "hard_commitments_applied": 8,
+      "hard_commitments_total": 13,
+      "hard_commitments_applied": 13,
       "hard_commitments_invalid": 0,
       "hard_commitments_overbooked": 0,
       "hard_commitments_missing_from_roster": 0,
-      "in_roster_hard_commitments": 8,
-      "forced_total": 8,
-      "forced_in_roster": 8,
+      "in_roster_hard_commitments": 13,
+      "forced_total": 13,
+      "forced_in_roster": 13,
       "forced_out_of_roster": 0,
       "extra_entries_total": 0,
       "extra_entries_by_group": {
@@ -138,6 +138,24 @@
       },
       {
         "row_index": 5,
+        "player": "Darkface 46",
+        "canon": "darkface 46",
+        "group_pref": "A",
+        "role_pref": "Start",
+        "commitment": "hard",
+        "source": "manual",
+        "note": "",
+        "in_alliance": true,
+        "in_player_pool": true,
+        "is_absent_next_event": false,
+        "pref_group_in_pool": null,
+        "status": "forced",
+        "resolved_group": "A",
+        "resolved_role": "Start",
+        "overbooked": false
+      },
+      {
+        "row_index": 6,
         "player": "KUBI01",
         "canon": "kubi01",
         "group_pref": "A",
@@ -155,7 +173,7 @@
         "overbooked": false
       },
       {
-        "row_index": 6,
+        "row_index": 7,
         "player": "LittelJoe",
         "canon": "litteljoe",
         "group_pref": "A",
@@ -173,7 +191,7 @@
         "overbooked": false
       },
       {
-        "row_index": 7,
+        "row_index": 8,
         "player": "Mahaja",
         "canon": "mahaja",
         "group_pref": "A",
@@ -191,7 +209,79 @@
         "overbooked": false
       },
       {
-        "row_index": 8,
+        "row_index": 9,
+        "player": "Schalmei3",
+        "canon": "schalmei3",
+        "group_pref": "A",
+        "role_pref": "Start",
+        "commitment": "hard",
+        "source": "manual",
+        "note": "",
+        "in_alliance": true,
+        "in_player_pool": true,
+        "is_absent_next_event": false,
+        "pref_group_in_pool": null,
+        "status": "forced",
+        "resolved_group": "A",
+        "resolved_role": "Start",
+        "overbooked": false
+      },
+      {
+        "row_index": 10,
+        "player": "Tobinho25",
+        "canon": "tobinho25",
+        "group_pref": "A",
+        "role_pref": "Start",
+        "commitment": "hard",
+        "source": "manual",
+        "note": "",
+        "in_alliance": true,
+        "in_player_pool": true,
+        "is_absent_next_event": false,
+        "pref_group_in_pool": null,
+        "status": "forced",
+        "resolved_group": "A",
+        "resolved_role": "Start",
+        "overbooked": false
+      },
+      {
+        "row_index": 11,
+        "player": "Zombie 666 80 420",
+        "canon": "zombie 666 80 420",
+        "group_pref": "A",
+        "role_pref": "Start",
+        "commitment": "hard",
+        "source": "manual",
+        "note": "",
+        "in_alliance": true,
+        "in_player_pool": true,
+        "is_absent_next_event": false,
+        "pref_group_in_pool": null,
+        "status": "forced",
+        "resolved_group": "A",
+        "resolved_role": "Start",
+        "overbooked": false
+      },
+      {
+        "row_index": 12,
+        "player": "Alstermaus",
+        "canon": "alstermaus",
+        "group_pref": "B",
+        "role_pref": "Start",
+        "commitment": "hard",
+        "source": "manual",
+        "note": "",
+        "in_alliance": true,
+        "in_player_pool": true,
+        "is_absent_next_event": false,
+        "pref_group_in_pool": "B",
+        "status": "forced",
+        "resolved_group": "B",
+        "resolved_role": "Start",
+        "overbooked": false
+      },
+      {
+        "row_index": 13,
         "player": "b1e90ff",
         "canon": "b1e90ff",
         "group_pref": "B",
@@ -209,7 +299,7 @@
         "overbooked": false
       },
       {
-        "row_index": 9,
+        "row_index": 14,
         "player": "ZANGE",
         "canon": "zange",
         "group_pref": "B",
@@ -259,6 +349,16 @@
         "overbooked": false
       },
       {
+        "player": "Darkface 46",
+        "canon": "darkface 46",
+        "group": "A",
+        "role": "Start",
+        "source": "manual",
+        "note": "",
+        "commitment": "hard",
+        "overbooked": false
+      },
+      {
         "player": "KUBI01",
         "canon": "kubi01",
         "group": "A",
@@ -289,6 +389,46 @@
         "overbooked": false
       },
       {
+        "player": "Schalmei3",
+        "canon": "schalmei3",
+        "group": "A",
+        "role": "Start",
+        "source": "manual",
+        "note": "",
+        "commitment": "hard",
+        "overbooked": false
+      },
+      {
+        "player": "Tobinho25",
+        "canon": "tobinho25",
+        "group": "A",
+        "role": "Start",
+        "source": "manual",
+        "note": "",
+        "commitment": "hard",
+        "overbooked": false
+      },
+      {
+        "player": "Zombie 666 80 420",
+        "canon": "zombie 666 80 420",
+        "group": "A",
+        "role": "Start",
+        "source": "manual",
+        "note": "",
+        "commitment": "hard",
+        "overbooked": false
+      },
+      {
+        "player": "Alstermaus",
+        "canon": "alstermaus",
+        "group": "B",
+        "role": "Start",
+        "source": "manual",
+        "note": "",
+        "commitment": "hard",
+        "overbooked": false
+      },
+      {
         "player": "b1e90ff",
         "canon": "b1e90ff",
         "group": "B",
@@ -311,31 +451,31 @@
     ],
     "invalid_forced_signups": [],
     "overbooked_forced_signups": [],
-    "file_rows_total": 8,
-    "file_entries_total": 8,
-    "raw_rows": 8,
-    "rows_with_playername": 8,
-    "rows_with_canon": 8,
-    "file_rows_with_playername": 8,
-    "file_rows_with_canon": 8,
-    "total_entries": 8,
-    "processed_entries_total": 8,
-    "applied_entries": 8,
+    "file_rows_total": 13,
+    "file_entries_total": 13,
+    "raw_rows": 13,
+    "rows_with_playername": 13,
+    "rows_with_canon": 13,
+    "file_rows_with_playername": 13,
+    "file_rows_with_canon": 13,
+    "total_entries": 13,
+    "processed_entries_total": 13,
+    "applied_entries": 13,
     "ignored_entries": 0,
-    "hard_commit_rows_total": 8,
-    "hard_commit_total": 8,
-    "hard_commit_applied": 8,
+    "hard_commit_rows_total": 13,
+    "hard_commit_total": 13,
+    "hard_commit_applied": 13,
     "hard_commit_invalid": 0,
     "hard_commit_overbooked": 0,
     "hard_commit_missing_from_roster": 0,
-    "hard_commitments_total": 8,
-    "hard_commitments_applied": 8,
+    "hard_commitments_total": 13,
+    "hard_commitments_applied": 13,
     "hard_commitments_invalid": 0,
     "hard_commitments_overbooked": 0,
     "hard_commitments_missing_from_roster": 0,
-    "in_roster_hard_commitments": 8,
-    "forced_total": 8,
-    "forced_in_roster": 8,
+    "in_roster_hard_commitments": 13,
+    "forced_total": 13,
+    "forced_in_roster": 13,
     "forced_out_of_roster": 0,
     "extra_entries_total": 0,
     "extra_entries_by_group": {
@@ -349,19 +489,19 @@
         "Alonzo Mosley",
         "BobbydyBob",
         "Damien 44",
+        "Darkface 46",
         "Jimmy die Robbe",
         "KUBI01",
         "Kurdun Laneti",
         "LittelJoe",
-        "Maggyispass",
         "Mahaja",
         "Marikopopo",
-        "Michael 3840",
         "PAvluWKA",
         "Re3Slim3",
         "Schalmei3",
         "TheFisch",
         "Tobinho25",
+        "Zombie 666 80 420",
         "abu47",
         "itsH4K1",
         "rompa ru",
@@ -370,14 +510,14 @@
       "Ersatz": [
         "Aegolas",
         "Amy0815",
+        "Baldurbabu",
+        "Caplap",
         "Colombo123",
         "DevastatorJMI",
+        "Evil Activities",
         "John Doe 0815",
-        "Wellsyone",
-        "Yoda0201",
-        "Yusam 83",
-        "Zombie 666 80 420",
-        "x Scorpion x"
+        "Pickopf",
+        "Yoda0201"
       ],
       "extra_signups": []
     },
@@ -390,30 +530,30 @@
         "Dany Bossss",
         "Darkhold",
         "Elevn765",
-        "Evil Activities",
         "Fenworld",
         "Globi3000",
-        "Kamikaze82",
         "Leraxo",
+        "Maggyispass",
         "Maik1234567890",
+        "Michael 3840",
         "Nico 90",
-        "Pickopf",
         "Schlumpfsoldat 4714",
         "Stiegl 13",
+        "Wellsyone",
         "ZANGE",
         "b1e90ff",
         "cindy934"
       ],
       "Ersatz": [
-        "Baldurbabu",
         "CRZDR79",
         "CS8888",
-        "Caplap",
         "CommanderPiwi",
         "DNA16",
-        "Darkface 46",
         "Der Mok",
         "DerOle83",
+        "Domdom15",
+        "Doodo12",
+        "Dragon0407",
         "capsharky"
       ],
       "extra_signups": []
@@ -422,18 +562,18 @@
   "event_signups": {
     "scope": "next_event",
     "source": "data/event_signups_next.csv",
-    "raw_rows": 8,
-    "rows_with_playername": 8,
-    "rows_with_canon": 8,
-    "file_rows_total": 8,
-    "file_rows_with_playername": 8,
-    "file_rows_with_canon": 8,
-    "total_entries": 8,
-    "applied_entries": 8,
+    "raw_rows": 13,
+    "rows_with_playername": 13,
+    "rows_with_canon": 13,
+    "file_rows_total": 13,
+    "file_rows_with_playername": 13,
+    "file_rows_with_canon": 13,
+    "total_entries": 13,
+    "applied_entries": 13,
     "ignored_entries": 0,
-    "hard_commitments": 8,
-    "hard_commit_rows_total": 8,
-    "hard_commitments_applied": 8,
+    "hard_commitments": 13,
+    "hard_commit_rows_total": 13,
+    "hard_commitments_applied": 13,
     "hard_commitments_invalid": 0,
     "hard_commitments_overbooked": 0,
     "extra_entries_total": 0,
@@ -441,8 +581,8 @@
       "A": 0,
       "B": 0
     },
-    "forced_total": 8,
-    "forced_in_roster": 8,
+    "forced_total": 13,
+    "forced_in_roster": 13,
     "forced_out_of_roster": 0
   },
   "forced_signups": [
@@ -477,6 +617,16 @@
       "overbooked": false
     },
     {
+      "player": "Darkface 46",
+      "canon": "darkface 46",
+      "group": "A",
+      "role": "Start",
+      "source": "manual",
+      "note": "",
+      "commitment": "hard",
+      "overbooked": false
+    },
+    {
       "player": "KUBI01",
       "canon": "kubi01",
       "group": "A",
@@ -500,6 +650,46 @@
       "player": "Mahaja",
       "canon": "mahaja",
       "group": "A",
+      "role": "Start",
+      "source": "manual",
+      "note": "",
+      "commitment": "hard",
+      "overbooked": false
+    },
+    {
+      "player": "Schalmei3",
+      "canon": "schalmei3",
+      "group": "A",
+      "role": "Start",
+      "source": "manual",
+      "note": "",
+      "commitment": "hard",
+      "overbooked": false
+    },
+    {
+      "player": "Tobinho25",
+      "canon": "tobinho25",
+      "group": "A",
+      "role": "Start",
+      "source": "manual",
+      "note": "",
+      "commitment": "hard",
+      "overbooked": false
+    },
+    {
+      "player": "Zombie 666 80 420",
+      "canon": "zombie 666 80 420",
+      "group": "A",
+      "role": "Start",
+      "source": "manual",
+      "note": "",
+      "commitment": "hard",
+      "overbooked": false
+    },
+    {
+      "player": "Alstermaus",
+      "canon": "alstermaus",
+      "group": "B",
       "role": "Start",
       "source": "manual",
       "note": "",
@@ -1168,12 +1358,12 @@
       "group": "A",
       "role": "Start",
       "noshow_overall": 0.2727272727272727,
-      "noshow_rolling": 0.2382562624035781,
+      "noshow_rolling": 0.23825626240790487,
       "last_seen": "2025-11-14",
       "last_noshow_date": "2025-10-24",
       "events_seen": 11,
       "noshow_count": 3,
-      "risk_penalty": 0.02424387166722377,
+      "risk_penalty": 0.024233420301574715,
       "is_absent_next_event": false,
       "callup": {
         "recommended": false,
@@ -1190,10 +1380,10 @@
       },
       "has_forced_signup": true,
       "eb": {
-        "p0": 0.6673482633809699,
+        "p0": 0.6642451408388083,
         "n0": 4.0,
-        "p_hat": 0.377959536901592,
-        "sigma": 0.12121935833611884
+        "p_hat": 0.3771320375570156,
+        "sigma": 0.12116710150787356
       },
       "event_signup": {
         "group": "A",
@@ -1209,12 +1399,12 @@
       "group": "A",
       "role": "Start",
       "noshow_overall": 0.25,
-      "noshow_rolling": 0.21007064410988874,
+      "noshow_rolling": 0.21007064408360387,
       "last_seen": "2025-11-14",
       "last_noshow_date": "2025-10-03",
       "events_seen": 12,
       "noshow_count": 3,
-      "risk_penalty": 0.02320153694774281,
+      "risk_penalty": 0.023190043645067916,
       "is_absent_next_event": false,
       "callup": {
         "recommended": false,
@@ -1231,10 +1421,10 @@
       },
       "has_forced_signup": true,
       "eb": {
-        "p0": 0.6673482633809699,
+        "p0": 0.6642451408388083,
         "n0": 4.0,
-        "p_hat": 0.3543370658452425,
-        "sigma": 0.11600768473871405
+        "p_hat": 0.3535612852097021,
+        "sigma": 0.11595021822533957
       },
       "event_signup": {
         "group": "A",
@@ -1255,7 +1445,7 @@
       "last_noshow_date": null,
       "events_seen": 5,
       "noshow_count": 0,
-      "risk_penalty": 0.02888793007598043,
+      "risk_penalty": 0.028848929077968558,
       "is_absent_next_event": false,
       "callup": {
         "recommended": false,
@@ -1272,10 +1462,58 @@
       },
       "has_forced_signup": true,
       "eb": {
-        "p0": 0.6673482633809699,
+        "p0": 0.6642451408388083,
         "n0": 4.0,
-        "p_hat": 0.29659922816931994,
-        "sigma": 0.14443965037990214
+        "p_hat": 0.29522006259502587,
+        "sigma": 0.14424464538984277
+      },
+      "event_signup": {
+        "group": "A",
+        "role": "Start",
+        "source": "manual",
+        "note": ""
+      },
+      "has_event_signup": true
+    },
+    {
+      "display": "Darkface 46",
+      "canon": "darkface 46",
+      "group": "A",
+      "role": "Start",
+      "noshow_overall": 1.0,
+      "noshow_rolling": 1.0,
+      "last_seen": "2025-11-07",
+      "last_noshow_date": "2025-11-07",
+      "events_seen": 2,
+      "noshow_count": 2,
+      "risk_penalty": 0.03150816324726571,
+      "is_absent_next_event": false,
+      "callup": {
+        "recommended": true,
+        "reasons": [
+          {
+            "code": "low_n",
+            "label": "Low-N (2 Events)"
+          }
+        ]
+      },
+      "callup_recommended": true,
+      "callup_reason_codes": [
+        "low_n"
+      ],
+      "callup_reason": "low_n",
+      "forced_signup": {
+        "commitment": "hard",
+        "source": "manual",
+        "note": "",
+        "overbooked": false
+      },
+      "has_forced_signup": true,
+      "eb": {
+        "p0": 0.6642451408388083,
+        "n0": 4.0,
+        "p_hat": 0.7761634272258723,
+        "sigma": 0.1575408162363285
       },
       "event_signup": {
         "group": "A",
@@ -1296,7 +1534,7 @@
       "last_noshow_date": null,
       "events_seen": 12,
       "noshow_count": 0,
-      "risk_penalty": 0.01808492770597482,
+      "risk_penalty": 0.01805123002256464,
       "is_absent_next_event": false,
       "callup": {
         "recommended": false,
@@ -1306,10 +1544,10 @@
       "callup_reason_codes": [],
       "callup_reason": null,
       "eb": {
-        "p0": 0.6673482633809699,
+        "p0": 0.6642451408388083,
         "n0": 4.0,
-        "p_hat": 0.16683706584524247,
-        "sigma": 0.0904246385298741
+        "p_hat": 0.16606128520970206,
+        "sigma": 0.09025615011282319
       }
     },
     {
@@ -1323,7 +1561,7 @@
       "last_noshow_date": null,
       "events_seen": 4,
       "noshow_count": 0,
-      "risk_penalty": 0.031434991510246514,
+      "risk_penalty": 0.03139831337560893,
       "is_absent_next_event": false,
       "callup": {
         "recommended": false,
@@ -1340,10 +1578,10 @@
       },
       "has_forced_signup": true,
       "eb": {
-        "p0": 0.6673482633809699,
+        "p0": 0.6642451408388083,
         "n0": 4.0,
-        "p_hat": 0.33367413169048493,
-        "sigma": 0.15717495755123256
+        "p_hat": 0.33212257041940413,
+        "sigma": 0.15699156687804464
       },
       "event_signup": {
         "group": "A",
@@ -1364,7 +1602,7 @@
       "last_noshow_date": null,
       "events_seen": 1,
       "noshow_count": 0,
-      "risk_penalty": 0.04073100700422339,
+      "risk_penalty": 0.04074426619040172,
       "is_absent_next_event": false,
       "callup": {
         "recommended": true,
@@ -1381,10 +1619,10 @@
       ],
       "callup_reason": "low_n",
       "eb": {
-        "p0": 0.6673482633809699,
+        "p0": 0.6642451408388083,
         "n0": 4.0,
-        "p_hat": 0.5338786107047759,
-        "sigma": 0.20365503502111695
+        "p_hat": 0.5313961126710466,
+        "sigma": 0.20372133095200862
       }
     },
     {
@@ -1394,26 +1632,19 @@
       "role": "Start",
       "noshow_overall": 0.0,
       "noshow_rolling": 0.0,
-      "last_seen": "",
+      "last_seen": "2025-11-14",
       "last_noshow_date": null,
-      "events_seen": 0,
+      "events_seen": 7,
       "noshow_count": 0,
-      "risk_penalty": 0.04214209854702289,
+      "risk_penalty": 0.02471169322197432,
       "is_absent_next_event": false,
       "callup": {
-        "recommended": true,
-        "reasons": [
-          {
-            "code": "low_n",
-            "label": "Low-N (0 Events)"
-          }
-        ]
+        "recommended": false,
+        "reasons": []
       },
-      "callup_recommended": true,
-      "callup_reason_codes": [
-        "low_n"
-      ],
-      "callup_reason": "low_n",
+      "callup_recommended": false,
+      "callup_reason_codes": [],
+      "callup_reason": null,
       "forced_signup": {
         "commitment": "hard",
         "source": "manual",
@@ -1422,10 +1653,10 @@
       },
       "has_forced_signup": true,
       "eb": {
-        "p0": 0.6673482633809699,
+        "p0": 0.6642451408388083,
         "n0": 4.0,
-        "p_hat": 0.6673482633809699,
-        "sigma": 0.2107104927351144
+        "p_hat": 0.24154368757774847,
+        "sigma": 0.1235584661098716
       },
       "event_signup": {
         "group": "A",
@@ -1436,44 +1667,17 @@
       "has_event_signup": true
     },
     {
-      "display": "Maggyispass",
-      "canon": "maggyispass",
-      "group": "A",
-      "role": "Start",
-      "noshow_overall": 0.33333333333333337,
-      "noshow_rolling": 0.2942292752662522,
-      "last_seen": "2025-11-14",
-      "last_noshow_date": "2025-10-17",
-      "events_seen": 12,
-      "noshow_count": 4,
-      "risk_penalty": 0.023915730800545657,
-      "is_absent_next_event": false,
-      "callup": {
-        "recommended": false,
-        "reasons": []
-      },
-      "callup_recommended": false,
-      "callup_reason_codes": [],
-      "callup_reason": null,
-      "eb": {
-        "p0": 0.6673482633809699,
-        "n0": 4.0,
-        "p_hat": 0.4168370658452425,
-        "sigma": 0.11957865400272828
-      }
-    },
-    {
       "display": "Mahaja",
       "canon": "mahaja",
       "group": "A",
       "role": "Start",
       "noshow_overall": 0.09999999999999998,
-      "noshow_rolling": 0.07516501975897982,
+      "noshow_rolling": 0.07516501975841938,
       "last_seen": "2025-11-14",
       "last_noshow_date": "2025-09-05",
       "events_seen": 10,
       "noshow_count": 1,
-      "risk_penalty": 0.022709959866032414,
+      "risk_penalty": 0.022685132847957052,
       "is_absent_next_event": false,
       "callup": {
         "recommended": false,
@@ -1490,10 +1694,10 @@
       },
       "has_forced_signup": true,
       "eb": {
-        "p0": 0.6673482633809699,
+        "p0": 0.6642451408388083,
         "n0": 4.0,
-        "p_hat": 0.26209950382313424,
-        "sigma": 0.11354979933016206
+        "p_hat": 0.26121289738251663,
+        "sigma": 0.11342566423978526
       },
       "event_signup": {
         "group": "A",
@@ -1514,7 +1718,7 @@
       "last_noshow_date": null,
       "events_seen": 9,
       "noshow_count": 0,
-      "risk_penalty": 0.02159194710003555,
+      "risk_penalty": 0.021554625649508673,
       "is_absent_next_event": false,
       "callup": {
         "recommended": false,
@@ -1524,49 +1728,10 @@
       "callup_reason_codes": [],
       "callup_reason": null,
       "eb": {
-        "p0": 0.6673482633809699,
+        "p0": 0.6642451408388083,
         "n0": 4.0,
-        "p_hat": 0.20533792719414456,
-        "sigma": 0.10795973550017775
-      }
-    },
-    {
-      "display": "Michael 3840",
-      "canon": "michael 3840",
-      "group": "A",
-      "role": "Start",
-      "noshow_overall": 0.6,
-      "noshow_rolling": 0.5862097419734531,
-      "last_seen": "2025-11-14",
-      "last_noshow_date": "2025-11-14",
-      "events_seen": 5,
-      "noshow_count": 3,
-      "risk_penalty": 0.03053637368525341,
-      "is_absent_next_event": false,
-      "callup": {
-        "recommended": true,
-        "reasons": [
-          {
-            "code": "high_overall",
-            "label": "High No-Show overall 60.0%"
-          },
-          {
-            "code": "high_rolling",
-            "label": "High No-Show rolling 58.6%"
-          }
-        ]
-      },
-      "callup_recommended": true,
-      "callup_reason_codes": [
-        "high_overall",
-        "high_rolling"
-      ],
-      "callup_reason": "high_overall",
-      "eb": {
-        "p0": 0.6673482633809699,
-        "n0": 4.0,
-        "p_hat": 0.6299325615026533,
-        "sigma": 0.15268186842626705
+        "p_hat": 0.20438312025809485,
+        "sigma": 0.10777312824754336
       }
     },
     {
@@ -1575,12 +1740,12 @@
       "group": "A",
       "role": "Start",
       "noshow_overall": 0.2727272727272727,
-      "noshow_rolling": 0.2596120656951695,
+      "noshow_rolling": 0.2596120657103801,
       "last_seen": "2025-11-14",
       "last_noshow_date": "2025-10-24",
       "events_seen": 11,
       "noshow_count": 3,
-      "risk_penalty": 0.02424387166722377,
+      "risk_penalty": 0.024233420301574715,
       "is_absent_next_event": false,
       "callup": {
         "recommended": false,
@@ -1590,10 +1755,10 @@
       "callup_reason_codes": [],
       "callup_reason": null,
       "eb": {
-        "p0": 0.6673482633809699,
+        "p0": 0.6642451408388083,
         "n0": 4.0,
-        "p_hat": 0.377959536901592,
-        "sigma": 0.12121935833611884
+        "p_hat": 0.3771320375570156,
+        "sigma": 0.12116710150787356
       }
     },
     {
@@ -1607,7 +1772,7 @@
       "last_noshow_date": null,
       "events_seen": 1,
       "noshow_count": 0,
-      "risk_penalty": 0.04073100700422339,
+      "risk_penalty": 0.04074426619040172,
       "is_absent_next_event": false,
       "callup": {
         "recommended": true,
@@ -1624,10 +1789,10 @@
       ],
       "callup_reason": "low_n",
       "eb": {
-        "p0": 0.6673482633809699,
+        "p0": 0.6642451408388083,
         "n0": 4.0,
-        "p_hat": 0.5338786107047759,
-        "sigma": 0.20365503502111695
+        "p_hat": 0.5313961126710466,
+        "sigma": 0.20372133095200862
       }
     },
     {
@@ -1636,12 +1801,12 @@
       "group": "A",
       "role": "Start",
       "noshow_overall": 0.08333333333333337,
-      "noshow_rolling": 0.06209488649931405,
+      "noshow_rolling": 0.06209488648889738,
       "last_seen": "2025-11-14",
       "last_noshow_date": "2025-08-28",
       "events_seen": 12,
       "noshow_count": 1,
-      "risk_penalty": 0.020392707812856993,
+      "risk_penalty": 0.020368431405312505,
       "is_absent_next_event": false,
       "callup": {
         "recommended": false,
@@ -1650,12 +1815,26 @@
       "callup_recommended": false,
       "callup_reason_codes": [],
       "callup_reason": null,
+      "forced_signup": {
+        "commitment": "hard",
+        "source": "manual",
+        "note": "",
+        "overbooked": false
+      },
+      "has_forced_signup": true,
       "eb": {
-        "p0": 0.6673482633809699,
+        "p0": 0.6642451408388083,
         "n0": 4.0,
-        "p_hat": 0.22933706584524247,
-        "sigma": 0.10196353906428496
-      }
+        "p_hat": 0.22856128520970206,
+        "sigma": 0.10184215702656252
+      },
+      "event_signup": {
+        "group": "A",
+        "role": "Start",
+        "source": "manual",
+        "note": ""
+      },
+      "has_event_signup": true
     },
     {
       "display": "TheFisch",
@@ -1663,12 +1842,12 @@
       "group": "A",
       "role": "Start",
       "noshow_overall": 0.2222222222222222,
-      "noshow_rolling": 0.17117597371456406,
+      "noshow_rolling": 0.17117597368961335,
       "last_seen": "2025-11-14",
       "last_noshow_date": "2025-08-28",
       "events_seen": 9,
       "noshow_count": 2,
-      "risk_penalty": 0.025644318611538493,
+      "risk_penalty": 0.025629283546030574,
       "is_absent_next_event": false,
       "callup": {
         "recommended": false,
@@ -1678,10 +1857,10 @@
       "callup_reason_codes": [],
       "callup_reason": null,
       "eb": {
-        "p0": 0.6673482633809699,
+        "p0": 0.6642451408388083,
         "n0": 4.0,
-        "p_hat": 0.3591840810402985,
-        "sigma": 0.12822159305769246
+        "p_hat": 0.3582292741042487,
+        "sigma": 0.12814641773015287
       }
     },
     {
@@ -1695,7 +1874,7 @@
       "last_noshow_date": null,
       "events_seen": 3,
       "noshow_count": 0,
-      "risk_penalty": 0.034345323331443384,
+      "risk_penalty": 0.03431444960921836,
       "is_absent_next_event": false,
       "callup": {
         "recommended": false,
@@ -1704,12 +1883,67 @@
       "callup_recommended": false,
       "callup_reason_codes": [],
       "callup_reason": null,
+      "forced_signup": {
+        "commitment": "hard",
+        "source": "manual",
+        "note": "",
+        "overbooked": false
+      },
+      "has_forced_signup": true,
       "eb": {
-        "p0": 0.6673482633809699,
+        "p0": 0.6642451408388083,
         "n0": 4.0,
-        "p_hat": 0.38134186478912563,
-        "sigma": 0.17172661665721692
-      }
+        "p_hat": 0.3795686519078904,
+        "sigma": 0.17157224804609178
+      },
+      "event_signup": {
+        "group": "A",
+        "role": "Start",
+        "source": "manual",
+        "note": ""
+      },
+      "has_event_signup": true
+    },
+    {
+      "display": "Zombie 666 80 420",
+      "canon": "zombie 666 80 420",
+      "group": "A",
+      "role": "Start",
+      "noshow_overall": 0.0,
+      "noshow_rolling": 0.0,
+      "last_seen": "2025-11-14",
+      "last_noshow_date": null,
+      "events_seen": 8,
+      "noshow_count": 0,
+      "risk_penalty": 0.023031110994415342,
+      "is_absent_next_event": false,
+      "callup": {
+        "recommended": false,
+        "reasons": []
+      },
+      "callup_recommended": false,
+      "callup_reason_codes": [],
+      "callup_reason": null,
+      "forced_signup": {
+        "commitment": "hard",
+        "source": "manual",
+        "note": "",
+        "overbooked": false
+      },
+      "has_forced_signup": true,
+      "eb": {
+        "p0": 0.6642451408388083,
+        "n0": 4.0,
+        "p_hat": 0.22141504694626943,
+        "sigma": 0.1151555549720767
+      },
+      "event_signup": {
+        "group": "A",
+        "role": "Start",
+        "source": "manual",
+        "note": ""
+      },
+      "has_event_signup": true
     },
     {
       "display": "abu47",
@@ -1722,7 +1956,7 @@
       "last_noshow_date": null,
       "events_seen": 1,
       "noshow_count": 0,
-      "risk_penalty": 0.04073100700422339,
+      "risk_penalty": 0.04074426619040172,
       "is_absent_next_event": false,
       "callup": {
         "recommended": true,
@@ -1739,10 +1973,10 @@
       ],
       "callup_reason": "low_n",
       "eb": {
-        "p0": 0.6673482633809699,
+        "p0": 0.6642451408388083,
         "n0": 4.0,
-        "p_hat": 0.5338786107047759,
-        "sigma": 0.20365503502111695
+        "p_hat": 0.5313961126710466,
+        "sigma": 0.20372133095200862
       }
     },
     {
@@ -1756,7 +1990,7 @@
       "last_noshow_date": null,
       "events_seen": 12,
       "noshow_count": 0,
-      "risk_penalty": 0.01808492770597482,
+      "risk_penalty": 0.01805123002256464,
       "is_absent_next_event": false,
       "callup": {
         "recommended": false,
@@ -1766,10 +2000,10 @@
       "callup_reason_codes": [],
       "callup_reason": null,
       "eb": {
-        "p0": 0.6673482633809699,
+        "p0": 0.6642451408388083,
         "n0": 4.0,
-        "p_hat": 0.16683706584524247,
-        "sigma": 0.0904246385298741
+        "p_hat": 0.16606128520970206,
+        "sigma": 0.09025615011282319
       }
     },
     {
@@ -1777,33 +2011,26 @@
       "canon": "rompa ru",
       "group": "A",
       "role": "Start",
-      "noshow_overall": 0.0,
-      "noshow_rolling": 0.0,
+      "noshow_overall": 0.16666666666666663,
+      "noshow_rolling": 0.13972932061049104,
       "last_seen": "2025-11-14",
-      "last_noshow_date": null,
-      "events_seen": 1,
-      "noshow_count": 0,
-      "risk_penalty": 0.04073100700422339,
+      "last_noshow_date": "2025-09-26",
+      "events_seen": 12,
+      "noshow_count": 2,
+      "risk_penalty": 0.02203444434418817,
       "is_absent_next_event": false,
       "callup": {
-        "recommended": true,
-        "reasons": [
-          {
-            "code": "low_n",
-            "label": "Low-N (1 Event)"
-          }
-        ]
+        "recommended": false,
+        "reasons": []
       },
-      "callup_recommended": true,
-      "callup_reason_codes": [
-        "low_n"
-      ],
-      "callup_reason": "low_n",
+      "callup_recommended": false,
+      "callup_reason_codes": [],
+      "callup_reason": null,
       "eb": {
-        "p0": 0.6673482633809699,
+        "p0": 0.6642451408388083,
         "n0": 4.0,
-        "p_hat": 0.5338786107047759,
-        "sigma": 0.20365503502111695
+        "p_hat": 0.2910612852097021,
+        "sigma": 0.11017222172094085
       }
     },
     {
@@ -1812,12 +2039,12 @@
       "group": "A",
       "role": "Start",
       "noshow_overall": 0.25,
-      "noshow_rolling": 0.18466023650415164,
+      "noshow_rolling": 0.18466023647591645,
       "last_seen": "2025-11-14",
       "last_noshow_date": "2025-08-28",
       "events_seen": 4,
       "noshow_count": 1,
-      "risk_penalty": 0.03321928306193154,
+      "risk_penalty": 0.03321054223737203,
       "is_absent_next_event": false,
       "callup": {
         "recommended": false,
@@ -1827,10 +2054,10 @@
       "callup_reason_codes": [],
       "callup_reason": null,
       "eb": {
-        "p0": 0.6673482633809699,
+        "p0": 0.6642451408388083,
         "n0": 4.0,
-        "p_hat": 0.45867413169048493,
-        "sigma": 0.16609641530965769
+        "p_hat": 0.45712257041940413,
+        "sigma": 0.16605271118686013
       }
     },
     {
@@ -1839,12 +2066,12 @@
       "group": "A",
       "role": "Ersatz",
       "noshow_overall": 0.7272727272727273,
-      "noshow_rolling": 0.7525167261699836,
+      "noshow_rolling": 0.7525167261816158,
       "last_seen": "2025-11-14",
       "last_noshow_date": "2025-11-14",
       "events_seen": 11,
       "noshow_count": 8,
-      "risk_penalty": 0.022658073781098815,
+      "risk_penalty": 0.022677319487540183,
       "is_absent_next_event": false,
       "callup": {
         "recommended": true,
@@ -1866,10 +2093,10 @@
       ],
       "callup_reason": "high_overall",
       "eb": {
-        "p0": 0.6673482633809699,
+        "p0": 0.6642451408388083,
         "n0": 4.0,
-        "p_hat": 0.7112928702349254,
-        "sigma": 0.11329036890549407
+        "p_hat": 0.7104653708903489,
+        "sigma": 0.11338659743770091
       }
     },
     {
@@ -1883,7 +2110,7 @@
       "last_noshow_date": "2025-11-14",
       "events_seen": 2,
       "noshow_count": 2,
-      "risk_penalty": 0.03140399032588516,
+      "risk_penalty": 0.03150816324726571,
       "is_absent_next_event": false,
       "callup": {
         "recommended": true,
@@ -1900,10 +2127,83 @@
       ],
       "callup_reason": "low_n",
       "eb": {
-        "p0": 0.6673482633809699,
+        "p0": 0.6642451408388083,
         "n0": 4.0,
-        "p_hat": 0.7782321755873133,
-        "sigma": 0.15701995162942578
+        "p_hat": 0.7761634272258723,
+        "sigma": 0.1575408162363285
+      }
+    },
+    {
+      "display": "Baldurbabu",
+      "canon": "baldurbabu",
+      "group": "A",
+      "role": "Ersatz",
+      "noshow_overall": 1.0,
+      "noshow_rolling": 1.0,
+      "last_seen": "2025-11-14",
+      "last_noshow_date": "2025-11-14",
+      "events_seen": 4,
+      "noshow_count": 4,
+      "risk_penalty": 0.02491716037129681,
+      "is_absent_next_event": false,
+      "callup": {
+        "recommended": true,
+        "reasons": [
+          {
+            "code": "high_overall",
+            "label": "High No-Show overall 100.0%"
+          },
+          {
+            "code": "high_rolling",
+            "label": "High No-Show rolling 100.0%"
+          }
+        ]
+      },
+      "callup_recommended": true,
+      "callup_reason_codes": [
+        "high_overall",
+        "high_rolling"
+      ],
+      "callup_reason": "high_overall",
+      "eb": {
+        "p0": 0.6642451408388083,
+        "n0": 4.0,
+        "p_hat": 0.8321225704194042,
+        "sigma": 0.12458580185648405
+      }
+    },
+    {
+      "display": "Caplap",
+      "canon": "caplap",
+      "group": "A",
+      "role": "Ersatz",
+      "noshow_overall": 1.0,
+      "noshow_rolling": 1.0,
+      "last_seen": "2025-10-31",
+      "last_noshow_date": "2025-10-31",
+      "events_seen": 1,
+      "noshow_count": 1,
+      "risk_penalty": 0.03618985484365549,
+      "is_absent_next_event": false,
+      "callup": {
+        "recommended": true,
+        "reasons": [
+          {
+            "code": "low_n",
+            "label": "Low-N (1 Event)"
+          }
+        ]
+      },
+      "callup_recommended": true,
+      "callup_reason_codes": [
+        "low_n"
+      ],
+      "callup_reason": "low_n",
+      "eb": {
+        "p0": 0.6642451408388083,
+        "n0": 4.0,
+        "p_hat": 0.7313961126710466,
+        "sigma": 0.18094927421827747
       }
     },
     {
@@ -1912,12 +2212,12 @@
       "group": "A",
       "role": "Ersatz",
       "noshow_overall": 0.6666666666666667,
-      "noshow_rolling": 0.6663535352835815,
+      "noshow_rolling": 0.6663535352383676,
       "last_seen": "2025-11-14",
       "last_noshow_date": "2025-11-14",
       "events_seen": 6,
       "noshow_count": 4,
-      "risk_penalty": 0.028420944154777014,
+      "risk_penalty": 0.02844734556248405,
       "is_absent_next_event": false,
       "callup": {
         "recommended": true,
@@ -1939,10 +2239,10 @@
       ],
       "callup_reason": "high_overall",
       "eb": {
-        "p0": 0.6673482633809699,
+        "p0": 0.6642451408388083,
         "n0": 4.0,
-        "p_hat": 0.666939305352388,
-        "sigma": 0.14210472077388506
+        "p_hat": 0.6656980563355234,
+        "sigma": 0.14223672781242025
       }
     },
     {
@@ -1951,12 +2251,12 @@
       "group": "A",
       "role": "Ersatz",
       "noshow_overall": 0.75,
-      "noshow_rolling": 0.7384546853484842,
+      "noshow_rolling": 0.738454685311339,
       "last_seen": "2025-11-14",
       "last_noshow_date": "2025-11-14",
       "events_seen": 8,
       "noshow_count": 6,
-      "risk_penalty": 0.024838943061885527,
+      "risk_penalty": 0.024867363658837374,
       "is_absent_next_event": false,
       "callup": {
         "recommended": true,
@@ -1978,460 +2278,24 @@
       ],
       "callup_reason": "high_overall",
       "eb": {
-        "p0": 0.6673482633809699,
+        "p0": 0.6642451408388083,
         "n0": 4.0,
-        "p_hat": 0.72244942112699,
-        "sigma": 0.12419471530942762
-      }
-    },
-    {
-      "display": "John Doe 0815",
-      "canon": "john doe 0815",
-      "group": "A",
-      "role": "Ersatz",
-      "noshow_overall": 0.8,
-      "noshow_rolling": 0.7778760309310039,
-      "last_seen": "2025-11-14",
-      "last_noshow_date": "2025-11-07",
-      "events_seen": 5,
-      "noshow_count": 4,
-      "risk_penalty": 0.027705446965740756,
-      "is_absent_next_event": false,
-      "callup": {
-        "recommended": true,
-        "reasons": [
-          {
-            "code": "high_overall",
-            "label": "High No-Show overall 80.0%"
-          },
-          {
-            "code": "high_rolling",
-            "label": "High No-Show rolling 77.8%"
-          }
-        ]
-      },
-      "callup_recommended": true,
-      "callup_reason_codes": [
-        "high_overall",
-        "high_rolling"
-      ],
-      "callup_reason": "high_overall",
-      "eb": {
-        "p0": 0.6673482633809699,
-        "n0": 4.0,
-        "p_hat": 0.7410436726137645,
-        "sigma": 0.13852723482870377
-      }
-    },
-    {
-      "display": "Wellsyone",
-      "canon": "wellsyone",
-      "group": "A",
-      "role": "Ersatz",
-      "noshow_overall": 0.0,
-      "noshow_rolling": 0.0,
-      "last_seen": "",
-      "last_noshow_date": null,
-      "events_seen": 0,
-      "noshow_count": 0,
-      "risk_penalty": 0.04214209854702289,
-      "is_absent_next_event": false,
-      "callup": {
-        "recommended": true,
-        "reasons": [
-          {
-            "code": "low_n",
-            "label": "Low-N (0 Events)"
-          }
-        ]
-      },
-      "callup_recommended": true,
-      "callup_reason_codes": [
-        "low_n"
-      ],
-      "callup_reason": "low_n",
-      "eb": {
-        "p0": 0.6673482633809699,
-        "n0": 4.0,
-        "p_hat": 0.6673482633809699,
-        "sigma": 0.2107104927351144
-      }
-    },
-    {
-      "display": "Yoda0201",
-      "canon": "yoda0201",
-      "group": "A",
-      "role": "Ersatz",
-      "noshow_overall": 0.7142857142857143,
-      "noshow_rolling": 0.6957593452389925,
-      "last_seen": "2025-11-14",
-      "last_noshow_date": "2025-10-31",
-      "events_seen": 7,
-      "noshow_count": 5,
-      "risk_penalty": 0.02652704518321124,
-      "is_absent_next_event": false,
-      "callup": {
-        "recommended": true,
-        "reasons": [
-          {
-            "code": "high_overall",
-            "label": "High No-Show overall 71.4%"
-          },
-          {
-            "code": "high_rolling",
-            "label": "High No-Show rolling 69.6%"
-          }
-        ]
-      },
-      "callup_recommended": true,
-      "callup_reason_codes": [
-        "high_overall",
-        "high_rolling"
-      ],
-      "callup_reason": "high_overall",
-      "eb": {
-        "p0": 0.6673482633809699,
-        "n0": 4.0,
-        "p_hat": 0.6972175503203527,
-        "sigma": 0.1326352259160562
-      }
-    },
-    {
-      "display": "Yusam 83",
-      "canon": "yusam 83",
-      "group": "A",
-      "role": "Ersatz",
-      "noshow_overall": 0.0,
-      "noshow_rolling": 0.0,
-      "last_seen": "",
-      "last_noshow_date": null,
-      "events_seen": 0,
-      "noshow_count": 0,
-      "risk_penalty": 0.04214209854702289,
-      "is_absent_next_event": false,
-      "callup": {
-        "recommended": true,
-        "reasons": [
-          {
-            "code": "low_n",
-            "label": "Low-N (0 Events)"
-          }
-        ]
-      },
-      "callup_recommended": true,
-      "callup_reason_codes": [
-        "low_n"
-      ],
-      "callup_reason": "low_n",
-      "eb": {
-        "p0": 0.6673482633809699,
-        "n0": 4.0,
-        "p_hat": 0.6673482633809699,
-        "sigma": 0.2107104927351144
-      }
-    },
-    {
-      "display": "Zombie 666 80 420",
-      "canon": "zombie 666 80 420",
-      "group": "A",
-      "role": "Ersatz",
-      "noshow_overall": 0.0,
-      "noshow_rolling": 0.0,
-      "last_seen": "",
-      "last_noshow_date": null,
-      "events_seen": 0,
-      "noshow_count": 0,
-      "risk_penalty": 0.04214209854702289,
-      "is_absent_next_event": false,
-      "callup": {
-        "recommended": true,
-        "reasons": [
-          {
-            "code": "low_n",
-            "label": "Low-N (0 Events)"
-          }
-        ]
-      },
-      "callup_recommended": true,
-      "callup_reason_codes": [
-        "low_n"
-      ],
-      "callup_reason": "low_n",
-      "eb": {
-        "p0": 0.6673482633809699,
-        "n0": 4.0,
-        "p_hat": 0.6673482633809699,
-        "sigma": 0.2107104927351144
-      }
-    },
-    {
-      "display": "x Scorpion x",
-      "canon": "x scorpion x",
-      "group": "A",
-      "role": "Ersatz",
-      "noshow_overall": 0.0,
-      "noshow_rolling": 0.0,
-      "last_seen": "",
-      "last_noshow_date": null,
-      "events_seen": 0,
-      "noshow_count": 0,
-      "risk_penalty": 0.04214209854702289,
-      "is_absent_next_event": false,
-      "callup": {
-        "recommended": true,
-        "reasons": [
-          {
-            "code": "low_n",
-            "label": "Low-N (0 Events)"
-          }
-        ]
-      },
-      "callup_recommended": true,
-      "callup_reason_codes": [
-        "low_n"
-      ],
-      "callup_reason": "low_n",
-      "eb": {
-        "p0": 0.6673482633809699,
-        "n0": 4.0,
-        "p_hat": 0.6673482633809699,
-        "sigma": 0.2107104927351144
-      }
-    },
-    {
-      "display": "APM77",
-      "canon": "apm77",
-      "group": "B",
-      "role": "Start",
-      "noshow_overall": 0.5,
-      "noshow_rolling": 0.5134745983956079,
-      "last_seen": "2025-11-07",
-      "last_noshow_date": "2025-11-07",
-      "events_seen": 2,
-      "noshow_count": 1,
-      "risk_penalty": 0.036843540796126936,
-      "is_absent_next_event": false,
-      "callup": {
-        "recommended": true,
-        "reasons": [
-          {
-            "code": "low_n",
-            "label": "Low-N (2 Events)"
-          }
-        ]
-      },
-      "callup_recommended": true,
-      "callup_reason_codes": [
-        "low_n"
-      ],
-      "callup_reason": "low_n",
-      "eb": {
-        "p0": 0.6673482633809699,
-        "n0": 4.0,
-        "p_hat": 0.6115655089206465,
-        "sigma": 0.18421770398063467
-      }
-    },
-    {
-      "display": "Alstermaus",
-      "canon": "alstermaus",
-      "group": "B",
-      "role": "Start",
-      "noshow_overall": 0.33333333333333337,
-      "noshow_rolling": 0.3155329023144461,
-      "last_seen": "2025-11-07",
-      "last_noshow_date": "2025-10-24",
-      "events_seen": 3,
-      "noshow_count": 1,
-      "risk_penalty": 0.035313907177550875,
-      "is_absent_next_event": false,
-      "callup": {
-        "recommended": false,
-        "reasons": []
-      },
-      "callup_recommended": false,
-      "callup_reason_codes": [],
-      "callup_reason": null,
-      "eb": {
-        "p0": 0.6673482633809699,
-        "n0": 4.0,
-        "p_hat": 0.5241990076462685,
-        "sigma": 0.17656953588775437
-      }
-    },
-    {
-      "display": "BjörnBärchi",
-      "canon": "björnbärchi",
-      "group": "B",
-      "role": "Start",
-      "noshow_overall": 0.5,
-      "noshow_rolling": 0.4992742678612705,
-      "last_seen": "2025-11-14",
-      "last_noshow_date": "2025-11-07",
-      "events_seen": 4,
-      "noshow_count": 2,
-      "risk_penalty": 0.03286326146564434,
-      "is_absent_next_event": false,
-      "callup": {
-        "recommended": true,
-        "reasons": [
-          {
-            "code": "high_overall",
-            "label": "High No-Show overall 50.0%"
-          }
-        ]
-      },
-      "callup_recommended": true,
-      "callup_reason_codes": [
-        "high_overall"
-      ],
-      "callup_reason": "high_overall",
-      "eb": {
-        "p0": 0.6673482633809699,
-        "n0": 4.0,
-        "p_hat": 0.583674131690485,
-        "sigma": 0.1643163073282217
-      }
-    },
-    {
-      "display": "Cupra290",
-      "canon": "cupra290",
-      "group": "B",
-      "role": "Start",
-      "noshow_overall": 0.0,
-      "noshow_rolling": 0.0,
-      "last_seen": "2025-11-14",
-      "last_noshow_date": null,
-      "events_seen": 8,
-      "noshow_count": 0,
-      "risk_penalty": 0.0230695054241446,
-      "is_absent_next_event": false,
-      "callup": {
-        "recommended": false,
-        "reasons": []
-      },
-      "callup_recommended": false,
-      "callup_reason_codes": [],
-      "callup_reason": null,
-      "eb": {
-        "p0": 0.6673482633809699,
-        "n0": 4.0,
-        "p_hat": 0.22244942112698995,
-        "sigma": 0.11534752712072298
-      }
-    },
-    {
-      "display": "Dany Bossss",
-      "canon": "dany bossss",
-      "group": "B",
-      "role": "Start",
-      "noshow_overall": 0.5,
-      "noshow_rolling": 0.5134745983950584,
-      "last_seen": "2025-11-14",
-      "last_noshow_date": "2025-11-14",
-      "events_seen": 4,
-      "noshow_count": 2,
-      "risk_penalty": 0.03286326146564434,
-      "is_absent_next_event": false,
-      "callup": {
-        "recommended": true,
-        "reasons": [
-          {
-            "code": "high_overall",
-            "label": "High No-Show overall 50.0%"
-          },
-          {
-            "code": "high_rolling",
-            "label": "High No-Show rolling 51.3%"
-          }
-        ]
-      },
-      "callup_recommended": true,
-      "callup_reason_codes": [
-        "high_overall",
-        "high_rolling"
-      ],
-      "callup_reason": "high_overall",
-      "eb": {
-        "p0": 0.6673482633809699,
-        "n0": 4.0,
-        "p_hat": 0.583674131690485,
-        "sigma": 0.1643163073282217
-      }
-    },
-    {
-      "display": "Darkhold",
-      "canon": "darkhold",
-      "group": "B",
-      "role": "Start",
-      "noshow_overall": 0.0,
-      "noshow_rolling": 0.0,
-      "last_seen": "",
-      "last_noshow_date": null,
-      "events_seen": 0,
-      "noshow_count": 0,
-      "risk_penalty": 0.04214209854702289,
-      "is_absent_next_event": false,
-      "callup": {
-        "recommended": true,
-        "reasons": [
-          {
-            "code": "low_n",
-            "label": "Low-N (0 Events)"
-          }
-        ]
-      },
-      "callup_recommended": true,
-      "callup_reason_codes": [
-        "low_n"
-      ],
-      "callup_reason": "low_n",
-      "eb": {
-        "p0": 0.6673482633809699,
-        "n0": 4.0,
-        "p_hat": 0.6673482633809699,
-        "sigma": 0.2107104927351144
-      }
-    },
-    {
-      "display": "Elevn765",
-      "canon": "elevn765",
-      "group": "B",
-      "role": "Start",
-      "noshow_overall": 0.0,
-      "noshow_rolling": 0.0,
-      "last_seen": "2025-11-14",
-      "last_noshow_date": null,
-      "events_seen": 12,
-      "noshow_count": 0,
-      "risk_penalty": 0.01808492770597482,
-      "is_absent_next_event": false,
-      "callup": {
-        "recommended": false,
-        "reasons": []
-      },
-      "callup_recommended": false,
-      "callup_reason_codes": [],
-      "callup_reason": null,
-      "eb": {
-        "p0": 0.6673482633809699,
-        "n0": 4.0,
-        "p_hat": 0.16683706584524247,
-        "sigma": 0.0904246385298741
+        "p_hat": 0.7214150469462695,
+        "sigma": 0.12433681829418686
       }
     },
     {
       "display": "Evil Activities",
       "canon": "evil activities",
-      "group": "B",
-      "role": "Start",
+      "group": "A",
+      "role": "Ersatz",
       "noshow_overall": 0.6666666666666667,
-      "noshow_rolling": 0.634239209013645,
+      "noshow_rolling": 0.6342392089934059,
       "last_seen": "2025-11-14",
       "last_noshow_date": "2025-11-14",
       "events_seen": 9,
       "noshow_count": 6,
-      "risk_penalty": 0.025193665353676516,
+      "risk_penalty": 0.025211676925817453,
       "is_absent_next_event": false,
       "callup": {
         "recommended": true,
@@ -2453,62 +2317,35 @@
       ],
       "callup_reason": "high_overall",
       "eb": {
-        "p0": 0.6673482633809699,
+        "p0": 0.6642451408388083,
         "n0": 4.0,
-        "p_hat": 0.6668763887326061,
-        "sigma": 0.12596832676838257
+        "p_hat": 0.6659215817965565,
+        "sigma": 0.12605838462908725
       }
     },
     {
-      "display": "Fenworld",
-      "canon": "fenworld",
-      "group": "B",
-      "role": "Start",
-      "noshow_overall": 0.25,
-      "noshow_rolling": 0.2429096136841059,
-      "last_seen": "2025-11-14",
-      "last_noshow_date": "2025-10-31",
-      "events_seen": 4,
-      "noshow_count": 1,
-      "risk_penalty": 0.03321928306193154,
-      "is_absent_next_event": false,
-      "callup": {
-        "recommended": false,
-        "reasons": []
-      },
-      "callup_recommended": false,
-      "callup_reason_codes": [],
-      "callup_reason": null,
-      "eb": {
-        "p0": 0.6673482633809699,
-        "n0": 4.0,
-        "p_hat": 0.45867413169048493,
-        "sigma": 0.16609641530965769
-      }
-    },
-    {
-      "display": "Globi3000",
-      "canon": "globi3000",
-      "group": "B",
-      "role": "Start",
-      "noshow_overall": 0.8333333333333334,
-      "noshow_rolling": 0.7931828527540596,
+      "display": "John Doe 0815",
+      "canon": "john doe 0815",
+      "group": "A",
+      "role": "Ersatz",
+      "noshow_overall": 0.8,
+      "noshow_rolling": 0.7778760309178332,
       "last_seen": "2025-11-14",
       "last_noshow_date": "2025-11-07",
-      "events_seen": 6,
-      "noshow_count": 5,
-      "risk_penalty": 0.025494627402507204,
+      "events_seen": 5,
+      "noshow_count": 4,
+      "risk_penalty": 0.0277532646054858,
       "is_absent_next_event": false,
       "callup": {
         "recommended": true,
         "reasons": [
           {
             "code": "high_overall",
-            "label": "High No-Show overall 83.3%"
+            "label": "High No-Show overall 80.0%"
           },
           {
             "code": "high_rolling",
-            "label": "High No-Show rolling 79.3%"
+            "label": "High No-Show rolling 77.8%"
           }
         ]
       },
@@ -2519,163 +2356,24 @@
       ],
       "callup_reason": "high_overall",
       "eb": {
-        "p0": 0.6673482633809699,
+        "p0": 0.6642451408388083,
         "n0": 4.0,
-        "p_hat": 0.766939305352388,
-        "sigma": 0.12747313701253601
-      }
-    },
-    {
-      "display": "Kamikaze82",
-      "canon": "kamikaze82",
-      "group": "B",
-      "role": "Start",
-      "noshow_overall": 0.0,
-      "noshow_rolling": 0.0,
-      "last_seen": "",
-      "last_noshow_date": null,
-      "events_seen": 0,
-      "noshow_count": 0,
-      "risk_penalty": 0.04214209854702289,
-      "is_absent_next_event": false,
-      "callup": {
-        "recommended": true,
-        "reasons": [
-          {
-            "code": "low_n",
-            "label": "Low-N (0 Events)"
-          }
-        ]
-      },
-      "callup_recommended": true,
-      "callup_reason_codes": [
-        "low_n"
-      ],
-      "callup_reason": "low_n",
-      "eb": {
-        "p0": 0.6673482633809699,
-        "n0": 4.0,
-        "p_hat": 0.6673482633809699,
-        "sigma": 0.2107104927351144
-      }
-    },
-    {
-      "display": "Leraxo",
-      "canon": "leraxo",
-      "group": "B",
-      "role": "Start",
-      "noshow_overall": 0.6666666666666667,
-      "noshow_rolling": 0.6669893704162793,
-      "last_seen": "2025-11-14",
-      "last_noshow_date": "2025-11-14",
-      "events_seen": 3,
-      "noshow_count": 2,
-      "risk_penalty": 0.033323583434182284,
-      "is_absent_next_event": false,
-      "callup": {
-        "recommended": true,
-        "reasons": [
-          {
-            "code": "high_overall",
-            "label": "High No-Show overall 66.7%"
-          },
-          {
-            "code": "high_rolling",
-            "label": "High No-Show rolling 66.7%"
-          }
-        ]
-      },
-      "callup_recommended": true,
-      "callup_reason_codes": [
-        "high_overall",
-        "high_rolling"
-      ],
-      "callup_reason": "high_overall",
-      "eb": {
-        "p0": 0.6673482633809699,
-        "n0": 4.0,
-        "p_hat": 0.6670561505034114,
-        "sigma": 0.16661791717091143
-      }
-    },
-    {
-      "display": "Maik1234567890",
-      "canon": "maik1234567890",
-      "group": "B",
-      "role": "Start",
-      "noshow_overall": 0.08333333333333337,
-      "noshow_rolling": 0.06604106366188978,
-      "last_seen": "2025-11-14",
-      "last_noshow_date": "2025-09-05",
-      "events_seen": 12,
-      "noshow_count": 1,
-      "risk_penalty": 0.020392707812856993,
-      "is_absent_next_event": false,
-      "callup": {
-        "recommended": false,
-        "reasons": []
-      },
-      "callup_recommended": false,
-      "callup_reason_codes": [],
-      "callup_reason": null,
-      "eb": {
-        "p0": 0.6673482633809699,
-        "n0": 4.0,
-        "p_hat": 0.22933706584524247,
-        "sigma": 0.10196353906428496
-      }
-    },
-    {
-      "display": "Nico 90",
-      "canon": "nico 90",
-      "group": "B",
-      "role": "Start",
-      "noshow_overall": 0.5454545454545454,
-      "noshow_rolling": 0.6159653376250058,
-      "last_seen": "2025-11-14",
-      "last_noshow_date": "2025-11-14",
-      "events_seen": 11,
-      "noshow_count": 6,
-      "risk_penalty": 0.02469424581790712,
-      "is_absent_next_event": false,
-      "callup": {
-        "recommended": true,
-        "reasons": [
-          {
-            "code": "high_overall",
-            "label": "High No-Show overall 54.5%"
-          },
-          {
-            "code": "high_rolling",
-            "label": "High No-Show rolling 61.6%"
-          }
-        ]
-      },
-      "callup_recommended": true,
-      "callup_reason_codes": [
-        "high_overall",
-        "high_rolling"
-      ],
-      "callup_reason": "high_overall",
-      "eb": {
-        "p0": 0.6673482633809699,
-        "n0": 4.0,
-        "p_hat": 0.577959536901592,
-        "sigma": 0.1234712290895356
+        "p_hat": 0.7396645070394704,
+        "sigma": 0.138766323027429
       }
     },
     {
       "display": "Pickopf",
       "canon": "pickopf",
-      "group": "B",
-      "role": "Start",
+      "group": "A",
+      "role": "Ersatz",
       "noshow_overall": 0.6363636363636364,
-      "noshow_rolling": 0.6115774313675397,
+      "noshow_rolling": 0.6115774313737559,
       "last_seen": "2025-11-14",
       "last_noshow_date": "2025-11-07",
       "events_seen": 11,
       "noshow_count": 7,
-      "risk_penalty": 0.023931321591244843,
+      "risk_penalty": 0.023943784823184804,
       "is_absent_next_event": false,
       "callup": {
         "recommended": true,
@@ -2697,10 +2395,522 @@
       ],
       "callup_reason": "high_overall",
       "eb": {
-        "p0": 0.6673482633809699,
+        "p0": 0.6642451408388083,
         "n0": 4.0,
-        "p_hat": 0.6446262035682586,
-        "sigma": 0.11965660795622421
+        "p_hat": 0.6437987042236822,
+        "sigma": 0.11971892411592401
+      }
+    },
+    {
+      "display": "Yoda0201",
+      "canon": "yoda0201",
+      "group": "A",
+      "role": "Ersatz",
+      "noshow_overall": 0.7142857142857143,
+      "noshow_rolling": 0.6957593452464716,
+      "last_seen": "2025-11-14",
+      "last_noshow_date": "2025-10-31",
+      "events_seen": 7,
+      "noshow_count": 5,
+      "risk_penalty": 0.026554914695236506,
+      "is_absent_next_event": false,
+      "callup": {
+        "recommended": true,
+        "reasons": [
+          {
+            "code": "high_overall",
+            "label": "High No-Show overall 71.4%"
+          },
+          {
+            "code": "high_rolling",
+            "label": "High No-Show rolling 69.6%"
+          }
+        ]
+      },
+      "callup_recommended": true,
+      "callup_reason_codes": [
+        "high_overall",
+        "high_rolling"
+      ],
+      "callup_reason": "high_overall",
+      "eb": {
+        "p0": 0.6642451408388083,
+        "n0": 4.0,
+        "p_hat": 0.696089142123203,
+        "sigma": 0.13277457347618252
+      }
+    },
+    {
+      "display": "APM77",
+      "canon": "apm77",
+      "group": "B",
+      "role": "Start",
+      "noshow_overall": 0.5,
+      "noshow_rolling": 0.5134745984731028,
+      "last_seen": "2025-11-07",
+      "last_noshow_date": "2025-11-07",
+      "events_seen": 2,
+      "noshow_count": 1,
+      "risk_penalty": 0.036878988166088755,
+      "is_absent_next_event": false,
+      "callup": {
+        "recommended": true,
+        "reasons": [
+          {
+            "code": "low_n",
+            "label": "Low-N (2 Events)"
+          }
+        ]
+      },
+      "callup_recommended": true,
+      "callup_reason_codes": [
+        "low_n"
+      ],
+      "callup_reason": "low_n",
+      "eb": {
+        "p0": 0.6642451408388083,
+        "n0": 4.0,
+        "p_hat": 0.6094967605592055,
+        "sigma": 0.18439494083044378
+      }
+    },
+    {
+      "display": "Alstermaus",
+      "canon": "alstermaus",
+      "group": "B",
+      "role": "Start",
+      "noshow_overall": 0.25,
+      "noshow_rolling": 0.23016074737494951,
+      "last_seen": "2025-11-14",
+      "last_noshow_date": "2025-10-24",
+      "events_seen": 4,
+      "noshow_count": 1,
+      "risk_penalty": 0.03321054223737203,
+      "is_absent_next_event": false,
+      "callup": {
+        "recommended": false,
+        "reasons": []
+      },
+      "callup_recommended": false,
+      "callup_reason_codes": [],
+      "callup_reason": null,
+      "forced_signup": {
+        "commitment": "hard",
+        "source": "manual",
+        "note": "",
+        "overbooked": false
+      },
+      "has_forced_signup": true,
+      "eb": {
+        "p0": 0.6642451408388083,
+        "n0": 4.0,
+        "p_hat": 0.45712257041940413,
+        "sigma": 0.16605271118686013
+      },
+      "event_signup": {
+        "group": "B",
+        "role": "Start",
+        "source": "manual",
+        "note": ""
+      },
+      "has_event_signup": true
+    },
+    {
+      "display": "BjörnBärchi",
+      "canon": "björnbärchi",
+      "group": "B",
+      "role": "Start",
+      "noshow_overall": 0.5,
+      "noshow_rolling": 0.49927426792051255,
+      "last_seen": "2025-11-14",
+      "last_noshow_date": "2025-11-07",
+      "events_seen": 4,
+      "noshow_count": 2,
+      "risk_penalty": 0.03288065175264492,
+      "is_absent_next_event": false,
+      "callup": {
+        "recommended": true,
+        "reasons": [
+          {
+            "code": "high_overall",
+            "label": "High No-Show overall 50.0%"
+          }
+        ]
+      },
+      "callup_recommended": true,
+      "callup_reason_codes": [
+        "high_overall"
+      ],
+      "callup_reason": "high_overall",
+      "eb": {
+        "p0": 0.6642451408388083,
+        "n0": 4.0,
+        "p_hat": 0.5821225704194042,
+        "sigma": 0.1644032587632246
+      }
+    },
+    {
+      "display": "Cupra290",
+      "canon": "cupra290",
+      "group": "B",
+      "role": "Start",
+      "noshow_overall": 0.0,
+      "noshow_rolling": 0.0,
+      "last_seen": "2025-11-14",
+      "last_noshow_date": null,
+      "events_seen": 8,
+      "noshow_count": 0,
+      "risk_penalty": 0.023031110994415342,
+      "is_absent_next_event": false,
+      "callup": {
+        "recommended": false,
+        "reasons": []
+      },
+      "callup_recommended": false,
+      "callup_reason_codes": [],
+      "callup_reason": null,
+      "eb": {
+        "p0": 0.6642451408388083,
+        "n0": 4.0,
+        "p_hat": 0.22141504694626943,
+        "sigma": 0.1151555549720767
+      }
+    },
+    {
+      "display": "Dany Bossss",
+      "canon": "dany bossss",
+      "group": "B",
+      "role": "Start",
+      "noshow_overall": 0.5,
+      "noshow_rolling": 0.5134745983737722,
+      "last_seen": "2025-11-14",
+      "last_noshow_date": "2025-11-14",
+      "events_seen": 4,
+      "noshow_count": 2,
+      "risk_penalty": 0.03288065175264492,
+      "is_absent_next_event": false,
+      "callup": {
+        "recommended": true,
+        "reasons": [
+          {
+            "code": "high_overall",
+            "label": "High No-Show overall 50.0%"
+          },
+          {
+            "code": "high_rolling",
+            "label": "High No-Show rolling 51.3%"
+          }
+        ]
+      },
+      "callup_recommended": true,
+      "callup_reason_codes": [
+        "high_overall",
+        "high_rolling"
+      ],
+      "callup_reason": "high_overall",
+      "eb": {
+        "p0": 0.6642451408388083,
+        "n0": 4.0,
+        "p_hat": 0.5821225704194042,
+        "sigma": 0.1644032587632246
+      }
+    },
+    {
+      "display": "Darkhold",
+      "canon": "darkhold",
+      "group": "B",
+      "role": "Start",
+      "noshow_overall": 0.0,
+      "noshow_rolling": 0.0,
+      "last_seen": "",
+      "last_noshow_date": null,
+      "events_seen": 0,
+      "noshow_count": 0,
+      "risk_penalty": 0.04223965281209968,
+      "is_absent_next_event": false,
+      "callup": {
+        "recommended": true,
+        "reasons": [
+          {
+            "code": "low_n",
+            "label": "Low-N (0 Events)"
+          }
+        ]
+      },
+      "callup_recommended": true,
+      "callup_reason_codes": [
+        "low_n"
+      ],
+      "callup_reason": "low_n",
+      "eb": {
+        "p0": 0.6642451408388083,
+        "n0": 4.0,
+        "p_hat": 0.6642451408388083,
+        "sigma": 0.2111982640604984
+      }
+    },
+    {
+      "display": "Elevn765",
+      "canon": "elevn765",
+      "group": "B",
+      "role": "Start",
+      "noshow_overall": 0.0,
+      "noshow_rolling": 0.0,
+      "last_seen": "2025-11-14",
+      "last_noshow_date": null,
+      "events_seen": 12,
+      "noshow_count": 0,
+      "risk_penalty": 0.01805123002256464,
+      "is_absent_next_event": false,
+      "callup": {
+        "recommended": false,
+        "reasons": []
+      },
+      "callup_recommended": false,
+      "callup_reason_codes": [],
+      "callup_reason": null,
+      "eb": {
+        "p0": 0.6642451408388083,
+        "n0": 4.0,
+        "p_hat": 0.16606128520970206,
+        "sigma": 0.09025615011282319
+      }
+    },
+    {
+      "display": "Fenworld",
+      "canon": "fenworld",
+      "group": "B",
+      "role": "Start",
+      "noshow_overall": 0.25,
+      "noshow_rolling": 0.24290961365885955,
+      "last_seen": "2025-11-14",
+      "last_noshow_date": "2025-10-31",
+      "events_seen": 4,
+      "noshow_count": 1,
+      "risk_penalty": 0.03321054223737203,
+      "is_absent_next_event": false,
+      "callup": {
+        "recommended": false,
+        "reasons": []
+      },
+      "callup_recommended": false,
+      "callup_reason_codes": [],
+      "callup_reason": null,
+      "eb": {
+        "p0": 0.6642451408388083,
+        "n0": 4.0,
+        "p_hat": 0.45712257041940413,
+        "sigma": 0.16605271118686013
+      }
+    },
+    {
+      "display": "Globi3000",
+      "canon": "globi3000",
+      "group": "B",
+      "role": "Start",
+      "noshow_overall": 0.8333333333333334,
+      "noshow_rolling": 0.7931828527563551,
+      "last_seen": "2025-11-14",
+      "last_noshow_date": "2025-11-07",
+      "events_seen": 6,
+      "noshow_count": 5,
+      "risk_penalty": 0.025541733610951675,
+      "is_absent_next_event": false,
+      "callup": {
+        "recommended": true,
+        "reasons": [
+          {
+            "code": "high_overall",
+            "label": "High No-Show overall 83.3%"
+          },
+          {
+            "code": "high_rolling",
+            "label": "High No-Show rolling 79.3%"
+          }
+        ]
+      },
+      "callup_recommended": true,
+      "callup_reason_codes": [
+        "high_overall",
+        "high_rolling"
+      ],
+      "callup_reason": "high_overall",
+      "eb": {
+        "p0": 0.6642451408388083,
+        "n0": 4.0,
+        "p_hat": 0.7656980563355233,
+        "sigma": 0.12770866805475836
+      }
+    },
+    {
+      "display": "Leraxo",
+      "canon": "leraxo",
+      "group": "B",
+      "role": "Start",
+      "noshow_overall": 0.6666666666666667,
+      "noshow_rolling": 0.6669893703677385,
+      "last_seen": "2025-11-14",
+      "last_noshow_date": "2025-11-14",
+      "events_seen": 3,
+      "noshow_count": 2,
+      "risk_penalty": 0.03336776517321649,
+      "is_absent_next_event": false,
+      "callup": {
+        "recommended": true,
+        "reasons": [
+          {
+            "code": "high_overall",
+            "label": "High No-Show overall 66.7%"
+          },
+          {
+            "code": "high_rolling",
+            "label": "High No-Show rolling 66.7%"
+          }
+        ]
+      },
+      "callup_recommended": true,
+      "callup_reason_codes": [
+        "high_overall",
+        "high_rolling"
+      ],
+      "callup_reason": "high_overall",
+      "eb": {
+        "p0": 0.6642451408388083,
+        "n0": 4.0,
+        "p_hat": 0.6652829376221762,
+        "sigma": 0.16683882586608245
+      }
+    },
+    {
+      "display": "Maggyispass",
+      "canon": "maggyispass",
+      "group": "B",
+      "role": "Start",
+      "noshow_overall": 0.33333333333333337,
+      "noshow_rolling": 0.29422927526200693,
+      "last_seen": "2025-11-14",
+      "last_noshow_date": "2025-10-17",
+      "events_seen": 12,
+      "noshow_count": 4,
+      "risk_penalty": 0.023909352940261832,
+      "is_absent_next_event": false,
+      "callup": {
+        "recommended": false,
+        "reasons": []
+      },
+      "callup_recommended": false,
+      "callup_reason_codes": [],
+      "callup_reason": null,
+      "eb": {
+        "p0": 0.6642451408388083,
+        "n0": 4.0,
+        "p_hat": 0.4160612852097021,
+        "sigma": 0.11954676470130915
+      }
+    },
+    {
+      "display": "Maik1234567890",
+      "canon": "maik1234567890",
+      "group": "B",
+      "role": "Start",
+      "noshow_overall": 0.08333333333333337,
+      "noshow_rolling": 0.06604106366429874,
+      "last_seen": "2025-11-14",
+      "last_noshow_date": "2025-09-05",
+      "events_seen": 12,
+      "noshow_count": 1,
+      "risk_penalty": 0.020368431405312505,
+      "is_absent_next_event": false,
+      "callup": {
+        "recommended": false,
+        "reasons": []
+      },
+      "callup_recommended": false,
+      "callup_reason_codes": [],
+      "callup_reason": null,
+      "eb": {
+        "p0": 0.6642451408388083,
+        "n0": 4.0,
+        "p_hat": 0.22856128520970206,
+        "sigma": 0.10184215702656252
+      }
+    },
+    {
+      "display": "Michael 3840",
+      "canon": "michael 3840",
+      "group": "B",
+      "role": "Start",
+      "noshow_overall": 0.6,
+      "noshow_rolling": 0.5862097419737076,
+      "last_seen": "2025-11-14",
+      "last_noshow_date": "2025-11-14",
+      "events_seen": 5,
+      "noshow_count": 3,
+      "risk_penalty": 0.0305597136370933,
+      "is_absent_next_event": false,
+      "callup": {
+        "recommended": true,
+        "reasons": [
+          {
+            "code": "high_overall",
+            "label": "High No-Show overall 60.0%"
+          },
+          {
+            "code": "high_rolling",
+            "label": "High No-Show rolling 58.6%"
+          }
+        ]
+      },
+      "callup_recommended": true,
+      "callup_reason_codes": [
+        "high_overall",
+        "high_rolling"
+      ],
+      "callup_reason": "high_overall",
+      "eb": {
+        "p0": 0.6642451408388083,
+        "n0": 4.0,
+        "p_hat": 0.6285533959283592,
+        "sigma": 0.1527985681854665
+      }
+    },
+    {
+      "display": "Nico 90",
+      "canon": "nico 90",
+      "group": "B",
+      "role": "Start",
+      "noshow_overall": 0.5454545454545454,
+      "noshow_rolling": 0.6159653376409148,
+      "last_seen": "2025-11-14",
+      "last_noshow_date": "2025-11-14",
+      "events_seen": 11,
+      "noshow_count": 6,
+      "risk_penalty": 0.02470074132401208,
+      "is_absent_next_event": false,
+      "callup": {
+        "recommended": true,
+        "reasons": [
+          {
+            "code": "high_overall",
+            "label": "High No-Show overall 54.5%"
+          },
+          {
+            "code": "high_rolling",
+            "label": "High No-Show rolling 61.6%"
+          }
+        ]
+      },
+      "callup_recommended": true,
+      "callup_reason_codes": [
+        "high_overall",
+        "high_rolling"
+      ],
+      "callup_reason": "high_overall",
+      "eb": {
+        "p0": 0.6642451408388083,
+        "n0": 4.0,
+        "p_hat": 0.5771320375570156,
+        "sigma": 0.12350370662006038
       }
     },
     {
@@ -2709,12 +2919,12 @@
       "group": "B",
       "role": "Start",
       "noshow_overall": 0.6666666666666667,
-      "noshow_rolling": 0.6077423383881277,
+      "noshow_rolling": 0.6077423383495163,
       "last_seen": "2025-11-14",
       "last_noshow_date": "2025-10-31",
       "events_seen": 6,
       "noshow_count": 4,
-      "risk_penalty": 0.028420944154777014,
+      "risk_penalty": 0.02844734556248405,
       "is_absent_next_event": false,
       "callup": {
         "recommended": true,
@@ -2736,10 +2946,10 @@
       ],
       "callup_reason": "high_overall",
       "eb": {
-        "p0": 0.6673482633809699,
+        "p0": 0.6642451408388083,
         "n0": 4.0,
-        "p_hat": 0.666939305352388,
-        "sigma": 0.14210472077388506
+        "p_hat": 0.6656980563355234,
+        "sigma": 0.14223672781242025
       }
     },
     {
@@ -2748,12 +2958,12 @@
       "group": "B",
       "role": "Start",
       "noshow_overall": 0.375,
-      "noshow_rolling": 0.35110235189552197,
+      "noshow_rolling": 0.35110235188099337,
       "last_seen": "2025-11-14",
       "last_noshow_date": "2025-10-24",
       "events_seen": 8,
       "noshow_count": 3,
-      "risk_penalty": 0.027692874151680365,
+      "risk_penalty": 0.027689648188387386,
       "is_absent_next_event": false,
       "callup": {
         "recommended": false,
@@ -2763,10 +2973,44 @@
       "callup_reason_codes": [],
       "callup_reason": null,
       "eb": {
-        "p0": 0.6673482633809699,
+        "p0": 0.6642451408388083,
         "n0": 4.0,
-        "p_hat": 0.47244942112699,
-        "sigma": 0.13846437075840182
+        "p_hat": 0.47141504694626946,
+        "sigma": 0.13844824094193692
+      }
+    },
+    {
+      "display": "Wellsyone",
+      "canon": "wellsyone",
+      "group": "B",
+      "role": "Start",
+      "noshow_overall": 0.0,
+      "noshow_rolling": 0.0,
+      "last_seen": "",
+      "last_noshow_date": null,
+      "events_seen": 0,
+      "noshow_count": 0,
+      "risk_penalty": 0.04223965281209968,
+      "is_absent_next_event": false,
+      "callup": {
+        "recommended": true,
+        "reasons": [
+          {
+            "code": "low_n",
+            "label": "Low-N (0 Events)"
+          }
+        ]
+      },
+      "callup_recommended": true,
+      "callup_reason_codes": [
+        "low_n"
+      ],
+      "callup_reason": "low_n",
+      "eb": {
+        "p0": 0.6642451408388083,
+        "n0": 4.0,
+        "p_hat": 0.6642451408388083,
+        "sigma": 0.2111982640604984
       }
     },
     {
@@ -2775,12 +3019,12 @@
       "group": "B",
       "role": "Start",
       "noshow_overall": 0.36363636363636365,
-      "noshow_rolling": 0.3230477898409375,
+      "noshow_rolling": 0.32304778986595595,
       "last_seen": "2025-11-14",
       "last_noshow_date": "2025-10-24",
       "events_seen": 11,
       "noshow_count": 4,
-      "risk_penalty": 0.024846214131570232,
+      "risk_penalty": 0.024841568708168515,
       "is_absent_next_event": false,
       "callup": {
         "recommended": false,
@@ -2797,10 +3041,10 @@
       },
       "has_forced_signup": true,
       "eb": {
-        "p0": 0.6673482633809699,
+        "p0": 0.6642451408388083,
         "n0": 4.0,
-        "p_hat": 0.44462620356825866,
-        "sigma": 0.12423107065785115
+        "p_hat": 0.4437987042236822,
+        "sigma": 0.12420784354084256
       },
       "event_signup": {
         "group": "B",
@@ -2816,12 +3060,12 @@
       "group": "B",
       "role": "Start",
       "noshow_overall": 0.5,
-      "noshow_rolling": 0.47307036110739,
+      "noshow_rolling": 0.47307036110954537,
       "last_seen": "2025-11-14",
       "last_noshow_date": "2025-10-31",
       "events_seen": 2,
       "noshow_count": 1,
-      "risk_penalty": 0.036843540796126936,
+      "risk_penalty": 0.036878988166088755,
       "is_absent_next_event": false,
       "callup": {
         "recommended": true,
@@ -2845,10 +3089,10 @@
       },
       "has_forced_signup": true,
       "eb": {
-        "p0": 0.6673482633809699,
+        "p0": 0.6642451408388083,
         "n0": 4.0,
-        "p_hat": 0.6115655089206465,
-        "sigma": 0.18421770398063467
+        "p_hat": 0.6094967605592055,
+        "sigma": 0.18439494083044378
       },
       "event_signup": {
         "group": "B",
@@ -2864,12 +3108,12 @@
       "group": "B",
       "role": "Start",
       "noshow_overall": 0.4285714285714286,
-      "noshow_rolling": 0.4518921351451224,
+      "noshow_rolling": 0.4518921351713022,
       "last_seen": "2025-11-14",
       "last_noshow_date": "2025-11-07",
       "events_seen": 7,
       "noshow_count": 3,
-      "risk_penalty": 0.02885381889512111,
+      "risk_penalty": 0.028855752730433296,
       "is_absent_next_event": false,
       "callup": {
         "recommended": true,
@@ -2886,49 +3130,10 @@
       ],
       "callup_reason": "high_overall",
       "eb": {
-        "p0": 0.6673482633809699,
+        "p0": 0.6642451408388083,
         "n0": 4.0,
-        "p_hat": 0.5153993685021709,
-        "sigma": 0.14426909447560554
-      }
-    },
-    {
-      "display": "Baldurbabu",
-      "canon": "baldurbabu",
-      "group": "B",
-      "role": "Ersatz",
-      "noshow_overall": 1.0,
-      "noshow_rolling": 1.0,
-      "last_seen": "2025-11-14",
-      "last_noshow_date": "2025-11-14",
-      "events_seen": 4,
-      "noshow_count": 4,
-      "risk_penalty": 0.02482485974811906,
-      "is_absent_next_event": false,
-      "callup": {
-        "recommended": true,
-        "reasons": [
-          {
-            "code": "high_overall",
-            "label": "High No-Show overall 100.0%"
-          },
-          {
-            "code": "high_rolling",
-            "label": "High No-Show rolling 100.0%"
-          }
-        ]
-      },
-      "callup_recommended": true,
-      "callup_reason_codes": [
-        "high_overall",
-        "high_rolling"
-      ],
-      "callup_reason": "high_overall",
-      "eb": {
-        "p0": 0.6673482633809699,
-        "n0": 4.0,
-        "p_hat": 0.833674131690485,
-        "sigma": 0.1241242987405953
+        "p_hat": 0.5142709603050212,
+        "sigma": 0.14427876365216646
       }
     },
     {
@@ -2942,7 +3147,7 @@
       "last_noshow_date": "2025-11-14",
       "events_seen": 1,
       "noshow_count": 1,
-      "risk_penalty": 0.03608331058858134,
+      "risk_penalty": 0.03618985484365549,
       "is_absent_next_event": false,
       "callup": {
         "recommended": true,
@@ -2959,10 +3164,10 @@
       ],
       "callup_reason": "low_n",
       "eb": {
-        "p0": 0.6673482633809699,
+        "p0": 0.6642451408388083,
         "n0": 4.0,
-        "p_hat": 0.7338786107047759,
-        "sigma": 0.18041655294290668
+        "p_hat": 0.7313961126710466,
+        "sigma": 0.18094927421827747
       }
     },
     {
@@ -2976,7 +3181,7 @@
       "last_noshow_date": "2025-11-07",
       "events_seen": 3,
       "noshow_count": 3,
-      "risk_penalty": 0.02774470675628192,
+      "risk_penalty": 0.027843283822333066,
       "is_absent_next_event": false,
       "callup": {
         "recommended": true,
@@ -2998,44 +3203,10 @@
       ],
       "callup_reason": "high_overall",
       "eb": {
-        "p0": 0.6673482633809699,
+        "p0": 0.6642451408388083,
         "n0": 4.0,
-        "p_hat": 0.8099132933605543,
-        "sigma": 0.13872353378140959
-      }
-    },
-    {
-      "display": "Caplap",
-      "canon": "caplap",
-      "group": "B",
-      "role": "Ersatz",
-      "noshow_overall": 1.0,
-      "noshow_rolling": 1.0,
-      "last_seen": "2025-10-31",
-      "last_noshow_date": "2025-10-31",
-      "events_seen": 1,
-      "noshow_count": 1,
-      "risk_penalty": 0.03608331058858134,
-      "is_absent_next_event": false,
-      "callup": {
-        "recommended": true,
-        "reasons": [
-          {
-            "code": "low_n",
-            "label": "Low-N (1 Event)"
-          }
-        ]
-      },
-      "callup_recommended": true,
-      "callup_reason_codes": [
-        "low_n"
-      ],
-      "callup_reason": "low_n",
-      "eb": {
-        "p0": 0.6673482633809699,
-        "n0": 4.0,
-        "p_hat": 0.7338786107047759,
-        "sigma": 0.18041655294290668
+        "p_hat": 0.8081400804793191,
+        "sigma": 0.13921641911166532
       }
     },
     {
@@ -3049,7 +3220,7 @@
       "last_noshow_date": "2025-10-31",
       "events_seen": 2,
       "noshow_count": 2,
-      "risk_penalty": 0.03140399032588516,
+      "risk_penalty": 0.03150816324726571,
       "is_absent_next_event": false,
       "callup": {
         "recommended": true,
@@ -3066,10 +3237,10 @@
       ],
       "callup_reason": "low_n",
       "eb": {
-        "p0": 0.6673482633809699,
+        "p0": 0.6642451408388083,
         "n0": 4.0,
-        "p_hat": 0.7782321755873133,
-        "sigma": 0.15701995162942578
+        "p_hat": 0.7761634272258723,
+        "sigma": 0.1575408162363285
       }
     },
     {
@@ -3083,7 +3254,7 @@
       "last_noshow_date": "2025-11-07",
       "events_seen": 2,
       "noshow_count": 2,
-      "risk_penalty": 0.03140399032588516,
+      "risk_penalty": 0.03150816324726571,
       "is_absent_next_event": false,
       "callup": {
         "recommended": true,
@@ -3100,44 +3271,10 @@
       ],
       "callup_reason": "low_n",
       "eb": {
-        "p0": 0.6673482633809699,
+        "p0": 0.6642451408388083,
         "n0": 4.0,
-        "p_hat": 0.7782321755873133,
-        "sigma": 0.15701995162942578
-      }
-    },
-    {
-      "display": "Darkface 46",
-      "canon": "darkface 46",
-      "group": "B",
-      "role": "Ersatz",
-      "noshow_overall": 1.0,
-      "noshow_rolling": 1.0,
-      "last_seen": "2025-11-07",
-      "last_noshow_date": "2025-11-07",
-      "events_seen": 2,
-      "noshow_count": 2,
-      "risk_penalty": 0.03140399032588516,
-      "is_absent_next_event": false,
-      "callup": {
-        "recommended": true,
-        "reasons": [
-          {
-            "code": "low_n",
-            "label": "Low-N (2 Events)"
-          }
-        ]
-      },
-      "callup_recommended": true,
-      "callup_reason_codes": [
-        "low_n"
-      ],
-      "callup_reason": "low_n",
-      "eb": {
-        "p0": 0.6673482633809699,
-        "n0": 4.0,
-        "p_hat": 0.7782321755873133,
-        "sigma": 0.15701995162942578
+        "p_hat": 0.7761634272258723,
+        "sigma": 0.1575408162363285
       }
     },
     {
@@ -3151,7 +3288,7 @@
       "last_noshow_date": "2025-09-12",
       "events_seen": 1,
       "noshow_count": 1,
-      "risk_penalty": 0.03608331058858134,
+      "risk_penalty": 0.03618985484365549,
       "is_absent_next_event": false,
       "callup": {
         "recommended": true,
@@ -3168,10 +3305,10 @@
       ],
       "callup_reason": "low_n",
       "eb": {
-        "p0": 0.6673482633809699,
+        "p0": 0.6642451408388083,
         "n0": 4.0,
-        "p_hat": 0.7338786107047759,
-        "sigma": 0.18041655294290668
+        "p_hat": 0.7313961126710466,
+        "sigma": 0.18094927421827747
       }
     },
     {
@@ -3185,7 +3322,7 @@
       "last_noshow_date": "2025-10-31",
       "events_seen": 2,
       "noshow_count": 2,
-      "risk_penalty": 0.03140399032588516,
+      "risk_penalty": 0.03150816324726571,
       "is_absent_next_event": false,
       "callup": {
         "recommended": true,
@@ -3202,24 +3339,63 @@
       ],
       "callup_reason": "low_n",
       "eb": {
-        "p0": 0.6673482633809699,
+        "p0": 0.6642451408388083,
         "n0": 4.0,
-        "p_hat": 0.7782321755873133,
-        "sigma": 0.15701995162942578
+        "p_hat": 0.7761634272258723,
+        "sigma": 0.1575408162363285
       }
     },
     {
-      "display": "capsharky",
-      "canon": "capsharky",
+      "display": "Domdom15",
+      "canon": "domdom15",
       "group": "B",
       "role": "Ersatz",
       "noshow_overall": 1.0,
       "noshow_rolling": 1.0,
       "last_seen": "2025-11-07",
       "last_noshow_date": "2025-11-07",
+      "events_seen": 5,
+      "noshow_count": 5,
+      "risk_penalty": 0.022534991964593864,
+      "is_absent_next_event": false,
+      "callup": {
+        "recommended": true,
+        "reasons": [
+          {
+            "code": "high_overall",
+            "label": "High No-Show overall 100.0%"
+          },
+          {
+            "code": "high_rolling",
+            "label": "High No-Show rolling 100.0%"
+          }
+        ]
+      },
+      "callup_recommended": true,
+      "callup_reason_codes": [
+        "high_overall",
+        "high_rolling"
+      ],
+      "callup_reason": "high_overall",
+      "eb": {
+        "p0": 0.6642451408388083,
+        "n0": 4.0,
+        "p_hat": 0.8507756181505814,
+        "sigma": 0.11267495982296931
+      }
+    },
+    {
+      "display": "Doodo12",
+      "canon": "doodo12",
+      "group": "B",
+      "role": "Ersatz",
+      "noshow_overall": 1.0,
+      "noshow_rolling": 1.0,
+      "last_seen": "2025-09-19",
+      "last_noshow_date": "2025-09-19",
       "events_seen": 1,
       "noshow_count": 1,
-      "risk_penalty": 0.03608331058858134,
+      "risk_penalty": 0.03618985484365549,
       "is_absent_next_event": false,
       "callup": {
         "recommended": true,
@@ -3236,10 +3412,78 @@
       ],
       "callup_reason": "low_n",
       "eb": {
-        "p0": 0.6673482633809699,
+        "p0": 0.6642451408388083,
         "n0": 4.0,
-        "p_hat": 0.7338786107047759,
-        "sigma": 0.18041655294290668
+        "p_hat": 0.7313961126710466,
+        "sigma": 0.18094927421827747
+      }
+    },
+    {
+      "display": "Dragon0407",
+      "canon": "dragon0407",
+      "group": "B",
+      "role": "Ersatz",
+      "noshow_overall": 1.0,
+      "noshow_rolling": 1.0,
+      "last_seen": "2025-11-07",
+      "last_noshow_date": "2025-11-07",
+      "events_seen": 1,
+      "noshow_count": 1,
+      "risk_penalty": 0.03618985484365549,
+      "is_absent_next_event": false,
+      "callup": {
+        "recommended": true,
+        "reasons": [
+          {
+            "code": "low_n",
+            "label": "Low-N (1 Event)"
+          }
+        ]
+      },
+      "callup_recommended": true,
+      "callup_reason_codes": [
+        "low_n"
+      ],
+      "callup_reason": "low_n",
+      "eb": {
+        "p0": 0.6642451408388083,
+        "n0": 4.0,
+        "p_hat": 0.7313961126710466,
+        "sigma": 0.18094927421827747
+      }
+    },
+    {
+      "display": "capsharky",
+      "canon": "capsharky",
+      "group": "B",
+      "role": "Ersatz",
+      "noshow_overall": 1.0,
+      "noshow_rolling": 1.0,
+      "last_seen": "2025-11-07",
+      "last_noshow_date": "2025-11-07",
+      "events_seen": 1,
+      "noshow_count": 1,
+      "risk_penalty": 0.03618985484365549,
+      "is_absent_next_event": false,
+      "callup": {
+        "recommended": true,
+        "reasons": [
+          {
+            "code": "low_n",
+            "label": "Low-N (1 Event)"
+          }
+        ]
+      },
+      "callup_recommended": true,
+      "callup_reason_codes": [
+        "low_n"
+      ],
+      "callup_reason": "low_n",
+      "eb": {
+        "p0": 0.6642451408388083,
+        "n0": 4.0,
+        "p_hat": 0.7313961126710466,
+        "sigma": 0.18094927421827747
       }
     },
     {
@@ -3278,11 +3522,11 @@
   ],
   "callup_stats": {
     "schema": 2,
-    "recommended_total": 39,
+    "recommended_total": 36,
     "reasons": {
-      "low_n": 22,
-      "high_overall": 17,
-      "high_rolling": 15
+      "low_n": 18,
+      "high_overall": 18,
+      "high_rolling": 16
     },
     "rules": {
       "min_events": 3,
