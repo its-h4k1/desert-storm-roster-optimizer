@@ -2248,20 +2248,26 @@
       const branch = getBranchValue();
       const eventId = elements.eventId.value.trim();
       const reason = `admin events upload ${eventId || "unbekannt"}`;
+      const workerUrl = elements.workerUrl.value.trim();
+      const adminKey = elements.adminKey.value.trim();
+      if (!workerUrl) { showToast("Worker-URL fehlt."); return; }
+      if (!adminKey) { showToast("Admin-Key erforderlich."); return; }
       try {
         const trigger = window.dsroShared?.triggerRosterBuild;
         if (typeof trigger !== "function") {
           throw new Error("Build-Helper nicht verfügbar (shared.js)");
         }
-        const result = await trigger({ branch, reason });
+        const result = await trigger({ branch, reason, workerUrl, adminKey });
         if (result && result.html_url) {
           lastBuildUrl = result.html_url;
           renderActionsLink(result.html_url);
         }
-        showToast("Build ausgelöst.");
+        showToast("Roster-Build gestartet. Aktualisierte Aufstellung erscheint nach abgeschlossenem Workflow.");
       } catch (err) {
         console.error(err);
-        showToast(`Build fehlgeschlagen: ${err.message}`);
+        const status = typeof err?.status === "number" ? err.status : null;
+        const message = status ? `Build-Trigger fehlgeschlagen (${status}).` : "Build-Trigger fehlgeschlagen.";
+        showToast(message);
       }
     }
 

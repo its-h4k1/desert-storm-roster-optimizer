@@ -45,22 +45,98 @@
     return `${base}out/latest.json${cache}`;
   }
 
-  async function triggerRosterBuild({ branch, reason } = {}) {
-    const ref = (branch || "main").trim() || "main";
+  const DEFAULT_WORKER_BASE = "https://ds-commit.hak1.workers.dev/";
+  const DEFAULT_DISPATCH_URL = `${DEFAULT_WORKER_BASE}dispatch`;
+
+  class RosterBuildTriggerError extends Error {
+    constructor(message, { status, body } = {}) {
+      super(message);
+      this.name = "RosterBuildTriggerError";
+      this.status = typeof status === "number" ? status : null;
+      this.body = body || null;
+    }
+  }
+
+  function readSharedAdminSettings() {
+    if (typeof localStorage === "undefined") return null;
+    try {
+      const raw = localStorage.getItem("dsro-admin-settings");
+      return raw ? JSON.parse(raw) : null;
+    } catch (err) {
+      console.warn("Konnte dsro-admin-settings nicht lesen", err);
+      return null;
+    }
+  }
+
+  function resolveDispatchUrl({ workerUrl, dispatchUrl } = {}) {
+    const fallback = DEFAULT_DISPATCH_URL;
+    const candidate = (dispatchUrl || workerUrl || "").trim();
+    if (!candidate) return fallback;
+    try {
+      const url = new URL(candidate, fallback);
+      const path = url.pathname || "/";
+      if (/\/dispatch\/?$/.test(path)) {
+        url.pathname = path.replace(/\/+$/, "");
+        url.search = "";
+        url.hash = "";
+        return url.toString();
+      }
+      let basePath = path;
+      if (!basePath.endsWith("/")) {
+        const idx = basePath.lastIndexOf("/");
+        basePath = idx === -1 ? "/" : basePath.slice(0, idx + 1);
+      }
+      if (!basePath.endsWith("/")) basePath += "/";
+      url.pathname = `${basePath}dispatch`;
+      url.search = "";
+      url.hash = "";
+      return url.toString();
+    } catch (err) {
+      console.warn("Dispatch-URL ungültig, verwende Fallback", err);
+      return fallback;
+    }
+  }
+
+  async function triggerRosterBuild({ branch, reason, adminKey, workerUrl, dispatchUrl } = {}) {
+    const sharedSettings = readSharedAdminSettings();
+    const ref = (branch || sharedSettings?.customBranch || sharedSettings?.branchSelect || "main").trim() || "main";
+    const resolvedWorkerUrl = workerUrl || sharedSettings?.workerUrl || null;
+    const resolvedAdminKey = adminKey || sharedSettings?.adminKey || "";
+    const endpoint = resolveDispatchUrl({ workerUrl: resolvedWorkerUrl, dispatchUrl });
+    const reasonText = (reason || "admin roster rebuild").trim() || "admin roster rebuild";
     const payload = {
       ref,
-      reason: reason || "admin roster rebuild",
+      reason: reasonText,
+      inputs: { reason: reasonText },
     };
-    const response = await fetch("/dispatch", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
-    });
+    const headers = {
+      "Content-Type": "application/json",
+      Accept: "application/json",
+    };
+    if (resolvedAdminKey) {
+      headers["X-Admin-Key"] = resolvedAdminKey;
+    }
+    let response;
+    try {
+      response = await fetch(endpoint, {
+        method: "POST",
+        headers,
+        body: JSON.stringify(payload),
+        mode: "cors",
+      });
+    } catch (err) {
+      throw new RosterBuildTriggerError(err?.message || "Netzwerkfehler", { body: null });
+    }
     if (!response.ok) {
       const text = await response.text().catch(() => "");
-      throw new Error(text || `HTTP ${response.status}`);
+      throw new RosterBuildTriggerError(text || `HTTP ${response.status}` , { status: response.status, body: text });
     }
-    const result = await response.json().catch(() => ({}));
+    let result = {};
+    try {
+      result = await response.json();
+    } catch (err) {
+      result = {};
+    }
     return result;
   }
 
@@ -70,5 +146,6 @@
     computeSiteRoot,
     buildLatestJsonUrl,
     triggerRosterBuild,
+    RosterBuildTriggerError,
   };
 })(typeof window !== "undefined" ? window : globalThis);

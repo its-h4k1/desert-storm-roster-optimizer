@@ -48,6 +48,19 @@ Schätzungen berechnet und daraus deterministische Aufstellungen (A/B, Start/Ers
   einen Button „Roster neu bauen (nächstes Event)“. So lässt sich direkt aus dem Pool-Editor
   derselbe Workflow-Dispatch starten, sobald neue Zusagen übernommen werden sollen.
 
+### Roster-Build aus der Admin-UI auslösen
+
+- Sowohl der Button „Roster neu bauen“ im Events-Tab als auch „Roster neu bauen (nächstes Event)“
+  im Zusagen-Editor sprechen den Cloudflare-Worker
+  `https://ds-commit.hak1.workers.dev/dispatch` per `POST` an. Der Request enthält `ref` (Branch),
+  einen `reason`-String und denselben Admin-Key wie der Schreib-Endpunkt (`X-Admin-Key`). Der Worker
+  ruft anschließend den GitHub-API-Endpunkt `workflow_dispatch` für `Build Rosters` auf und liefert
+  die Actions-URL zurück.
+- Änderungen an `data/event_signups_next.csv` werden dadurch erst nach Abschluss des Workflows in
+  `out/latest.json` sichtbar; die Admin-Seite weist solange auf ausstehende Builds hin.
+- Alternativ lässt sich der Build jederzeit manuell via GitHub Actions starten: Repository öffnen,
+  Tab **Actions** → Workflow **Build Rosters** → **Run workflow** klicken und den Ziel-Branch wählen.
+
 ## UIs & Admin-Tools
 
 Alle Oberflächen liegen statisch im Ordner `docs/` und können entweder über GitHub Pages

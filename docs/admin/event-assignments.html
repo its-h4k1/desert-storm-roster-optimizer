@@ -405,6 +405,7 @@
         currentBranch: branchOverride || 'main',
         buildSyncStatus: null,
         building: false,
+        buildingHint: null,
         buildRunUrl: null,
         buildPolling: null,
       };
@@ -506,6 +507,7 @@
           refreshBuildSyncState();
           if (state.buildSyncStatus?.isSynced) {
             state.building = false;
+            state.buildingHint = null;
             updateBuildControls();
             setStatus('latest.json aktualisiert – Zusagen sind im Build.', 'ok');
             stopBuildPolling();
@@ -515,6 +517,7 @@
           state.buildPolling.remaining -= 1;
           if (state.buildPolling.remaining <= 0) {
             state.building = false;
+            state.buildingHint = null;
             updateBuildControls();
             setStatus('Build läuft noch – bitte später erneut auf "Neu laden" klicken.', 'warn');
             stopBuildPolling();
@@ -742,11 +745,12 @@
         if (!elements.rebuildBtn) return;
         const status = state.buildSyncStatus;
         const building = state.building;
+        const buildingLabel = state.buildingHint || 'Build läuft…';
         elements.rebuildBtn.disabled = building || state.loading || state.saving;
-        elements.rebuildBtn.textContent = building ? 'Build läuft…' : 'Roster neu bauen (nächstes Event)';
+        elements.rebuildBtn.textContent = building ? buildingLabel : 'Roster neu bauen (nächstes Event)';
         if (elements.rebuildStatus) {
           if (building) {
-            elements.rebuildStatus.textContent = 'Build läuft…';
+            elements.rebuildStatus.textContent = buildingLabel;
           } else if (!status) {
             elements.rebuildStatus.textContent = 'Build-Status lädt …';
           } else if (status.isSynced) {
@@ -1008,6 +1012,7 @@
       async function reloadData() {
         stopBuildPolling();
         state.building = false;
+        state.buildingHint = null;
         updateBuildControls();
         setLoading(true);
         try {
@@ -1100,26 +1105,39 @@
       async function triggerRosterBuildForAssignments() {
         if (state.loading || state.saving || state.building) return;
         const branch = branchOverride || elements.branch.value.trim() || 'main';
+        const workerUrl = elements.workerUrl.value.trim();
+        const adminKey = elements.adminKey.value.trim();
+        if (!adminKey) { setStatus('Admin-Key erforderlich.', 'error'); return; }
         const trigger = window.dsroShared?.triggerRosterBuild;
         if (typeof trigger !== 'function') {
           setStatus('Build-Trigger nicht verfügbar (shared.js).', 'error');
           return;
         }
         state.building = true;
+        state.buildingHint = 'Roster-Build wird gestartet…';
         state.buildRunUrl = null;
         updateBuildControls();
         setStatus('Roster-Build wird gestartet…', 'info');
         try {
-          const result = await trigger({ branch, reason: 'admin event signups rebuild next roster' });
-          state.buildRunUrl = result?.html_url || null;
+          const result = await trigger({
+            branch,
+            reason: 'admin event signups rebuild next roster',
+            adminKey,
+            workerUrl,
+          });
+          state.buildRunUrl = result?.html_url || result?.url || null;
+          state.buildingHint = 'Build läuft…';
           updateBuildControls();
-          setStatus('Build ausgelöst. Warte auf aktualisiertes latest.json …', 'info');
+          setStatus('Roster-Build gestartet. Aktualisierte Aufstellung erscheint nach abgeschlossenem Workflow.', 'info');
           startBuildPolling();
         } catch (err) {
-          console.error(err);
+          console.error('Build-Trigger fehlgeschlagen', err);
           state.building = false;
+          state.buildingHint = null;
           updateBuildControls();
-          setStatus(`Build-Trigger fehlgeschlagen: ${err.message}`, 'error');
+          const status = typeof err?.status === 'number' ? err.status : null;
+          const message = status ? `Build-Trigger fehlgeschlagen (${status}).` : 'Build-Trigger fehlgeschlagen.';
+          setStatus(message, 'error');
         }
       }
 
