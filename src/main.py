@@ -1004,10 +1004,14 @@ def main():
     hard_commit_player_labels: List[str] = []
 
     def _choose_group(canon: str, signup_group: str, pref_group: Optional[str]) -> str:
-        desired = []
+        # Explizite Wahl aus event_signups_next.csv hat Vorrang, auch wenn die Gruppe
+        # bereits überbucht ist. Erst wenn keine gültige Gruppe gesetzt ist, fallen
+        # wir auf PrefGroup bzw. Balancing zurück.
         if signup_group in GROUPS:
-            desired.append(signup_group)
-        if pref_group in GROUPS and pref_group not in desired:
+            return signup_group
+
+        desired = []
+        if pref_group in GROUPS:
             desired.append(pref_group)
         # Balancing-Heuristik: wähle die Gruppe mit den meisten Rest-Slots
         if not desired:
