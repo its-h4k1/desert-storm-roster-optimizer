@@ -235,3 +235,97 @@ def test_manual_hard_commitment_exports_forced_signup(monkeypatch, tmp_path):
     assert slot_player.get("has_forced_signup") is True
     assert slot_player.get("forced_signup", {}).get("commitment") == "hard"
 
+
+def test_hard_commitment_lowercase_header(monkeypatch, tmp_path):
+    data_dir = tmp_path / "data"
+    data_dir.mkdir()
+
+    players = ["Alpha", "Bravo", "Charlie"]
+
+    _write_csv(
+        data_dir / "events.csv",
+        ["EventID", "Slot", "PlayerName", "RoleAtRegistration", "Teilgenommen"],
+        [["DS-2025-05-01-A", idx + 1, name, "Damage", 1] for idx, name in enumerate(players)],
+    )
+
+    _write_csv(
+        data_dir / "alliance.csv",
+        ["PlayerName", "InAlliance"],
+        [[name, 1] for name in players],
+    )
+
+    _write_csv(
+        data_dir / "absences.csv",
+        ["PlayerName", "From", "To", "InAlliance", "Reason"],
+        [],
+    )
+
+    # Header komplett in lowercase – muss dennoch als hard commitment erkannt werden.
+    _write_csv(
+        data_dir / "event_signups_next.csv",
+        ["playername", "group", "role", "commitment", "source", "note"],
+        [
+            [name, "A", "Start", "hard", "manual", "lc header"]
+            for name in players
+        ],
+    )
+
+    captured: dict[str, object] = {}
+
+    def _fake_builder(df: pd.DataFrame, forced_assignments, **kwargs) -> pd.DataFrame:
+        captured["forced_assignments"] = list(forced_assignments)
+        rows = [
+            {
+                "PlayerName": item["PlayerName"],
+                "Group": item["Group"],
+                "Role": item["Role"],
+                "NoShowOverall": 0.0,
+                "NoShowRolling": 0.0,
+                "risk_penalty": 0.0,
+            }
+            for item in forced_assignments
+        ]
+        return pd.DataFrame(rows)
+
+    def _capture_writer(out_dir, roster_df, json_payload):
+        captured["payload"] = json_payload
+        captured["roster_df"] = roster_df
+
+    monkeypatch.setattr(main_mod, "build_deterministic_roster", _fake_builder)
+    monkeypatch.setattr(main_mod, "_write_outputs", _capture_writer)
+
+    argv = [
+        "prog",
+        "--events",
+        "data/events.csv",
+        "--alliance",
+        "data/alliance.csv",
+        "--absences",
+        "data/absences.csv",
+        "--event-signups",
+        "data/event_signups_next.csv",
+        "--out",
+        "generated",
+    ]
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.setattr(sys, "argv", argv)
+
+    main_mod.main()
+
+    payload = captured["payload"]
+    signup_pool = payload["signup_pool"]
+    forced_signups = signup_pool.get("forced_signups") or []
+    assert len(forced_signups) == len(players)
+    assert {item["player"] for item in forced_signups} == set(players)
+
+    event_meta = payload["event_signups"]
+    assert event_meta["hard_commitments"] == len(players)
+    assert event_meta["hard_commit_rows_total"] == len(players)
+
+    players_with_forced = {
+        p["display"]
+        for p in payload.get("players") or []
+        if p.get("has_forced_signup") or p.get("forced_signup")
+    }
+    assert players_with_forced == set(players)
+
