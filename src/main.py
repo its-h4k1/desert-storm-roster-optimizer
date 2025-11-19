@@ -813,11 +813,12 @@ def main():
 
     forced_signups: List[Dict] = []
     invalid_forced_signups: List[Dict] = []
+    signup_file_entries: List[Dict[str, object]] = []
     capacities_remaining = {g: {"Start": STARTERS_PER_GROUP, "Ersatz": SUBS_PER_GROUP} for g in GROUPS}
 
     hard_commitment_mask = event_signups_df["Commitment"] == "hard"
+    hard_signup_total = int(hard_commitment_mask.sum())
     # Commitment "hard" ist die einzige Quelle für Fixplätze – Source dient nur als Dokumentation.
-    hard_signups = event_signups_df[hard_commitment_mask]
     seen_forced: set[str] = set()
 
     def _choose_group(canon: str, signup_group: str, pref_group: Optional[str]) -> str:
@@ -849,50 +850,89 @@ def main():
                 role_norm = "Ersatz"
         return role_norm
 
-    for row in hard_signups.itertuples(index=False):
-        canon = getattr(row, "canon", pd.NA)
+    for row in event_signups_df.itertuples(index=False):
         display = getattr(row, "PlayerName", "") or ""
         group_pref = (getattr(row, "Group", "") or "").strip().upper()
         role_pref = (getattr(row, "Role", "") or "").strip().title()
+        commitment = (getattr(row, "Commitment", "") or "none").strip().lower() or "none"
         source = (getattr(row, "Source", "") or "manual_event_signup").strip()
         note = (getattr(row, "Note", "") or "").strip()
+        canon_val = getattr(row, "canon", pd.NA)
+        canon = None if pd.isna(canon_val) or not str(canon_val).strip() else str(canon_val)
 
-        if pd.isna(canon) or not str(canon).strip():
-            invalid_forced_signups.append({"player": display, "reason": "unknown_player"})
+        row_debug = {
+            "player": display or canon,
+            "canon": canon,
+            "group_pref": group_pref or None,
+            "role_pref": role_pref or None,
+            "commitment": commitment,
+            "source": source,
+            "note": note,
+            "in_alliance": bool(canon and canon in in_alliance_set),
+            "in_player_pool": bool(canon and canon in pool_idx.index),
+            "is_absent_next_event": bool(canon and canon in absent_now),
+        }
+
+        if commitment != "hard":
+            row_debug["status"] = "info_only"
+            signup_file_entries.append(row_debug)
             continue
-        canon = str(canon)
+
+        if not canon:
+            invalid_forced_signups.append({"player": display, "reason": "unknown_player"})
+            row_debug.update({"status": "invalid", "reason": "unknown_player"})
+            signup_file_entries.append(row_debug)
+            continue
         if canon in seen_forced:
             invalid_forced_signups.append({"player": display, "canon": canon, "reason": "duplicate"})
+            row_debug.update({"status": "invalid", "reason": "duplicate"})
+            signup_file_entries.append(row_debug)
             continue
         if canon not in in_alliance_set:
             invalid_forced_signups.append({"player": display, "canon": canon, "reason": "not_in_alliance"})
+            row_debug.update({"status": "invalid", "reason": "not_in_alliance"})
+            signup_file_entries.append(row_debug)
             continue
         if canon in absent_now:
             invalid_forced_signups.append({"player": display, "canon": canon, "reason": "absent"})
+            row_debug.update({"status": "invalid", "reason": "absent"})
+            signup_file_entries.append(row_debug)
             continue
         if canon not in pool_idx.index:
             invalid_forced_signups.append({"player": display, "canon": canon, "reason": "inactive_or_filtered"})
+            row_debug.update({"status": "invalid", "reason": "inactive_or_filtered"})
+            signup_file_entries.append(row_debug)
             continue
 
         pref_group_val = pool_idx.loc[canon].get("PrefGroup") if canon in pool_idx.index else pd.NA
         pref_group = None if pd.isna(pref_group_val) else str(pref_group_val).strip().upper()
+        row_debug["pref_group_in_pool"] = pref_group
         target_group = _choose_group(canon, group_pref, pref_group)
         target_role = _choose_role(target_group, role_pref)
 
         capacities_remaining[target_group][target_role] -= 1
+        overbooked = capacities_remaining[target_group][target_role] < 0
         seen_forced.add(canon)
-        forced_signups.append(
+        forced_entry = {
+            "player": display or canon,
+            "canon": canon,
+            "group": target_group,
+            "role": target_role,
+            "source": source,
+            "note": note,
+            "commitment": "hard",
+            "overbooked": overbooked,
+        }
+        forced_signups.append(forced_entry)
+        row_debug.update(
             {
-                "player": display or canon,
-                "canon": canon,
-                "group": target_group,
-                "role": target_role,
-                "source": source,
-                "note": note,
-                "commitment": "hard",
-                "overbooked": capacities_remaining[target_group][target_role] < 0,
+                "status": "forced",
+                "resolved_group": target_group,
+                "resolved_role": target_role,
+                "overbooked": overbooked,
             }
         )
+        signup_file_entries.append(row_debug)
 
     overbooked_forced_signups: List[Dict] = []
     for g in GROUPS:
@@ -1255,7 +1295,6 @@ def main():
     # vor dem Optimizer gesetzt werden (siehe forced_signups oben). Overlay
     # bleibt für alle anderen Signups erhalten.
     extra_signups_by_group = {g: [] for g in GROUPS}
-    hard_signup_total = int(hard_commitment_mask.sum())
     signups_meta = {
         "scope": "next_event",
         "source": str(Path(args.event_signups)),
@@ -1329,16 +1368,22 @@ def main():
         - signups_meta["hard_commitments_invalid"],
     )
     forced_in_roster = sum(1 for p in players_payload if p.get("has_forced_signup"))
+    forced_out_of_roster = max(0, forced_signup_total - forced_in_roster)
     signups_meta["forced_total"] = forced_signup_total
     signups_meta["forced_in_roster"] = forced_in_roster
     signup_pool_stats = {
-        "source": signups_meta["source"],
+        "file_entries_total": signups_meta["total_entries"],
         "raw_rows": signups_meta["raw_rows"],
         "rows_with_playername": signups_meta["rows_with_playername"],
         "rows_with_canon": signups_meta["rows_with_canon"],
         "total_entries": signups_meta["total_entries"],
         "applied_entries": signups_meta["applied_entries"],
         "ignored_entries": signups_meta["ignored_entries"],
+        "hard_commit_total": hard_signup_total,
+        "hard_commit_applied": signups_meta["hard_commitments_applied"],
+        "hard_commit_invalid": signups_meta["hard_commitments_invalid"],
+        "hard_commit_overbooked": signups_meta["hard_commitments_overbooked"],
+        "hard_commit_missing_from_roster": hard_missing_from_roster,
         "hard_commitments_total": hard_signup_total,
         "hard_commitments_applied": signups_meta["hard_commitments_applied"],
         "hard_commitments_invalid": signups_meta["hard_commitments_invalid"],
@@ -1347,9 +1392,19 @@ def main():
         "in_roster_hard_commitments": forced_in_roster,
         "forced_total": forced_signup_total,
         "forced_in_roster": forced_in_roster,
+        "forced_out_of_roster": forced_out_of_roster,
         "extra_entries_total": signups_meta["extra_entries_total"],
         "extra_entries_by_group": signups_meta["extra_entries_by_group"],
     }
+    signup_pool_payload = {
+        "source": signups_meta["source"],
+        "stats": signup_pool_stats,
+        "file_entries": signup_file_entries,
+        "forced_signups": forced_signups,
+        "invalid_forced_signups": invalid_forced_signups,
+        "overbooked_forced_signups": overbooked_forced_signups,
+    }
+    signup_pool_payload.update(signup_pool_stats)
 
     callup_config_snapshot = callup_config.to_snapshot()
     callup_rules_legacy = {
@@ -1373,7 +1428,7 @@ def main():
     json_payload = {
         "generated_at": datetime.now(TZ).isoformat(),
         "schema": schema_block,
-        "signup_pool": signup_pool_stats,
+        "signup_pool": signup_pool_payload,
         "groups": {
             "A": {
                 "Start": _by("A", "Start"),

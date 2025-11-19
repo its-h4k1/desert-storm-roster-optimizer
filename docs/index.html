@@ -174,7 +174,7 @@
       absenceDebug: null,
       absenceConflicts: [],
       playersByCanon: {},
-      forcedDiagnostics: { forced: [], invalid: [], overbooked: [] },
+      forcedDiagnostics: { forced: [], invalid: [], overbooked: [], rows: [] },
       callupMeta: { available: false, recommendedTotal: null, reasonCounts: {}, fromStats: false, hasStats: false },
       callupCandidates: [],
       latestPayload: null,
@@ -956,6 +956,7 @@
           hardApplied: null,
           forcedTotal: null,
           forcedInRoster: null,
+          forcedOutOfRoster: null,
           hardInvalid: null,
           hardOverbooked: null,
           extraTotal: null,
@@ -964,19 +965,33 @@
           inRosterHard: null,
         };
       }
+      const hardTotal = toNum(meta.hard_commit_total ?? meta.hard_commitments_total ?? meta.hard_commitments);
+      const hardApplied = toNum(meta.hard_commit_applied ?? meta.hard_commitments_applied);
+      const hardInvalid = toNum(meta.hard_commit_invalid ?? meta.hard_commitments_invalid);
+      const hardOverbooked = toNum(meta.hard_commit_overbooked ?? meta.hard_commitments_overbooked);
+      const missingHard = toNum(meta.hard_commit_missing_from_roster ?? meta.hard_commitments_missing_from_roster);
+      const forcedTotal = toNum(meta.forced_total);
+      const forcedInRoster = toNum(meta.forced_in_roster ?? meta.in_roster_hard_commitments);
+      const forcedOutOfRoster = toNum(meta.forced_out_of_roster);
+
       return {
         source: meta.source || '',
-        totalEntries: toNum(meta.rows_with_canon ?? meta.total_entries ?? meta.rows_with_playername ?? meta.raw_rows),
-        hardTotal: toNum(meta.hard_commitments_total ?? meta.hard_commitments),
-        hardApplied: toNum(meta.hard_commitments_applied),
-        forcedTotal: toNum(meta.forced_total),
-        forcedInRoster: toNum(meta.forced_in_roster),
-        hardInvalid: toNum(meta.hard_commitments_invalid),
-        hardOverbooked: toNum(meta.hard_commitments_overbooked),
+        totalEntries: toNum(meta.file_entries_total ?? meta.rows_with_canon ?? meta.total_entries ?? meta.rows_with_playername ?? meta.raw_rows),
+        hardTotal,
+        hardApplied,
+        forcedTotal,
+        forcedInRoster,
+        forcedOutOfRoster: forcedOutOfRoster != null
+          ? forcedOutOfRoster
+          : (Number.isFinite(forcedTotal) && Number.isFinite(forcedInRoster)
+            ? Math.max(0, forcedTotal - forcedInRoster)
+            : null),
+        hardInvalid,
+        hardOverbooked,
         extraTotal: toNum(meta.extra_entries_total),
         extraByGroup: (meta.extra_entries_by_group && typeof meta.extra_entries_by_group === 'object') ? meta.extra_entries_by_group : null,
-        missingHard: toNum(meta.hard_commitments_missing_from_roster),
-        inRosterHard: toNum(meta.in_roster_hard_commitments),
+        missingHard,
+        inRosterHard: forcedInRoster,
       };
     }
 
@@ -993,10 +1008,14 @@
         : (Number.isFinite(stats.inRosterHard)
           ? stats.inRosterHard
           : (Number.isFinite(stats.hardApplied) ? stats.hardApplied : null));
+      const forcedOutOfRoster = Number.isFinite(stats.forcedOutOfRoster) ? stats.forcedOutOfRoster : null;
       const summaryParts = [];
       if (Number.isFinite(totalEntries)) summaryParts.push(`${totalEntries} Einträge`);
       if (Number.isFinite(stats.hardTotal)) {
-        const suffix = (forcedInRoster != null) ? ` (${forcedInRoster} im Roster)` : '';
+        const suffixBits = [];
+        if (forcedInRoster != null) suffixBits.push(`${forcedInRoster} im Roster`);
+        if (forcedOutOfRoster) suffixBits.push(`${forcedOutOfRoster} außerhalb`);
+        const suffix = suffixBits.length ? ` (${suffixBits.join(', ')})` : '';
         summaryParts.push(`${stats.hardTotal} verbindliche Zusagen${suffix}`);
       }
       if (!extraCount) summaryParts.push('keine zusätzlichen Zusagen außerhalb des Rosters');
@@ -1091,10 +1110,12 @@
           : (Number.isFinite(stats.hardApplied) ? stats.hardApplied : forced.length));
       const hardInvalid = Number.isFinite(stats.hardInvalid) ? stats.hardInvalid : invalid.length;
       const hardOverbooked = Number.isFinite(stats.hardOverbooked) ? stats.hardOverbooked : overbooked.length;
+      const forcedOutOfRoster = Number.isFinite(stats.forcedOutOfRoster) ? stats.forcedOutOfRoster : null;
       if (Number.isFinite(stats.totalEntries)) summaryParts.push(`Datei-Einträge: ${stats.totalEntries}`);
       if (hardTotal != null) summaryParts.push(`davon verbindliche Zusagen: ${hardTotal}`);
       if (Number.isFinite(forcedTotal)) summaryParts.push(`Fixplätze geplant: ${forcedTotal}`);
       if (Number.isFinite(forcedInRoster)) summaryParts.push(`Fixplätze im Roster: ${forcedInRoster}`);
+      if (forcedOutOfRoster) summaryParts.push(`nicht im Roster: ${forcedOutOfRoster}`);
       if (Number.isFinite(hardInvalid) && hardInvalid > 0) summaryParts.push(`ignoriert: ${hardInvalid}`);
       if (Number.isFinite(hardOverbooked) && hardOverbooked > 0) summaryParts.push(`über Kapazität: ${hardOverbooked}`);
 
@@ -1391,10 +1412,18 @@
           A: (payload && payload.groups && Array.isArray(payload.groups.A?.extra_signups)) ? payload.groups.A.extra_signups : [],
           B: (payload && payload.groups && Array.isArray(payload.groups.B?.extra_signups)) ? payload.groups.B.extra_signups : [],
         };
+        const signupPoolBlock = (payload && typeof payload.signup_pool === 'object') ? payload.signup_pool : {};
         state.forcedDiagnostics = {
-          forced: Array.isArray(payload.forced_signups) ? payload.forced_signups : [],
-          invalid: Array.isArray(payload.invalid_forced_signups) ? payload.invalid_forced_signups : [],
-          overbooked: Array.isArray(payload.overbooked_forced_signups) ? payload.overbooked_forced_signups : [],
+          forced: Array.isArray(signupPoolBlock.forced_signups)
+            ? signupPoolBlock.forced_signups
+            : (Array.isArray(payload.forced_signups) ? payload.forced_signups : []),
+          invalid: Array.isArray(signupPoolBlock.invalid_forced_signups)
+            ? signupPoolBlock.invalid_forced_signups
+            : (Array.isArray(payload.invalid_forced_signups) ? payload.invalid_forced_signups : []),
+          overbooked: Array.isArray(signupPoolBlock.overbooked_forced_signups)
+            ? signupPoolBlock.overbooked_forced_signups
+            : (Array.isArray(payload.overbooked_forced_signups) ? payload.overbooked_forced_signups : []),
+          rows: Array.isArray(signupPoolBlock.file_entries) ? signupPoolBlock.file_entries : [],
         };
         const hasEventsSeen = playersArray.some(p => p && Object.prototype.hasOwnProperty.call(p, "events_seen"));
 
@@ -1590,7 +1619,9 @@
           writeBucketCounts(key, keyCounts);
         }
 
-        const signupMeta = payload.signup_pool || payload.event_signups || null;
+        const signupMeta = (signupPoolBlock && typeof signupPoolBlock.stats === 'object')
+          ? signupPoolBlock.stats
+          : (payload.signup_pool || payload.event_signups || null);
         const filteredExtraSignups = {
           A: (extraSignups.A || []).filter(item => {
             const canon = canonicalNameJS(item?.canon || item?.player || '');

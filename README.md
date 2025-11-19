@@ -36,6 +36,11 @@ Schätzungen berechnet und daraus deterministische Aufstellungen (A/B, Start/Ers
   `out/latest.json` dokumentiert, wenn mehr harte Zusagen existieren als Slots.
 - Einträge ohne `Commitment = hard` bleiben Overlays/Badges (`event_signup`) oder tauchen als
   `extra_signups` unterhalb der Gruppen auf.
+- `out/latest.json.signup_pool` enthält zusätzlich zu den Legacy-Zählern nun ein Feld
+  `stats` (u. a. `file_entries_total`, `hard_commit_total`, `forced_in_roster`,
+  `forced_out_of_roster`) sowie die Listen `forced_signups`,
+  `invalid_forced_signups`, `overbooked_forced_signups` und `file_entries`
+  (Diagnose aller CSV-Zeilen inkl. Status `forced` / `info_only` / `invalid`).
 - Änderungen an `data/event_signups_next.csv` landen nach dem nächsten Build (`python -m src.main`
   lokal oder GitHub Actions auf `main`/`feat/**`) in `out/latest.json`. Der „Roster neu bauen“-Button
   im Admin-Tab „Events erfassen“ triggert optional denselben Workflow-Dispatch.
