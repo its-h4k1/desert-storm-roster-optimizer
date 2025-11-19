@@ -542,3 +542,110 @@ def test_absence_debug_entries_and_roster_flag(monkeypatch, tmp_path):
     il_entries = [p for p in players if (p.get("canon") == "ilishelbymf")]
     assert il_entries, "absent player metadata missing from payload"
     assert all(p.get("is_absent_next_event") for p in il_entries)
+
+
+def test_hard_commitments_from_all_sources(monkeypatch, tmp_path):
+    data_dir = tmp_path / "data"
+    data_dir.mkdir()
+
+    _write_csv(
+        data_dir / "events.csv",
+        ["EventID", "Slot", "PlayerName", "RoleAtRegistration", "Teilgenommen"],
+        [
+            ["DS-2024-01-01-A", 1, "ManualHard", "Damage", 1],
+            ["DS-2024-01-01-A", 2, "CallupHard", "Damage", 1],
+        ],
+    )
+
+    _write_csv(
+        data_dir / "alliance.csv",
+        ["PlayerName", "InAlliance"],
+        [["ManualHard", 1], ["CallupHard", 1], ["SoftInfo", 1]],
+    )
+
+    _write_csv(
+        data_dir / "absences.csv",
+        ["PlayerName", "From", "To", "InAlliance", "Reason"],
+        [],
+    )
+
+    _write_csv(
+        data_dir / "event_signups_next.csv",
+        ["PlayerName", "Group", "Role", "Commitment", "Source", "Note"],
+        [
+            ["ManualHard", "A", "Start", "hard", "manual", "Ticket"],
+            ["CallupHard", "B", "Ersatz", "hard", "callup-confirmed", "Callup"],
+            ["SoftInfo", "B", "Start", "none", "manual", "Info"],
+        ],
+    )
+
+    captured: dict[str, object] = {}
+
+    def _fake_builder(df: pd.DataFrame, **kwargs) -> pd.DataFrame:
+        forced_assignments = list(kwargs.get("forced_assignments") or [])
+        captured["forced_assignments"] = forced_assignments
+        if not forced_assignments:
+            players = df["PlayerName"].tolist()
+            groups = ["A"] * len(players)
+            roles = ["Start"] * len(players)
+        else:
+            players = [item["PlayerName"] for item in forced_assignments]
+            groups = [item.get("Group", "A") for item in forced_assignments]
+            roles = [item.get("Role", "Start") for item in forced_assignments]
+        return pd.DataFrame(
+            {
+                "PlayerName": players,
+                "Group": groups,
+                "Role": roles,
+                "NoShowOverall": [0.0] * len(players),
+                "NoShowRolling": [0.0] * len(players),
+                "risk_penalty": [0.0] * len(players),
+            }
+        )
+
+    def _capture_writer(out_dir, roster_df, json_payload):
+        captured["payload"] = json_payload
+        captured["roster"] = roster_df
+
+    monkeypatch.setattr(main_mod, "build_deterministic_roster", _fake_builder)
+    monkeypatch.setattr(main_mod, "_write_outputs", _capture_writer)
+
+    argv = [
+        "prog",
+        "--events",
+        "data/events.csv",
+        "--alliance",
+        "data/alliance.csv",
+        "--absences",
+        "data/absences.csv",
+        "--event-signups",
+        "data/event_signups_next.csv",
+        "--out",
+        "generated",
+    ]
+
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.setattr(sys, "argv", argv)
+
+    main_mod.main()
+
+    payload = captured.get("payload") or {}
+    forced_list = payload.get("forced_signups") or []
+    forced_sources = {item.get("canon"): item.get("source") for item in forced_list}
+    assert forced_sources.get("manualhard") == "manual"
+    assert forced_sources.get("calluphard") == "callup-confirmed"
+    assert len(forced_sources) == 2
+
+    signup_meta = payload.get("signup_pool") or {}
+    assert signup_meta.get("hard_commitments_total") == 2
+    assert signup_meta.get("forced_total") == 2
+    assert signup_meta.get("forced_in_roster") == 2
+
+    players = payload.get("players") or []
+    by_canon = {p.get("canon"): p for p in players}
+    assert by_canon.get("manualhard", {}).get("has_forced_signup") is True
+    assert by_canon.get("calluphard", {}).get("has_forced_signup") is True
+    assert (by_canon.get("softinfo") or {}).get("has_forced_signup") is not True
+
+    forced_assignments = captured.get("forced_assignments") or []
+    assert {item.get("PlayerName") for item in forced_assignments} == {"manualhard", "calluphard"}

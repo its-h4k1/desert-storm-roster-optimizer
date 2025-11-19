@@ -954,6 +954,8 @@
           totalEntries: null,
           hardTotal: null,
           hardApplied: null,
+          forcedTotal: null,
+          forcedInRoster: null,
           hardInvalid: null,
           hardOverbooked: null,
           extraTotal: null,
@@ -967,6 +969,8 @@
         totalEntries: toNum(meta.rows_with_canon ?? meta.total_entries ?? meta.rows_with_playername ?? meta.raw_rows),
         hardTotal: toNum(meta.hard_commitments_total ?? meta.hard_commitments),
         hardApplied: toNum(meta.hard_commitments_applied),
+        forcedTotal: toNum(meta.forced_total),
+        forcedInRoster: toNum(meta.forced_in_roster),
         hardInvalid: toNum(meta.hard_commitments_invalid),
         hardOverbooked: toNum(meta.hard_commitments_overbooked),
         extraTotal: toNum(meta.extra_entries_total),
@@ -984,13 +988,15 @@
         ? Number(stats.extraTotal)
         : groups.reduce((sum, g) => sum + (Array.isArray(extraData[g]) ? extraData[g].length : 0), 0);
       const totalEntries = Number.isFinite(stats.totalEntries) ? stats.totalEntries : extraCount;
-      const inRosterHard = Number.isFinite(stats.inRosterHard)
-        ? stats.inRosterHard
-        : (Number.isFinite(stats.hardApplied) ? stats.hardApplied : null);
+      const forcedInRoster = Number.isFinite(stats.forcedInRoster)
+        ? stats.forcedInRoster
+        : (Number.isFinite(stats.inRosterHard)
+          ? stats.inRosterHard
+          : (Number.isFinite(stats.hardApplied) ? stats.hardApplied : null));
       const summaryParts = [];
       if (Number.isFinite(totalEntries)) summaryParts.push(`${totalEntries} Einträge`);
       if (Number.isFinite(stats.hardTotal)) {
-        const suffix = (inRosterHard != null) ? ` (${inRosterHard} im Roster)` : '';
+        const suffix = (forcedInRoster != null) ? ` (${forcedInRoster} im Roster)` : '';
         summaryParts.push(`${stats.hardTotal} verbindliche Zusagen${suffix}`);
       }
       if (!extraCount) summaryParts.push('keine zusätzlichen Zusagen außerhalb des Rosters');
@@ -1015,7 +1021,7 @@
         const parts = [];
         if (Number.isFinite(totalEntries)) parts.push(`Datei-Einträge: ${totalEntries}`);
         if (Number.isFinite(stats.hardTotal)) {
-          const applied = (inRosterHard != null) ? ` (${inRosterHard} im Roster)` : '';
+          const applied = (forcedInRoster != null) ? ` (${forcedInRoster} im Roster)` : '';
           parts.push(`verbindlich: ${stats.hardTotal}${applied}`);
         }
         if (Number.isFinite(extraCount) && extraCount > 0) parts.push(`außerhalb des Rosters: ${extraCount}`);
@@ -1075,12 +1081,20 @@
 
       const summaryParts = [];
       const hardTotal = Number.isFinite(stats.hardTotal) ? stats.hardTotal : null;
-      const hardApplied = Number.isFinite(stats.hardApplied) ? stats.hardApplied : forced.length;
+      const forcedTotal = Number.isFinite(stats.forcedTotal)
+        ? stats.forcedTotal
+        : (Number.isFinite(stats.hardApplied) ? stats.hardApplied : forced.length);
+      const forcedInRoster = Number.isFinite(stats.forcedInRoster)
+        ? stats.forcedInRoster
+        : (Number.isFinite(stats.inRosterHard)
+          ? stats.inRosterHard
+          : (Number.isFinite(stats.hardApplied) ? stats.hardApplied : forced.length));
       const hardInvalid = Number.isFinite(stats.hardInvalid) ? stats.hardInvalid : invalid.length;
       const hardOverbooked = Number.isFinite(stats.hardOverbooked) ? stats.hardOverbooked : overbooked.length;
       if (Number.isFinite(stats.totalEntries)) summaryParts.push(`Datei-Einträge: ${stats.totalEntries}`);
       if (hardTotal != null) summaryParts.push(`davon verbindliche Zusagen: ${hardTotal}`);
-      if (Number.isFinite(hardApplied)) summaryParts.push(`Fixplätze im Roster: ${hardApplied}`);
+      if (Number.isFinite(forcedTotal)) summaryParts.push(`Fixplätze geplant: ${forcedTotal}`);
+      if (Number.isFinite(forcedInRoster)) summaryParts.push(`Fixplätze im Roster: ${forcedInRoster}`);
       if (Number.isFinite(hardInvalid) && hardInvalid > 0) summaryParts.push(`ignoriert: ${hardInvalid}`);
       if (Number.isFinite(hardOverbooked) && hardOverbooked > 0) summaryParts.push(`über Kapazität: ${hardOverbooked}`);
 
