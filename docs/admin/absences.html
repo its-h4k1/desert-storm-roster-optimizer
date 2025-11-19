@@ -451,10 +451,13 @@
         return normalizeLineEndings(current).trim() !== normalizeLineEndings(state.originalCsv).trim();
       }
 
+      function getAllAbsences(includeDeleted = false) {
+        return includeDeleted ? [...state.absences] : state.absences.filter(item => !item.deleted);
+      }
+
       function buildCurrentCsv() {
         const headers = state.headers.length ? state.headers : [...DEFAULT_HEADERS];
-        const rows = state.absences
-          .filter(item => !item.deleted)
+        const rows = getAllAbsences()
           .map(item => {
             const row = {};
             headers.forEach(h => { row[h] = item.raw[h] ?? ""; });
@@ -566,7 +569,7 @@
         const query = (elements.searchInput.value || "").trim().toLowerCase();
         const activeOnly = elements.activeOnly.checked;
         const sortBy = elements.sortSelect.value || "from";
-        const rows = state.absences.filter(row => !row.deleted);
+        const rows = getAllAbsences();
         const filtered = rows.filter(row => {
           if (activeOnly && !isActiveAbsence(row)) return false;
           if (!query) return true;
@@ -668,8 +671,9 @@
       }
 
       function updateStats() {
-        const total = state.absences.filter(row => !row.deleted).length;
-        const active = state.absences.filter(row => !row.deleted && isActiveAbsence(row)).length;
+        const rows = getAllAbsences();
+        const total = rows.length;
+        const active = rows.filter(row => isActiveAbsence(row)).length;
         elements.statsPill.textContent = `${total} gesamt · ${active} aktiv`;
       }
 
@@ -696,6 +700,10 @@
         if (!entry) return;
         if (!window.confirm("Absenz wirklich löschen?")) return;
         entry.deleted = true;
+        const lingering = getAllAbsences().filter(row =>
+          (row.raw.PlayerName || "").toString().trim().toLowerCase() === "kingkobra2"
+        );
+        console.debug("[absences-admin] nach Delete KingKobra2 vorhanden?", lingering.length > 0, lingering);
         renderTable();
         setStatus("Absenz gelöscht. Speichern nicht vergessen.", "warn");
       }
@@ -731,6 +739,12 @@
             branch,
             message: "admin: update absences.csv via absences ui",
           });
+          state.absences = getAllAbsences().map((row, idx) => ({
+            ...row,
+            id: idx + 1,
+            deleted: false,
+          }));
+          state.nextId = state.absences.reduce((max, row) => Math.max(max, row.id), 0) + 1;
           state.originalCsv = content;
           setStatus("Absenzen gespeichert.", "ok");
         } catch (err) {
