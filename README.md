@@ -54,6 +54,13 @@ Schätzungen berechnet und daraus deterministische Aufstellungen (A/B, Start/Ers
   einen Button „Roster neu bauen (nächstes Event)“. So lässt sich direkt aus dem Pool-Editor
   derselbe Workflow-Dispatch starten, sobald neue Zusagen übernommen werden sollen.
 
+#### How to verify (Gruppenwechsel)
+
+1. Vorhandene Zusage in `docs/admin/event-assignments.html` öffnen, die aktuell in Gruppe B steht.
+2. Gruppe auf A umstellen und speichern.
+3. Roster-Build anstoßen/warten.
+4. Admin-Tab neu laden: Die Zusage erscheint jetzt mit Gruppe A, ohne dass alte Roster-Daten die Auswahl überschreiben.
+
 ### Roster-Build aus der Admin-UI auslösen
 
 - Sowohl der Button „Roster neu bauen“ im Events-Tab als auch „Roster neu bauen (nächstes Event)“
