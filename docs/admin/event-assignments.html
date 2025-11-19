@@ -14,6 +14,15 @@
     .page-header .meta-line { margin:0.15rem 0 0; color:var(--text-muted); font-size:0.95rem; }
     .header-meta { display:flex; gap:0.5rem; align-items:center; flex-wrap:wrap; margin-left:auto; }
     .labelled-value { display:flex; gap:0.4rem; align-items:center; padding:0.35rem 0.65rem; border:1px solid var(--border); border-radius:0.75rem; background:var(--panel-muted); color:var(--text-muted); font-weight:600; }
+    .build-controls { display:flex; flex-direction:column; gap:0.3rem; min-width:240px; }
+    .build-controls button { background:#1d4ed8; border-color:#1d4ed8; color:#fff; font-weight:600; }
+    .build-controls button:hover { background:#1e3a8a; color:#fff; }
+    .build-status-line { display:flex; flex-wrap:wrap; gap:0.5rem; font-size:0.85rem; color:var(--text-muted); align-items:center; }
+    .build-status-line a { color:#2563eb; text-decoration:none; }
+    .build-status-line a:hover { text-decoration:underline; }
+    .build-alert { border:1px solid #fcd34d; background:#fefce8; color:#92400e; border-radius:0.85rem; padding:0.85rem 1rem; display:grid; gap:0.35rem; }
+    .build-alert strong { font-size:1rem; }
+    .build-alert small { color:#b45309; }
     .settings { display:flex; flex-wrap:wrap; gap:0.75rem; align-items:flex-end; }
     .settings-toggle { border:1px solid var(--border); border-radius:0.85rem; padding:0.35rem 0.65rem; background:var(--panel-muted); }
     .settings-toggle summary { list-style:none; cursor:pointer; display:flex; align-items:center; gap:0.4rem; font-weight:600; color:var(--text-muted); }
@@ -123,6 +132,13 @@
               <div class="header-meta">
                 <div class="labelled-value" id="eventQuickMeta">nächstes Event · lädt …</div>
                 <span class="pill info" id="assignmentCount">–</span>
+                <div class="build-controls">
+                  <button id="rebuildRosterBtn">Roster neu bauen (nächstes Event)</button>
+                  <div class="build-status-line">
+                    <span id="rebuildStatusText">Build-Status lädt …</span>
+                    <a id="buildRunLink" href="#" target="_blank" rel="noopener" style="display:none;">Actions-Run</a>
+                  </div>
+                </div>
                 <details class="settings-toggle">
                   <summary>⚙️ Einstellungen</summary>
                   <div class="settings-grid">
@@ -142,6 +158,12 @@
                 </details>
               </div>
             </header>
+
+            <div id="buildSyncBanner" class="build-alert" style="display:none;" aria-live="polite">
+              <strong>Es gibt Zusagen, die noch nicht in der aktuellen Aufstellung berücksichtigt sind.</strong>
+              <p id="buildSyncBannerText"></p>
+              <small id="buildSyncBannerMeta" style="display:none;"></small>
+            </div>
 
             <main class="page-main" style="display:grid;gap:1rem;">
               <section class="panel compact">
@@ -310,6 +332,12 @@
         assignmentBody: document.getElementById('assignmentBody'),
         assignmentCount: document.getElementById('assignmentCount'),
         emptyState: document.getElementById('emptyState'),
+        rebuildBtn: document.getElementById('rebuildRosterBtn'),
+        rebuildStatus: document.getElementById('rebuildStatusText'),
+        buildRunLink: document.getElementById('buildRunLink'),
+        buildBanner: document.getElementById('buildSyncBanner'),
+        buildBannerText: document.getElementById('buildSyncBannerText'),
+        buildBannerMeta: document.getElementById('buildSyncBannerMeta'),
         statusBadge: document.getElementById('statusBadge'),
         statusText: document.getElementById('statusText'),
         eventMeta: document.getElementById('eventMeta'),
@@ -373,6 +401,12 @@
         rosterGroups: {},
         rosterMeta: null,
         eventSignupsMeta: null,
+        eventSignupCommit: null,
+        currentBranch: branchOverride || 'main',
+        buildSyncStatus: null,
+        building: false,
+        buildRunUrl: null,
+        buildPolling: null,
       };
 
       // Konzept-Notiz: Dauerhafte Gruppenpräferenzen (data/alliance.csv: PrefGroup/PrefMode/PrefBoost) steuern den Optimizer langfristig.
@@ -421,6 +455,75 @@
         const lines = rows.map(row => headers.map(h => formatCsvValue(row[h] ?? '')).join(','));
         return ensureTrailingNewline([headerLine, ...lines].join('\n'));
       }
+
+      async function fetchEventSignupCommit(branchValue) {
+        const branch = safeBranchName(branchValue || 'main');
+        const url = `https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/commits?path=data/event_signups_next.csv&sha=${encodeURIComponent(branch)}&per_page=1`;
+        const response = await fetch(url, { headers: { 'Accept': 'application/vnd.github+json' } });
+        if (!response.ok) {
+          throw new Error(`GitHub API ${response.status}`);
+        }
+        const data = await response.json();
+        if (!Array.isArray(data) || !data.length) return null;
+        const commit = data[0];
+        return {
+          sha: commit?.sha || null,
+          url: commit?.html_url || null,
+          date: commit?.commit?.committer?.date || commit?.commit?.author?.date || null,
+        };
+      }
+
+      async function refreshFileCommit(branchValue) {
+        try {
+          const info = await fetchEventSignupCommit(branchValue || state.currentBranch || 'main');
+          state.eventSignupCommit = info;
+        } catch (err) {
+          console.warn('Commit-Info konnte nicht geladen werden', err);
+          state.eventSignupCommit = null;
+        } finally {
+          refreshBuildSyncState();
+        }
+      }
+
+      function stopBuildPolling() {
+        if (state.buildPolling?.timeoutId) {
+          window.clearTimeout(state.buildPolling.timeoutId);
+        }
+        state.buildPolling = null;
+      }
+
+      function startBuildPolling() {
+        stopBuildPolling();
+        state.buildPolling = { remaining: 24, delayMs: 8000 };
+        const poll = async () => {
+          if (!state.building) { stopBuildPolling(); return; }
+          try {
+            await loadRoster();
+            renderRosterPreview();
+          } catch (err) {
+            console.warn('latest.json Poll fehlgeschlagen', err);
+          }
+          refreshBuildSyncState();
+          if (state.buildSyncStatus?.isSynced) {
+            state.building = false;
+            updateBuildControls();
+            setStatus('latest.json aktualisiert – Zusagen sind im Build.', 'ok');
+            stopBuildPolling();
+            return;
+          }
+          if (!state.buildPolling) return;
+          state.buildPolling.remaining -= 1;
+          if (state.buildPolling.remaining <= 0) {
+            state.building = false;
+            updateBuildControls();
+            setStatus('Build läuft noch – bitte später erneut auf "Neu laden" klicken.', 'warn');
+            stopBuildPolling();
+            return;
+          }
+          state.buildPolling.timeoutId = window.setTimeout(poll, state.buildPolling.delayMs);
+        };
+        state.buildPolling.timeoutId = window.setTimeout(poll, state.buildPolling.delayMs);
+      }
       function safeBranchName(value) {
         const trimmed = (value || '').trim();
         const cleaned = trimmed.replace(/[^\w\-\/]/g, '');
@@ -441,6 +544,7 @@
       }
       async function loadAssignments() {
         const branch = branchOverride || elements.branch.value || 'main';
+        state.currentBranch = branch;
         const csvUrl = buildRawDataUrl('data/event_signups_next.csv', branch);
         try {
           const text = await fetchText(csvUrl, { allow404: true });
@@ -448,6 +552,7 @@
             state.headers = [...DEFAULT_HEADERS];
             state.assignments = [];
             state.originalCsv = buildCurrentCsv();
+            await refreshFileCommit(branch);
             return;
           }
           const { headers, rows } = parseCsv(text);
@@ -461,11 +566,13 @@
             Commitment: r.Commitment || r.commitment || baseRow.Commitment,
           }));
           state.originalCsv = buildCurrentCsv();
+          await refreshFileCommit(branch);
         } catch (err) {
           console.warn('event_signups_next.csv konnte nicht geladen werden, starte leer', err);
           state.headers = [...DEFAULT_HEADERS];
           state.assignments = [];
           state.originalCsv = buildCurrentCsv();
+          await refreshFileCommit(branch);
         }
       }
       async function loadRoster() {
@@ -492,6 +599,7 @@
           state.rosterMeta = data?.generated_at || null;
           state.eventSignupsMeta = data?.event_signups || null;
           updateContextMeta();
+          refreshBuildSyncState();
         } catch (err) {
           console.warn('latest.json nicht verfügbar', err);
           state.rosterPlayers = [];
@@ -501,6 +609,7 @@
           state.alliancePool = [];
           state.eventSignupsMeta = null;
           updateContextMeta();
+          refreshBuildSyncState();
         }
       }
       function buildCurrentCsv() {
@@ -534,11 +643,13 @@
         if (elements.resetBtn) elements.resetBtn.disabled = isLoading || state.saving;
         updateSaveButtonState();
         if (isLoading) setStatus('Lade Daten…', 'info');
+        updateBuildControls();
       }
       function setSaving(isSaving) {
         state.saving = isSaving;
         if (elements.resetBtn) elements.resetBtn.disabled = isSaving || state.loading;
         updateSaveButtonState();
+        updateBuildControls();
       }
       function updateSaveButtonState() {
         elements.saveBtn.disabled = state.loading || state.saving || !hasChanges();
@@ -551,7 +662,7 @@
         if (state.eventSignupsMeta && typeof state.eventSignupsMeta.total_entries === 'number') {
           parts.push(`Pool laut Build: ${state.eventSignupsMeta.total_entries} Einträge`);
         }
-        const rebuildHint = 'Hinweis: Änderungen an event_signups_next.csv landen nach dem nächsten Roster-Build in latest.json.';
+        const rebuildHint = 'Hinweis: Änderungen an event_signups_next.csv landen nach dem nächsten Roster-Build in latest.json. Der Button „Roster neu bauen (nächstes Event)“ triggert denselben Workflow wie im Events-Tab.';
         const text = parts.length ? `${parts.join(' · ')} · ${rebuildHint}` : rebuildHint;
         if (elements.contextMeta) elements.contextMeta.textContent = text;
         if (elements.rosterMeta) elements.rosterMeta.textContent = text;
@@ -565,6 +676,95 @@
         parts.push(`Pool: ${state.assignments.length}`);
         const text = parts.length ? parts.join(' · ') : 'nächstes Event';
         if (elements.eventQuickMeta) elements.eventQuickMeta.textContent = text;
+      }
+
+      function formatCommitShort(value) {
+        if (!value) return '';
+        return value.slice(0, 7);
+      }
+
+      function extractBuildCommit(meta) {
+        if (!meta || typeof meta !== 'object') return null;
+        return meta.source_commit || meta.commit || meta.commit_sha || meta.source_sha || meta.csv_sha || null;
+      }
+
+      function refreshBuildSyncState() {
+        const buildMeta = state.eventSignupsMeta || {};
+        const fileCount = state.assignments.length;
+        const buildCount = typeof buildMeta.total_entries === 'number' ? buildMeta.total_entries : null;
+        const fileCommit = state.eventSignupCommit?.sha || null;
+        const buildCommit = extractBuildCommit(buildMeta);
+        const lastBuild = state.rosterMeta || null;
+        const hasCountMismatch = buildCount != null && buildCount !== fileCount;
+        const hasCommitMismatch = Boolean(fileCommit && buildCommit && fileCommit !== buildCommit);
+        const needsBuild = hasCountMismatch || hasCommitMismatch;
+        state.buildSyncStatus = {
+          fileCount,
+          buildCount,
+          fileCommit,
+          buildCommit,
+          lastBuild,
+          isSynced: !needsBuild,
+        };
+        updateBuildBanner();
+        updateBuildControls();
+      }
+
+      function updateBuildBanner() {
+        if (!elements.buildBanner) return;
+        const status = state.buildSyncStatus;
+        if (!status || status.isSynced) {
+          elements.buildBanner.style.display = 'none';
+          return;
+        }
+        const poolFile = typeof status.fileCount === 'number' ? status.fileCount : '–';
+        const poolBuild = typeof status.buildCount === 'number' ? status.buildCount : '–';
+        const buildStamp = status.lastBuild || 'unbekannt';
+        elements.buildBanner.style.display = 'grid';
+        if (elements.buildBannerText) {
+          elements.buildBannerText.textContent = `Pool (Datei): ${poolFile} · Pool im letzten Build: ${poolBuild} · Letzter Build: ${buildStamp}.`;
+        }
+        if (elements.buildBannerMeta) {
+          const parts = [];
+          if (status.fileCommit) parts.push(`CSV-Commit: ${formatCommitShort(status.fileCommit)}`);
+          if (status.buildCommit) parts.push(`Build-Commit: ${formatCommitShort(status.buildCommit)}`);
+          if (parts.length) {
+            elements.buildBannerMeta.textContent = parts.join(' · ');
+            elements.buildBannerMeta.style.display = 'block';
+          } else {
+            elements.buildBannerMeta.textContent = '';
+            elements.buildBannerMeta.style.display = 'none';
+          }
+        }
+      }
+
+      function updateBuildControls() {
+        if (!elements.rebuildBtn) return;
+        const status = state.buildSyncStatus;
+        const building = state.building;
+        elements.rebuildBtn.disabled = building || state.loading || state.saving;
+        elements.rebuildBtn.textContent = building ? 'Build läuft…' : 'Roster neu bauen (nächstes Event)';
+        if (elements.rebuildStatus) {
+          if (building) {
+            elements.rebuildStatus.textContent = 'Build läuft…';
+          } else if (!status) {
+            elements.rebuildStatus.textContent = 'Build-Status lädt …';
+          } else if (status.isSynced) {
+            elements.rebuildStatus.textContent = status.lastBuild
+              ? `Build aktuell (${status.lastBuild})`
+              : 'Build-Status aktuell.';
+          } else {
+            elements.rebuildStatus.textContent = 'Änderungen warten auf den nächsten Build.';
+          }
+        }
+        if (elements.buildRunLink) {
+          if (state.buildRunUrl) {
+            elements.buildRunLink.style.display = 'inline-flex';
+            elements.buildRunLink.href = state.buildRunUrl;
+          } else {
+            elements.buildRunLink.style.display = 'none';
+          }
+        }
       }
 
       function populatePlayers() {
@@ -704,6 +904,7 @@
         elements.emptyState.style.display = rows.length ? 'none' : 'block';
         renderRosterPreview();
         updateQuickMeta();
+        refreshBuildSyncState();
       }
 
       function renderRosterPreview() {
@@ -805,6 +1006,9 @@
       }
 
       async function reloadData() {
+        stopBuildPolling();
+        state.building = false;
+        updateBuildControls();
         setLoading(true);
         try {
           await loadAssignments();
@@ -839,6 +1043,7 @@
             message: 'admin: update event_signups_next.csv via event assignments ui',
           });
           state.originalCsv = content;
+          await refreshFileCommit(branch);
           setStatus('Event-Zusagen gespeichert.', 'ok');
         } catch (err) {
           console.error(err);
@@ -871,6 +1076,7 @@
           });
           state.assignments = [];
           state.originalCsv = emptyCsv;
+          await refreshFileCommit(branch);
           renderAssignments();
           setStatus('Pool geleert.', 'ok');
         } catch (err) {
@@ -889,6 +1095,32 @@
         const result = await response.json().catch(() => ({}));
         if (result && result.ok === false) throw new Error(result.error || 'Worker-Fehler');
         return result;
+      }
+
+      async function triggerRosterBuildForAssignments() {
+        if (state.loading || state.saving || state.building) return;
+        const branch = branchOverride || elements.branch.value.trim() || 'main';
+        const trigger = window.dsroShared?.triggerRosterBuild;
+        if (typeof trigger !== 'function') {
+          setStatus('Build-Trigger nicht verfügbar (shared.js).', 'error');
+          return;
+        }
+        state.building = true;
+        state.buildRunUrl = null;
+        updateBuildControls();
+        setStatus('Roster-Build wird gestartet…', 'info');
+        try {
+          const result = await trigger({ branch, reason: 'admin event signups rebuild next roster' });
+          state.buildRunUrl = result?.html_url || null;
+          updateBuildControls();
+          setStatus('Build ausgelöst. Warte auf aktualisiertes latest.json …', 'info');
+          startBuildPolling();
+        } catch (err) {
+          console.error(err);
+          state.building = false;
+          updateBuildControls();
+          setStatus(`Build-Trigger fehlgeschlagen: ${err.message}`, 'error');
+        }
       }
 
       function persistSettings() {
@@ -923,6 +1155,7 @@
         elements.saveBtn.addEventListener('click', saveChanges);
         elements.addBtn.addEventListener('click', addAssignment);
         if (elements.resetBtn) elements.resetBtn.addEventListener('click', resetPool);
+        if (elements.rebuildBtn) elements.rebuildBtn.addEventListener('click', triggerRosterBuildForAssignments);
         ['workerUrl','branch','adminKey'].forEach(key => elements[key].addEventListener('change', persistSettings));
         elements.playerInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); addAssignment(); } });
       }

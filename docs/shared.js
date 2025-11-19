@@ -45,10 +45,30 @@
     return `${base}out/latest.json${cache}`;
   }
 
+  async function triggerRosterBuild({ branch, reason } = {}) {
+    const ref = (branch || "main").trim() || "main";
+    const payload = {
+      ref,
+      reason: reason || "admin roster rebuild",
+    };
+    const response = await fetch("/dispatch", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+    if (!response.ok) {
+      const text = await response.text().catch(() => "");
+      throw new Error(text || `HTTP ${response.status}`);
+    }
+    const result = await response.json().catch(() => ({}));
+    return result;
+  }
+
   global.dsroShared = {
     canonicalNameJS,
     escapeHtml,
     computeSiteRoot,
     buildLatestJsonUrl,
+    triggerRosterBuild,
   };
 })(typeof window !== "undefined" ? window : globalThis);
