@@ -228,3 +228,10 @@ def test_manual_hard_commitment_exports_forced_signup(monkeypatch, tmp_path):
     }
     assert player.get("has_event_signup") is True
 
+    players_by_slot = {(p["canon"], p["group"], p["role"]): p for p in players}
+    forced_key = ("bobbydybob", "A", "Start")
+    assert forced_key in players_by_slot
+    slot_player = players_by_slot[forced_key]
+    assert slot_player.get("has_forced_signup") is True
+    assert slot_player.get("forced_signup", {}).get("commitment") == "hard"
+

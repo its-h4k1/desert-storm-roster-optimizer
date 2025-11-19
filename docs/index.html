@@ -1293,6 +1293,33 @@
       "callup-confirmed": "Callup",
     };
 
+    function buildForcedLookup(payload) {
+      const forcedList = Array.isArray(payload?.signup_pool?.forced_signups)
+        ? payload.signup_pool.forced_signups
+        : (Array.isArray(payload?.forced_signups) ? payload.forced_signups : []);
+      const map = new Map();
+      forcedList.forEach(item => {
+        const canon = canonicalNameJS(item?.canon || item?.player || "");
+        const group = item?.group || item?.Group;
+        const role = item?.role || item?.Role;
+        if (!canon || !group || !role) return;
+        map.set(`${canon}::${group}::${role}`, normalizeForcedSignup(item));
+      });
+      return map;
+    }
+
+    function resolveForcedSignup({ forcedLookup, player, row }) {
+      const canon = canonicalNameJS(player?.canon || row?.PlayerName || "");
+      const group = row?.Group || player?.group;
+      const role = row?.Role || player?.role;
+      const lookupKey = canon && group && role ? `${canon}::${group}::${role}` : null;
+      const fromLookup = lookupKey ? forcedLookup.get(lookupKey) : null;
+      if (fromLookup) return fromLookup;
+      if (player?.forced_signup) return player.forced_signup;
+      if (player?.has_forced_signup) return { commitment: "hard", source: player?.event_signup?.source };
+      return null;
+    }
+
     function normalizeForcedSignup(raw) {
       if (!raw || typeof raw !== "object") return null;
       const commitment = (raw.commitment || raw.Commitment || "").toString().toLowerCase();
@@ -1435,6 +1462,8 @@
         };
         const hasEventsSeen = playersArray.some(p => p && Object.prototype.hasOwnProperty.call(p, "events_seen"));
 
+        state.forcedLookup = buildForcedLookup(payload);
+
         const observedFromPlayers = playersArray
           .map(p => {
             if (!p || typeof p !== "object") return null;
@@ -1575,7 +1604,8 @@
             const tooltip = `${tip}${reasonHint}`.replace(/"/g, '&quot;');
             let nameHTML = `${r.PlayerName || ""}`;
             const normalizedCallup = normalizeCallup(p);
-            const forcedBadge = p ? buildFixBadge(p.forced_signup || (p.has_forced_signup ? { commitment: 'hard', source: p.event_signup?.source } : null)) : '';
+            const forcedSource = resolveForcedSignup({ forcedLookup: state.forcedLookup || new Map(), player: p, row: r });
+            const forcedBadge = buildFixBadge(forcedSource);
             const callupBadge = p ? buildCallupBadge(normalizedCallup) : '';
             if (historyBadge) nameHTML += ` ${historyBadge}`;
             if (forcedBadge) nameHTML += ` ${forcedBadge}`;
