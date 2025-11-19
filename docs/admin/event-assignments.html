@@ -14,9 +14,6 @@
     .page-header .meta-line { margin:0.15rem 0 0; color:var(--text-muted); font-size:0.95rem; }
     .header-meta { display:flex; gap:0.5rem; align-items:center; flex-wrap:wrap; margin-left:auto; }
     .labelled-value { display:flex; gap:0.4rem; align-items:center; padding:0.35rem 0.65rem; border:1px solid var(--border); border-radius:0.75rem; background:var(--panel-muted); color:var(--text-muted); font-weight:600; }
-    .build-controls { display:flex; flex-direction:column; gap:0.3rem; min-width:240px; }
-    .build-controls button { background:#1d4ed8; border-color:#1d4ed8; color:#fff; font-weight:600; }
-    .build-controls button:hover { background:#1e3a8a; color:#fff; }
     .build-status-line { display:flex; flex-wrap:wrap; gap:0.5rem; font-size:0.85rem; color:var(--text-muted); align-items:center; }
     .build-status-line a { color:#2563eb; text-decoration:none; }
     .build-status-line a:hover { text-decoration:underline; }
@@ -132,12 +129,10 @@
               <div class="header-meta">
                 <div class="labelled-value" id="eventQuickMeta">nächstes Event · lädt …</div>
                 <span class="pill info" id="assignmentCount">–</span>
-                <div class="build-controls">
-                  <button id="rebuildRosterBtn">Roster neu bauen (nächstes Event)</button>
-                  <div class="build-status-line">
-                    <span id="rebuildStatusText">Build-Status lädt …</span>
-                    <a id="buildRunLink" href="#" target="_blank" rel="noopener" style="display:none;">Actions-Run</a>
-                  </div>
+                <div class="build-status-line">
+                  <span id="rebuildStatusText">Build-Status lädt …</span>
+                  <a id="buildRunLink" href="#" target="_blank" rel="noopener" style="display:none;">Actions-Run</a>
+                  <small class="hint" style="color:var(--text-muted);">Hinweis: Änderungen an event_signups_next.csv werden automatisch in den nächsten Roster-Build übernommen.</small>
                 </div>
                 <details class="settings-toggle">
                   <summary>⚙️ Einstellungen</summary>
@@ -332,7 +327,6 @@
         assignmentBody: document.getElementById('assignmentBody'),
         assignmentCount: document.getElementById('assignmentCount'),
         emptyState: document.getElementById('emptyState'),
-        rebuildBtn: document.getElementById('rebuildRosterBtn'),
         rebuildStatus: document.getElementById('rebuildStatusText'),
         buildRunLink: document.getElementById('buildRunLink'),
         buildBanner: document.getElementById('buildSyncBanner'),
@@ -444,10 +438,8 @@
         eventSignupCommit: null,
         currentBranch: branchOverride || 'main',
         buildSyncStatus: null,
-        building: false,
-        buildingHint: null,
+        buildStatusHint: null,
         buildRunUrl: null,
-        buildPolling: null,
       };
 
       // Konzept-Notiz: Dauerhafte Gruppenpräferenzen (data/alliance.csv: PrefGroup/PrefMode/PrefBoost) steuern den Optimizer langfristig.
@@ -526,47 +518,6 @@
         }
       }
 
-      function stopBuildPolling() {
-        if (state.buildPolling?.timeoutId) {
-          window.clearTimeout(state.buildPolling.timeoutId);
-        }
-        state.buildPolling = null;
-      }
-
-      function startBuildPolling() {
-        stopBuildPolling();
-        state.buildPolling = { remaining: 24, delayMs: 8000 };
-        const poll = async () => {
-          if (!state.building) { stopBuildPolling(); return; }
-          try {
-            await loadRoster();
-            renderRosterPreview();
-          } catch (err) {
-            console.warn('latest.json Poll fehlgeschlagen', err);
-          }
-          refreshBuildSyncState();
-          if (state.buildSyncStatus?.isSynced) {
-            state.building = false;
-            state.buildingHint = null;
-            updateBuildControls();
-            setStatus('latest.json aktualisiert – Zusagen sind im Build.', 'ok');
-            stopBuildPolling();
-            return;
-          }
-          if (!state.buildPolling) return;
-          state.buildPolling.remaining -= 1;
-          if (state.buildPolling.remaining <= 0) {
-            state.building = false;
-            state.buildingHint = null;
-            updateBuildControls();
-            setStatus('Build läuft noch – bitte später erneut auf "Neu laden" klicken.', 'warn');
-            stopBuildPolling();
-            return;
-          }
-          state.buildPolling.timeoutId = window.setTimeout(poll, state.buildPolling.delayMs);
-        };
-        state.buildPolling.timeoutId = window.setTimeout(poll, state.buildPolling.delayMs);
-      }
       function safeBranchName(value) {
         const trimmed = (value || '').trim();
         const cleaned = trimmed.replace(/[^\w\-\/]/g, '');
@@ -706,7 +657,7 @@
         if (buildCount != null) {
           parts.push(`Pool laut Build: ${buildCount} Einträge`);
         }
-        const rebuildHint = 'Hinweis: Änderungen an event_signups_next.csv landen nach dem nächsten Roster-Build in latest.json. Der Button „Roster neu bauen (nächstes Event)“ triggert denselben Workflow wie im Events-Tab.';
+        const rebuildHint = 'Hinweis: Änderungen an event_signups_next.csv landen automatisch nach dem nächsten Roster-Build in latest.json.';
         const text = parts.length ? `${parts.join(' · ')} · ${rebuildHint}` : rebuildHint;
         if (elements.contextMeta) elements.contextMeta.textContent = text;
         if (elements.rosterMeta) elements.rosterMeta.textContent = text;
@@ -756,6 +707,10 @@
           hasHardMismatch,
           isSynced: !needsBuild,
         };
+        if (state.buildSyncStatus.isSynced) {
+          state.buildStatusHint = null;
+          state.buildRunUrl = null;
+        }
         updateBuildBanner();
         updateBuildControls();
       }
@@ -794,15 +749,11 @@
       }
 
       function updateBuildControls() {
-        if (!elements.rebuildBtn) return;
         const status = state.buildSyncStatus;
-        const building = state.building;
-        const buildingLabel = state.buildingHint || 'Build läuft…';
-        elements.rebuildBtn.disabled = building || state.loading || state.saving;
-        elements.rebuildBtn.textContent = building ? buildingLabel : 'Roster neu bauen (nächstes Event)';
+        const hint = state.buildStatusHint;
         if (elements.rebuildStatus) {
-          if (building) {
-            elements.rebuildStatus.textContent = buildingLabel;
+          if (hint) {
+            elements.rebuildStatus.textContent = hint;
           } else if (!status) {
             elements.rebuildStatus.textContent = 'Build-Status lädt …';
           } else if (status.isSynced) {
@@ -819,6 +770,7 @@
             elements.buildRunLink.href = state.buildRunUrl;
           } else {
             elements.buildRunLink.style.display = 'none';
+            elements.buildRunLink.removeAttribute('href');
           }
         }
       }
@@ -1062,9 +1014,6 @@
       }
 
       async function reloadData() {
-        stopBuildPolling();
-        state.building = false;
-        state.buildingHint = null;
         updateBuildControls();
         setLoading(true);
         try {
@@ -1101,7 +1050,8 @@
           });
           state.originalCsv = content;
           await refreshFileCommit(branch);
-          setStatus('Event-Zusagen gespeichert.', 'ok');
+          setStatus('Event-Zusagen gespeichert. Starte Roster-Build…', 'ok');
+          await triggerAutoBuild('admin event signups autosave');
         } catch (err) {
           console.error(err);
           setStatus(`Speichern fehlgeschlagen: ${err.message}`, 'error');
@@ -1135,7 +1085,8 @@
           state.originalCsv = emptyCsv;
           await refreshFileCommit(branch);
           renderAssignments();
-          setStatus('Pool geleert.', 'ok');
+          setStatus('Pool geleert. Starte Roster-Build…', 'ok');
+          await triggerAutoBuild('admin event signups reset pool');
         } catch (err) {
           console.error(err);
           setStatus(`Reset fehlgeschlagen: ${err.message}`, 'error');
@@ -1154,42 +1105,39 @@
         return result;
       }
 
-      async function triggerRosterBuildForAssignments() {
-        if (state.loading || state.saving || state.building) return;
+      async function triggerAutoBuild(reasonText) {
+        const trigger = window.dsroShared?.triggerRosterBuild;
         const branch = branchOverride || elements.branch.value.trim() || 'main';
         const workerUrl = elements.workerUrl.value.trim();
         const adminKey = elements.adminKey.value.trim();
-        if (!adminKey) { setStatus('Admin-Key erforderlich.', 'error'); return; }
-        const trigger = window.dsroShared?.triggerRosterBuild;
         if (typeof trigger !== 'function') {
-          setStatus('Build-Trigger nicht verfügbar (shared.js).', 'error');
-          return;
+          setStatus('CSV gespeichert, aber Build-Trigger nicht verfügbar. Bitte Workflow manuell starten.', 'warn');
+          return null;
         }
-        state.building = true;
-        state.buildingHint = 'Roster-Build wird gestartet…';
-        state.buildRunUrl = null;
-        updateBuildControls();
         setStatus('Roster-Build wird gestartet…', 'info');
         try {
           const result = await trigger({
             branch,
-            reason: 'admin event signups rebuild next roster',
+            reason: reasonText || 'admin event signups auto rebuild',
             adminKey,
             workerUrl,
           });
+          state.buildStatusHint = 'Build läuft…';
           state.buildRunUrl = result?.html_url || result?.url || null;
-          state.buildingHint = 'Build läuft…';
           updateBuildControls();
-          setStatus('Roster-Build gestartet. Aktualisierte Aufstellung erscheint nach abgeschlossenem Workflow.', 'info');
-          startBuildPolling();
+          if (state.buildRunUrl) {
+            setStatus('Roster-Build gestartet. Actions-Link oben verfügbar.', 'info');
+          } else {
+            setStatus('Roster-Build gestartet.', 'info');
+          }
+          return result;
         } catch (err) {
           console.error('Build-Trigger fehlgeschlagen', err);
-          state.building = false;
-          state.buildingHint = null;
+          state.buildStatusHint = null;
+          state.buildRunUrl = null;
           updateBuildControls();
-          const status = typeof err?.status === 'number' ? err.status : null;
-          const message = status ? `Build-Trigger fehlgeschlagen (${status}).` : 'Build-Trigger fehlgeschlagen.';
-          setStatus(message, 'error');
+          setStatus('CSV gespeichert, Build-Trigger fehlgeschlagen. Bitte Workflow manuell starten.', 'error');
+          return null;
         }
       }
 
@@ -1225,7 +1173,6 @@
         elements.saveBtn.addEventListener('click', saveChanges);
         elements.addBtn.addEventListener('click', addAssignment);
         if (elements.resetBtn) elements.resetBtn.addEventListener('click', resetPool);
-        if (elements.rebuildBtn) elements.rebuildBtn.addEventListener('click', triggerRosterBuildForAssignments);
         ['workerUrl','branch','adminKey'].forEach(key => elements[key].addEventListener('change', persistSettings));
         elements.playerInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); addAssignment(); } });
       }

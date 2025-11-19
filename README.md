@@ -41,17 +41,17 @@ Schätzungen berechnet und daraus deterministische Aufstellungen (A/B, Start/Ers
   `forced_out_of_roster`) sowie die Listen `forced_signups`,
   `invalid_forced_signups`, `overbooked_forced_signups` und `file_entries`
   (Diagnose aller CSV-Zeilen inkl. Status `forced` / `info_only` / `invalid`).
-- Änderungen an `data/event_signups_next.csv` landen nach dem nächsten Build (`python -m src.main`
-  lokal oder GitHub Actions auf `main`/`feat/**`) in `out/latest.json`. Der „Roster neu bauen“-Button
-  im Admin-Tab „Events erfassen“ triggert optional denselben Workflow-Dispatch.
-- Der Admin-Tab „Event-Zusagen“ zeigt zusätzlich den Sync-Status (CSV vs. `latest.json`) und enthält
-  einen Button „Roster neu bauen (nächstes Event)“. So lässt sich direkt aus dem Pool-Editor
-  derselbe Workflow-Dispatch starten, sobald neue Zusagen übernommen werden sollen.
+  - Änderungen an `data/event_signups_next.csv` landen nach dem nächsten Build (`python -m src.main`
+    lokal oder GitHub Actions auf `main`/`feat/**`) in `out/latest.json`. Der „Roster neu bauen“-Button
+    im Admin-Tab „Events erfassen“ triggert optional denselben Workflow-Dispatch.
+  - Der Admin-Tab „Event-Zusagen“ zeigt zusätzlich den Sync-Status (CSV vs. `latest.json`) und stößt
+    nach dem Speichern/Reset automatisch denselben Build-Workflow an; ein separater Build-Button ist
+    dort nicht nötig.
 
 ### Roster-Build aus der Admin-UI auslösen
 
-- Sowohl der Button „Roster neu bauen“ im Events-Tab als auch „Roster neu bauen (nächstes Event)“
-  im Zusagen-Editor sprechen den Cloudflare-Worker
+  - Der Button „Roster neu bauen“ im Events-Tab sowie der automatische Trigger nach dem Speichern im
+    Zusagen-Editor sprechen den Cloudflare-Worker
   `https://ds-commit.hak1.workers.dev/dispatch` per `POST` an. Der Request enthält `ref` (Branch),
   einen `reason`-String und denselben Admin-Key wie der Schreib-Endpunkt (`X-Admin-Key`). Der Worker
   ruft anschließend den GitHub-API-Endpunkt `workflow_dispatch` für `Build Rosters` auf und liefert
