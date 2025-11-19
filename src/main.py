@@ -247,6 +247,15 @@ def _load_event_signups(path: str, to_canon) -> tuple[pd.DataFrame, Dict[str, in
         print(f"[warn] event signups: {path} nicht lesbar ({e}), starte leer")
         return pd.DataFrame(columns=cols), meta
 
+    # Sämtliche Spaltennamen case-insensitive auf die erwarteten Header mappen.
+    # Hintergrund: Admin-UI & Sheets können Header gelegentlich in lowercase
+    # schreiben (commitment/source/note) → harte Zusagen gingen verloren.
+    lower_to_expected = {c.lower(): c for c in cols}
+    for col in list(df.columns):
+        col_norm = str(col).strip().lower()
+        if col_norm in lower_to_expected and lower_to_expected[col_norm] not in df.columns:
+            df = df.rename(columns={col: lower_to_expected[col_norm]})
+
     meta["raw_rows"] = int(len(df))
     # Merke die ursprüngliche Zeilennummer (inkl. Header) für Diagnosezwecke.
     # Header = Zeile 1 → erste Datenzeile = 2.
