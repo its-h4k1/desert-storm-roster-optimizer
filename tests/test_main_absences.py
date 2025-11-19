@@ -210,6 +210,81 @@ def test_absences_export_and_filter(monkeypatch, tmp_path):
     assert {p.get("canonical") for p in debug_block.get("players", [])} == {"absentone"}
 
 
+def test_absence_payload_ignores_former_members(monkeypatch, tmp_path):
+    data_dir = tmp_path / "data"
+    data_dir.mkdir()
+
+    _write_csv(
+        data_dir / "events.csv",
+        ["EventID", "Slot", "PlayerName", "RoleAtRegistration", "Teilgenommen"],
+        [["DS-2024-01-01-A", 1, "PresentOne", "Damage", 1]],
+    )
+
+    _write_csv(
+        data_dir / "alliance.csv",
+        ["PlayerName", "InAlliance"],
+        [["PresentOne", 1], ["FormerMember", 0]],
+    )
+
+    _write_csv(
+        data_dir / "absences.csv",
+        ["PlayerName", "From", "To", "InAlliance", "Reason", "Scope"],
+        [
+            ["PresentOne", "2024-01-01", "2024-12-31", 1, "Active absence", "next_event"],
+            ["FormerMember", "2024-01-01", "2024-12-31", 0, "Historical", "next_event"],
+        ],
+    )
+
+    captured: dict[str, object] = {}
+
+    def _fake_builder(df: pd.DataFrame, **kwargs) -> pd.DataFrame:
+        return pd.DataFrame(
+            {
+                "PlayerName": df["PlayerName"],
+                "Group": ["A"] * len(df),
+                "Role": ["Start"] * len(df),
+                "NoShowOverall": [0.0] * len(df),
+                "NoShowRolling": [0.0] * len(df),
+                "risk_penalty": [0.0] * len(df),
+            }
+        )
+
+    def _capture_writer(out_dir, roster_df, json_payload):
+        captured["payload"] = json_payload
+        captured["roster"] = roster_df
+
+    monkeypatch.setattr(main_mod, "build_deterministic_roster", _fake_builder)
+    monkeypatch.setattr(main_mod, "_write_outputs", _capture_writer)
+
+    argv = [
+        "prog",
+        "--events",
+        "data/events.csv",
+        "--alliance",
+        "data/alliance.csv",
+        "--absences",
+        "data/absences.csv",
+        "--out",
+        "generated",
+    ]
+
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.setattr(sys, "argv", argv)
+
+    main_mod.main()
+
+    payload = captured.get("payload")
+    assert payload, "json payload not captured"
+    absences_block = payload.get("absences")
+    assert absences_block["total_entries"] == 1
+    assert {p.get("canonical") for p in absences_block.get("players", [])} == {"presentone"}
+
+    debug_block = payload.get("absence_debug")
+    assert debug_block["raw_count"] == 1
+    assert debug_block["active_for_next_event"] == 1
+    assert {p.get("canonical") for p in debug_block.get("players", [])} == {"presentone"}
+
+
 def test_absence_conflict_with_hard_commitment(monkeypatch, tmp_path):
     data_dir = tmp_path / "data"
     data_dir.mkdir()
