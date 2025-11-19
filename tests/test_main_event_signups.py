@@ -117,3 +117,114 @@ def test_hard_commitments_are_exported(monkeypatch, tmp_path):
     }
     assert forced_players == set(players)
 
+
+def test_manual_hard_commitment_exports_forced_signup(monkeypatch, tmp_path):
+    data_dir = tmp_path / "data"
+    data_dir.mkdir()
+
+    _write_csv(
+        data_dir / "events.csv",
+        ["EventID", "Slot", "PlayerName", "RoleAtRegistration", "Teilgenommen"],
+        [["DS-2025-01-01-A", 1, "BobbydyBob", "Damage", 1]],
+    )
+
+    _write_csv(
+        data_dir / "alliance.csv",
+        ["PlayerName", "InAlliance"],
+        [["BobbydyBob", 1]],
+    )
+
+    _write_csv(
+        data_dir / "absences.csv",
+        ["PlayerName", "From", "To", "InAlliance", "Reason"],
+        [],
+    )
+
+    _write_csv(
+        data_dir / "event_signups_next.csv",
+        ["PlayerName", "Group", "Role", "Commitment", "Source", "Note"],
+        [["BobbydyBob", "A", "Start", "hard", "manual", ""]],
+    )
+
+    captured: dict[str, object] = {}
+
+    def _fake_builder(df: pd.DataFrame, forced_assignments, **kwargs) -> pd.DataFrame:
+        captured["forced_assignments"] = list(forced_assignments)
+        rows = [
+            {
+                "PlayerName": item["PlayerName"],
+                "Group": item["Group"],
+                "Role": item["Role"],
+                "NoShowOverall": 0.0,
+                "NoShowRolling": 0.0,
+                "risk_penalty": 0.0,
+            }
+            for item in forced_assignments
+        ]
+        return pd.DataFrame(rows)
+
+    def _capture_writer(out_dir, roster_df, json_payload):
+        captured["payload"] = json_payload
+        captured["roster_df"] = roster_df
+
+    monkeypatch.setattr(main_mod, "build_deterministic_roster", _fake_builder)
+    monkeypatch.setattr(main_mod, "_write_outputs", _capture_writer)
+
+    argv = [
+        "prog",
+        "--events",
+        "data/events.csv",
+        "--alliance",
+        "data/alliance.csv",
+        "--absences",
+        "data/absences.csv",
+        "--event-signups",
+        "data/event_signups_next.csv",
+        "--out",
+        "generated",
+    ]
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.setattr(sys, "argv", argv)
+
+    main_mod.main()
+
+    payload = captured["payload"]
+    signup_pool = payload["signup_pool"]
+    forced_list = signup_pool.get("forced_signups") or []
+    assert forced_list == [
+        {
+            "player": "BobbydyBob",
+            "canon": "bobbydybob",
+            "group": "A",
+            "role": "Start",
+            "source": "manual",
+            "note": "",
+            "commitment": "hard",
+            "overbooked": False,
+        }
+    ]
+
+    forced_assignments = captured.get("forced_assignments") or []
+    assert forced_assignments == [
+        {"PlayerName": "bobbydybob", "Group": "A", "Role": "Start"}
+    ]
+
+    players = payload.get("players") or []
+    assert len(players) == 1
+    player = players[0]
+    assert player["display"] == "BobbydyBob"
+    assert player.get("forced_signup") == {
+        "commitment": "hard",
+        "source": "manual",
+        "note": "",
+        "overbooked": False,
+    }
+    assert player.get("has_forced_signup") is True
+    assert player.get("event_signup") == {
+        "group": "A",
+        "role": "Start",
+        "source": "manual",
+        "note": "",
+    }
+    assert player.get("has_event_signup") is True
+
