@@ -1186,7 +1186,20 @@ def main():
         },
     }
 
-    forced_by_canon = {f["canon"]: f for f in forced_signups}
+    def _canon_key(value: object) -> str | None:
+        if value is None or pd.isna(value):
+            return None
+        try:
+            return canonical_name(str(value))
+        except Exception:
+            return None
+
+    forced_by_canon: Dict[str, Dict[str, object]] = {}
+    for item in forced_signups:
+        for candidate in (item.get("canon"), item.get("player")):
+            key = _canon_key(candidate)
+            if key and key not in forced_by_canon:
+                forced_by_canon[key] = item
 
     players_payload = []
     callup_recommended_total = 0
@@ -1228,12 +1241,14 @@ def main():
             callup_recommended_total += 1
             for code in callup_reason_codes:
                 callup_reason_counts[code] = callup_reason_counts.get(code, 0) + 1
-        if row.Canonical in forced_by_canon:
+        canon_key = _canon_key(row.Canonical) or _canon_key(row.PlayerName)
+        if canon_key and canon_key in forced_by_canon:
+            forced_meta = forced_by_canon[canon_key]
             entry["forced_signup"] = {
-                "commitment": forced_by_canon[row.Canonical].get("commitment", "hard"),
-                "source": forced_by_canon[row.Canonical].get("source"),
-                "note": forced_by_canon[row.Canonical].get("note"),
-                "overbooked": bool(forced_by_canon[row.Canonical].get("overbooked")),
+                "commitment": forced_meta.get("commitment", "hard"),
+                "source": forced_meta.get("source"),
+                "note": forced_meta.get("note"),
+                "overbooked": bool(forced_meta.get("overbooked")),
             }
             entry["has_forced_signup"] = True
         if cfg.EB_ENABLE:
