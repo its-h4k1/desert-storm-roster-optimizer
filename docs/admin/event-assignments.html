@@ -686,6 +686,7 @@
           state.rosterGroups = (data && data.groups) || {};
           state.rosterMeta = data?.generated_at || null;
           state.eventSignupsMeta = data?.event_signups || null;
+          hydrateAssignmentsFromBuild(data);
           updateContextMeta();
           refreshBuildSyncState();
         } catch (err) {
@@ -699,6 +700,28 @@
           updateContextMeta();
           refreshBuildSyncState();
         }
+      }
+
+      function hydrateAssignmentsFromBuild(data) {
+        const fileEntries = data?.event_signups?.file_entries;
+        if (!Array.isArray(fileEntries) || !fileEntries.length) return;
+        // Nur übernehmen, wenn Build und Datei denselben Stand haben, um frische CSV-Änderungen
+        // nicht mit alten Build-Daten zu überschreiben.
+        const buildCommit = extractBuildCommit(data?.event_signups);
+        const fileCommit = state.eventSignupCommit?.sha || null;
+        if (buildCommit && fileCommit && buildCommit !== fileCommit) return;
+        const baseRow = DEFAULT_HEADERS.reduce((acc, k) => ({ ...acc, [k]: k === 'Commitment' ? 'none' : '' }), {});
+        state.assignments = fileEntries.map(entry => ({
+          ...baseRow,
+          PlayerName: entry.player || entry.PlayerName || '',
+          Group: entry.group_pref || entry.Group || entry.group || '',
+          Role: entry.role_pref || entry.Role || entry.role || '',
+          Commitment: entry.commitment || entry.Commitment || baseRow.Commitment,
+          Source: entry.source || entry.Source || 'manual',
+          Note: entry.note || entry.Note || '',
+        }));
+        state.headers = state.headers.length ? state.headers : [...DEFAULT_HEADERS];
+        state.originalCsv = buildCurrentCsv();
       }
       function buildCurrentCsv() {
         const headers = state.headers.length ? Array.from(new Set([...state.headers, ...DEFAULT_HEADERS])) : [...DEFAULT_HEADERS];
