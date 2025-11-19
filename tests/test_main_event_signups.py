@@ -426,3 +426,90 @@ def test_multiple_builds_apply_new_hard_commitments(monkeypatch, tmp_path):
     docs_latest = (tmp_path / "docs/out/latest.json").read_text(encoding="utf-8")
     assert out_latest == docs_latest
 
+
+def test_hard_commitment_prefers_signup_group_over_pref(monkeypatch, tmp_path):
+    data_dir = tmp_path / "data"
+    data_dir.mkdir()
+
+    filler_players = [f"Alpha{i}" for i in range(31)]
+    target_player = "Switchy"
+    all_players = filler_players + [target_player]
+
+    _write_csv(
+        data_dir / "events.csv",
+        ["EventID", "Slot", "PlayerName", "RoleAtRegistration", "Teilgenommen"],
+        [["DS-2027-01-01-A", idx + 1, name, "Damage", 1] for idx, name in enumerate(all_players)],
+    )
+
+    _write_csv(
+        data_dir / "alliance.csv",
+        ["PlayerName", "InAlliance", "PrefGroup"],
+        [[name, 1, ""] for name in filler_players] + [[target_player, 1, "B"]],
+    )
+
+    _write_csv(
+        data_dir / "absences.csv",
+        ["PlayerName", "From", "To", "InAlliance", "Reason"],
+        [],
+    )
+
+    _write_csv(
+        data_dir / "event_signups_next.csv",
+        ["PlayerName", "Group", "Role", "Commitment", "Source", "Note"],
+        [[name, "A", "Start", "hard", "manual", ""] for name in filler_players]
+        + [[target_player, "A", "Start", "hard", "manual", ""]],
+    )
+
+    captured: dict[str, object] = {}
+
+    def _fake_builder(df: pd.DataFrame, forced_assignments, **kwargs) -> pd.DataFrame:
+        captured["forced_assignments"] = list(forced_assignments)
+        rows = [
+            {
+                "PlayerName": item["PlayerName"],
+                "Group": item["Group"],
+                "Role": item["Role"],
+                "NoShowOverall": 0.0,
+                "NoShowRolling": 0.0,
+                "risk_penalty": 0.0,
+            }
+            for item in forced_assignments
+        ]
+        return pd.DataFrame(rows)
+
+    def _capture_writer(out_dir, roster_df, json_payload):
+        captured["payload"] = json_payload
+        captured["roster_df"] = roster_df
+
+    monkeypatch.setattr(main_mod, "build_deterministic_roster", _fake_builder)
+    monkeypatch.setattr(main_mod, "_write_outputs", _capture_writer)
+
+    argv = [
+        "prog",
+        "--events",
+        "data/events.csv",
+        "--alliance",
+        "data/alliance.csv",
+        "--absences",
+        "data/absences.csv",
+        "--event-signups",
+        "data/event_signups_next.csv",
+        "--out",
+        "generated",
+    ]
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.setattr(sys, "argv", argv)
+
+    main_mod.main()
+
+    forced_assignments = captured.get("forced_assignments") or []
+    target = next(item for item in forced_assignments if item["PlayerName"] == "switchy")
+    assert target["Group"] == "A"
+
+    payload = captured.get("payload") or {}
+    signup_pool = payload.get("signup_pool") or {}
+    forced = signup_pool.get("forced_signups") or []
+    target_forced = next(item for item in forced if item.get("player") == target_player)
+    assert target_forced["group"] == "A"
+    assert target_forced["overbooked"] is True
+
