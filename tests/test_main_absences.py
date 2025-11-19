@@ -15,6 +15,15 @@ def _write_csv(path: Path, header: list[str], rows: list[list[str]]) -> None:
     )
 
 
+def _get_debug_file_entries(block: dict | None) -> list[dict]:
+    if not block or not isinstance(block, dict):
+        return []
+    entries = block.get("file_entries")
+    if entries is None:
+        entries = block.get("players")
+    return entries or []
+
+
 def test_main_excludes_absent_players(monkeypatch, tmp_path):
     data_dir = tmp_path / "data"
     data_dir.mkdir()
@@ -207,7 +216,7 @@ def test_absences_export_and_filter(monkeypatch, tmp_path):
     debug_block = payload.get("absence_debug")
     assert debug_block["raw_count"] == 2
     assert debug_block["active_for_next_event"] == 1
-    debug_players = debug_block.get("players", [])
+    debug_players = _get_debug_file_entries(debug_block)
     assert {p.get("canonical") for p in debug_players} == {"absentone", "futureaway"}
     assert {p.get("canonical") for p in debug_players if p.get("is_absent_next_event")}
     assert {p.get("canonical") for p in debug_players if p.get("is_absent_next_event")} == {"absentone"}
@@ -285,7 +294,92 @@ def test_absence_payload_ignores_former_members(monkeypatch, tmp_path):
     debug_block = payload.get("absence_debug")
     assert debug_block["raw_count"] == 1
     assert debug_block["active_for_next_event"] == 1
-    assert {p.get("canonical") for p in debug_block.get("players", [])} == {"presentone"}
+    assert {p.get("canonical") for p in _get_debug_file_entries(debug_block)} == {"presentone"}
+
+
+def test_absence_debug_aggregates_active_entries(monkeypatch, tmp_path):
+    data_dir = tmp_path / "data"
+    data_dir.mkdir()
+
+    _write_csv(
+        data_dir / "events.csv",
+        ["EventID", "Slot", "PlayerName", "RoleAtRegistration", "Teilgenommen"],
+        [["DS-2025-11-14-A", 1, "ilishelbymf", "Damage", 1]],
+    )
+
+    _write_csv(
+        data_dir / "alliance.csv",
+        ["PlayerName", "InAlliance"],
+        [["ilishelbymf", 1], ["PresentOne", 1]],
+    )
+
+    _write_csv(
+        data_dir / "absences.csv",
+        ["PlayerName", "From", "To", "InAlliance", "Reason", "Scope"],
+        [
+            ["ilishelbymf", "", "", 1, "muss es noch erklärt bekommen", "next_event"],
+            ["ilishelbymf", "2024-01-01", "2024-01-05", 1, "historisch", ""],
+        ],
+    )
+
+    captured: dict[str, object] = {}
+
+    def _fake_builder(df: pd.DataFrame, **kwargs) -> pd.DataFrame:
+        return pd.DataFrame(
+            {
+                "PlayerName": df["PlayerName"],
+                "Group": ["A"] * len(df),
+                "Role": ["Start"] * len(df),
+                "NoShowOverall": [0.0] * len(df),
+                "NoShowRolling": [0.0] * len(df),
+                "risk_penalty": [0.0] * len(df),
+            }
+        )
+
+    def _capture_writer(out_dir, roster_df, json_payload):
+        captured["payload"] = json_payload
+        captured["roster"] = roster_df
+
+    monkeypatch.setattr(
+        main_mod,
+        "_infer_next_event_ts",
+        lambda df: (pd.Timestamp("2025-11-21", tz=main_mod.TZ), {"source": "test"}),
+    )
+    monkeypatch.setattr(main_mod, "build_deterministic_roster", _fake_builder)
+    monkeypatch.setattr(main_mod, "_write_outputs", _capture_writer)
+
+    argv = [
+        "prog",
+        "--events",
+        "data/events.csv",
+        "--alliance",
+        "data/alliance.csv",
+        "--absences",
+        "data/absences.csv",
+        "--out",
+        "generated",
+    ]
+
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.setattr(sys, "argv", argv)
+
+    main_mod.main()
+
+    payload = captured.get("payload") or {}
+    debug_block = payload.get("absence_debug") or {}
+    file_entries = _get_debug_file_entries(debug_block)
+    assert len(file_entries) == 2
+    aggregated = debug_block.get("next_event_absences") or []
+    assert len(aggregated) == 1
+    agg_entry = aggregated[0]
+    assert agg_entry.get("canonical") == "ilishelbymf"
+    assert agg_entry.get("active") is True
+    ranges = agg_entry.get("ranges") or []
+    assert len(ranges) == 1
+    assert ranges[0].get("reason") == "muss es noch erklärt bekommen"
+    stats = debug_block.get("stats") or {}
+    assert stats.get("file_entries") == 2
+    assert stats.get("unique_active_players") == 1
 
 
 def test_absence_conflict_with_hard_commitment(monkeypatch, tmp_path):
@@ -439,7 +533,7 @@ def test_absence_debug_entries_and_roster_flag(monkeypatch, tmp_path):
     assert "ilishelbymf" not in players_in_groups
 
     absence_debug = payload.get("absence_debug", {})
-    players_debug = absence_debug.get("players") or []
+    players_debug = _get_debug_file_entries(absence_debug)
     il_debug_entries = [p for p in players_debug if (p.get("canonical") == "ilishelbymf")]
     assert il_debug_entries, "ilishelbymf should appear in absence_debug.players"
     assert all(p.get("is_absent_next_event") for p in il_debug_entries)

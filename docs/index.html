@@ -709,6 +709,66 @@
       return `${from} – ${to}`;
     }
 
+    function dedupeActiveAbsenceEntries(entries = []) {
+      const byCanon = new Map();
+      entries.forEach(entry => {
+        if (!entry || typeof entry !== 'object') return;
+        const isActive = Boolean(entry.is_absent_next_event || entry.isActiveNextEvent);
+        if (!isActive) return;
+        const canon = canonicalNameJS(entry.canonical || entry.canon || entry.display || entry.name || '');
+        if (!canon) return;
+        const display = entry.display || entry.name || entry.PlayerName || canon;
+        const range = {
+          from: entry.from ?? entry.From ?? '',
+          to: entry.to ?? entry.To ?? '',
+          reason: entry.reason ?? entry.Reason ?? '',
+          scope: entry.scope ?? entry.Scope ?? '',
+        };
+        const existing = byCanon.get(canon);
+        if (existing) {
+          existing.ranges.push(range);
+          if ((!existing.display || existing.display === canon) && display) {
+            existing.display = display;
+          }
+          existing.in_alliance = existing.in_alliance || Boolean(entry.in_alliance || entry.InAlliance || entry.inAlliance);
+        } else {
+          byCanon.set(canon, {
+            canonical: canon,
+            display,
+            active: true,
+            ranges: [range],
+            in_alliance: Boolean(entry.in_alliance || entry.InAlliance || entry.inAlliance),
+          });
+        }
+      });
+      return Array.from(byCanon.values()).sort((a, b) => {
+        const left = (a.display || a.canonical || '').toString();
+        const right = (b.display || b.canonical || '').toString();
+        return left.localeCompare(right);
+      });
+    }
+
+    function formatAggregatedRangeLabel(entry) {
+      const ranges = Array.isArray(entry?.ranges) ? entry.ranges : [];
+      if (!ranges.length) return 'Zeitraum offen';
+      const formatted = ranges
+        .map(r => formatAbsenceRange({ from: r?.from, to: r?.to }))
+        .filter(Boolean);
+      if (!formatted.length) return 'Zeitraum offen';
+      const suffix = ranges.length > 1 ? ` (${ranges.length} Zeiträume)` : '';
+      return `${formatted[0]}${suffix}`;
+    }
+
+    function extractAggregatedReason(entry) {
+      const ranges = Array.isArray(entry?.ranges) ? entry.ranges : [];
+      const reasons = ranges
+        .map(r => (r?.reason || '').toString().trim())
+        .filter(Boolean);
+      if (reasons.length) return reasons[0];
+      const fallback = (entry?.reason || '').toString().trim();
+      return fallback || '–';
+    }
+
     function rosterBadgeFor(entry) {
       const meta = state.playersByCanon[entry.canon];
       if (!meta) return "";
@@ -767,34 +827,50 @@
         return;
       }
 
-      const rawCount = Number(debugBlock.raw_count ?? debugBlock.rawCount ?? debugBlock.total_entries ?? 0);
-      const activeCount = Number(debugBlock.active_for_next_event ?? debugBlock.activeEntries ?? debugBlock.active_entries ?? 0);
-      const players = Array.isArray(debugBlock.players) ? debugBlock.players : [];
+      const stats = (debugBlock.stats && typeof debugBlock.stats === 'object') ? debugBlock.stats : {};
+      const rawCount = Number(
+        stats.file_entries ?? stats.total_entries ??
+        debugBlock.raw_count ?? debugBlock.rawCount ?? debugBlock.total_entries ?? 0
+      );
+      const activeCount = Number(
+        stats.active_for_next_event ??
+        debugBlock.active_for_next_event ?? debugBlock.activeEntries ?? debugBlock.active_entries ?? 0
+      );
+      const uniquePlayers = Number(
+        stats.unique_active_players ??
+        (Array.isArray(debugBlock.next_event_absences) ? debugBlock.next_event_absences.length : NaN)
+      );
+      const fileEntries = Array.isArray(debugBlock.file_entries)
+        ? debugBlock.file_entries
+        : (Array.isArray(debugBlock.players) ? debugBlock.players : []);
+      const aggregatedEntries = Array.isArray(debugBlock.next_event_absences)
+        ? debugBlock.next_event_absences
+        : [];
       const source = (debugBlock.source || '').toString();
       const summaryParts = [];
       if (!Number.isNaN(rawCount)) summaryParts.push(`Datei-Einträge: ${rawCount}`);
       if (!Number.isNaN(activeCount)) summaryParts.push(`für nächstes Event aktiv: ${activeCount}`);
+      if (!Number.isNaN(uniquePlayers)) summaryParts.push(`aktive Spieler: ${uniquePlayers}`);
       if (source) summaryParts.push(`Quelle: ${escapeHtml(source)}`);
 
       let html = '<h4>Absenzen (nächstes Event – Übersicht & Diagnostik)</h4>';
       html += `<p>${summaryParts.join(' · ')}</p>`;
 
-      const activeEntries = players.filter(p => p && (p.is_absent_next_event || p.isActiveNextEvent));
+      const activeEntries = aggregatedEntries.length ? aggregatedEntries : dedupeActiveAbsenceEntries(fileEntries);
       if (activeEntries.length) {
         const items = activeEntries.map(p => {
-          const canon = canonicalNameJS(p?.canonical || '');
-          const display = p?.display || p?.name || canon || 'Unbekannt';
-          const range = formatAbsenceRange({ from: p?.from, to: p?.to });
-          const reason = p?.reason ? escapeHtml(p.reason) : '–';
-          const scope = (p?.scope || '').toString().trim();
-          const isActive = Boolean(p?.is_absent_next_event || p?.isActiveNextEvent);
+          const canon = canonicalNameJS(p?.canonical || p?.canon || '');
+          const display = p?.display || canon || 'Unbekannt';
+          const range = formatAggregatedRangeLabel(p);
+          const reasonRaw = extractAggregatedReason(p);
+          const reason = reasonRaw ? escapeHtml(reasonRaw) : '–';
+          const isActive = Boolean(p?.active ?? true);
           const statusLabel = isActive ? 'aktiv' : 'geplant';
           const badgeClass = isActive ? 'tag tag-abs-active' : 'tag tag-abs-planned';
-          const scopeLabel = scope && scope !== 'next_event' ? ` · ${escapeHtml(scope)}` : '';
           return `
             <li>
               <strong>${escapeHtml(display)}</strong> <span class="${badgeClass}">${statusLabel}</span><br />
-              <span class="muted">${escapeHtml(range)} · Grund: ${reason}${scopeLabel}</span>
+              <span class="muted">${escapeHtml(range)} · Grund: ${reason}</span>
             </li>
           `;
         }).join('');

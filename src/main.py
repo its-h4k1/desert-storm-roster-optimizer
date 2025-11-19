@@ -540,11 +540,17 @@ def main():
         "players": [],
     }
     absence_debug = {
-        "schema": 1,
+        "schema": 2,
         "source": str(Path(args.absences)) if args.absences else "",
         "raw_count": 0,
         "active_for_next_event": 0,
-        "players": [],
+        "file_entries": [],
+        "next_event_absences": [],
+        "stats": {
+            "file_entries": 0,
+            "active_for_next_event": 0,
+            "unique_active_players": 0,
+        },
     }
     absence_debug["reference_event"] = {
         "event_date": next_event_ts.isoformat(),
@@ -631,7 +637,8 @@ def main():
 
         absence_debug["raw_count"] = int(len(abs_df))
         absence_debug["active_for_next_event"] = int(abs_df["is_absent_next_event"].sum())
-        absence_debug["players"] = []
+        absence_debug["file_entries"] = []
+        aggregated_absences: Dict[str, Dict[str, object]] = {}
         active_abs_meta: Dict[str, Dict[str, str]] = {}
         for row in abs_df.itertuples(index=False):
             scope_norm = getattr(row, "scope_norm", "") or ""
@@ -645,18 +652,46 @@ def main():
                     "to": getattr(row, "To", "") or "",
                     "scope": scope_norm,
                 }
-            absence_debug["players"].append(
-                {
-                    "canonical": canon_val,
-                    "display": getattr(row, "DisplayName", "") or "",
-                    "reason": getattr(row, "Reason", "") or "",
-                    "scope": scope_label,
-                    "source": str(Path(args.absences)) if args.absences else "",
-                    "from": getattr(row, "From", "") or "",
-                    "to": getattr(row, "To", "") or "",
-                    "is_absent_next_event": is_active,
-                }
-            )
+            from_val = getattr(row, "From", "") or ""
+            to_val = getattr(row, "To", "") or ""
+            reason_val = getattr(row, "Reason", "") or ""
+            file_entry = {
+                "canonical": canon_val,
+                "display": getattr(row, "DisplayName", "") or "",
+                "reason": reason_val,
+                "scope": scope_label,
+                "source": str(Path(args.absences)) if args.absences else "",
+                "from": from_val,
+                "to": to_val,
+                "is_absent_next_event": is_active,
+            }
+            absence_debug["file_entries"].append(file_entry)
+
+            canon_key = None
+            if canon_val is not pd.NA and pd.notna(canon_val):
+                canon_key = str(canon_val)
+
+            if is_active and canon_key:
+                agg_entry = aggregated_absences.setdefault(
+                    canon_key,
+                    {
+                        "canonical": canon_key,
+                        "display": getattr(row, "DisplayName", "") or canon_key,
+                        "active": True,
+                        "ranges": [],
+                        "in_alliance": bool(getattr(row, "InAlliance", 0)),
+                    },
+                )
+                agg_entry["display"] = getattr(row, "DisplayName", "") or agg_entry["display"]
+                agg_entry["in_alliance"] = bool(getattr(row, "InAlliance", 0))
+                agg_entry.setdefault("ranges", []).append(
+                    {
+                        "from": from_val,
+                        "to": to_val,
+                        "reason": reason_val,
+                        "scope": scope_label,
+                    }
+                )
 
         absent_now = set(abs_df.loc[abs_df["is_absent_next_event"], "canon"].tolist())
         before = len(pool)
@@ -665,6 +700,15 @@ def main():
             "[info] absences filter: "
             f"{before - len(pool)} ausgeschlossen (ref_event={next_event_ts.isoformat()}, now={now_ts.isoformat()}, raw={absence_debug['raw_count']}, active={absence_debug['active_for_next_event']})"
         )
+
+        agg_list = sorted(aggregated_absences.values(), key=lambda x: (x.get("display") or x.get("canonical") or ""))
+        absence_debug["next_event_absences"] = agg_list
+        absence_debug["stats"] = {
+            "file_entries": absence_debug["raw_count"],
+            "active_for_next_event": absence_debug["active_for_next_event"],
+            "unique_active_players": len(agg_list),
+        }
+        absence_debug["players"] = absence_debug["file_entries"]
 
     hist_cols = [
         "canon",
