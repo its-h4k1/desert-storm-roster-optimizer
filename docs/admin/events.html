@@ -673,6 +673,7 @@
   <script src="https://unpkg.com/dayjs@1.11.10/dayjs.min.js"></script>
   <script src="https://unpkg.com/papaparse@5.4.1/papaparse.min.js"></script>
   <script src="https://unpkg.com/tabulator-tables@5.5.2/dist/js/tabulator.min.js"></script>
+  <script src="../shared.js"></script>
   <script>
     const repoOwner = "its-h4k1";
     const repoName = "desert-storm-roster-optimizer";
@@ -2246,21 +2247,13 @@
     async function triggerBuild() {
       const branch = getBranchValue();
       const eventId = elements.eventId.value.trim();
-      const payload = {
-        ref: branch,
-        reason: `admin events upload ${eventId}`,
-      };
+      const reason = `admin events upload ${eventId || "unbekannt"}`;
       try {
-        const response = await fetch("/dispatch", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload),
-        });
-        if (!response.ok) {
-          const text = await response.text();
-          throw new Error(text || `HTTP ${response.status}`);
+        const trigger = window.dsroShared?.triggerRosterBuild;
+        if (typeof trigger !== "function") {
+          throw new Error("Build-Helper nicht verfügbar (shared.js)");
         }
-        const result = await response.json().catch(() => null);
+        const result = await trigger({ branch, reason });
         if (result && result.html_url) {
           lastBuildUrl = result.html_url;
           renderActionsLink(result.html_url);

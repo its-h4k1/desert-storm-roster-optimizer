@@ -39,6 +39,9 @@ Schätzungen berechnet und daraus deterministische Aufstellungen (A/B, Start/Ers
 - Änderungen an `data/event_signups_next.csv` landen nach dem nächsten Build (`python -m src.main`
   lokal oder GitHub Actions auf `main`/`feat/**`) in `out/latest.json`. Der „Roster neu bauen“-Button
   im Admin-Tab „Events erfassen“ triggert optional denselben Workflow-Dispatch.
+- Der Admin-Tab „Event-Zusagen“ zeigt zusätzlich den Sync-Status (CSV vs. `latest.json`) und enthält
+  einen Button „Roster neu bauen (nächstes Event)“. So lässt sich direkt aus dem Pool-Editor
+  derselbe Workflow-Dispatch starten, sobald neue Zusagen übernommen werden sollen.
 
 ## UIs & Admin-Tools
 
