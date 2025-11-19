@@ -165,3 +165,71 @@ def test_no_response_penalty_export(monkeypatch, tmp_path):
     penalties = payload.get("event_responses", {}).get("penalty_applied") or []
     assert any(item.get("canonical") == "alpha" for item in penalties)
 
+
+def test_missing_event_responses_file(monkeypatch, tmp_path):
+    data_dir = tmp_path / "data"
+    data_dir.mkdir()
+
+    players = ["Alpha", "Bravo"]
+    _write_csv(
+        data_dir / "events.csv",
+        ["EventID", "Slot", "PlayerName", "RoleAtRegistration", "Teilgenommen"],
+        [["DS-2029-03-03-A", idx + 1, name, "Damage", 1] for idx, name in enumerate(players)],
+    )
+    _write_csv(
+        data_dir / "alliance.csv",
+        ["PlayerName", "InAlliance"],
+        [[name, 1] for name in players],
+    )
+    _write_csv(data_dir / "absences.csv", ["PlayerName", "From", "To", "InAlliance"], [])
+
+    captured: dict[str, object] = {}
+
+    def _fake_builder(df: pd.DataFrame, forced_assignments, **kwargs) -> pd.DataFrame:
+        captured["builder_pool"] = df.copy()
+        return pd.DataFrame(
+            [
+                {
+                    "PlayerName": getattr(row, "PlayerName"),
+                    "Group": "A",
+                    "Role": "Start",
+                    "NoShowOverall": 0.0,
+                    "NoShowRolling": 0.0,
+                    "risk_penalty": getattr(row, "risk_penalty", 0.0),
+                }
+                for row in df.itertuples(index=False)
+            ]
+        )
+
+    def _capture_writer(out_dir, roster_df, json_payload):
+        captured["payload"] = json_payload
+        captured["roster_df"] = roster_df
+
+    monkeypatch.setattr(main_mod, "build_deterministic_roster", _fake_builder)
+    monkeypatch.setattr(main_mod, "_write_outputs", _capture_writer)
+
+    argv = [
+        "prog",
+        "--events",
+        "data/events.csv",
+        "--alliance",
+        "data/alliance.csv",
+        "--absences",
+        "data/absences.csv",
+        "--event-responses",
+        "data/event_responses_next.csv",
+        "--out",
+        "generated",
+    ]
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.setattr(sys, "argv", argv)
+
+    main_mod.main()
+
+    payload = captured.get("payload") or {}
+    responses_meta = payload.get("event_responses", {}).get("stats") or {}
+    assert responses_meta.get("file_entries", 0) == 0
+    # No penalties or removals should be applied when the file is missing/empty.
+    assert not payload.get("event_responses", {}).get("penalty_applied")
+    assert not payload.get("event_responses", {}).get("removed_from_pool")
+

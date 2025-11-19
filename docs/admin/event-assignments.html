@@ -68,6 +68,8 @@
     .tag { padding:0.25rem 0.55rem; border-radius:0.65rem; border:1px solid var(--border); background:var(--bg-alt); font-size:0.8rem; color:var(--text-muted); }
     .tag-hard { background:#fef2f2; border-color:#fecaca; color:#991b1b; font-weight:600; }
     .tag-callup { background:#eff6ff; border-color:#bfdbfe; color:#1d4ed8; font-weight:600; }
+    .tag-decline { background:#fee2e2; border-color:#fecaca; color:#991b1b; font-weight:600; }
+    .tag-noresp { background:#fff7ed; border-color:#fed7aa; color:#9a3412; font-weight:600; }
     .tag-fix { background:#f5f5f5; border-color:#d4d4d8; color:#3f3f46; font-weight:600; display:inline-flex; align-items:center; gap:0.35rem; }
     .callup-note { color:#1d4ed8; font-weight:600; font-size:0.9rem; display:inline-flex; align-items:center; gap:0.3rem; }
     tr.from-callup td { background:linear-gradient(90deg, rgba(239,246,255,0.6), rgba(255,255,255,0)); }
@@ -240,6 +242,47 @@
                 </section>
               </div>
 
+              <section class="panel">
+                <div class="controls" style="margin-bottom:0.35rem; align-items:flex-start; gap:0.35rem;">
+                  <div style="display:grid; gap:0.25rem;">
+                    <h2 style="margin:0;">Event-Antworten (Absagen / Keine Rückmeldung)</h2>
+                    <span id="responseMeta" class="hint" style="color:var(--text-muted);"></span>
+                  </div>
+                  <div class="controls" style="gap:0.5rem; margin-left:auto;">
+                    <label>Antwort-Status setzen
+                      <select id="responseStatusInput">
+                        <option value="">Keine Antwort setzen</option>
+                        <option value="decline">Absage</option>
+                        <option value="no_response">Keine Rückmeldung</option>
+                      </select>
+                    </label>
+                    <label style="min-width:220px;">Spieler (Allianz oder Roster)
+                      <input type="search" id="responsePlayerInput" list="playerOptions" placeholder="Name eingeben…" autocomplete="off">
+                    </label>
+                    <label style="flex:1;min-width:180px;">Notiz (optional)
+                      <input type="text" id="responseNoteInput" placeholder="z.B. Absage via Discord">
+                    </label>
+                    <button id="addResponseBtn">Antwort speichern</button>
+                  </div>
+                </div>
+                <div class="table-wrapper">
+                  <table>
+                    <thead>
+                      <tr>
+                        <th>Spieler</th>
+                        <th>Status</th>
+                        <th>Notiz</th>
+                        <th>Quelle</th>
+                        <th>Aktion</th>
+                      </tr>
+                    </thead>
+                    <tbody id="responseBody"></tbody>
+                  </table>
+                </div>
+                <div id="responseEmptyState" class="hint" style="color:var(--text-muted);display:none;">Keine Event-Antworten gesetzt.</div>
+                <p class="hint" style="color:var(--text-muted);">Responses gelten fürs nächste Event und landen in <code>data/event_responses_next.csv</code>. Status "Keine Antwort setzen" entfernt vorhandene Einträge.</p>
+              </section>
+
               <details class="accordion" id="rosterPreviewPanel">
                 <summary>
                   <div style="display:grid; gap:0.1rem;">
@@ -326,6 +369,13 @@
         assignmentBody: document.getElementById('assignmentBody'),
         assignmentCount: document.getElementById('assignmentCount'),
         emptyState: document.getElementById('emptyState'),
+        responseStatusInput: document.getElementById('responseStatusInput'),
+        responsePlayerInput: document.getElementById('responsePlayerInput'),
+        responseNoteInput: document.getElementById('responseNoteInput'),
+        addResponseBtn: document.getElementById('addResponseBtn'),
+        responseBody: document.getElementById('responseBody'),
+        responseEmptyState: document.getElementById('responseEmptyState'),
+        responseMeta: document.getElementById('responseMeta'),
         rebuildStatus: document.getElementById('rebuildStatusText'),
         buildBanner: document.getElementById('buildSyncBanner'),
         buildBannerText: document.getElementById('buildSyncBannerText'),
@@ -343,6 +393,8 @@
       const SETTINGS_KEY = 'dsro-event-assignments-settings';
       // Commitment existierte bereits als CSV-Spalte, wurde in dieser UI jedoch ignoriert; jetzt wird sie mitgelesen und mitgeschrieben.
       const DEFAULT_HEADERS = ['PlayerName','Group','Role','Commitment','Source','Note'];
+      const DEFAULT_RESPONSE_HEADERS = ['PlayerName','Status','Source','Note'];
+      const ALLOWED_RESPONSE_STATUSES = ['decline','no_response'];
       const branchOverride = (new URL(location.href)).searchParams.get('branch');
       const cacheBuster = `?v=${Date.now()}`;
       const canonicalNameJS = (window.dsroShared && typeof window.dsroShared.canonicalNameJS === 'function')
@@ -425,6 +477,9 @@
         assignments: [],
         headers: [],
         originalCsv: '',
+        responses: [],
+        responseHeaders: [],
+        originalResponseCsv: '',
         loading: false,
         saving: false,
         alliancePool: [],
@@ -483,6 +538,17 @@
         const headerLine = headers.join(',');
         const lines = rows.map(row => headers.map(h => formatCsvValue(row[h] ?? '')).join(','));
         return ensureTrailingNewline([headerLine, ...lines].join('\n'));
+      }
+      function normalizeResponseStatus(value) {
+        const norm = (value || '').toString().trim().toLowerCase();
+        if (['decline','declined','absage','cancel','cancelled','canceled','no'].includes(norm)) return 'decline';
+        if (['no_response','none','unanswered','missing','unknown'].includes(norm)) return 'no_response';
+        return '';
+      }
+      function formatResponseLabel(status) {
+        if (status === 'decline') return 'Absage';
+        if (status === 'no_response') return 'Keine Rückmeldung';
+        return '–';
       }
 
       async function fetchEventSignupCommit(branchValue) {
@@ -565,6 +631,38 @@
           await refreshFileCommit(branch);
         }
       }
+      async function loadResponses() {
+        const branch = branchOverride || elements.branch.value || 'main';
+        const csvUrl = buildRawDataUrl('data/event_responses_next.csv', branch);
+        try {
+          const text = await fetchText(csvUrl, { allow404: true });
+          if (!text) {
+            state.responseHeaders = [...DEFAULT_RESPONSE_HEADERS];
+            state.responses = [];
+            state.originalResponseCsv = buildResponseCsv();
+            return;
+          }
+          const { headers, rows } = parseCsv(text);
+          const mergedHeaders = headers.length ? Array.from(new Set([...headers, ...DEFAULT_RESPONSE_HEADERS])) : [...DEFAULT_RESPONSE_HEADERS];
+          state.responseHeaders = mergedHeaders;
+          const baseRow = DEFAULT_RESPONSE_HEADERS.reduce((acc, k) => ({ ...acc, [k]: '' }), {});
+          state.responses = rows
+            .map(r => ({
+              ...baseRow,
+              ...r,
+              Status: normalizeResponseStatus(r.Status || r.status),
+              Source: r.Source || r.source || 'manual',
+              Note: r.Note || r.note || '',
+            }))
+            .filter(r => ALLOWED_RESPONSE_STATUSES.includes(r.Status));
+          state.originalResponseCsv = buildResponseCsv();
+        } catch (err) {
+          console.warn('event_responses_next.csv konnte nicht geladen werden, starte leer', err);
+          state.responseHeaders = [...DEFAULT_RESPONSE_HEADERS];
+          state.responses = [];
+          state.originalResponseCsv = buildResponseCsv();
+        }
+      }
       async function loadRoster() {
         const rosterPath = LATEST_JSON_URL;
         try {
@@ -617,9 +715,26 @@
         });
         return buildCsv(headers, rows);
       }
+      function buildResponseCsv() {
+        const headers = state.responseHeaders.length
+          ? Array.from(new Set([...state.responseHeaders, ...DEFAULT_RESPONSE_HEADERS]))
+          : [...DEFAULT_RESPONSE_HEADERS];
+        const rows = state.responses
+          .filter(r => ALLOWED_RESPONSE_STATUSES.includes(r.Status))
+          .map(entry => {
+            const out = {};
+            headers.forEach(h => { out[h] = entry[h] ?? ''; });
+            return out;
+          })
+          .sort((a,b) => (a.PlayerName || '').localeCompare((b.PlayerName || ''), 'de', { sensitivity:'base' }));
+        return buildCsv(headers, rows);
+      }
       function hasChanges() {
-        const current = buildCurrentCsv();
-        return normalizeLineEndings(current).trim() !== normalizeLineEndings(state.originalCsv).trim();
+        const currentAssignments = buildCurrentCsv();
+        const currentResponses = buildResponseCsv();
+        const assignmentsChanged = normalizeLineEndings(currentAssignments).trim() !== normalizeLineEndings(state.originalCsv).trim();
+        const responsesChanged = normalizeLineEndings(currentResponses).trim() !== normalizeLineEndings(state.originalResponseCsv).trim();
+        return assignmentsChanged || responsesChanged;
       }
       function setStatus(message, tone='info') {
         const toneClass = tone === 'ok' ? 'status-ok' : tone === 'warn' ? 'status-warn' : tone === 'error' ? 'status-error' : 'status-info';
@@ -653,6 +768,7 @@
         if (buildCount != null) {
           parts.push(`Pool laut Build: ${buildCount} Einträge`);
         }
+        parts.push(`Responses gesetzt: ${state.responses.length}`);
         const rebuildHint = 'Hinweis: Änderungen an event_signups_next.csv landen automatisch nach dem nächsten Roster-Build in latest.json.';
         const text = parts.length ? `${parts.join(' · ')} · ${rebuildHint}` : rebuildHint;
         if (elements.contextMeta) elements.contextMeta.textContent = text;
@@ -665,6 +781,7 @@
         if (state.eventSignupsMeta?.event_id) parts.push(`Event ${state.eventSignupsMeta.event_id}`);
         if (state.rosterMeta) parts.push(`Build: ${state.rosterMeta}`);
         parts.push(`Pool: ${state.assignments.length}`);
+        parts.push(`Responses: ${state.responses.length}`);
         const text = parts.length ? parts.join(' · ') : 'nächstes Event';
         if (elements.eventQuickMeta) elements.eventQuickMeta.textContent = text;
       }
@@ -759,6 +876,7 @@
         const set = new Set();
         state.alliancePool.forEach(n => set.add(n.display || n.canon || ''));
         state.rosterPlayers.forEach(p => set.add(p.name));
+        state.responses.forEach(r => set.add(r.PlayerName || ''));
         const names = Array.from(set).sort((a,b) => a.localeCompare(b, 'de', { sensitivity:'base' }));
         elements.playerOptions.innerHTML = '';
         names.forEach(name => {
@@ -782,12 +900,35 @@
         elements.assignmentCount.textContent = `${rows.length} Einträge`;
         elements.eventMeta.textContent = 'Alle Einträge beziehen sich auf das nächste Event (aktuelles Roster); Callup-Einträge sind blau markiert und nur zur Dokumentation.';
         elements.emptyState.style.display = rows.length ? 'none' : 'block';
+        const responseByCanon = new Map();
+        state.responses.forEach(r => {
+          const canon = canonicalNameJS(r.PlayerName || '');
+          if (canon) responseByCanon.set(canon, r);
+        });
         rows.forEach((row, idx) => {
           const tr = document.createElement('tr');
           const fromCallup = (row.Source || '') === 'callup-confirmed';
           if (fromCallup) tr.classList.add('from-callup');
           const playerTd = document.createElement('td');
-          playerTd.textContent = row.PlayerName || '–';
+          const playerName = row.PlayerName || '–';
+          playerTd.textContent = playerName;
+          const canon = canonicalNameJS(playerName);
+          const response = canon ? responseByCanon.get(canon) : null;
+          if (response) {
+            const badge = document.createElement('div');
+            badge.className = 'tags';
+            const tag = document.createElement('span');
+            tag.className = response.Status === 'decline' ? 'tag tag-decline' : 'tag tag-noresp';
+            tag.textContent = response.Status === 'decline' ? 'Absage' : 'Keine Rückmeldung';
+            badge.appendChild(tag);
+            if (response.Note) {
+              const note = document.createElement('span');
+              note.className = 'tag';
+              note.textContent = response.Note;
+              badge.appendChild(note);
+            }
+            playerTd.appendChild(badge);
+          }
           tr.appendChild(playerTd);
 
           const groupTd = document.createElement('td');
@@ -993,14 +1134,147 @@
         setStatus('Eintrag hinzugefügt/aktualisiert.', 'info');
       }
 
+      function findResponseIndexByCanon(canon) {
+        if (!canon) return -1;
+        return state.responses.findIndex(r => canonicalNameJS(r.PlayerName || '') === canon);
+      }
+
+      function renderResponses() {
+        if (!elements.responseBody) return;
+        const rows = [...state.responses].sort((a,b) => (a.PlayerName || '').localeCompare((b.PlayerName || ''), 'de', { sensitivity:'base' }));
+        elements.responseBody.innerHTML = '';
+        elements.responseEmptyState.style.display = rows.length ? 'none' : 'block';
+        if (elements.responseMeta) {
+          elements.responseMeta.textContent = `Gesetzt: ${rows.length} · Speichern schreibt event_responses_next.csv`;
+        }
+        rows.forEach((row, idx) => {
+          const tr = document.createElement('tr');
+
+          const playerTd = document.createElement('td');
+          playerTd.textContent = row.PlayerName || '–';
+          tr.appendChild(playerTd);
+
+          const statusTd = document.createElement('td');
+          const statusSel = document.createElement('select');
+          [['','Keine Antwort setzen'], ['decline','Absage'], ['no_response','Keine Rückmeldung']].forEach(([value, label]) => {
+            const opt = document.createElement('option');
+            opt.value = value; opt.textContent = label;
+            if ((row.Status || '') === value) opt.selected = true;
+            statusSel.appendChild(opt);
+          });
+          const badge = document.createElement('div');
+          const updateBadge = () => {
+            badge.className = 'tag ' + (row.Status === 'decline' ? 'tag-decline' : 'tag-noresp');
+            badge.textContent = formatResponseLabel(row.Status);
+          };
+          statusSel.addEventListener('change', () => {
+            const newStatus = normalizeResponseStatus(statusSel.value);
+            if (!newStatus) {
+              const canon = canonicalNameJS(row.PlayerName || '');
+              const idxExisting = findResponseIndexByCanon(canon);
+              if (idxExisting >= 0) state.responses.splice(idxExisting, 1);
+              renderResponses();
+              renderAssignments();
+              updateSaveButtonState();
+              return;
+            }
+            row.Status = newStatus;
+            updateBadge();
+            renderAssignments();
+            updateSaveButtonState();
+          });
+          updateBadge();
+          statusTd.appendChild(statusSel);
+          statusTd.appendChild(badge);
+          statusTd.style.display = 'flex';
+          statusTd.style.flexDirection = 'column';
+          statusTd.style.gap = '0.35rem';
+          tr.appendChild(statusTd);
+
+          const noteTd = document.createElement('td');
+          const noteInput = document.createElement('input');
+          noteInput.type = 'text';
+          noteInput.value = row.Note || '';
+          noteInput.placeholder = 'optional';
+          noteInput.addEventListener('input', () => { row.Note = noteInput.value; updateSaveButtonState(); renderAssignments(); });
+          noteTd.appendChild(noteInput);
+          tr.appendChild(noteTd);
+
+          const sourceTd = document.createElement('td');
+          const source = document.createElement('span');
+          source.className = 'tag';
+          source.textContent = formatSourceLabel(row.Source || 'manual');
+          sourceTd.appendChild(source);
+          tr.appendChild(sourceTd);
+
+          const actionTd = document.createElement('td');
+          const delBtn = document.createElement('button');
+          delBtn.textContent = 'Entfernen';
+          delBtn.addEventListener('click', () => {
+            const canon = canonicalNameJS(row.PlayerName || '');
+            const idxExisting = findResponseIndexByCanon(canon);
+            if (idxExisting >= 0) {
+              state.responses.splice(idxExisting, 1);
+              renderResponses();
+              renderAssignments();
+              updateSaveButtonState();
+            }
+          });
+          actionTd.appendChild(delBtn);
+          tr.appendChild(actionTd);
+
+          elements.responseBody.appendChild(tr);
+        });
+        updateQuickMeta();
+      }
+
+      function addResponse() {
+        const player = elements.responsePlayerInput.value.trim();
+        const status = normalizeResponseStatus(elements.responseStatusInput.value);
+        const note = elements.responseNoteInput.value || '';
+        if (!player) { setStatus('Bitte Spieler für Antwort wählen.', 'warn'); elements.responsePlayerInput.focus(); return; }
+
+        const canon = canonicalNameJS(player);
+        const idxExisting = findResponseIndexByCanon(canon);
+
+        if (!status) {
+          if (idxExisting >= 0) {
+            state.responses.splice(idxExisting, 1);
+            setStatus('Antwort entfernt.', 'info');
+          } else {
+            setStatus('Keine Antwort gesetzt.', 'info');
+          }
+          renderResponses();
+          renderAssignments();
+          updateSaveButtonState();
+          return;
+        }
+
+        if (idxExisting >= 0) {
+          state.responses[idxExisting] = { ...state.responses[idxExisting], PlayerName: player, Status: status, Note: note, Source: state.responses[idxExisting].Source || 'manual' };
+        } else {
+          state.responses.push({ PlayerName: player, Status: status, Source: 'manual', Note: note });
+        }
+
+        elements.responsePlayerInput.value = '';
+        elements.responseNoteInput.value = '';
+        elements.responseStatusInput.value = '';
+        setStatus('Antwort gespeichert.', 'info');
+        renderResponses();
+        renderAssignments();
+        updateSaveButtonState();
+      }
+
       async function reloadData() {
         updateBuildControls();
         setLoading(true);
         try {
           await loadAssignments();
+          await loadResponses();
           await loadRoster();
           populatePlayers();
           renderAssignments();
+          renderResponses();
           setStatus('Daten geladen.', 'ok');
         } catch (err) {
           console.error(err);
@@ -1019,8 +1293,11 @@
         if (!workerUrl) { setStatus('Worker-URL fehlt.', 'error'); return; }
         if (!adminKey) { setStatus('Admin-Key erforderlich.', 'error'); return; }
         const content = buildCurrentCsv();
+        const responsesContent = buildResponseCsv();
         setSaving(true);
-        setStatus('Speichere event_signups_next.csv…', 'info');
+        setStatus('Speichere event_signups_next.csv & event_responses_next.csv…', 'info');
+        let signupSaved = false;
+        let responsesSaved = false;
         try {
           await writeFile(workerUrl, adminKey, {
             path: 'data/event_signups_next.csv',
@@ -1028,12 +1305,24 @@
             branch,
             message: 'admin: update event_signups_next.csv via event assignments ui',
           });
+          signupSaved = true;
+          await writeFile(workerUrl, adminKey, {
+            path: 'data/event_responses_next.csv',
+            content: responsesContent,
+            branch,
+            message: 'admin: update event_responses_next.csv via event assignments ui',
+          });
+          responsesSaved = true;
           state.originalCsv = content;
+          state.originalResponseCsv = responsesContent;
           await refreshFileCommit(branch);
-          setStatus('Event-Zusagen gespeichert.', 'ok');
+          setStatus('Event-Zusagen & Antworten gespeichert.', 'ok');
         } catch (err) {
           console.error(err);
-          setStatus(`Speichern fehlgeschlagen: ${err.message}`, 'error');
+          if (signupSaved) state.originalCsv = content;
+          if (responsesSaved) state.originalResponseCsv = responsesContent;
+          const prefix = signupSaved && !responsesSaved ? 'Responses fehlgeschlagen. ' : '';
+          setStatus(`${prefix}Speichern fehlgeschlagen: ${err.message}`, 'error');
         } finally {
           setSaving(false);
           updateSaveButtonState();
@@ -1051,8 +1340,10 @@
         if (!confirmReset) return;
         const headers = state.headers.length ? state.headers : [...DEFAULT_HEADERS];
         const emptyCsv = buildCsv(headers, []);
+        const responseHeaders = state.responseHeaders.length ? state.responseHeaders : [...DEFAULT_RESPONSE_HEADERS];
+        const emptyResponsesCsv = buildCsv(responseHeaders, []);
         setSaving(true);
-        setStatus('Leere event_signups_next.csv…', 'info');
+        setStatus('Leere event_signups_next.csv & event_responses_next.csv…', 'info');
         try {
           await writeFile(workerUrl, adminKey, {
             path: 'data/event_signups_next.csv',
@@ -1060,11 +1351,20 @@
             branch,
             message: 'admin: reset event_signups_next.csv via event assignments ui',
           });
+          await writeFile(workerUrl, adminKey, {
+            path: 'data/event_responses_next.csv',
+            content: emptyResponsesCsv,
+            branch,
+            message: 'admin: reset event_responses_next.csv via event assignments ui',
+          });
           state.assignments = [];
+          state.responses = [];
           state.originalCsv = emptyCsv;
+          state.originalResponseCsv = emptyResponsesCsv;
           await refreshFileCommit(branch);
           renderAssignments();
-          setStatus('Pool geleert.', 'ok');
+          renderResponses();
+          setStatus('Pool & Responses geleert.', 'ok');
         } catch (err) {
           console.error(err);
           setStatus(`Reset fehlgeschlagen: ${err.message}`, 'error');
@@ -1114,9 +1414,13 @@
         elements.reloadBtn.addEventListener('click', reloadData);
         elements.saveBtn.addEventListener('click', saveChanges);
         elements.addBtn.addEventListener('click', addAssignment);
+        if (elements.addResponseBtn) elements.addResponseBtn.addEventListener('click', addResponse);
         if (elements.resetBtn) elements.resetBtn.addEventListener('click', resetPool);
         ['workerUrl','branch','adminKey'].forEach(key => elements[key].addEventListener('change', persistSettings));
         elements.playerInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); addAssignment(); } });
+        if (elements.responsePlayerInput) {
+          elements.responsePlayerInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); addResponse(); } });
+        }
       }
 
       restoreSettings();
