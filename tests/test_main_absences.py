@@ -207,7 +207,10 @@ def test_absences_export_and_filter(monkeypatch, tmp_path):
     debug_block = payload.get("absence_debug")
     assert debug_block["raw_count"] == 2
     assert debug_block["active_for_next_event"] == 1
-    assert {p.get("canonical") for p in debug_block.get("players", [])} == {"absentone"}
+    debug_players = debug_block.get("players", [])
+    assert {p.get("canonical") for p in debug_players} == {"absentone", "futureaway"}
+    assert {p.get("canonical") for p in debug_players if p.get("is_absent_next_event")}
+    assert {p.get("canonical") for p in debug_players if p.get("is_absent_next_event")} == {"absentone"}
 
 
 def test_absence_payload_ignores_former_members(monkeypatch, tmp_path):
@@ -361,7 +364,7 @@ def test_absence_conflict_with_hard_commitment(monkeypatch, tmp_path):
     assert captured["player_names"] == []
 
 
-def test_absence_debug_probe_and_roster_flag(monkeypatch, tmp_path):
+def test_absence_debug_entries_and_roster_flag(monkeypatch, tmp_path):
     data_dir = tmp_path / "data"
     data_dir.mkdir()
 
@@ -436,10 +439,10 @@ def test_absence_debug_probe_and_roster_flag(monkeypatch, tmp_path):
     assert "ilishelbymf" not in players_in_groups
 
     absence_debug = payload.get("absence_debug", {})
-    probe = absence_debug.get("probe_ilishelbymf", {})
-    assert probe.get("found_in_csv") is True
-    assert probe.get("active_for_next_event") is True
-    assert "2025-11-21" in str(probe.get("event_date"))
+    players_debug = absence_debug.get("players") or []
+    il_debug_entries = [p for p in players_debug if (p.get("canonical") == "ilishelbymf")]
+    assert il_debug_entries, "ilishelbymf should appear in absence_debug.players"
+    assert all(p.get("is_absent_next_event") for p in il_debug_entries)
 
     players = payload.get("players") or []
     il_entries = [p for p in players if (p.get("canon") == "ilishelbymf")]
