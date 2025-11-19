@@ -815,7 +815,9 @@ def main():
     invalid_forced_signups: List[Dict] = []
     capacities_remaining = {g: {"Start": STARTERS_PER_GROUP, "Ersatz": SUBS_PER_GROUP} for g in GROUPS}
 
-    hard_signups = event_signups_df[event_signups_df["Commitment"] == "hard"]
+    hard_commitment_mask = event_signups_df["Commitment"] == "hard"
+    # Commitment "hard" ist die einzige Quelle für Fixplätze – Source dient nur als Dokumentation.
+    hard_signups = event_signups_df[hard_commitment_mask]
     seen_forced: set[str] = set()
 
     def _choose_group(canon: str, signup_group: str, pref_group: Optional[str]) -> str:
@@ -1253,7 +1255,7 @@ def main():
     # vor dem Optimizer gesetzt werden (siehe forced_signups oben). Overlay
     # bleibt für alle anderen Signups erhalten.
     extra_signups_by_group = {g: [] for g in GROUPS}
-    hard_signup_total = int((event_signups_df["Commitment"] == "hard").sum())
+    hard_signup_total = int(hard_commitment_mask.sum())
     signups_meta = {
         "scope": "next_event",
         "source": str(Path(args.event_signups)),
@@ -1313,7 +1315,8 @@ def main():
             )
             signups_meta["applied_entries"] += 1
 
-    signups_meta["hard_commitments_applied"] = len(forced_signups)
+    forced_signup_total = len(forced_signups)
+    signups_meta["hard_commitments_applied"] = forced_signup_total
     signups_meta["hard_commitments_invalid"] = len(invalid_forced_signups)
     signups_meta["hard_commitments_overbooked"] = len(overbooked_forced_signups)
     signups_meta["extra_entries_total"] = int(sum(len(v) for v in extra_signups_by_group.values()))
@@ -1326,6 +1329,8 @@ def main():
         - signups_meta["hard_commitments_invalid"],
     )
     forced_in_roster = sum(1 for p in players_payload if p.get("has_forced_signup"))
+    signups_meta["forced_total"] = forced_signup_total
+    signups_meta["forced_in_roster"] = forced_in_roster
     signup_pool_stats = {
         "source": signups_meta["source"],
         "raw_rows": signups_meta["raw_rows"],
@@ -1340,6 +1345,8 @@ def main():
         "hard_commitments_overbooked": signups_meta["hard_commitments_overbooked"],
         "hard_commitments_missing_from_roster": hard_missing_from_roster,
         "in_roster_hard_commitments": forced_in_roster,
+        "forced_total": forced_signup_total,
+        "forced_in_roster": forced_in_roster,
         "extra_entries_total": signups_meta["extra_entries_total"],
         "extra_entries_by_group": signups_meta["extra_entries_by_group"],
     }
