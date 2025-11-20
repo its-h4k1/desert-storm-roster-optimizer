@@ -74,6 +74,9 @@ def build_deterministic_roster(
     *,
     forced_assignments: List[Dict[str, str]] | None = None,
     capacities_by_group_role: Dict[str, Dict[str, int]] | None = None,
+    min_attend_start: float | None = None,
+    min_attend_sub: float | None = None,
+    allow_unfilled: bool = False,
 ) -> pd.DataFrame:
     """
     Baut eine eindeutige Aufstellung ohne Doppler unter Berücksichtigung von
@@ -148,7 +151,9 @@ def build_deterministic_roster(
 
     for g in GROUPS:
         df[f"p_start_{g}"] = _ensure_prob("p_start", g).clip(0.0, 1.0)
-        df[f"p_sub_{g}"]   = _ensure_prob("p_sub", g).clip(0.0, 1.0)
+        df[f"p_sub_{g}"] = _ensure_prob("p_sub", g).clip(0.0, 1.0)
+        df[f"attend_start_{g}"] = _ensure_prob("attend_prob", g).clip(0.0, 1.0)
+        df[f"attend_sub_{g}"] = _ensure_prob("attend_prob", g).clip(0.0, 1.0)
 
     # Boosts nur in gewünschter Gruppe addieren (Standard 0.05 bei leerem Boost)
     for g in GROUPS:
@@ -157,10 +162,12 @@ def build_deterministic_roster(
         eff_boost = df["PrefBoost"].where(mask, 0.0)
         eff_boost = eff_boost.mask(mask & (eff_boost <= 0.0), 0.05)
 
-        base_start = df[f"p_start_{g}"] + eff_boost
-        base_sub = df[f"p_sub_{g}"] + eff_boost
-        df[f"score_{g}_start"] = (base_start - df["risk_penalty"]).clip(0.0, 1.0)
-        df[f"score_{g}_sub"]   = (base_sub   - df["risk_penalty"]).clip(0.0, 1.0)
+        base_start = df[f"attend_start_{g}"]
+        base_sub = df[f"attend_sub_{g}"]
+        boosted_start = (base_start + eff_boost).clip(0.0, 1.0)
+        boosted_sub = (base_sub + eff_boost).clip(0.0, 1.0)
+        df[f"score_{g}_start"] = (boosted_start - df["risk_penalty"]).clip(0.0, 1.0)
+        df[f"score_{g}_sub"] = (boosted_sub - df["risk_penalty"]).clip(0.0, 1.0)
 
     used: Set[str] = set()
     rows: List[Dict[str, str]] = []
@@ -247,6 +254,16 @@ def build_deterministic_roster(
             for idx, row in available_df.iterrows():
                 if local_remaining <= 0:
                     break
+                score_col = f"score_{group}_{'start' if role == 'Start' else 'sub'}"
+                min_attend = (
+                    float(min_attend_start)
+                    if role == "Start" and min_attend_start is not None
+                    else float(min_attend_sub)
+                    if role != "Start" and min_attend_sub is not None
+                    else None
+                )
+                if min_attend is not None and row.get(score_col, 0.0) < min_attend:
+                    continue
                 is_no_data = False
                 if guard_enabled and role == "Start":
                     ev_val = row.get("events_seen")
@@ -286,7 +303,7 @@ def build_deterministic_roster(
                     selected_frames.append(take)
                     selected_names.update(take["PlayerName"].tolist())
 
-        if remaining > 0:
+        if remaining > 0 and not allow_unfilled:
             # An dieser Stelle fehlen uns real Kandidaten (z. B. vorher gefiltert/inaktiv)
             raise RuntimeError(f"Not enough candidates to fill {group} {role} (missing {remaining}).")
 
@@ -312,13 +329,8 @@ def build_deterministic_roster(
 
     out = pd.DataFrame(rows, columns=["PlayerName", "Group", "Role"])
 
-    # Safety: harte Assertions (kein Doppler, exakt Zielanzahl inkl. forced Slots)
+    # Safety: harte Assertions (kein Doppler)
     assert not out.duplicated("PlayerName").any(), "Duplicate players in roster"
-    for g in GROUPS:
-        target_start = caps[g]["Start"] + forced_count[g]["Start"]
-        target_sub = caps[g]["Ersatz"] + forced_count[g]["Ersatz"]
-        assert len(out[(out["Group"] == g) & (out["Role"] == "Start")])  == target_start, f"Wrong starters in {g}"
-        assert len(out[(out["Group"] == g) & (out["Role"] == "Ersatz")]) == target_sub,   f"Wrong subs in {g}"
 
     return out
 

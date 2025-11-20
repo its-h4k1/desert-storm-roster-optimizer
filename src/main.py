@@ -530,6 +530,7 @@ def _write_outputs(out_dir: Path, roster_df: pd.DataFrame, json_payload: Dict):
         "Role",
         "NoShowOverall",
         "NoShowRolling",
+        "AttendProb",
         "risk_penalty",
     ]
     for latest_dir in latest_dirs:
@@ -972,6 +973,18 @@ def main():
     pool["p_start"] = pool["p_start"].fillna(p0).clip(0.0, 1.0)
     pool["p_sub"] = pool["p_sub"].fillna(p0).clip(0.0, 1.0)
 
+    base_show = (1.0 - pool["w_noshow_rate"]).where(pool["w_assignments_total"] > 0, 1.0 - prior_with_pad)
+    base_show = base_show.fillna(1.0 - prior_with_pad)
+    if cfg.EB_ENABLE:
+        base_show = (1.0 - pool["eb_p_hat"]).where(pd.notna(pool["eb_p_hat"]), base_show)
+    pool["attend_prob_raw"] = base_show.clip(0.0, 1.0)
+    pool["attend_prob"] = (pool["attend_prob_raw"] - pool["risk_penalty"]).clip(0.0, 1.0)
+
+    if noresp_canons:
+        nr_factor = min(max(float(cfg.NO_RESPONSE_MULTIPLIER), 0.0), 1.0)
+        nr_mask = pool["canon"].isin(noresp_canons)
+        pool.loc[nr_mask, "attend_prob"] = (pool.loc[nr_mask, "attend_prob"] * nr_factor).clip(0.0, 1.0)
+
     alias_suggestions = find_alias_suggestions(pool, events_df, alias_map)
     alias_out_path = Path("out") / "alias_suggestions.csv"
     if alias_suggestions:
@@ -1002,6 +1015,7 @@ def main():
     # Commitment "hard" ist die einzige Quelle für Fixplätze – Source dient nur als Dokumentation.
     seen_forced: set[str] = set()
     hard_commit_player_labels: List[str] = []
+    forced_count_snapshot = {g: {"Start": 0, "Ersatz": 0} for g in GROUPS}
 
     def _choose_group(canon: str, signup_group: str, pref_group: Optional[str]) -> str:
         # Explizite Wahl aus event_signups_next.csv hat Vorrang, auch wenn die Gruppe
@@ -1127,6 +1141,7 @@ def main():
             }
         )
         signup_file_entries.append(row_debug)
+        forced_count_snapshot[target_group][target_role] += 1
 
     if hard_commit_player_labels:
         label_preview = ", ".join(hard_commit_player_labels)
@@ -1150,12 +1165,40 @@ def main():
                 )
                 capacities_remaining[g][r] = 0  # Optimizer darf nicht weiter ins Minus laufen
 
+    target_caps_by_group_role = {
+        g: {r: capacities_remaining[g][r] + forced_count_snapshot[g][r] for r in ["Start", "Ersatz"]}
+        for g in GROUPS
+    }
+
+    if seen_forced:
+        hard_floor = min(max(float(cfg.HARD_COMMIT_FLOOR), 0.0), 1.0)
+        hard_mask = pool["canon"].isin(seen_forced)
+        pool.loc[hard_mask, "attend_prob"] = pool.loc[hard_mask, "attend_prob"].clip(lower=hard_floor)
+
+    next_event_status: Dict[str, str] = {}
+    signup_canons = set(
+        str(c)
+        for c in event_signups_df.get("canon", pd.Series(dtype=object)).dropna().tolist()
+    )
+    for canon_val in pool["canon"].dropna().astype(str).tolist():
+        if canon_val in signup_canons:
+            next_event_status[canon_val] = "signup"
+        else:
+            next_event_status.setdefault(canon_val, "open")
+    for canon_val in noresp_canons:
+        next_event_status[canon_val] = "no_response"
+    for canon_val in decline_canons:
+        next_event_status[canon_val] = "decline"
+    for canon_val in seen_forced:
+        next_event_status[canon_val] = "hard_commitment"
+
     # 6) Input für Builder (nur Rest-Slots)
     pool_for_builder = pool[~pool["canon"].isin(seen_forced)].copy()
     probs_for_builder = pd.DataFrame({
         "PlayerName": pool_for_builder["canon"],
-        "p_start": pool_for_builder["p_start"].fillna(p0),
-        "p_sub": pool_for_builder["p_sub"].fillna(p0),
+        "attend_prob": pool_for_builder["attend_prob"].fillna(1.0 - prior_with_pad),
+        "p_start": pool_for_builder["attend_prob"].fillna(1.0 - prior_with_pad),
+        "p_sub": pool_for_builder["attend_prob"].fillna(1.0 - prior_with_pad),
         "PrefGroup": pool_for_builder.get("PrefGroup", pd.Series([pd.NA]*len(pool_for_builder))),
         "PrefMode": pool_for_builder.get("PrefMode", pd.Series([pd.NA]*len(pool_for_builder))),
         "PrefBoost": pool_for_builder.get("PrefBoost", pd.Series([pd.NA]*len(pool_for_builder))),
@@ -1171,6 +1214,9 @@ def main():
             for f in forced_signups
         ],
         capacities_by_group_role=capacities_remaining,
+        min_attend_start=cfg.MIN_ATTEND_START,
+        min_attend_sub=cfg.MIN_ATTEND_SUB,
+        allow_unfilled=True,
     )  # PlayerName = canon
 
     # 8) Anzeige + Kennzahlen
@@ -1195,6 +1241,7 @@ def main():
     roster["events_seen"] = _map_from_pool("events_seen", 0).astype(int)
     roster["noshow_count"] = _map_from_pool("noshow_count", 0).astype(int)
     roster["risk_penalty"] = _map_from_pool("risk_penalty", 0.0).astype(float)
+    roster["AttendProb"] = _map_from_pool("attend_prob", 0.0).astype(float)
     roster["eb_p_hat"] = _map_from_pool("eb_p_hat")
     roster["eb_sigma"] = _map_from_pool("eb_sigma")
     roster["last_event"] = pd.to_datetime(
@@ -1224,6 +1271,7 @@ def main():
             "Role",
             "NoShowOverall",
             "NoShowRolling",
+            "AttendProb",
             "LastSeenDate",
             "LastNoShowDate",
             "events_seen",
@@ -1238,11 +1286,29 @@ def main():
     out_df["events_seen"] = out_df["events_seen"].fillna(0).astype(int)
     out_df["noshow_count"] = out_df["noshow_count"].fillna(0).astype(int)
     out_df["risk_penalty"] = pd.to_numeric(out_df["risk_penalty"], errors="coerce").fillna(0.0)
+    out_df["AttendProb"] = pd.to_numeric(out_df["AttendProb"], errors="coerce").fillna(0.0)
 
     role_order = {"Start": 0, "Ersatz": 1}
     group_order = {"A": 0, "B": 1}
     out_df["_ord"] = out_df["Group"].map(group_order) * 10 + out_df["Role"].map(role_order)
     out_df = out_df.sort_values(["_ord", "PlayerName"]).drop(columns=["_ord"]).reset_index(drop=True)
+
+    actual_counts = {g: {r: 0 for r in ["Start", "Ersatz"]} for g in GROUPS}
+    expected_attendance = {g: {"starters": 0.0, "subs": 0.0, "total": 0.0} for g in GROUPS}
+    for g in GROUPS:
+        for r in ["Start", "Ersatz"]:
+            mask = (roster["Group"] == g) & (roster["Role"] == r)
+            actual_counts[g][r] = int(mask.sum())
+            expected_attendance[g]["starters" if r == "Start" else "subs"] = float(roster.loc[mask, "AttendProb"].sum())
+        expected_attendance[g]["total"] = expected_attendance[g]["starters"] + expected_attendance[g]["subs"]
+
+    missing_slots = {
+        g: {
+            r: max(target_caps_by_group_role.get(g, {}).get(r, 0) - actual_counts[g][r], 0)
+            for r in ["Start", "Ersatz"]
+        }
+        for g in GROUPS
+    }
 
     def _by(grp: str, role: str) -> List[str]:
         return out_df[(out_df["Group"] == grp) & (out_df["Role"] == role)]["PlayerName"].tolist()
@@ -1382,6 +1448,7 @@ def main():
             "role": row.Role,
             "noshow_overall": _float_default(row.NoShowOverall, 0.0),
             "noshow_rolling": _float_default(row.NoShowRolling, 0.0),
+            "attend_prob": _float_default(row.AttendProb, 0.0),
             "last_seen": row.LastSeenDate,
             "last_noshow_date": row.LastNoShowDate or None,
             "events_seen": _int_default(row.events_seen, 0),
@@ -1427,6 +1494,7 @@ def main():
                 "note": resp_meta.get("note", ""),
             }
             entry["has_event_response"] = True
+        entry["next_event_status"] = next_event_status.get(str(row.Canonical), "open")
         if cfg.EB_ENABLE:
             entry["eb"] = {
                 "p0": float(p0),
@@ -1471,6 +1539,7 @@ def main():
                     "absence_scope": meta.get("scope", ""),
                     "absence_from": meta.get("from", ""),
                     "absence_to": meta.get("to", ""),
+                    "next_event_status": next_event_status.get(str(canon), "absent"),
                 }
             )
         players_by_canon = {p["canon"]: p for p in players_payload}
@@ -1674,6 +1743,34 @@ def main():
         "config_source": callup_config_meta,
     }
 
+    high_reliability_threshold = float(cfg.MIN_ATTEND_START)
+    high_reliability_pool = int((pool["attend_prob"] >= high_reliability_threshold).sum())
+    capacity_total = STARTERS_PER_GROUP + SUBS_PER_GROUP
+    if high_reliability_pool < capacity_total:
+        attendance_recommendation = {
+            "code": "a_only",
+            "reason": "Zu wenige zuverlässige Spieler für zwei Teams",
+        }
+    elif high_reliability_pool >= capacity_total * 1.8:
+        attendance_recommendation = {
+            "code": "balance",
+            "reason": "Genug zuverlässige Spieler für A und B",
+        }
+    else:
+        attendance_recommendation = {
+            "code": "focus_a",
+            "reason": "A auffüllen, B nur wenn zusätzliche sichere Spieler auftauchen",
+        }
+
+    attendance_summary = {
+        "schema": 1,
+        "expected_by_team": expected_attendance,
+        "missing_slots": missing_slots,
+        "high_reliability_pool": high_reliability_pool,
+        "recommendation": attendance_recommendation,
+        "pool_total_expected": float(pool["attend_prob"].sum()),
+    }
+
     json_payload = {
         "generated_at": datetime.now(TZ).isoformat(),
         "schema": schema_block,
@@ -1702,6 +1799,7 @@ def main():
         "absence_conflicts": absence_conflicts,
         "event_responses": event_responses_payload,
         "event_response_conflicts": event_response_conflicts,
+        "attendance": attendance_summary,
     }
 
     _write_outputs(out_dir, out_df, json_payload)
