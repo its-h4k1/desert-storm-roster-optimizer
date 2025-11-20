@@ -33,6 +33,31 @@ def test_builder_leaves_slots_empty_with_low_attendance(monkeypatch):
     assert len(players) == 2
 
 
+def test_builder_uses_group_specific_thresholds():
+    df = pd.DataFrame(
+        {
+            "PlayerName": ["a_high", "a_low", "b_low"],
+            "attend_prob": [0.8, 0.58, 0.35],
+            "PrefGroup": ["A", "A", "B"],
+            "PrefMode": ["hard", "soft", "soft"],
+            "PrefBoost": [0.0, 0.0, 0.0],
+            "risk_penalty": [0.0, 0.0, 0.0],
+        }
+    )
+
+    roster = utils_mod.build_deterministic_roster(
+        df,
+        capacities_by_group_role={"A": {"Start": 1, "Ersatz": 0}, "B": {"Start": 1, "Ersatz": 0}},
+        min_attend_start={"A": 0.7, "B": 0.3},
+        min_attend_sub=0.0,
+        allow_unfilled=True,
+    )
+
+    players_by_group = roster.groupby("Group")["PlayerName"].apply(list).to_dict()
+    assert players_by_group.get("A", []) == ["a_high"]
+    assert players_by_group.get("B", []) == ["b_low"]
+
+
 def test_attendance_prob_and_status_flow(monkeypatch, tmp_path):
     data_dir = tmp_path / "data"
     data_dir.mkdir()

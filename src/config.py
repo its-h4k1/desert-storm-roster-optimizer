@@ -8,7 +8,6 @@ from pathlib import Path
 from typing import Any, Dict
 
 
-
 @dataclass(frozen=True)
 class Config:
     EB_ENABLE: bool
@@ -18,10 +17,6 @@ class Config:
     WINSORIZE: bool
     PRIOR_FALLBACK: float
     PRIOR_PAD: float
-    MIN_ATTEND_START: float
-    MIN_ATTEND_SUB: float
-    HARD_COMMIT_FLOOR: float
-    NO_RESPONSE_MULTIPLIER: float
 
 
 DEFAULTS: Dict[str, Any] = {
@@ -32,10 +27,6 @@ DEFAULTS: Dict[str, Any] = {
     "WINSORIZE": True,
     "PRIOR_FALLBACK": 0.18,
     "PRIOR_PAD": 0.02,
-    "MIN_ATTEND_START": 0.55,
-    "MIN_ATTEND_SUB": 0.45,
-    "HARD_COMMIT_FLOOR": 0.92,
-    "NO_RESPONSE_MULTIPLIER": 0.65,
 }
 
 _CONFIG_CACHE: Config | None = None
@@ -127,10 +118,6 @@ def get_config() -> Config:
         WINSORIZE=bool(values["WINSORIZE"]),
         PRIOR_FALLBACK=float(values["PRIOR_FALLBACK"]),
         PRIOR_PAD=float(values["PRIOR_PAD"]),
-        MIN_ATTEND_START=float(values["MIN_ATTEND_START"]),
-        MIN_ATTEND_SUB=float(values["MIN_ATTEND_SUB"]),
-        HARD_COMMIT_FLOOR=float(values["HARD_COMMIT_FLOOR"]),
-        NO_RESPONSE_MULTIPLIER=float(values["NO_RESPONSE_MULTIPLIER"]),
     )
 
     _CONFIG_CACHE = cfg
