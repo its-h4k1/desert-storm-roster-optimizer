@@ -14,7 +14,7 @@ import re
 from datetime import datetime, timezone
 import unicodedata
 import pandas as pd
-from typing import List, Dict, Set
+from typing import List, Dict, Set, Mapping
 
 from src.config import get_config
 
@@ -74,8 +74,8 @@ def build_deterministic_roster(
     *,
     forced_assignments: List[Dict[str, str]] | None = None,
     capacities_by_group_role: Dict[str, Dict[str, int]] | None = None,
-    min_attend_start: float | None = None,
-    min_attend_sub: float | None = None,
+    min_attend_start: float | Mapping[str, float] | None = None,
+    min_attend_sub: float | Mapping[str, float] | None = None,
     allow_unfilled: bool = False,
 ) -> pd.DataFrame:
     """
@@ -225,6 +225,18 @@ def build_deterministic_roster(
         pref_group = candidates["PrefGroup"].astype(str).str.upper()
         pref_mode  = candidates["PrefMode"].astype(str).str.lower()
 
+        def _resolve_min_attend(raw_threshold):
+            if raw_threshold is None:
+                return None
+            if isinstance(raw_threshold, Mapping):
+                raw_val = raw_threshold.get(group)
+            else:
+                raw_val = raw_threshold
+            try:
+                return float(raw_val)
+            except (TypeError, ValueError):
+                return None
+
         recognized_pref = pref_group.isin(GROUPS)
         cat1 = (pref_group == group) & (pref_mode == "hard")  # Muss nehmen, wenn vorhanden
         cat2 = (pref_group == group) & (pref_mode == "soft")  # Bevorzugt
@@ -255,12 +267,8 @@ def build_deterministic_roster(
                 if local_remaining <= 0:
                     break
                 score_col = f"score_{group}_{'start' if role == 'Start' else 'sub'}"
-                min_attend = (
-                    float(min_attend_start)
-                    if role == "Start" and min_attend_start is not None
-                    else float(min_attend_sub)
-                    if role != "Start" and min_attend_sub is not None
-                    else None
+                min_attend = _resolve_min_attend(
+                    min_attend_start if role == "Start" else min_attend_sub
                 )
                 if min_attend is not None and row.get(score_col, 0.0) < min_attend:
                     continue

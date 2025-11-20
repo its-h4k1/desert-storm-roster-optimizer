@@ -21,6 +21,7 @@ from typing import List, Dict, Optional
 import pandas as pd
 
 from src.config import get_config
+from src.attendance_config import load_attendance_config
 from src.callup_config import load_callup_config
 from src.utils import (
     canonical_name,
@@ -579,6 +580,7 @@ def main():
     args = ap.parse_args()
 
     cfg = get_config()
+    attendance_config, attendance_config_meta = load_attendance_config()
     callup_config, callup_config_meta = load_callup_config()
     out_dir = Path(args.out)
 
@@ -981,7 +983,9 @@ def main():
     pool["attend_prob"] = (pool["attend_prob_raw"] - pool["risk_penalty"]).clip(0.0, 1.0)
 
     if noresp_canons:
-        nr_factor = min(max(float(cfg.NO_RESPONSE_MULTIPLIER), 0.0), 1.0)
+        nr_factor = min(
+            max(float(attendance_config.no_response_multiplier), 0.0), 1.0
+        )
         nr_mask = pool["canon"].isin(noresp_canons)
         pool.loc[nr_mask, "attend_prob"] = (pool.loc[nr_mask, "attend_prob"] * nr_factor).clip(0.0, 1.0)
 
@@ -1171,7 +1175,7 @@ def main():
     }
 
     if seen_forced:
-        hard_floor = min(max(float(cfg.HARD_COMMIT_FLOOR), 0.0), 1.0)
+        hard_floor = min(max(float(attendance_config.hard_commit_floor), 0.0), 1.0)
         hard_mask = pool["canon"].isin(seen_forced)
         pool.loc[hard_mask, "attend_prob"] = pool.loc[hard_mask, "attend_prob"].clip(lower=hard_floor)
 
@@ -1194,6 +1198,8 @@ def main():
 
     # 6) Input für Builder (nur Rest-Slots)
     pool_for_builder = pool[~pool["canon"].isin(seen_forced)].copy()
+    min_start_thresholds = attendance_config.min_start_thresholds()
+    min_bench_thresholds = attendance_config.min_bench_thresholds()
     probs_for_builder = pd.DataFrame({
         "PlayerName": pool_for_builder["canon"],
         "attend_prob": pool_for_builder["attend_prob"].fillna(1.0 - prior_with_pad),
@@ -1214,8 +1220,8 @@ def main():
             for f in forced_signups
         ],
         capacities_by_group_role=capacities_remaining,
-        min_attend_start=cfg.MIN_ATTEND_START,
-        min_attend_sub=cfg.MIN_ATTEND_SUB,
+        min_attend_start=min_start_thresholds,
+        min_attend_sub=min_bench_thresholds,
         allow_unfilled=True,
     )  # PlayerName = canon
 
@@ -1743,7 +1749,7 @@ def main():
         "config_source": callup_config_meta,
     }
 
-    high_reliability_threshold = float(cfg.MIN_ATTEND_START)
+    high_reliability_threshold = float(attendance_config.min_start_A)
     high_reliability_pool = int((pool["attend_prob"] >= high_reliability_threshold).sum())
     capacity_total = STARTERS_PER_GROUP + SUBS_PER_GROUP
     if high_reliability_pool < capacity_total:
@@ -1751,7 +1757,9 @@ def main():
             "code": "a_only",
             "reason": "Zu wenige zuverlässige Spieler für zwei Teams",
         }
-    elif high_reliability_pool >= capacity_total * 1.8:
+    elif high_reliability_pool >= capacity_total * float(
+        attendance_config.high_reliability_balance_ratio
+    ):
         attendance_recommendation = {
             "code": "balance",
             "reason": "Genug zuverlässige Spieler für A und B",
@@ -1762,6 +1770,21 @@ def main():
             "reason": "A auffüllen, B nur wenn zusätzliche sichere Spieler auftauchen",
         }
 
+    attendance_targets = attendance_config.target_expected()
+    attendance_target_status = {}
+    for g in GROUPS:
+        bounds = attendance_targets.get(g, {}) or {}
+        expected_total = expected_attendance.get(g, {}).get("total", 0.0)
+        if not bounds:
+            attendance_target_status[g] = "unknown"
+            continue
+        if expected_total < bounds.get("low", expected_total):
+            attendance_target_status[g] = "below_target"
+        elif expected_total > bounds.get("high", expected_total):
+            attendance_target_status[g] = "above_target"
+        else:
+            attendance_target_status[g] = "within_target"
+
     attendance_summary = {
         "schema": 1,
         "expected_by_team": expected_attendance,
@@ -1769,6 +1792,10 @@ def main():
         "high_reliability_pool": high_reliability_pool,
         "recommendation": attendance_recommendation,
         "pool_total_expected": float(pool["attend_prob"].sum()),
+        "targets": attendance_targets,
+        "target_status": attendance_target_status,
+        "config_snapshot": attendance_config.to_snapshot(),
+        "config_source": attendance_config_meta,
     }
 
     json_payload = {
