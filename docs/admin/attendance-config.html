@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex, nofollow">
+  <title>Attendance-Konfiguration</title>
+  <link rel="stylesheet" href="admin.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+</head>
+<body>
+  <div class="admin-shell">
+    <aside class="admin-sidebar">
+      <div class="admin-sidebar-header">
+        <div class="admin-logo">ELT Admin</div>
+        <button class="sidebar-close" aria-label="Navigation schließen">✕</button>
+      </div>
+      <nav class="admin-nav">
+        <a href="index.html">CSV &amp; Datei-Tools</a>
+        <a href="events.html">Events erfassen</a>
+        <a href="players.html">Spieler &amp; Aliase</a>
+        <a href="absences.html">Absenzen</a>
+        <a href="group-preferences.html">Gruppenpräferenzen</a>
+        <a href="event-assignments.html">Event-Zusagen</a>
+        <a href="attendance-config.html" class="active">Attendance-Config</a>
+        <a href="noshow-dashboard.html">No-Show Analyse</a>
+        <a href="callup-assistant.html">Callup-Assistent</a>
+      </nav>
+    </aside>
+
+    <div class="admin-main">
+      <header class="admin-header">
+        <button class="sidebar-toggle" aria-label="Navigation öffnen">☰</button>
+        <div class="page-title">
+          <p>Attendance</p>
+          <h1>Konfiguration &amp; Roster-Rebuild</h1>
+        </div>
+        <div class="admin-header-actions">
+          <a class="btn ghost" href="../index.html">Zur Roster-Ansicht</a>
+        </div>
+      </header>
+
+      <main class="admin-content">
+        <section class="admin-section page-wrapper">
+          <div class="page-inner">
+            <header class="page-header">
+              <div style="flex:1;min-width:260px;">
+                <h2>Attendance-Konfiguration pflegen</h2>
+                <p style="margin:0;color:#6b7280;font-size:0.95rem;">
+                  Werte aus <code>out/latest.json</code> oder <code>data/attendance_config.yml</code> laden,
+                  anpassen und direkt über den Worker committen. Anschließend wird der Roster-Build erneut angestoßen.
+                </p>
+              </div>
+              <div class="settings" style="align-items:flex-end;">
+                <label>Worker URL
+                  <input id="workerUrl" type="text" value="https://ds-commit.hak1.workers.dev/attendance-config" spellcheck="false">
+                </label>
+                <label>Branch
+                  <input id="branchInput" type="text" value="main" spellcheck="false">
+                </label>
+                <label>Admin-Key
+                  <input id="adminKey" type="password" placeholder="r4-admin" autocomplete="off">
+                </label>
+                <button id="reloadBtn" class="ghost">Neu laden</button>
+                <button id="saveBtn" class="secondary">Speichern &amp; Roster neu bauen</button>
+                <div id="statusPill" class="pill">Bereit</div>
+              </div>
+            </header>
+
+            <main class="page-main">
+              <section class="panel">
+                <div style="display:flex;gap:0.75rem;align-items:center;flex-wrap:wrap;">
+                  <h2 style="margin:0;flex:1;">Parameter</h2>
+                  <span class="pill" id="sourcePill">–</span>
+                </div>
+                <div class="card-grid" style="grid-template-columns:repeat(auto-fit,minmax(260px,1fr));">
+                  <div class="card">
+                    <div class="card-title">Starter-Schwellen</div>
+                    <label>min_start_A
+                      <input type="range" min="0.3" max="0.95" step="0.01" id="minStartA">
+                      <div class="hint">Minimaler Attendance-Score für Starter in Team A: <strong id="minStartALabel">–</strong></div>
+                    </label>
+                    <label>min_start_B
+                      <input type="range" min="0.3" max="0.95" step="0.01" id="minStartB">
+                      <div class="hint">Minimaler Attendance-Score für Starter in Team B: <strong id="minStartBLabel">–</strong></div>
+                    </label>
+                  </div>
+
+                  <div class="card">
+                    <div class="card-title">Bank-Schwellen</div>
+                    <label>min_bench_A
+                      <input type="range" min="0.2" max="0.9" step="0.01" id="minBenchA">
+                      <div class="hint">Minimaler Score für Ersatzbank Team A: <strong id="minBenchALabel">–</strong></div>
+                    </label>
+                    <label>min_bench_B
+                      <input type="range" min="0.2" max="0.9" step="0.01" id="minBenchB">
+                      <div class="hint">Minimaler Score für Ersatzbank Team B: <strong id="minBenchBLabel">–</strong></div>
+                    </label>
+                  </div>
+
+                  <div class="card">
+                    <div class="card-title">Erwartete Anwesenheit</div>
+                    <div class="two">
+                      <label>Target A Low
+                        <input type="number" id="targetALow" min="10" max="40" step="0.5">
+                      </label>
+                      <label>Target A High
+                        <input type="number" id="targetAHigh" min="10" max="40" step="0.5">
+                      </label>
+                    </div>
+                    <div class="two">
+                      <label>Target B Low
+                        <input type="number" id="targetBLow" min="10" max="40" step="0.5">
+                      </label>
+                      <label>Target B High
+                        <input type="number" id="targetBHigh" min="10" max="40" step="0.5">
+                      </label>
+                    </div>
+                    <div class="hint">Zielkorridor (Summe Attendance pro Team), z. B. 24–28.</div>
+                  </div>
+
+                  <div class="card">
+                    <div class="card-title">Commit/No-Response &amp; Balance</div>
+                    <label>hard_commit_floor
+                      <input type="range" min="0.5" max="1" step="0.01" id="hardCommitFloor">
+                      <div class="hint">Min-Score für harte Zusagen: <strong id="hardCommitLabel">–</strong></div>
+                    </label>
+                    <label>no_response_multiplier
+                      <input type="range" min="0.3" max="1" step="0.01" id="noResponseMultiplier">
+                      <div class="hint">Faktor für keine Antwort: <strong id="noResponseLabel">–</strong></div>
+                    </label>
+                    <label>high_reliability_balance_ratio
+                      <input type="number" id="reliabilityRatio" min="0.5" max="3" step="0.05">
+                      <div class="hint">Schwelle für A/B-Empfehlung (Pool vs. Kapazität).</div>
+                    </label>
+                  </div>
+                </div>
+              </section>
+
+              <section class="panel">
+                <div style="display:flex;align-items:center;gap:0.75rem;flex-wrap:wrap;">
+                  <h2 style="margin:0;flex:1;">Build-Status</h2>
+                  <span class="pill" id="buildPill">–</span>
+                </div>
+                <div class="row" style="align-items:flex-start;gap:1.5rem;flex-wrap:wrap;">
+                  <div style="flex:1;min-width:260px;">
+                    <div class="card muted">
+                      <div class="card-title">Letzter Snapshot</div>
+                      <div id="snapshotMeta" class="hint">–</div>
+                      <pre id="snapshotViewer" style="background:var(--bg-alt);padding:0.75rem;border-radius:0.75rem;max-height:320px;overflow:auto;"></pre>
+                    </div>
+                  </div>
+                  <div style="flex:1;min-width:260px;">
+                    <div class="card muted">
+                      <div class="card-title">Status / Log</div>
+                      <div id="statusLog" class="hint" style="white-space:pre-line;min-height:140px;">Bereit.</div>
+                    </div>
+                  </div>
+                </div>
+              </section>
+            </main>
+          </div>
+        </section>
+      </main>
+    </div>
+  </div>
+  <div class="admin-overlay"></div>
+
+  <script src="../shared.js"></script>
+  <script src="admin.js"></script>
+  <script src="attendance-config.js"></script>
+</body>
+</html>

@@ -36,6 +36,7 @@
 | `docs/admin/index.html` | Shell-Einstieg, Tab-Tools für Allianz-, Alias-, Event- und Abwesenheits-Dateien. Dient als Fallback, falls spezialisierte Admin-UIs nicht genügen. | Liest/Schreibt direkt `data/alliance.csv`, `data/aliases.csv`, `data/absences.csv` und Event-CSVs via Worker-API.
 | `docs/admin/events.html` | Tabellenbasiertes Erfassen/Validieren von Events, inkl. Alias-Resolver, Auto-Vervollständigung und Commit-Flow. | Liest `data/alliance.csv`, `data/aliases.csv` (lokal oder Raw-URLs) und speichert `data/<EventID>.csv`.
 | `docs/admin/players.html` | Pflege von Spielerstatus, Aliases und Abwesenheiten mit Detailpanelen und Modal-Editoren. | Verwaltet `data/alliance.csv`, `data/aliases.csv`, `data/absences.csv`.
+| `docs/admin/attendance-config.html` | Pflege der Attendance-Schwellen für Starter/Bank, Zielerwartungen und Commit/No-Response. | Liest `out/latest.json` oder `data/attendance_config.yml`, schreibt via Worker und stößt einen neuen Roster-Build an. |
 | `docs/admin/noshow-dashboard.html` | Analytisches Dashboard mit Filtern, Histogrammen und Rolling-vs-Overall KPIs. | Lädt `out/latest.json` (aktuellster Build).
 | `docs/admin/callup-assistant.html` | Empfiehlt Callups für den aktuellen Roster und trackt Rückmeldungen/Erinnerungen. | Liest `out/latest.json`, `data/alliance.csv`, `data/absences.csv`, `data/callups.csv`; speichert `data/callups.csv` via Worker.|
 
