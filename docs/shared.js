@@ -147,5 +147,7 @@
     buildLatestJsonUrl,
     triggerRosterBuild,
     RosterBuildTriggerError,
+    DEFAULT_WORKER_BASE,
+    DEFAULT_DISPATCH_URL,
   };
 })(typeof window !== "undefined" ? window : globalThis);
