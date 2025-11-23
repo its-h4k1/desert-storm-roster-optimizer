@@ -1961,6 +1961,59 @@
         return;
       }
 
+      const schema = Number(attendance.schema);
+      const fmtNum = (val, digits = 1) => {
+        const num = Number(val);
+        return Number.isFinite(num) ? num.toFixed(digits) : "–";
+      };
+      const fmtInt = (val) => {
+        const num = Number(val);
+        return Number.isFinite(num) ? num.toFixed(0) : "0";
+      };
+
+      if (Number.isFinite(schema) && schema >= 2) {
+        const threshold = Number(attendance.threshold);
+        const teams = attendance.teams || {};
+        const thresholdLabel = Number.isFinite(threshold)
+          ? `Schwelle: ≥${(threshold * 100).toFixed(0)}% AttendProb`
+          : "Schwelle: –";
+
+        const blocks = Object.entries(teams).map(([team, meta]) => {
+          const starters = meta?.starters || {};
+          const bench = meta?.bench || {};
+          const missing = meta?.missing_slots || {};
+          const expected = meta?.expected_attendance || {};
+          const riskText = meta?.risk_text || "Risiko gering";
+          const starterLine = `Starter: ${fmtInt(starters.total)} (≥ Schwelle: ${fmtInt(starters.at_threshold)}, unter: ${fmtInt(starters.below_threshold)})`;
+          const benchLine = `Ersatz: ${fmtInt(bench.total)} (≥ Schwelle: ${fmtInt(bench.at_threshold)}, unter: ${fmtInt(bench.below_threshold)})`;
+          const expectedLine = `Erwartete Anwesenheit Starter: ${fmtNum(expected.starters)}`;
+          const missingLine = (missing.Start || missing.Ersatz)
+            ? `Bewusst frei: Start ${fmtInt(missing.Start || 0)} · Ersatz ${fmtInt(missing.Ersatz || 0)}`
+            : '';
+          return `<div style="margin:0 0 10px;">
+            <strong>Team ${escapeHtml(team)}</strong><br />
+            <span class="muted">${escapeHtml(starterLine)}</span><br />
+            <span class="muted">${escapeHtml(benchLine)}</span><br />
+            ${escapeHtml(expectedLine)}<br />
+            ${missingLine ? `<span class="muted">${escapeHtml(missingLine)}</span><br />` : ''}
+            <span class="muted">${escapeHtml(riskText)}</span>
+          </div>`;
+        }).join('');
+
+        const recommendationText = (attendance.recommendation?.text || "").toString();
+        const block = [
+          `<h3 style="margin:0 0 6px">Erwartete Anwesenheit</h3>`,
+          `<p class="muted" style="margin:0 0 4px">${escapeHtml(thresholdLabel)}</p>`,
+          `<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:8px;">${blocks}</div>`,
+        ];
+          if (recommendationText) {
+            block.push(`<p style="margin:4px 0 0;"><strong>${escapeHtml(recommendationText)}</strong></p>`);
+          }
+        attendanceSummaryBox.innerHTML = block.join("");
+        attendanceSummaryBox.style.display = "block";
+        return;
+      }
+
       const expected = attendance.expected_by_team || {};
       const rec = attendance.recommendation || {};
       const missing = attendance.missing_slots || {};
@@ -1968,11 +2021,6 @@
       const targetStatus = attendance.target_status || {};
       const callupNeeds = state.callupSuggestions?.needs || {};
       const callupTeams = state.callupSuggestions?.teams || {};
-
-      const fmtNum = (val, digits = 1) => {
-        const num = Number(val);
-        return Number.isFinite(num) ? num.toFixed(digits) : "–";
-      };
 
       const statusLabel = (status) => {
         switch ((status || '').toLowerCase()) {

@@ -583,6 +583,7 @@ def main():
     cfg = get_config()
     attendance_config, attendance_config_meta = load_attendance_config()
     callup_config, callup_config_meta = load_callup_config()
+    callup_min_attend_prob = min(max(float(callup_config.callup_min_attend_prob), 0.0), 1.0)
     out_dir = Path(args.out)
 
     # 1) Daten laden
@@ -1199,8 +1200,12 @@ def main():
 
     # 6) Input für Builder (nur Rest-Slots)
     pool_for_builder = pool[~pool["canon"].isin(seen_forced)].copy()
-    min_start_thresholds = attendance_config.min_start_thresholds()
-    min_bench_thresholds = attendance_config.min_bench_thresholds()
+    # Team-Logik:
+    #  - Team A Starter: immer voll besetzen (kein Attend-Filter)
+    #  - Team B Starter: nur Spieler über der globalen Attend-Schwelle
+    #  - Bänke: bevorzugt Spieler über der Schwelle, Rest darf leer bleiben
+    min_start_thresholds = {"A": None, "B": callup_min_attend_prob}
+    min_bench_thresholds = {g: callup_min_attend_prob for g in GROUPS}
     probs_for_builder = pd.DataFrame({
         "PlayerName": pool_for_builder["canon"],
         "attend_prob": pool_for_builder["attend_prob"].fillna(1.0 - prior_with_pad),
@@ -1768,27 +1773,6 @@ def main():
         "config_source": callup_config_meta,
     }
 
-    high_reliability_threshold = float(attendance_config.min_start_A)
-    high_reliability_pool = int((pool["attend_prob"] >= high_reliability_threshold).sum())
-    capacity_total = STARTERS_PER_GROUP + SUBS_PER_GROUP
-    if high_reliability_pool < capacity_total:
-        attendance_recommendation = {
-            "code": "a_only",
-            "reason": "Zu wenige zuverlässige Spieler für zwei Teams",
-        }
-    elif high_reliability_pool >= capacity_total * float(
-        attendance_config.high_reliability_balance_ratio
-    ):
-        attendance_recommendation = {
-            "code": "balance",
-            "reason": "Genug zuverlässige Spieler für A und B",
-        }
-    else:
-        attendance_recommendation = {
-            "code": "focus_a",
-            "reason": "A auffüllen, B nur wenn zusätzliche sichere Spieler auftauchen",
-        }
-
     attendance_targets = attendance_config.target_expected()
     attendance_target_status = {}
     for g in GROUPS:
@@ -1804,21 +1788,91 @@ def main():
         else:
             attendance_target_status[g] = "within_target"
 
+    reliable_pool = int((pool["attend_prob"] >= callup_min_attend_prob).sum())
+    team_overview: Dict[str, Dict[str, object]] = {}
+    summary_lines: List[str] = []
+    for g in GROUPS:
+        starters_mask = (roster["Group"] == g) & (roster["Role"] == "Start")
+        bench_mask = (roster["Group"] == g) & (roster["Role"] == "Ersatz")
+        starters_total = int(starters_mask.sum())
+        bench_total = int(bench_mask.sum())
+        starters_at_threshold = int(
+            (roster.loc[starters_mask, "AttendProb"] >= callup_min_attend_prob).sum()
+        )
+        bench_at_threshold = int(
+            (roster.loc[bench_mask, "AttendProb"] >= callup_min_attend_prob).sum()
+        )
+        starters_below = max(starters_total - starters_at_threshold, 0)
+        bench_below = max(bench_total - bench_at_threshold, 0)
+        missing = missing_slots.get(g, {"Start": 0, "Ersatz": 0}) or {"Start": 0, "Ersatz": 0}
+        expected_meta = expected_attendance.get(g, {}) or {}
+
+        risk_reasons: List[str] = []
+        risk_level = "low"
+        if missing.get("Start", 0) > 0:
+            risk_reasons.append(
+                f"{missing.get('Start', 0)} Starter-Slots bewusst frei – keine weiteren Spieler ≥ {callup_min_attend_prob:.0%}"
+            )
+            risk_level = "high"
+        if starters_below > 0:
+            risk_reasons.append(
+                f"{starters_below} Starter unter Schwelle {callup_min_attend_prob:.0%} (Team A wird immer aufgefüllt)"
+            )
+            risk_level = "moderate" if risk_level == "low" else risk_level
+
+        parts = [
+            f"Starter: {starters_total} (≥ Schwelle: {starters_at_threshold}, unter Schwelle: {starters_below})",
+            f"Erwartete Anwesenheit Starter: {expected_meta.get('starters', 0.0):.1f}",
+        ]
+        if bench_total > 0:
+            parts.append(
+                f"Ersatz: {bench_total} (≥ Schwelle: {bench_at_threshold}, unter Schwelle: {bench_below})"
+            )
+        if missing.get("Ersatz", 0) > 0:
+            parts.append(f"Ersatz-Slots frei: {missing.get('Ersatz', 0)}")
+        if risk_reasons:
+            parts.append("Risiken: " + "; ".join(risk_reasons))
+
+        risk_text = "; ".join(risk_reasons) if risk_reasons else "Risiko gering"
+        team_overview[g] = {
+            "starters": {
+                "total": starters_total,
+                "at_threshold": starters_at_threshold,
+                "below_threshold": starters_below,
+            },
+            "bench": {
+                "total": bench_total,
+                "at_threshold": bench_at_threshold,
+                "below_threshold": bench_below,
+            },
+            "missing_slots": missing,
+            "expected_attendance": expected_meta,
+            "risk_level": risk_level,
+            "risk_text": risk_text,
+            "summary": "; ".join(parts),
+        }
+        summary_lines.append(
+            f"Team {g}: {starters_total} Starter, erwartete Anwesenheit {expected_meta.get('starters', 0.0):.1f}"
+        )
+
     attendance_summary = {
-        "schema": 1,
+        "schema": 2,
         "expected_by_team": expected_attendance,
         "missing_slots": missing_slots,
-        "high_reliability_pool": high_reliability_pool,
-        "recommendation": attendance_recommendation,
         "pool_total_expected": float(pool["attend_prob"].sum()),
         "targets": attendance_targets,
         "target_status": attendance_target_status,
         "config_snapshot": attendance_config.to_snapshot(),
         "config_source": attendance_config_meta,
+        "threshold": callup_min_attend_prob,
+        "reliable_pool": reliable_pool,
+        "teams": team_overview,
+        "recommendation": {
+            "text": " | ".join(summary_lines),
+        },
     }
 
     roster_canons = set(roster["PlayerName"].dropna().astype(str).tolist())
-    callup_min_attend_prob = max(float(attendance_config.min_bench_B), 0.5)
     nominal_prob_by_team = {"A": float(attendance_config.min_bench_A), "B": float(attendance_config.min_bench_B)}
 
     callup_candidate_df = pool[~pool["canon"].isin(roster_canons)].copy()
