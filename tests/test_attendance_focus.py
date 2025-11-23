@@ -135,6 +135,32 @@ def test_attendance_prob_and_status_flow(monkeypatch, tmp_path):
     assert stats.get("no_responses", 0) == 1
 
     attendance = payload.get("attendance") or {}
-    expected_by_team = attendance.get("expected_by_team") or {}
-    assert expected_by_team.get("A", {}).get("total", 0) >= 1.0
-    assert attendance.get("recommendation", {}).get("code")
+    teams = attendance.get("teams") or {}
+    team_a_meta = teams.get("A", {})
+    assert team_a_meta.get("starters", {}).get("total", 0) >= 1
+    assert attendance.get("threshold")
+
+
+def test_team_a_fills_before_threshold():
+    df = pd.DataFrame(
+        {
+            "PlayerName": ["strong", "mid", "risky"],
+            "attend_prob": [0.95, 0.45, 0.35],
+            "PrefGroup": ["A", "A", "B"],
+            "PrefMode": ["hard", "soft", "soft"],
+            "PrefBoost": [0.0, 0.0, 0.0],
+            "risk_penalty": [0.0, 0.0, 0.0],
+        }
+    )
+
+    roster = utils_mod.build_deterministic_roster(
+        df,
+        capacities_by_group_role={"A": {"Start": 2, "Ersatz": 0}, "B": {"Start": 2, "Ersatz": 0}},
+        min_attend_start={"A": None, "B": 0.8},
+        min_attend_sub=0.8,
+        allow_unfilled=True,
+    )
+
+    players_by_group = roster.groupby("Group")["PlayerName"].apply(list).to_dict()
+    assert set(players_by_group.get("A", [])) == {"strong", "mid"}
+    assert players_by_group.get("B", []) == []

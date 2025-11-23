@@ -267,10 +267,12 @@ def build_deterministic_roster(
                 if local_remaining <= 0:
                     break
                 score_col = f"score_{group}_{'start' if role == 'Start' else 'sub'}"
+                attend_col = f"attend_{'start' if role == 'Start' else 'sub'}_{group}"
                 min_attend = _resolve_min_attend(
                     min_attend_start if role == "Start" else min_attend_sub
                 )
-                if min_attend is not None and row.get(score_col, 0.0) < min_attend:
+                base_attend = row.get(attend_col, row.get(score_col, 0.0))
+                if min_attend is not None and base_attend < min_attend:
                     continue
                 is_no_data = False
                 if guard_enabled and role == "Start":
