@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import math
 from pathlib import Path
 import re
 from datetime import datetime
@@ -1335,6 +1336,24 @@ def main():
         except (TypeError, ValueError):
             return None
 
+    def _suggested_role_for_team(team: str) -> str:
+        missing_start = missing_slots.get(team, {}).get("Start", 0)
+        missing_sub = missing_slots.get(team, {}).get("Ersatz", 0)
+        if missing_start > 0:
+            return "Start"
+        if missing_sub > 0:
+            return "Ersatz"
+        return "Ersatz"
+
+    def _risk_category(attend_prob: float, events_seen: int) -> str:
+        if events_seen <= callup_config.low_n_max_events:
+            return "low_n"
+        if attend_prob >= 0.8:
+            return "low"
+        if attend_prob >= 0.6:
+            return "medium"
+        return "high"
+
     def _int_default(val, default=0):
         if pd.isna(val):
             return default
@@ -1798,6 +1817,111 @@ def main():
         "config_source": attendance_config_meta,
     }
 
+    roster_canons = set(roster["PlayerName"].dropna().astype(str).tolist())
+    callup_min_attend_prob = max(float(attendance_config.min_bench_B), 0.5)
+    nominal_prob_by_team = {"A": float(attendance_config.min_bench_A), "B": float(attendance_config.min_bench_B)}
+
+    callup_candidate_df = pool[~pool["canon"].isin(roster_canons)].copy()
+    if seen_forced:
+        callup_candidate_df = callup_candidate_df[~callup_candidate_df["canon"].isin(seen_forced)]
+    if decline_canons:
+        callup_candidate_df = callup_candidate_df[~callup_candidate_df["canon"].isin(decline_canons)]
+    if noresp_canons:
+        callup_candidate_df = callup_candidate_df[~callup_candidate_df["canon"].isin(noresp_canons)]
+
+    callup_candidate_df["attend_prob"] = pd.to_numeric(
+        callup_candidate_df["attend_prob"], errors="coerce"
+    ).fillna(0.0)
+    callup_candidate_df["events_seen"] = pd.to_numeric(
+        callup_candidate_df["events_seen"], errors="coerce"
+    ).fillna(0)
+
+    callup_candidate_df = callup_candidate_df[
+        callup_candidate_df["attend_prob"] >= callup_min_attend_prob
+    ].copy()
+
+    callup_needs: Dict[str, Dict[str, object]] = {}
+    for g in GROUPS:
+        target_caps = target_caps_by_group_role.get(g, {})
+        expected_gap = max(
+            (attendance_targets.get(g, {}).get("low", expected_attendance[g]["total"]))
+            - expected_attendance[g]["total"],
+            0.0,
+        )
+        nominal_prob = max(nominal_prob_by_team.get(g, 0.5), 0.01)
+        expected_gap_players = int(math.ceil(expected_gap / nominal_prob)) if expected_gap else 0
+        missing_total = missing_slots.get(g, {}).get("Start", 0) + missing_slots.get(g, {}).get("Ersatz", 0)
+        suggested = max(missing_total, expected_gap_players)
+        callup_needs[g] = {
+            "missing": missing_slots.get(g, {}),
+            "target_slots": target_caps,
+            "planned_slots": actual_counts.get(g, {}),
+            "expected_attendance": expected_attendance.get(g, {}),
+            "expected_gap": expected_gap,
+            "expected_gap_players": expected_gap_players,
+            "suggested_callups": suggested,
+        }
+
+    def _build_callup_entry(row, team: str) -> Dict[str, object]:
+        display = getattr(row, "DisplayName", "") or getattr(row, "PlayerName", "") or getattr(row, "canon", "")
+        canon_val = getattr(row, "canon", "")
+        attend_prob_val = float(getattr(row, "attend_prob", 0.0) or 0.0)
+        events_seen_val = int(getattr(row, "events_seen", 0) or 0)
+        role_hint = _suggested_role_for_team(team)
+        pref_group_raw = getattr(row, "PrefGroup", pd.NA)
+        pref_group = None if pd.isna(pref_group_raw) else str(pref_group_raw).strip().upper()
+        risk = _risk_category(attend_prob_val, events_seen_val)
+        status = next_event_status.get(str(canon_val), "open")
+        reason_parts = [f"AttendProb {attend_prob_val:.0%}"]
+        if pref_group:
+            reason_parts.append(f"Präferenz {pref_group}")
+        if risk == "low_n":
+            reason_parts.append("wenig Historie")
+        if status not in {"open", "signup"}:
+            reason_parts.append(f"Status: {status}")
+        reason_text = "; ".join(reason_parts)
+        return {
+            "display": display,
+            "canon": canon_val,
+            "attend_prob": attend_prob_val,
+            "events_seen": events_seen_val,
+            "risk": risk,
+            "recommended_team": team,
+            "recommended_role": role_hint,
+            "pref_group": pref_group,
+            "next_event_status": status,
+            "reason": reason_text,
+        }
+
+    callup_suggestions: Dict[str, object] = {
+        "schema": 1,
+        "meta": {
+            "min_attend_prob": callup_min_attend_prob,
+            "candidates": int(len(callup_candidate_df)),
+            "note": "Nur Spieler außerhalb des Rosters, ohne Absagen/No-Response/Hard-Commitment",
+        },
+        "needs": callup_needs,
+        "teams": {},
+    }
+
+    sorted_candidates = callup_candidate_df.sort_values(
+        by=["attend_prob", "risk_penalty", "DisplayName"], ascending=[False, True, True]
+    )
+
+    for g in GROUPS:
+        target_count = max(callup_needs.get(g, {}).get("suggested_callups", 0), 0)
+        target_count = max(target_count, 6) if g == "B" else target_count
+        ranked: List[Dict[str, object]] = []
+        for row in sorted_candidates.itertuples(index=False):
+            entry = _build_callup_entry(row, g)
+            ranked.append(entry)
+            if target_count and len(ranked) >= int(target_count * 2):
+                break
+        callup_suggestions["teams"][g] = {
+            "suggestions": ranked,
+            "target_count": int(target_count),
+        }
+
     json_payload = {
         "generated_at": datetime.now(TZ).isoformat(),
         "schema": schema_block,
@@ -1827,6 +1951,7 @@ def main():
         "event_responses": event_responses_payload,
         "event_response_conflicts": event_response_conflicts,
         "attendance": attendance_summary,
+        "callup_suggestions": callup_suggestions,
     }
 
     _write_outputs(out_dir, out_df, json_payload)

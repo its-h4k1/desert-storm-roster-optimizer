@@ -73,6 +73,14 @@
     #extras{margin-top:48px;padding-top:24px;border-top:1px solid var(--line)}
     #extras h2{margin-top:0}
     #signup-inline{display:none;margin-top:8px}
+    #callup-suggestions{margin-top:32px}
+    .callup-suggestion-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:12px}
+    .callup-suggestion-card{border:1px solid var(--line);border-radius:10px;padding:10px;background:#fff}
+    .callup-suggestion-card h3{margin:0 0 6px}
+    .callup-suggestion-card table{width:100%;border-collapse:collapse;margin-top:6px}
+    .callup-suggestion-card th,.callup-suggestion-card td{border-bottom:1px solid var(--line);padding:6px 8px;text-align:left}
+    .callup-suggestion-card th{background:var(--bgth)}
+    .callup-suggestion-card td.reason{font-size:0.9em;color:var(--muted)}
   </style>
 </head>
 <body>
@@ -101,6 +109,12 @@
   <p class="muted" id="callup-note" style="margin:0 0 18px; display:none"></p>
 
   <div id="attendance-summary" class="diag" style="display:none"></div>
+
+  <section id="callup-suggestions" class="diag" style="display:none">
+    <h2>Empfohlene Callup-Kandidaten (nächstes Event)</h2>
+    <p class="muted" id="callup-suggestions-note">Lädt Empfehlungen …</p>
+    <div id="callup-suggestions-content"></div>
+  </section>
 
   <div id="roster-root" class="grid">
     <section id="A-Start">
@@ -186,6 +200,7 @@
       forcedDiagnostics: { forced: [], invalid: [], overbooked: [], rows: [] },
       callupMeta: { available: false, recommendedTotal: null, reasonCounts: {}, fromStats: false, hasStats: false },
       callupCandidates: [],
+      callupSuggestions: null,
       latestPayload: null,
       playersArray: [],
     };
@@ -194,6 +209,9 @@
     const callupToggle = document.getElementById("callup-toggle");
     const callupNote = document.getElementById("callup-note");
     const attendanceSummaryBox = document.getElementById("attendance-summary");
+    const callupSuggestionsSection = document.getElementById("callup-suggestions");
+    const callupSuggestionsContent = document.getElementById("callup-suggestions-content");
+    const callupSuggestionsNote = document.getElementById("callup-suggestions-note");
     const callupExportBtn = document.getElementById("callup-export");
     const absencesContainer = document.getElementById("absences-content");
     const absenceDiag = document.getElementById("absence-diagnostics");
@@ -224,6 +242,9 @@
     if (callupExportBtn) {
       callupExportBtn.addEventListener("click", () => {
         const candidates = state.callupCandidates || [];
+        const suggestions = state.callupSuggestions;
+        const exportedSuggestions = exportSuggestedCallupsCsv(state.latestPayload, suggestions);
+        if (exportedSuggestions) return;
         if (!candidates.length) {
           callupExportBtn.title = 'Keine Callup-Kandidaten im aktuellen Roster';
           return;
@@ -491,11 +512,99 @@
       if (!callupExportBtn) return;
       const recommendedTotal = Number.isFinite(meta?.recommendedTotal) ? Number(meta.recommendedTotal) : null;
       const hasCandidates = Array.isArray(candidates) ? candidates.length > 0 : false;
-      const enabled = hasCandidates || (recommendedTotal != null && recommendedTotal > 0);
+      const suggestionRows = collectCallupSuggestionRows(state.callupSuggestions);
+      const hasSuggestions = suggestionRows.length > 0;
+      const enabled = hasSuggestions || hasCandidates || (recommendedTotal != null && recommendedTotal > 0);
       callupExportBtn.disabled = !enabled;
       callupExportBtn.title = enabled
         ? 'Callup-Kandidaten als CSV exportieren'
         : 'Keine Callup-Kandidaten im aktuellen Roster';
+    }
+
+    function collectCallupSuggestionRows(suggestions) {
+      if (!suggestions || typeof suggestions !== 'object' || !suggestions.teams) return [];
+      const rows = [];
+      Object.entries(suggestions.teams).forEach(([team, data]) => {
+        const list = Array.isArray(data?.suggestions) ? data.suggestions : [];
+        list.forEach(item => {
+          if (!item || typeof item !== 'object') return;
+          rows.push({ ...item, recommended_team: team });
+        });
+      });
+      return rows;
+    }
+
+    function extractCallupSuggestions(payload) {
+      const block = payload && typeof payload === 'object' ? payload.callup_suggestions : null;
+      if (!block || typeof block !== 'object') return null;
+      const teams = (block.teams && typeof block.teams === 'object') ? block.teams : {};
+      const normalizedTeams = {};
+      Object.entries(teams).forEach(([team, data]) => {
+        const suggestions = Array.isArray(data?.suggestions) ? data.suggestions : [];
+        normalizedTeams[team] = {
+          target_count: Number.isFinite(data?.target_count) ? Number(data.target_count) : null,
+          suggestions: suggestions.filter(Boolean),
+        };
+      });
+      return {
+        schema: block.schema || 1,
+        meta: block.meta || {},
+        needs: block.needs || {},
+        teams: normalizedTeams,
+      };
+    }
+
+    function renderCallupSuggestions(suggestions) {
+      if (!callupSuggestionsSection || !callupSuggestionsContent || !callupSuggestionsNote) return;
+      if (!suggestions || !suggestions.teams || !Object.keys(suggestions.teams).length) {
+        callupSuggestionsSection.style.display = 'none';
+        callupSuggestionsContent.innerHTML = '';
+        return;
+      }
+
+      const needs = (suggestions && typeof suggestions === 'object' && suggestions.needs) ? suggestions.needs : {};
+      const cards = [];
+      Object.entries(suggestions.teams).forEach(([team, data]) => {
+        const list = Array.isArray(data?.suggestions) ? data.suggestions : [];
+        const needMeta = needs[team] || {};
+        const missing = needMeta.missing || {};
+        const expectedGap = Number(needMeta.expected_gap || 0);
+        const needLabelParts = [];
+        if (missing.Start || missing.Ersatz) {
+          const parts = [];
+          if (missing.Start) parts.push(`Start: ${missing.Start}`);
+          if (missing.Ersatz) parts.push(`Ersatz: ${missing.Ersatz}`);
+          needLabelParts.push(`Slots fehlen: ${parts.join(', ')}`);
+        }
+        if (expectedGap > 0) {
+          needLabelParts.push(`Erwartung unter Ziel: ${expectedGap.toFixed(1)} Spieler`);
+        }
+        const needLabel = needLabelParts.length ? needLabelParts.join(' · ') : 'Keine Lücke erkannt';
+
+        const rows = list.map(item => {
+          const prob = Number.isFinite(Number(item.attend_prob)) ? `${Math.round(Number(item.attend_prob) * 100)}%` : '–';
+          const role = item.recommended_role || 'Ersatz';
+          const reason = item.reason || '';
+          const risk = item.risk || '';
+          return `<tr><td>${escapeHtml(item.display || item.canon || '?')}</td><td>${escapeHtml(role)}</td><td>${escapeHtml(prob)}</td><td>${escapeHtml(risk)}</td><td class="reason">${escapeHtml(reason)}</td></tr>`;
+        }).join('');
+
+        const table = list.length
+          ? `<table><thead><tr><th>Spieler</th><th>Empfehlung</th><th>Attend</th><th>Risiko</th><th>Begründung</th></tr></thead><tbody>${rows}</tbody></table>`
+          : '<p class="muted">Keine Empfehlungen gefunden.</p>';
+
+        cards.push(`
+          <div class="callup-suggestion-card">
+            <h3>Team ${escapeHtml(team)} ${data?.target_count ? `(Ziel: ${data.target_count})` : ''}</h3>
+            <p class="muted" style="margin:4px 0">${escapeHtml(needLabel)}</p>
+            ${table}
+          </div>
+        `);
+      });
+
+      callupSuggestionsContent.innerHTML = `<div class="callup-suggestion-grid">${cards.join('')}</div>`;
+      callupSuggestionsSection.style.display = 'block';
+      callupSuggestionsNote.textContent = suggestions.meta?.note || '';
     }
 
     function splitCsvLine(line) {
@@ -631,6 +740,44 @@
       a.click();
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
+    }
+
+    function exportSuggestedCallupsCsv(payload, suggestions) {
+      const rows = collectCallupSuggestionRows(suggestions);
+      if (!rows.length) return false;
+
+      const header = [
+        'PlayerName',
+        'RecommendedTeam',
+        'RecommendedRole',
+        'AttendProb',
+        'EventsSeen',
+        'Risk',
+        'NextEventStatus',
+        'Reason',
+      ];
+
+      const csvLines = [header, ...rows.map(item => [
+        item.display || item.canon || '',
+        item.recommended_team || '',
+        item.recommended_role || '',
+        Number.isFinite(Number(item.attend_prob)) ? Number(item.attend_prob).toFixed(3) : '',
+        Number.isFinite(Number(item.events_seen)) ? Number(item.events_seen) : '',
+        item.risk || '',
+        item.next_event_status || '',
+        item.reason || '',
+      ])].map(line => line.map(escapeCsvCell).join(',')).join('\n');
+
+      const blob = new Blob([csvLines], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = buildCallupCsvFilename(payload).replace('callup_candidates', 'callup_suggestions');
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      return true;
     }
 
     function parseInAllianceFlag(value) {
@@ -1525,6 +1672,8 @@
         renderAttendanceSummary(payload.attendance);
         state.playersArray = playersArray;
         state.callupCandidates = collectCallupCandidates(playersArray);
+        state.callupSuggestions = extractCallupSuggestions(payload);
+        renderCallupSuggestions(state.callupSuggestions);
         // Datengrundlage (latest.json):
         // - forced_signups (Array) sowie players[].forced_signup markieren verbindliche Zusagen aus event_signups_next.csv
         //   inkl. commitment (hard), source (manual/callup-confirmed), note & overbooked-Flag.
