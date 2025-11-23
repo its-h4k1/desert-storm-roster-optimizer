@@ -999,14 +999,19 @@
       return `<span class="contact-chip ${cls}">${icon} ${escapeHtml(label)}</span>`;
     }
 
-    function buildAllianceFilterSummary({ filteredCount, totalCount, filters }) {
+    function buildAllianceFilterSummary({ filteredActive, filteredFormer, totalActive, totalFormer, filters }) {
       const parts = [];
       if (filters.contactYesOnly) parts.push('Kontakt=yes');
       if (filters.hideRoster) parts.push('nicht im Roster');
       if (filters.hideAbsent) parts.push('nicht abwesend');
       parts.push(filters.showFormer ? 'Ex-Mitglieder eingeblendet' : 'Ex-Mitglieder ausgeblendet');
       const filterText = parts.length ? `Filter: ${parts.join(', ')}` : 'Keine Filter';
-      return `${filteredCount} von ${totalCount} Spielern angezeigt – ${filterText}.`;
+      const baseTotal = Number.isFinite(Number(totalActive)) ? Number(totalActive) : 0;
+      const formerTotal = Number.isFinite(Number(totalFormer)) ? Number(totalFormer) : 0;
+      const effectiveTotal = baseTotal || (filteredActive + filteredFormer);
+      const shownLabel = filteredFormer ? `${filteredActive} (+${filteredFormer} Ex)` : `${filteredActive}`;
+      const totalLabel = formerTotal && filters.showFormer ? `${effectiveTotal}` : `${effectiveTotal}`;
+      return `${shownLabel} von ${totalLabel} Spielern angezeigt – ${filterText}.`;
     }
 
     function renderAllianceStatus(player) {
@@ -1018,7 +1023,12 @@
 
     function buildAllianceRows(players, meta) {
       const filters = state.allianceFilters || {};
-      const total = players.length;
+      const totalActive = Number.isFinite(Number(meta?.players_active))
+        ? Number(meta.players_active)
+        : players.filter(p => p && p.in_alliance).length;
+      const totalFormer = Number.isFinite(Number(meta?.players_former))
+        ? Number(meta.players_former)
+        : players.filter(p => p && !p.in_alliance).length;
       const filtered = players.filter(p => {
         if (!filters.showFormer && !p.in_alliance) return false;
         if (filters.contactYesOnly && (p.contact_recommendation || '').toLowerCase() !== 'yes') return false;
@@ -1027,7 +1037,15 @@
         return true;
       });
 
-      const summaryText = buildAllianceFilterSummary({ filteredCount: filtered.length, totalCount: total, filters });
+      const filteredActive = filtered.filter(p => p.in_alliance).length;
+      const filteredFormer = filtered.length - filteredActive;
+      const summaryText = buildAllianceFilterSummary({
+        filteredActive,
+        filteredFormer,
+        totalActive,
+        totalFormer,
+        filters,
+      });
 
       if (!filtered.length) return { tableHtml: '<p class="muted">Keine Spieler für die aktuellen Filter.</p>', summaryText };
 
@@ -1984,7 +2002,9 @@
           const missing = meta?.missing_slots || {};
           const expected = meta?.expected_attendance || {};
           const riskText = meta?.risk_text || "Risiko gering";
+          const fallback = Number.isFinite(Number(starters.fallback)) ? Number(starters.fallback) : 0;
           const starterLine = `Starter: ${fmtInt(starters.total)} (≥ Schwelle: ${fmtInt(starters.at_threshold)}, unter: ${fmtInt(starters.below_threshold)})`;
+          const fallbackLine = fallback ? `<span class="muted">Fallback-Starter unter Schwelle: ${fmtInt(fallback)}</span><br />` : '';
           const benchLine = `Ersatz: ${fmtInt(bench.total)} (≥ Schwelle: ${fmtInt(bench.at_threshold)}, unter: ${fmtInt(bench.below_threshold)})`;
           const expectedLine = `Erwartete Anwesenheit Starter: ${fmtNum(expected.starters)}`;
           const missingLine = (missing.Start || missing.Ersatz)
@@ -1993,6 +2013,7 @@
           return `<div style="margin:0 0 10px;">
             <strong>Team ${escapeHtml(team)}</strong><br />
             <span class="muted">${escapeHtml(starterLine)}</span><br />
+            ${fallbackLine}
             <span class="muted">${escapeHtml(benchLine)}</span><br />
             ${escapeHtml(expectedLine)}<br />
             ${missingLine ? `<span class="muted">${escapeHtml(missingLine)}</span><br />` : ''}

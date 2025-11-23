@@ -30,6 +30,7 @@ from src.utils import (
     STARTERS_PER_GROUP,
     SUBS_PER_GROUP,
     GROUPS,
+    MIN_B_STARTERS,
     parse_event_date,
 )
 from src.alias_utils import load_alias_map, AliasResolutionError
@@ -1228,6 +1229,7 @@ def main():
         capacities_by_group_role=capacities_remaining,
         min_attend_start=min_start_thresholds,
         min_attend_sub=min_bench_thresholds,
+        min_b_starters=MIN_B_STARTERS,
         allow_unfilled=True,
     )  # PlayerName = canon
 
@@ -1295,6 +1297,9 @@ def main():
     ].copy()
     out_df = out_df.rename(columns={"DisplayName": "PlayerName", "PlayerName": "Canonical"})
 
+    if "_selection_stage" in roster.columns:
+        out_df["SelectionStage"] = roster["_selection_stage"]
+
     out_df["events_seen"] = out_df["events_seen"].fillna(0).astype(int)
     out_df["noshow_count"] = out_df["noshow_count"].fillna(0).astype(int)
     out_df["risk_penalty"] = pd.to_numeric(out_df["risk_penalty"], errors="coerce").fillna(0.0)
@@ -1324,6 +1329,12 @@ def main():
 
     def _by(grp: str, role: str) -> List[str]:
         return out_df[(out_df["Group"] == grp) & (out_df["Role"] == role)]["PlayerName"].tolist()
+
+    def _stage_counts(grp: str, role: str) -> Dict[str, int]:
+        if "_selection_stage" not in roster.columns:
+            return {}
+        mask = (roster["Group"] == grp) & (roster["Role"] == role)
+        return roster.loc[mask, "_selection_stage"].value_counts().to_dict()
 
     def _float_default(val, default=0.0):
         if pd.isna(val):
@@ -1485,6 +1496,7 @@ def main():
             "noshow_count": _int_default(row.noshow_count, 0),
             "risk_penalty": _float_default(row.risk_penalty, 0.0),
         }
+        entry["selection_stage"] = getattr(row, "SelectionStage", None)
         entry["is_absent_next_event"] = bool(row.Canonical in absent_now)
         callup_info = _detect_callup_recommendation(
             noshow_overall=_float_or_none(row.NoShowOverall),
@@ -1806,6 +1818,11 @@ def main():
         bench_below = max(bench_total - bench_at_threshold, 0)
         missing = missing_slots.get(g, {"Start": 0, "Ersatz": 0}) or {"Start": 0, "Ersatz": 0}
         expected_meta = expected_attendance.get(g, {}) or {}
+        start_stage_counts = _stage_counts(g, "Start")
+        bench_stage_counts = _stage_counts(g, "Ersatz")
+        fallback_starters = int(start_stage_counts.get(f"{g}-start-fallback", 0)) if g == "B" else 0
+        forced_starters = int(start_stage_counts.get("forced", 0))
+        forced_bench = int(bench_stage_counts.get("forced", 0))
 
         risk_reasons: List[str] = []
         risk_level = "low"
@@ -1814,6 +1831,11 @@ def main():
                 f"{missing.get('Start', 0)} Starter-Slots bewusst frei – keine weiteren Spieler ≥ {callup_min_attend_prob:.0%}"
             )
             risk_level = "high"
+        if g == "B" and fallback_starters > 0:
+            risk_reasons.append(
+                f"{fallback_starters} Starter für Team B aus Fallback < Schwelle"
+            )
+            risk_level = "moderate" if risk_level == "low" else risk_level
         if starters_below > 0:
             risk_reasons.append(
                 f"{starters_below} Starter unter Schwelle {callup_min_attend_prob:.0%} (Team A wird immer aufgefüllt)"
@@ -1824,6 +1846,8 @@ def main():
             f"Starter: {starters_total} (≥ Schwelle: {starters_at_threshold}, unter Schwelle: {starters_below})",
             f"Erwartete Anwesenheit Starter: {expected_meta.get('starters', 0.0):.1f}",
         ]
+        if fallback_starters > 0:
+            parts.append(f"Fallback-Starter (< Schwelle): {fallback_starters}")
         if bench_total > 0:
             parts.append(
                 f"Ersatz: {bench_total} (≥ Schwelle: {bench_at_threshold}, unter Schwelle: {bench_below})"
@@ -1839,20 +1863,28 @@ def main():
                 "total": starters_total,
                 "at_threshold": starters_at_threshold,
                 "below_threshold": starters_below,
+                "fallback": fallback_starters,
+                "forced": forced_starters,
             },
             "bench": {
                 "total": bench_total,
                 "at_threshold": bench_at_threshold,
                 "below_threshold": bench_below,
+                "forced": forced_bench,
             },
             "missing_slots": missing,
             "expected_attendance": expected_meta,
             "risk_level": risk_level,
             "risk_text": risk_text,
             "summary": "; ".join(parts),
+            "stage_counts": {"start": start_stage_counts, "bench": bench_stage_counts},
         }
         summary_lines.append(
-            f"Team {g}: {starters_total} Starter, erwartete Anwesenheit {expected_meta.get('starters', 0.0):.1f}"
+            (
+                f"Team {g}: {starters_total} Starter"
+                + (f", Fallback {fallback_starters}" if fallback_starters and g == "B" else "")
+                + f", erwartete Anwesenheit {expected_meta.get('starters', 0.0):.1f}"
+            )
         )
 
     attendance_summary = {
@@ -2075,11 +2107,16 @@ def main():
 
     overview_players = sorted(overview_players, key=lambda e: (str(e.get("display") or "")))
 
+    active_overview_count = sum(1 for entry in overview_players if entry.get("in_alliance"))
+    former_overview_count = len(overview_players) - active_overview_count
     alliance_overview_payload = {
         "schema": 1,
         "meta": {
             "callup_min_attend_prob": float(callup_config.callup_min_attend_prob),
-            "players": len(overview_players),
+            "players": active_overview_count,
+            "players_total": len(overview_players),
+            "players_active": active_overview_count,
+            "players_former": former_overview_count,
         },
         "players": overview_players,
     }
