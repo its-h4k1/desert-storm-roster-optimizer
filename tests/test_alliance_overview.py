@@ -110,6 +110,10 @@ def test_alliance_overview_lists_all_members(monkeypatch, tmp_path):
     players_block = overview.get("players", [])
 
     assert len(players_block) == len(players)
+    meta = overview.get("meta", {})
+    assert meta.get("players") == len(players) - 1  # only aktive Mitglieder als Basis
+    assert meta.get("players_total") == len(players)
+    assert meta.get("players_former") == 1
 
     starter = _by_canon(players_block, "startera")
     bench = _by_canon(players_block, "benchb")

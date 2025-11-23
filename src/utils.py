@@ -24,6 +24,7 @@ from src.config import get_config
 STARTERS_PER_GROUP = 20
 SUBS_PER_GROUP = 10
 GROUPS = ["A", "B"]
+MIN_B_STARTERS = 3
 
 # --------------------------------------------
 # Namensnormalisierung (Zero-Width + Homoglyph)
@@ -76,6 +77,7 @@ def build_deterministic_roster(
     capacities_by_group_role: Dict[str, Dict[str, int]] | None = None,
     min_attend_start: float | Mapping[str, float] | None = None,
     min_attend_sub: float | Mapping[str, float] | None = None,
+    min_b_starters: int | None = None,
     allow_unfilled: bool = False,
 ) -> pd.DataFrame:
     """
@@ -196,7 +198,12 @@ def build_deterministic_roster(
         if p in used:
             continue
         used.add(p)
-        rows.append({"PlayerName": p, "Group": g, "Role": r})
+        rows.append({
+            "PlayerName": p,
+            "Group": g,
+            "Role": r,
+            "_selection_stage": "forced",
+        })
         forced_count[g][r] += 1
 
     start_no_data_cap = getattr(_CFG, "START_NO_DATA_CAP", 0)
@@ -217,7 +224,15 @@ def build_deterministic_roster(
             )
         )
 
-    def _pick_for(group: str, role: str, count: int) -> pd.DataFrame:
+    _USE_DEFAULT = object()
+
+    def _pick_for(
+        group: str,
+        role: str,
+        count: int,
+        *,
+        min_attend_override=_USE_DEFAULT,
+    ) -> pd.DataFrame:
         candidates = _sort_candidates(group, role)
         if candidates.empty:
             return candidates
@@ -268,9 +283,12 @@ def build_deterministic_roster(
                     break
                 score_col = f"score_{group}_{'start' if role == 'Start' else 'sub'}"
                 attend_col = f"attend_{'start' if role == 'Start' else 'sub'}_{group}"
-                min_attend = _resolve_min_attend(
-                    min_attend_start if role == "Start" else min_attend_sub
-                )
+                if min_attend_override is _USE_DEFAULT:
+                    min_attend = _resolve_min_attend(
+                        min_attend_start if role == "Start" else min_attend_sub
+                    )
+                else:
+                    min_attend = min_attend_override
                 base_attend = row.get(attend_col, row.get(score_col, 0.0))
                 if min_attend is not None and base_attend < min_attend:
                     continue
@@ -323,21 +341,49 @@ def build_deterministic_roster(
             pd.DataFrame(columns=candidates.columns)
         )
 
-    # Slots in definierter Reihenfolge füllen
-    order = [
-        ("A", "Start",  caps["A"]["Start"]),
-        ("B", "Start",  caps["B"]["Start"]),
-        ("A", "Ersatz", caps["A"]["Ersatz"]),
-        ("B", "Ersatz", caps["B"]["Ersatz"]),
-    ]
-
-    for group, role, cap in order:
-        picked = _pick_for(group, role, cap)
+    def _consume(group: str, role: str, cap: int, stage_label: str, *, min_attend=_USE_DEFAULT) -> pd.DataFrame:
+        picked = _pick_for(group, role, cap, min_attend_override=min_attend)
         for row in picked.itertuples(index=False):
             used.add(row.PlayerName)
-            rows.append({"PlayerName": row.PlayerName, "Group": group, "Role": role})
+            rows.append(
+                {
+                    "PlayerName": row.PlayerName,
+                    "Group": group,
+                    "Role": role,
+                    "_selection_stage": stage_label,
+                }
+            )
+        return picked
 
-    out = pd.DataFrame(rows, columns=["PlayerName", "Group", "Role"])
+    # Slots in definierter Reihenfolge füllen
+    _consume("A", "Start", caps["A"]["Start"], stage_label="A-start-main")
+
+    b_primary = _consume("B", "Start", caps["B"]["Start"], stage_label="B-start-main")
+    try:
+        min_b_needed = int(min_b_starters) if min_b_starters is not None else None
+    except Exception:
+        min_b_needed = None
+    if min_b_needed is not None:
+        min_b_needed = max(min_b_needed, 0)
+    if min_b_needed:
+        fallback_target = min(min_b_needed, caps["B"]["Start"])
+        if len(b_primary) < fallback_target:
+            needed = fallback_target - len(b_primary)
+            _consume(
+                "B",
+                "Start",
+                needed,
+                stage_label="B-start-fallback",
+                min_attend=None,
+            )
+
+    _consume("A", "Ersatz", caps["A"]["Ersatz"], stage_label="A-bench")
+    _consume("B", "Ersatz", caps["B"]["Ersatz"], stage_label="B-bench")
+
+    out = pd.DataFrame(rows)
+    if "_selection_stage" not in out.columns:
+        out["_selection_stage"] = pd.NA
+    out = out[["PlayerName", "Group", "Role", "_selection_stage"]]
 
     # Safety: harte Assertions (kein Doppler)
     assert not out.duplicated("PlayerName").any(), "Duplicate players in roster"
@@ -396,5 +442,6 @@ __all__ = [
     "STARTERS_PER_GROUP",
     "SUBS_PER_GROUP",
     "GROUPS",
+    "MIN_B_STARTERS",
     "load_alias_map",
 ]

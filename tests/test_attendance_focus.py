@@ -158,9 +158,41 @@ def test_team_a_fills_before_threshold():
         capacities_by_group_role={"A": {"Start": 2, "Ersatz": 0}, "B": {"Start": 2, "Ersatz": 0}},
         min_attend_start={"A": None, "B": 0.8},
         min_attend_sub=0.8,
+        min_b_starters=utils_mod.MIN_B_STARTERS,
         allow_unfilled=True,
     )
 
     players_by_group = roster.groupby("Group")["PlayerName"].apply(list).to_dict()
     assert set(players_by_group.get("A", [])) == {"strong", "mid"}
-    assert players_by_group.get("B", []) == []
+    assert players_by_group.get("B", []) == ["risky"]
+    b_stage = roster.loc[roster["PlayerName"] == "risky", "_selection_stage"].iat[0]
+    assert b_stage == "B-start-fallback"
+
+
+def test_team_b_uses_fallback_pool_when_needed():
+    df = pd.DataFrame(
+        {
+            "PlayerName": ["high1", "high2", "high3", "high4", "high5", "low1", "low2"],
+            "attend_prob": [0.95, 0.9, 0.85, 0.8, 0.7, 0.4, 0.35],
+            "PrefGroup": ["A", "A", "A", "A", "", "", ""],
+            "PrefMode": ["hard", "", "", "", "", "", ""],
+            "PrefBoost": [0.0] * 7,
+            "risk_penalty": [0.0] * 7,
+        }
+    )
+
+    roster = utils_mod.build_deterministic_roster(
+        df,
+        capacities_by_group_role={"A": {"Start": 4, "Ersatz": 1}, "B": {"Start": 3, "Ersatz": 1}},
+        min_attend_start={"A": None, "B": 0.6},
+        min_attend_sub=0.6,
+        min_b_starters=utils_mod.MIN_B_STARTERS,
+        allow_unfilled=True,
+    )
+
+    b_starters = roster[(roster["Group"] == "B") & (roster["Role"] == "Start")]
+    assert len(b_starters) == min(utils_mod.MIN_B_STARTERS, 3)
+    fallback_names = set(b_starters.loc[b_starters["_selection_stage"] == "B-start-fallback", "PlayerName"].tolist())
+    assert fallback_names == {"low1", "low2"}
+    bench = roster[roster["Role"] == "Ersatz"]
+    assert bench.empty
