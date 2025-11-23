@@ -1971,6 +1971,8 @@ def main():
         }
 
     def _contact_recommendation(entry: Dict[str, object]) -> str:
+        if not bool(entry.get("in_alliance", False)):
+            return "former"
         if entry.get("event_status") == "decline" or entry.get("is_absent_next_event"):
             return "no"
         attend_prob_val = entry.get("attend_prob")

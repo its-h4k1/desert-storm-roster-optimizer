@@ -108,6 +108,13 @@
     #alliance-overview .contact-yes{background:#ecfdf3;border-color:#bbf7d0;color:#166534}
     #alliance-overview .contact-maybe{background:#fff7ed;border-color:#fed7aa;color:#7c2d12}
     #alliance-overview .contact-no{background:#fef2f2;border-color:#fecdd3;color:#991b1b}
+    #alliance-overview .contact-former{background:#f4f4f5;border-color:#e4e4e7;color:#3f3f46}
+    #alliance-overview .alliance-summary{margin:6px 0 4px;color:var(--muted);font-size:0.95em}
+    #alliance-overview .alliance-status{display:inline-flex;align-items:center;gap:6px;font-weight:600}
+    #alliance-overview .alliance-status .tag{margin-left:0}
+    #alliance-overview .alliance-status .status-active{background:#ecfdf3;border:1px solid #bbf7d0;color:#166534;padding:2px 8px;border-radius:10px;font-size:0.85em}
+    #alliance-overview .alliance-status .status-former{background:#f4f4f5;border:1px solid #e4e4e7;color:#3f3f46;padding:2px 8px;border-radius:10px;font-size:0.85em}
+    #alliance-overview .ex-member{background:linear-gradient(90deg,#f9fafb,#f4f4f5)}
     .admin-inline-link{color:inherit;text-decoration:none;display:inline-flex;align-items:center;gap:4px;padding:2px 6px;border-radius:8px;border:1px solid var(--line);background:#fff}
     .admin-inline-link:hover{border-color:#c8d5ec}
     .prefill-highlight{box-shadow:0 0 0 2px #bfdbfe;transition:box-shadow 0.25s ease;background:linear-gradient(90deg,#eff6ff,transparent)}
@@ -232,8 +239,10 @@
         <label class="player-meta-toggle"><input type="checkbox" id="alliance-filter-contact" checked /> nur Kontakt = yes</label>
         <label class="player-meta-toggle"><input type="checkbox" id="alliance-filter-hide-roster" checked /> Spieler im Roster ausblenden</label>
         <label class="player-meta-toggle"><input type="checkbox" id="alliance-filter-hide-absent" checked /> Abwesende ausblenden</label>
+        <label class="player-meta-toggle"><input type="checkbox" id="alliance-filter-show-former" /> Ausgetretene anzeigen</label>
         <button class="btn" id="alliance-export" type="button">📤 Allianz-Tabelle als CSV</button>
       </div>
+      <p id="alliance-overview-summary" class="muted" style="margin:0 0 6px;">Wird geladen …</p>
       <div id="alliance-overview-table" class="muted">Wird geladen …</div>
     </section>
 
@@ -296,7 +305,7 @@
       callupCandidates: [],
       callupSuggestions: null,
       allianceOverview: { players: [], meta: {} },
-      allianceFilters: { contactYesOnly: true, hideRoster: true, hideAbsent: true },
+      allianceFilters: { contactYesOnly: true, hideRoster: true, hideAbsent: true, showFormer: false },
       latestPayload: null,
       playersArray: [],
     };
@@ -313,10 +322,12 @@
     const callupSuggestionsNote = document.getElementById("callup-suggestions-note");
     const callupExportBtn = document.getElementById("callup-export");
     const allianceTable = document.getElementById("alliance-overview-table");
+    const allianceSummary = document.getElementById("alliance-overview-summary");
     const allianceExportBtn = document.getElementById("alliance-export");
     const allianceFilterContact = document.getElementById("alliance-filter-contact");
     const allianceFilterHideRoster = document.getElementById("alliance-filter-hide-roster");
     const allianceFilterHideAbsent = document.getElementById("alliance-filter-hide-absent");
+    const allianceFilterShowFormer = document.getElementById("alliance-filter-show-former");
     const absencesContainer = document.getElementById("absences-content");
     const absenceDiag = document.getElementById("absence-diagnostics");
     const eventResponsesContainer = document.getElementById("event-responses-content");
@@ -376,6 +387,13 @@
       state.allianceFilters.hideAbsent = Boolean(allianceFilterHideAbsent.checked);
       allianceFilterHideAbsent.addEventListener('change', (event) => {
         state.allianceFilters.hideAbsent = Boolean(event.target.checked);
+        renderAllianceOverview();
+      });
+    }
+    if (allianceFilterShowFormer) {
+      state.allianceFilters.showFormer = Boolean(allianceFilterShowFormer.checked);
+      allianceFilterShowFormer.addEventListener('change', (event) => {
+        state.allianceFilters.showFormer = Boolean(event.target.checked);
         renderAllianceOverview();
       });
     }
@@ -972,22 +990,46 @@
 
     function renderContactChip(rec) {
       const value = typeof rec === 'string' ? rec.toLowerCase() : '';
-      const cls = value === 'yes' ? 'contact-yes' : value === 'no' ? 'contact-no' : 'contact-maybe';
-      const icon = value === 'yes' ? '✅' : value === 'no' ? '⛔' : '❔';
-      const label = value || 'maybe';
+      let cls = 'contact-maybe';
+      let icon = '❔';
+      let label = value || 'maybe';
+      if (value === 'yes') { cls = 'contact-yes'; icon = '✅'; label = 'yes'; }
+      else if (value === 'no') { cls = 'contact-no'; icon = '⛔'; label = 'no'; }
+      else if (value === 'former') { cls = 'contact-former'; icon = '👋'; label = 'ex'; }
       return `<span class="contact-chip ${cls}">${icon} ${escapeHtml(label)}</span>`;
+    }
+
+    function buildAllianceFilterSummary({ filteredCount, totalCount, filters }) {
+      const parts = [];
+      if (filters.contactYesOnly) parts.push('Kontakt=yes');
+      if (filters.hideRoster) parts.push('nicht im Roster');
+      if (filters.hideAbsent) parts.push('nicht abwesend');
+      parts.push(filters.showFormer ? 'Ex-Mitglieder eingeblendet' : 'Ex-Mitglieder ausgeblendet');
+      const filterText = parts.length ? `Filter: ${parts.join(', ')}` : 'Keine Filter';
+      return `${filteredCount} von ${totalCount} Spielern angezeigt – ${filterText}.`;
+    }
+
+    function renderAllianceStatus(player) {
+      const active = Boolean(player?.in_alliance);
+      const label = active ? 'Aktiv' : 'Ex-Mitglied';
+      const cls = active ? 'status-active' : 'status-former';
+      return `<span class="alliance-status"><span class="${cls}">${label}</span></span>`;
     }
 
     function buildAllianceRows(players, meta) {
       const filters = state.allianceFilters || {};
+      const total = players.length;
       const filtered = players.filter(p => {
+        if (!filters.showFormer && !p.in_alliance) return false;
         if (filters.contactYesOnly && (p.contact_recommendation || '').toLowerCase() !== 'yes') return false;
         if (filters.hideRoster && p.roster_status && p.roster_status !== '-') return false;
         if (filters.hideAbsent && p.is_absent_next_event) return false;
         return true;
       });
 
-      if (!filtered.length) return '<p class="muted">Keine Spieler für die aktuellen Filter.</p>';
+      const summaryText = buildAllianceFilterSummary({ filteredCount: filtered.length, totalCount: total, filters });
+
+      if (!filtered.length) return { tableHtml: '<p class="muted">Keine Spieler für die aktuellen Filter.</p>', summaryText };
 
       const rows = filtered.map(p => {
         const rosterStatus = p.roster_status && p.roster_status !== '-' ? escapeHtml(p.roster_status) : '–';
@@ -1002,8 +1044,10 @@
         if (p.flags?.no_data) flags.push('<span class="tag tag-nd" title="Keine Historie">No Data</span>');
         else if (p.flags?.low_n) flags.push('<span class="tag tag-low" title="Wenig Historie">low n</span>');
         const noshowText = `${nsOverall} (${nsRolling} rolling)`;
-        return `<tr>
+        const rowClass = p.in_alliance ? '' : ' class="ex-member"';
+        return `<tr${rowClass}>
           <td>${escapeHtml(p.display || p.canon || '')}</td>
+          <td>${renderAllianceStatus(p)}</td>
           <td>${rosterStatus}</td>
           <td>${escapeHtml(eventStatus)}</td>
           <td>${absenceInfo}</td>
@@ -1014,15 +1058,18 @@
       }).join('');
 
       const thresholdInfo = Number.isFinite(Number(meta?.callup_min_attend_prob))
-        ? `<span class="muted">Kontakt = yes ab AttendProb ≥ ${(Number(meta.callup_min_attend_prob) * 100).toFixed(0)}% und ohne Absage/Absenz.</span>`
+        ? `<span class="muted">Kontakt = yes ab AttendProb ≥ ${(Number(meta.callup_min_attend_prob) * 100).toFixed(0)}%, nur aktive Mitglieder ohne Absage/Absenz.</span>`
         : '';
 
-      return `<table>
+      return {
+        tableHtml: `<table>
         <thead>
-          <tr><th>Spieler</th><th>Team/Rolle</th><th>Event-Status</th><th>Absenz</th><th>Attendance / No-Show</th><th>Kontakt</th><th>Admin</th></tr>
+          <tr><th>Spieler</th><th>Allianz</th><th>Team/Rolle</th><th>Event-Status</th><th>Absenz</th><th>Attendance / No-Show</th><th>Kontakt</th><th>Admin</th></tr>
         </thead>
         <tbody>${rows}</tbody>
-      </table>${thresholdInfo ? `<div class="muted" style="margin-top:6px;">${thresholdInfo}</div>` : ''}`;
+      </table>${thresholdInfo ? `<div class="muted" style="margin-top:6px;">${thresholdInfo}</div>` : ''}`,
+        summaryText,
+      };
     }
 
     function renderAllianceOverview() {
@@ -1030,13 +1077,20 @@
       const overview = state.allianceOverview;
       if (!overview || !Array.isArray(overview.players)) {
         allianceTable.textContent = 'Keine Allianz-Daten in latest.json gefunden.';
+        if (allianceSummary) allianceSummary.textContent = '';
         return;
       }
       if (!overview.players.length) {
         allianceTable.textContent = 'Keine Allianz-Spieler vorhanden.';
+        if (allianceSummary) allianceSummary.textContent = '';
         return;
       }
-      allianceTable.innerHTML = buildAllianceRows(overview.players, overview.meta);
+      const rendered = buildAllianceRows(overview.players, overview.meta);
+      allianceTable.innerHTML = rendered.tableHtml;
+      if (allianceSummary) {
+        allianceSummary.textContent = rendered.summaryText || '';
+        allianceSummary.style.display = rendered.summaryText ? 'block' : 'none';
+      }
       if (allianceExportBtn) allianceExportBtn.disabled = false;
     }
 
@@ -1051,9 +1105,10 @@
     function exportAllianceOverviewCsv() {
       const overview = state.allianceOverview;
       if (!overview || !Array.isArray(overview.players) || !overview.players.length) return;
-      const header = ['PlayerName', 'RosterStatus', 'EventStatus', 'Absent', 'AttendProb', 'NoShowOverall', 'NoShowRolling', 'EventsSeen', 'ContactRecommendation'];
+      const header = ['PlayerName', 'InAlliance', 'RosterStatus', 'EventStatus', 'Absent', 'AttendProb', 'NoShowOverall', 'NoShowRolling', 'EventsSeen', 'ContactRecommendation'];
       const rows = overview.players.map(p => [
         p.display || p.canon || '',
+        p.in_alliance ? '1' : '0',
         p.roster_status || '-',
         formatEventStatus(p.event_status),
         p.is_absent_next_event ? 'absent' : '',
