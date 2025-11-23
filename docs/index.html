@@ -10,6 +10,7 @@
       --ok:#1f9d55; --mid:#c9a227; --bad:#d64545;
       --bg:#fff; --bgth:#fafafa;
     }
+    html{scroll-behavior:smooth;}
     body{font-family:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,Arial,"Noto Sans",sans-serif;margin:24px;color:var(--fg);background:var(--bg)}
     h1{margin:0 0 8px}
     h2{margin:0 0 8px}
@@ -20,7 +21,26 @@
     .admin-link:hover{border-color:#c8d5ec;box-shadow:0 6px 16px rgba(0,0,0,0.08)}
     .admin-link:active{transform:translateY(1px)}
     .stamp{display:block;font-size:0.8em;line-height:1.4;margin-top:4px}
-    .grid{display:grid;grid-template-columns:1fr 1fr;gap:24px}
+    .anchor-nav{display:flex;flex-wrap:wrap;gap:10px;margin:12px 0 20px;font-size:0.95em}
+    .anchor-nav a{padding:6px 10px;border:1px solid var(--line);border-radius:8px;text-decoration:none;color:var(--fg);background:#fff;box-shadow:0 4px 12px rgba(0,0,0,0.03)}
+    .anchor-nav a:hover{border-color:#c8d5ec}
+    .page-section{margin:32px 0}
+    .section-header{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap}
+    .section-header p{margin:4px 0 0}
+    .overview-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px;margin-top:10px}
+    .meta-list{list-style:none;margin:0;padding:0;display:grid;gap:6px;font-size:0.95em}
+    .meta-list strong{font-weight:700}
+    .team-grid{display:grid;grid-template-columns:1fr;gap:16px;margin-top:12px}
+    @media (min-width: 960px){ .team-grid{grid-template-columns:repeat(2,1fr)} }
+    .team-card{border:1px solid var(--line);border-radius:12px;padding:14px;background:#fff;box-shadow:0 6px 18px rgba(0,0,0,0.04)}
+    .team-card h3{margin:0 0 10px}
+    .team-roles{display:grid;grid-template-columns:1fr;gap:14px}
+    .team-legend{margin:6px 0 0}
+    .legend-inline{margin-top:6px}
+    .diagnostics-header{align-items:center}
+    .diag-toggle{margin-left:auto}
+    .diagnostics-content{display:none;margin-top:12px}
+    .diagnostics-content.is-open{display:block}
     table{width:100%;border-collapse:collapse}
     th,td{border-bottom:1px solid var(--line);padding:8px 10px;text-align:left;vertical-align:top}
     th{background:var(--bgth)}
@@ -100,95 +120,147 @@
       <a class="admin-link" href="admin/index.html">Admin &amp; Tools</a>
     </div>
   </div>
-  <p class="muted" id="sort-note" style="margin:0 0 18px"></p>
+  <nav class="anchor-nav">
+    <a href="#section-overview">Überblick</a>
+    <a href="#section-teams">Teams A/B</a>
+    <a href="#section-alliance">Allianz &amp; Callup</a>
+    <a href="#section-diagnostics">Diagnose</a>
+  </nav>
 
-  <div class="roster-controls">
-    <label class="player-meta-toggle">
-      <input type="checkbox" id="player-meta-toggle" />
-      Detailzeile pro Spieler anzeigen
-    </label>
-    <label class="player-meta-toggle">
-      <input type="checkbox" id="callup-toggle" checked />
-      Callup-Empfehlungen anzeigen
-    </label>
-    <button id="callup-export" class="btn" type="button" disabled title="Keine Callup-Kandidaten im aktuellen Roster">
-      📥 Callup-Kandidaten als CSV exportieren
-    </button>
-  </div>
-
-  <p class="muted" id="callup-note" style="margin:0 0 18px; display:none"></p>
-
-  <div id="attendance-summary" class="diag" style="display:none"></div>
-
-  <section id="callup-suggestions" class="diag" style="display:none">
-    <h2>Zusätzliche Kandidaten zum Auffüllen (nächstes Event)</h2>
-    <p class="muted" id="callup-suggestions-note">Lädt Empfehlungen …</p>
-    <div id="callup-suggestions-content"></div>
-  </section>
-
-  <section id="alliance-overview" class="diag">
-    <h2>Allianz-Übersicht (nächstes Desert Storm)</h2>
-    <div class="filters">
-      <label class="player-meta-toggle"><input type="checkbox" id="alliance-filter-contact" checked /> nur Kontakt = yes</label>
-      <label class="player-meta-toggle"><input type="checkbox" id="alliance-filter-hide-roster" checked /> Spieler im Roster ausblenden</label>
-      <label class="player-meta-toggle"><input type="checkbox" id="alliance-filter-hide-absent" checked /> Abwesende ausblenden</label>
-      <button class="btn" id="alliance-export" type="button">📤 Allianz-Tabelle als CSV</button>
+  <!-- Abschnittsstruktur: Überblick (Status & Empfehlung), Teams A/B (Roster & Details), Allianz & Callup (Arbeitsbereich), Diagnose (Debug). -->
+  <section id="section-overview" class="page-section">
+    <div class="section-header">
+      <h2>Event-Überblick</h2>
+      <p class="muted">Status des nächsten Desert Storm inkl. Anwesenheit &amp; Empfehlung.</p>
     </div>
-    <div id="alliance-overview-table" class="muted">Wird geladen …</div>
+    <div class="overview-grid">
+      <div id="attendance-summary" class="diag" style="display:none"></div>
+      <div id="overview-meta" class="diag">
+        <h3 style="margin:0 0 6px">Event-Metadaten</h3>
+        <p class="muted" id="overview-meta-note">Wird geladen …</p>
+        <ul class="meta-list" id="overview-meta-list" style="display:none"></ul>
+      </div>
+    </div>
   </section>
 
-  <div id="roster-root" class="grid">
-    <section id="A-Start">
-      <h2>Gruppe A · Start</h2>
-      <table>
-        <thead><tr><th>#</th><th>Spieler</th><th>No-Show (overall)</th><th>No-Show (rolling)</th></tr></thead>
-        <tbody></tbody>
-      </table>
-    </section>
-    <section id="A-Ersatz">
-      <h2>Gruppe A · Ersatz</h2>
-      <table>
-        <thead><tr><th>#</th><th>Spieler</th><th>No-Show (overall)</th><th>No-Show (rolling)</th></tr></thead>
-        <tbody></tbody>
-      </table>
-    </section>
-    <section id="B-Start">
-      <h2>Gruppe B · Start</h2>
-      <table>
-        <thead><tr><th>#</th><th>Spieler</th><th>No-Show (overall)</th><th>No-Show (rolling)</th></tr></thead>
-        <tbody></tbody>
-      </table>
-    </section>
-    <section id="B-Ersatz">
-      <h2>Gruppe B · Ersatz</h2>
-      <table>
-        <thead><tr><th>#</th><th>Spieler</th><th>No-Show (overall)</th><th>No-Show (rolling)</th></tr></thead>
-        <tbody></tbody>
-      </table>
-    </section>
-  </div>
-
-  <section id="extras">
-    <h2>Zusätzliche Zusagen (Pool nächstes Event)</h2>
-    <p class="muted" id="extra-note">Lädt Zusagen …</p>
-    <div id="forced-diagnostics" class="diag"></div>
-    <div id="extra-root" class="extra-grid"></div>
+  <section id="section-teams" class="page-section">
+    <div class="section-header">
+      <h2>Teams A/B</h2>
+      <p class="muted">Roster-Aufstellung und Detailhistorie pro Spieler.</p>
+    </div>
+    <div class="roster-controls">
+      <label class="player-meta-toggle">
+        <input type="checkbox" id="player-meta-toggle" />
+        Detailzeile pro Spieler anzeigen
+      </label>
+      <label class="player-meta-toggle">
+        <input type="checkbox" id="callup-toggle" checked />
+        Callup-Empfehlungen anzeigen
+      </label>
+      <button id="callup-export" class="btn" type="button" disabled title="Keine Callup-Kandidaten im aktuellen Roster">
+        📥 Callup-Kandidaten als CSV exportieren
+      </button>
+    </div>
+    <p class="muted" id="sort-note" style="margin:0 0 10px"></p>
+    <p class="muted legend team-legend">Legende: <span class="tag tag-nd" title="Keine Historie – events_seen = 0">No&nbsp;Data</span> keine Historie · <span class="tag tag-low" title="Wenig Historie – events_seen ∈ {1,2}">low&nbsp;n</span> wenig Historie · <span class="tag tag-fix">🔒 verbindlich</span> verbindliche Zusage (Commitment=hard) · <span class="tag tag-callup callup-badge">🔔 Callup</span> Spieler, für die eine Erinnerung empfohlen wird<br />Farben basieren auf Historie (rolling→overall), EB wird nur zur Sortierung verwendet.<br />No-Data = nie teilgenommen (grau). low-n ≤2 = gelb. 1 Fehltermin = nie rot.</p>
+    <div id="roster-root" class="team-grid">
+      <div class="team-card">
+        <h3>Team A</h3>
+        <div class="team-roles">
+          <section id="A-Start">
+            <h2>Gruppe A · Start</h2>
+            <table>
+              <thead><tr><th>#</th><th>Spieler</th><th>No-Show (overall)</th><th>No-Show (rolling)</th></tr></thead>
+              <tbody></tbody>
+            </table>
+          </section>
+          <section id="A-Ersatz">
+            <h2>Gruppe A · Ersatz</h2>
+            <table>
+              <thead><tr><th>#</th><th>Spieler</th><th>No-Show (overall)</th><th>No-Show (rolling)</th></tr></thead>
+              <tbody></tbody>
+            </table>
+          </section>
+        </div>
+      </div>
+      <div class="team-card">
+        <h3>Team B</h3>
+        <div class="team-roles">
+          <section id="B-Start">
+            <h2>Gruppe B · Start</h2>
+            <table>
+              <thead><tr><th>#</th><th>Spieler</th><th>No-Show (overall)</th><th>No-Show (rolling)</th></tr></thead>
+              <tbody></tbody>
+            </table>
+          </section>
+          <section id="B-Ersatz">
+            <h2>Gruppe B · Ersatz</h2>
+            <table>
+              <thead><tr><th>#</th><th>Spieler</th><th>No-Show (overall)</th><th>No-Show (rolling)</th></tr></thead>
+              <tbody></tbody>
+            </table>
+          </section>
+        </div>
+      </div>
+    </div>
   </section>
 
-  <p class="muted legend">Legende: <span class="tag tag-nd" title="Keine Historie – events_seen = 0">No&nbsp;Data</span> keine Historie · <span class="tag tag-low" title="Wenig Historie – events_seen ∈ {1,2}">low&nbsp;n</span> wenig Historie · <span class="tag tag-fix">🔒 verbindlich</span> verbindliche Zusage (Commitment=hard) · <span class="tag tag-callup callup-badge">🔔 Callup</span> Spieler, für die eine Erinnerung empfohlen wird<br />Farben basieren auf Historie (rolling→overall), EB wird nur zur Sortierung verwendet.<br />No-Data = nie teilgenommen (grau). low-n ≤2 = gelb. 1 Fehltermin = nie rot.</p>
-  <p class="muted legend" id="signup-inline"></p>
+  <section id="section-alliance" class="page-section">
+    <div class="section-header">
+      <h2>Allianz &amp; Callup</h2>
+      <p class="muted">Callup-Empfehlungen, Allianz-Tabelle und Event-Kontext.</p>
+    </div>
+    <p class="muted" id="callup-note" style="margin:0 0 12px; display:none"></p>
+    <section id="callup-suggestions" class="diag" style="display:none">
+      <h2>Zusätzliche Kandidaten zum Auffüllen (nächstes Event)</h2>
+      <p class="muted" id="callup-suggestions-note">Lädt Empfehlungen …</p>
+      <div id="callup-suggestions-content"></div>
+    </section>
 
-  <section id="absence-diagnostics" class="diag" style="display:none"></section>
+    <section id="extras">
+      <h2>Zusätzliche Zusagen (Pool nächstes Event)</h2>
+      <p class="muted" id="extra-note">Lädt Zusagen …</p>
+      <div id="extra-root" class="extra-grid"></div>
+      <p class="muted legend" id="signup-inline"></p>
+    </section>
 
-  <section id="event-responses">
-    <h2>Event-Antworten (nächstes Event)</h2>
-    <p style="margin:6px 0 10px;"><a class="admin-link" href="admin/event-assignments.html" target="_blank" rel="noopener">✏️ Antwort/Zusage im Admin erfassen…</a></p>
-    <div id="event-responses-content" class="muted">Wird geladen …</div>
+    <p class="muted legend legend-inline">Kurzlegende für Allianz &amp; Callup: <span class="tag tag-callup callup-badge">🔔 Callup</span> Erinnerung empfohlen · <span class="tag tag-fix">🔒 verbindlich</span> bindende Zusage · No-Show-Farben wie im Team-Block.</p>
+
+    <section id="alliance-overview" class="diag">
+      <h2>Allianz-Übersicht (nächstes Desert Storm)</h2>
+      <div class="filters">
+        <label class="player-meta-toggle"><input type="checkbox" id="alliance-filter-contact" checked /> nur Kontakt = yes</label>
+        <label class="player-meta-toggle"><input type="checkbox" id="alliance-filter-hide-roster" checked /> Spieler im Roster ausblenden</label>
+        <label class="player-meta-toggle"><input type="checkbox" id="alliance-filter-hide-absent" checked /> Abwesende ausblenden</label>
+        <button class="btn" id="alliance-export" type="button">📤 Allianz-Tabelle als CSV</button>
+      </div>
+      <div id="alliance-overview-table" class="muted">Wird geladen …</div>
+    </section>
+
+    <section id="event-responses">
+      <h2>Event-Antworten (nächstes Event)</h2>
+      <p style="margin:6px 0 10px;"><a class="admin-link" href="admin/event-assignments.html" target="_blank" rel="noopener">✏️ Antwort/Zusage im Admin erfassen…</a></p>
+      <div id="event-responses-content" class="muted">Wird geladen …</div>
+    </section>
+
+    <section id="absences">
+      <h2>Absenzen</h2>
+      <div id="absences-content" class="muted">Wird geladen …</div>
+    </section>
   </section>
 
-  <section id="absences">
-    <h2>Absenzen</h2>
-    <div id="absences-content" class="muted">Wird geladen …</div>
+  <section id="section-diagnostics" class="page-section">
+    <div class="section-header diagnostics-header">
+      <h2>Diagnose &amp; Details</h2>
+      <button class="btn diag-toggle" id="diagnostics-toggle" type="button">Diagnose &amp; technische Details anzeigen</button>
+    </div>
+    <div id="diagnostics-content" class="diagnostics-content">
+      <div class="diag">
+        <p class="muted" style="margin:0">Signup-Pool-Diagnostik, erweiterte Absenzen und weitere technische Details.</p>
+      </div>
+      <div id="forced-diagnostics" class="diag"></div>
+      <section id="absence-diagnostics" class="diag" style="display:none"></section>
+    </div>
   </section>
 
   <p class="sub muted">Quelle: <code>out/latest.json</code> (GitHub)</p>
@@ -233,6 +305,9 @@
     const callupToggle = document.getElementById("callup-toggle");
     const callupNote = document.getElementById("callup-note");
     const attendanceSummaryBox = document.getElementById("attendance-summary");
+    const overviewMeta = document.getElementById("overview-meta");
+    const overviewMetaNote = document.getElementById("overview-meta-note");
+    const overviewMetaList = document.getElementById("overview-meta-list");
     const callupSuggestionsSection = document.getElementById("callup-suggestions");
     const callupSuggestionsContent = document.getElementById("callup-suggestions-content");
     const callupSuggestionsNote = document.getElementById("callup-suggestions-note");
@@ -248,6 +323,8 @@
     const extraRoot = document.getElementById("extra-root");
     const extraNote = document.getElementById("extra-note");
     const signupInline = document.getElementById("signup-inline");
+    const diagnosticsToggle = document.getElementById("diagnostics-toggle");
+    const diagnosticsContent = document.getElementById("diagnostics-content");
     if (playerMetaToggle) {
       state.showPlayerMeta = Boolean(playerMetaToggle.checked);
       playerMetaToggle.addEventListener("change", (event) => {
@@ -305,6 +382,20 @@
     if (allianceExportBtn) {
       allianceExportBtn.addEventListener('click', () => {
         exportAllianceOverviewCsv();
+      });
+    }
+    if (diagnosticsToggle && diagnosticsContent) {
+      const setDiagnosticsOpen = (open) => {
+        diagnosticsContent.classList.toggle("is-open", open);
+        diagnosticsContent.style.display = open ? "block" : "none";
+        diagnosticsToggle.textContent = open
+          ? "Diagnose & technische Details ausblenden"
+          : "Diagnose & technische Details anzeigen";
+      };
+      setDiagnosticsOpen(false);
+      diagnosticsToggle.addEventListener("click", () => {
+        const isOpen = diagnosticsContent.classList.contains("is-open");
+        setDiagnosticsOpen(!isOpen);
       });
     }
     if (rosterRoot) {
@@ -1481,7 +1572,7 @@
 
       const hasDiagnostics = Boolean((diagnostics.forced || []).length || (diagnostics.invalid || []).length || (diagnostics.overbooked || []).length);
       const extrasSection = document.getElementById('extras');
-      const shouldShowSection = extraCount > 0 || hasDiagnostics;
+      const shouldShowSection = extraCount > 0 || hasDiagnostics || Boolean(summaryText);
       if (!shouldShowSection) {
         if (extrasSection) extrasSection.style.display = 'none';
         extraRoot.innerHTML = '';
@@ -1896,6 +1987,55 @@
       attendanceSummaryBox.style.display = "block";
     }
 
+    function renderOverviewMeta(payload, schema = {}) {
+      if (!overviewMeta || !overviewMetaList || !overviewMetaNote) return;
+
+      const generatedAt = (payload && typeof payload.generated_at === "string" && payload.generated_at.trim())
+        ? payload.generated_at.trim()
+        : "";
+      const schemaVersion = Number.isFinite(schema.version) ? Number(schema.version) : null;
+      const attendanceSchema = Number.isFinite(payload?.attendance?.schema) ? Number(payload.attendance.schema) : null;
+      const signupScopeRaw = payload?.event_signups?.scope || payload?.signup_pool?.scope || "";
+      const signupScope = (signupScopeRaw || "").toString();
+      const signupSourceRaw = payload?.event_signups?.source;
+      const signupSource = typeof signupSourceRaw === "string"
+        ? signupSourceRaw
+        : (signupSourceRaw && typeof signupSourceRaw.path === "string" ? signupSourceRaw.path : "");
+      const recommendationRaw = payload?.attendance?.recommendation;
+      const recommendationText = recommendationRaw
+        ? (recommendationRaw.text || recommendationRaw.reason || recommendationRaw.code || "").toString().trim()
+        : "";
+
+      const items = [];
+      const schemaLabel = schemaVersion != null ? ` (Schema v${schemaVersion})` : "";
+      if (generatedAt || schemaLabel) {
+        items.push(`<li><strong>Stand:</strong> ${escapeHtml(generatedAt || '–')}${schemaLabel}</li>`);
+      }
+      if (attendanceSchema != null) {
+        items.push(`<li><strong>Attendance-Schema:</strong> v${attendanceSchema}</li>`);
+      }
+      if (signupScope || signupSource) {
+        const parts = [];
+        if (signupScope) parts.push(escapeHtml(signupScope));
+        if (signupSource) parts.push(`Quelle: ${escapeHtml(signupSource)}`);
+        items.push(`<li><strong>Signup-Pool:</strong> ${parts.length ? parts.join(' · ') : '–'}</li>`);
+      }
+      if (recommendationText) {
+        items.push(`<li><strong>Empfehlung:</strong> ${escapeHtml(recommendationText)}</li>`);
+      }
+
+      if (items.length) {
+        overviewMetaList.innerHTML = items.join('');
+        overviewMetaList.style.display = 'grid';
+        overviewMetaNote.style.display = 'none';
+      } else {
+        overviewMetaList.innerHTML = '';
+        overviewMetaList.style.display = 'none';
+        overviewMetaNote.textContent = 'Keine Metadaten gefunden.';
+        overviewMetaNote.style.display = 'block';
+      }
+    }
+
     fetch(LATEST_JSON_URL, { cache: "no-store" })
       .then(r=>{ if(!r.ok) throw new Error(r.status+" "+r.statusText); return r.json(); })
       .then(payload => {
@@ -1938,6 +2078,7 @@
         const playersArray = (!Array.isArray(payload) && Array.isArray(payload.players)) ? payload.players : [];
         state.callupMeta = extractCallupMeta(payload, playersArray, schema);
         state.latestPayload = payload;
+        renderOverviewMeta(payload, schema);
         state.callupSuggestions = extractCallupSuggestions(payload);
         renderAttendanceSummary(payload.attendance);
         state.playersArray = playersArray;
