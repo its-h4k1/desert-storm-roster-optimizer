@@ -85,6 +85,7 @@
     .roster-list { list-style:none; padding:0; margin:0.35rem 0 0; display:grid; gap:0.25rem; }
     .roster-badge { display:inline-flex; align-items:center; gap:0.35rem; padding:0.2rem 0.55rem; border-radius:999px; background:#eef2ff; color:#312e81; border:1px solid #c7d2fe; font-size:0.78rem; }
     .extra-pill { background:#ecfeff; border:1px solid #a5f3fc; color:#0f172a; }
+    .prefill-highlight { box-shadow:0 0 0 2px #bfdbfe; background:linear-gradient(90deg, rgba(239,246,255,0.6), rgba(255,255,255,0)); }
     @media (max-width: 960px) { .page-header { position:static; } label { width:100%; } input, select, textarea, button { width:100%; } button { justify-content:center; } table { min-width:800px; } .header-meta { width:100%; justify-content:flex-start; } .toolbar { flex-direction:column; align-items:flex-start; } }
   </style>
 </head>
@@ -180,7 +181,7 @@
               </section>
 
               <div class="layout-two-col">
-                <section class="panel">
+                <section class="panel" id="addPanel">
                   <h2>Spieler hinzufügen</h2>
                   <div class="controls" style="gap:0.65rem;">
                     <label style="min-width:220px;flex:1;">Spieler (Allianz oder Roster)
@@ -389,9 +390,13 @@
         resetBtn: document.getElementById('resetBtn'),
         rosterPreview: document.getElementById('rosterPreview'),
         rosterMeta: document.getElementById('rosterMeta'),
+        addPanel: document.getElementById('addPanel'),
       };
 
       const SETTINGS_KEY = 'dsro-event-assignments-settings';
+      const url = new URL(location.href);
+      const playerPrefillRaw = url.searchParams.get('player') || '';
+      const playerPrefillCanon = canonicalNameJS(playerPrefillRaw);
       // Commitment existierte bereits als CSV-Spalte, wurde in dieser UI jedoch ignoriert; jetzt wird sie mitgelesen und mitgeschrieben.
       const DEFAULT_HEADERS = ['PlayerName','Group','Role','Commitment','Source','Note'];
       const DEFAULT_RESPONSE_HEADERS = ['PlayerName','Status','Source','Note'];
@@ -910,6 +915,17 @@
         });
       }
 
+      function applyPlayerPrefill() {
+        if (!playerPrefillCanon || !elements.playerInput) return;
+        const options = Array.from(elements.playerOptions?.children || []);
+        const match = options.find(opt => canonicalNameJS(opt.value || '') === playerPrefillCanon);
+        const valueToUse = (match && match.value) ? match.value : (playerPrefillRaw || '');
+        if (valueToUse) {
+          elements.playerInput.value = valueToUse;
+          if (elements.addPanel) elements.addPanel.classList.add('prefill-highlight');
+        }
+      }
+
       function ensureAssignment(playerName) {
         const existing = state.assignments.find(r => (r.PlayerName || '') === playerName);
         if (existing) return existing;
@@ -931,12 +947,16 @@
         });
         rows.forEach((row, idx) => {
           const tr = document.createElement('tr');
+          const canon = canonicalNameJS(row.PlayerName || '');
+          if (canon) tr.dataset.playerCanon = canon;
           const fromCallup = (row.Source || '') === 'callup-confirmed';
           if (fromCallup) tr.classList.add('from-callup');
+          if (playerPrefillCanon && canon && playerPrefillCanon === canon) {
+            tr.classList.add('prefill-highlight');
+          }
           const playerTd = document.createElement('td');
           const playerName = row.PlayerName || '–';
           playerTd.textContent = playerName;
-          const canon = canonicalNameJS(playerName);
           const response = canon ? responseByCanon.get(canon) : null;
           if (response) {
             const badge = document.createElement('div');
@@ -1297,6 +1317,7 @@
           await loadResponses();
           await loadRoster();
           populatePlayers();
+          applyPlayerPrefill();
           renderAssignments();
           renderResponses();
           setStatus('Daten geladen.', 'ok');
