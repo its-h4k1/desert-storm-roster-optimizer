@@ -28,6 +28,7 @@ def test_alliance_overview_lists_all_members(monkeypatch, tmp_path):
         "Decliner",
         "Absentia",
         "MaybeLow",
+        "ExMember",
     ]
 
     events = [
@@ -45,7 +46,7 @@ def test_alliance_overview_lists_all_members(monkeypatch, tmp_path):
     _write_csv(
         data_dir / "alliance.csv",
         ["PlayerName", "InAlliance"],
-        [[name, 1] for name in players],
+        [[name, 1] for name in players if name != "ExMember"] + [["ExMember", 0]],
     )
 
     _write_csv(
@@ -115,6 +116,7 @@ def test_alliance_overview_lists_all_members(monkeypatch, tmp_path):
     decliner = _by_canon(players_block, "decliner")
     absent = _by_canon(players_block, "absentia")
     maybe_low = _by_canon(players_block, "maybelow")
+    former_member = _by_canon(players_block, "exmember")
 
     assert starter.get("roster_status") == "A-Start"
     assert bench.get("roster_status") == "B-Ersatz"
@@ -126,5 +128,8 @@ def test_alliance_overview_lists_all_members(monkeypatch, tmp_path):
     assert decliner.get("contact_recommendation") == "no"
     assert absent.get("contact_recommendation") == "no"
     assert maybe_low.get("contact_recommendation") == "maybe"
+    assert former_member.get("contact_recommendation") == "former"
+    assert former_member.get("in_alliance") == 0
+    assert former_member.get("roster_status") == "-"
 
     assert overview.get("meta", {}).get("callup_min_attend_prob") == main_mod.load_callup_config()[0].callup_min_attend_prob
