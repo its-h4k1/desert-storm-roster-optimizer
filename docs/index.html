@@ -88,6 +88,9 @@
     #alliance-overview .contact-yes{background:#ecfdf3;border-color:#bbf7d0;color:#166534}
     #alliance-overview .contact-maybe{background:#fff7ed;border-color:#fed7aa;color:#7c2d12}
     #alliance-overview .contact-no{background:#fef2f2;border-color:#fecdd3;color:#991b1b}
+    .admin-inline-link{color:inherit;text-decoration:none;display:inline-flex;align-items:center;gap:4px;padding:2px 6px;border-radius:8px;border:1px solid var(--line);background:#fff}
+    .admin-inline-link:hover{border-color:#c8d5ec}
+    .prefill-highlight{box-shadow:0 0 0 2px #bfdbfe;transition:box-shadow 0.25s ease;background:linear-gradient(90deg,#eff6ff,transparent)}
   </style>
 </head>
 <body>
@@ -118,7 +121,7 @@
   <div id="attendance-summary" class="diag" style="display:none"></div>
 
   <section id="callup-suggestions" class="diag" style="display:none">
-    <h2>Empfohlene Callup-Kandidaten (nächstes Event)</h2>
+    <h2>Zusätzliche Kandidaten zum Auffüllen (nächstes Event)</h2>
     <p class="muted" id="callup-suggestions-note">Lädt Empfehlungen …</p>
     <div id="callup-suggestions-content"></div>
   </section>
@@ -126,9 +129,9 @@
   <section id="alliance-overview" class="diag">
     <h2>Allianz-Übersicht (nächstes Desert Storm)</h2>
     <div class="filters">
-      <label class="player-meta-toggle"><input type="checkbox" id="alliance-filter-contact" /> nur Kontakt = yes</label>
-      <label class="player-meta-toggle"><input type="checkbox" id="alliance-filter-hide-roster" /> Spieler im Roster ausblenden</label>
-      <label class="player-meta-toggle"><input type="checkbox" id="alliance-filter-hide-absent" /> Abwesende ausblenden</label>
+      <label class="player-meta-toggle"><input type="checkbox" id="alliance-filter-contact" checked /> nur Kontakt = yes</label>
+      <label class="player-meta-toggle"><input type="checkbox" id="alliance-filter-hide-roster" checked /> Spieler im Roster ausblenden</label>
+      <label class="player-meta-toggle"><input type="checkbox" id="alliance-filter-hide-absent" checked /> Abwesende ausblenden</label>
       <button class="btn" id="alliance-export" type="button">📤 Allianz-Tabelle als CSV</button>
     </div>
     <div id="alliance-overview-table" class="muted">Wird geladen …</div>
@@ -179,6 +182,7 @@
 
   <section id="event-responses">
     <h2>Event-Antworten (nächstes Event)</h2>
+    <p style="margin:6px 0 10px;"><a class="admin-link" href="admin/event-assignments.html" target="_blank" rel="noopener">✏️ Antwort/Zusage im Admin erfassen…</a></p>
     <div id="event-responses-content" class="muted">Wird geladen …</div>
   </section>
 
@@ -220,7 +224,7 @@
       callupCandidates: [],
       callupSuggestions: null,
       allianceOverview: { players: [], meta: {} },
-      allianceFilters: { contactYesOnly: false, hideRoster: false, hideAbsent: false },
+      allianceFilters: { contactYesOnly: true, hideRoster: true, hideAbsent: true },
       latestPayload: null,
       playersArray: [],
     };
@@ -614,23 +618,30 @@
       }
 
       const needs = (suggestions && typeof suggestions === 'object' && suggestions.needs) ? suggestions.needs : {};
+      const attendanceStatus = (state.latestPayload && state.latestPayload.attendance && state.latestPayload.attendance.target_status)
+        ? state.latestPayload.attendance.target_status
+        : {};
       const cards = [];
       Object.entries(suggestions.teams).forEach(([team, data]) => {
         const list = Array.isArray(data?.suggestions) ? data.suggestions : [];
         const needMeta = needs[team] || {};
         const missing = needMeta.missing || {};
         const expectedGap = Number(needMeta.expected_gap || 0);
-        const needLabelParts = [];
+        const goalStatusRaw = (attendanceStatus?.[team] || '').toLowerCase();
+        const goalMet = goalStatusRaw === 'at_target' || goalStatusRaw === 'above_target';
+        const needLines = [];
         if (missing.Start || missing.Ersatz) {
           const parts = [];
           if (missing.Start) parts.push(`Start: ${missing.Start}`);
           if (missing.Ersatz) parts.push(`Ersatz: ${missing.Ersatz}`);
-          needLabelParts.push(`Slots fehlen: ${parts.join(', ')}`);
+          needLines.push(`Slots fehlen: ${parts.join(', ')}`);
         }
         if (expectedGap > 0) {
-          needLabelParts.push(`Erwartung unter Ziel: ${expectedGap.toFixed(1)} Spieler`);
+          needLines.push(`Erwartung unter Ziel: ${expectedGap.toFixed(1)} Spieler`);
         }
-        const needLabel = needLabelParts.length ? needLabelParts.join(' · ') : 'Keine Lücke erkannt';
+        const needsBlock = needLines.length ? `<ul class="muted" style="margin:6px 0 8px;padding-left:18px;">
+          ${needLines.map(line => `<li>${escapeHtml(line)}</li>`).join('')}
+        </ul>` : '<p class="muted" style="margin:6px 0 8px;">Keine Lücke erkannt.</p>';
 
         const rows = list.map(item => {
           const prob = Number.isFinite(Number(item.attend_prob)) ? `${Math.round(Number(item.attend_prob) * 100)}%` : '–';
@@ -640,14 +651,21 @@
           return `<tr><td>${escapeHtml(item.display || item.canon || '?')}</td><td>${escapeHtml(role)}</td><td>${escapeHtml(prob)}</td><td>${escapeHtml(risk)}</td><td class="reason">${escapeHtml(reason)}</td></tr>`;
         }).join('');
 
-        const table = list.length
-          ? `<table><thead><tr><th>Spieler</th><th>Empfehlung</th><th>Attend</th><th>Risiko</th><th>Begründung</th></tr></thead><tbody>${rows}</tbody></table>`
-          : '<p class="muted">Keine Empfehlungen gefunden.</p>';
+        let table;
+        if (list.length) {
+          table = `<table><thead><tr><th>Spieler</th><th>Empfehlung</th><th>Attend</th><th>Risiko</th><th>Begründung</th></tr></thead><tbody>${rows}</tbody></table>`;
+        } else {
+          if (goalMet) {
+            table = '<p class="muted">Attendance-Ziel erreicht, zusätzliche Kandidaten sind aus Sicht des Modells nicht erforderlich.</p>';
+          } else {
+            table = '<p class="muted">Attendance-Ziel wird aktuell klar verfehlt, im Pool gibt es jedoch keine weiteren Kandidaten, die die Callup-Schwelle erfüllen. Nutze ggf. die Allianz-Übersicht für manuelle Callups.</p>';
+          }
+        }
 
         cards.push(`
           <div class="callup-suggestion-card">
             <h3>Team ${escapeHtml(team)} ${data?.target_count ? `(Ziel: ${data.target_count})` : ''}</h3>
-            <p class="muted" style="margin:4px 0">${escapeHtml(needLabel)}</p>
+            ${needsBlock}
             ${table}
           </div>
         `);
@@ -655,7 +673,7 @@
 
       callupSuggestionsContent.innerHTML = `<div class="callup-suggestion-grid">${cards.join('')}</div>`;
       callupSuggestionsSection.style.display = 'block';
-      callupSuggestionsNote.textContent = suggestions.meta?.note || '';
+      callupSuggestionsNote.textContent = suggestions.meta?.note || 'Zusätzliche Kandidaten zum Auffüllen aus Attendance-Sicht (ergänzend zu 🔔-Badges).';
     }
 
     function splitCsvLine(line) {
@@ -851,8 +869,14 @@
         case 'decline': return 'Absage';
         case 'no_response': return 'No-Response';
         case 'signup': return 'Signup';
-        default: return 'neutral';
+        default: return '–';
       }
+    }
+
+    function buildAdminLink(playerName) {
+      const safeName = encodeURIComponent(playerName || '');
+      const href = `${SITE_ROOT}admin/event-assignments.html${safeName ? `?player=${safeName}` : ''}`;
+      return `<a class="admin-inline-link" href="${href}" title="Antwort/Zusage im Admin erfassen" target="_blank" rel="noopener">✏️</a>`;
     }
 
     function renderContactChip(rec) {
@@ -894,16 +918,17 @@
           <td>${absenceInfo}</td>
           <td class="num">${attendProb}<br/><span class="muted">No-Show ${noshowText}</span> ${flags.join(' ')}</td>
           <td>${renderContactChip(p.contact_recommendation)}</td>
+          <td>${buildAdminLink(p.display || p.canon || '')}</td>
         </tr>`;
       }).join('');
 
       const thresholdInfo = Number.isFinite(Number(meta?.callup_min_attend_prob))
-        ? `<span class="muted">Kontakt ab AttendProb ≥ ${(Number(meta.callup_min_attend_prob) * 100).toFixed(0)}%</span>`
+        ? `<span class="muted">Kontakt = yes ab AttendProb ≥ ${(Number(meta.callup_min_attend_prob) * 100).toFixed(0)}% und ohne Absage/Absenz.</span>`
         : '';
 
       return `<table>
         <thead>
-          <tr><th>Spieler</th><th>Team/Rolle</th><th>Event-Status</th><th>Absenz</th><th>Attendance / No-Show</th><th>Kontakt</th></tr>
+          <tr><th>Spieler</th><th>Team/Rolle</th><th>Event-Status</th><th>Absenz</th><th>Attendance / No-Show</th><th>Kontakt</th><th>Admin</th></tr>
         </thead>
         <tbody>${rows}</tbody>
       </table>${thresholdInfo ? `<div class="muted" style="margin-top:6px;">${thresholdInfo}</div>` : ''}`;
@@ -1789,20 +1814,83 @@
         attendanceSummaryBox.innerHTML = "";
         return;
       }
+
       const expected = attendance.expected_by_team || {};
       const rec = attendance.recommendation || {};
       const missing = attendance.missing_slots || {};
-      const fmt = (val) => {
+      const targets = attendance.targets || {};
+      const targetStatus = attendance.target_status || {};
+      const callupNeeds = state.callupSuggestions?.needs || {};
+      const callupTeams = state.callupSuggestions?.teams || {};
+
+      const fmtNum = (val, digits = 1) => {
         const num = Number(val);
-        return Number.isFinite(num) ? num.toFixed(1) : "–";
+        return Number.isFinite(num) ? num.toFixed(digits) : "–";
       };
+
+      const statusLabel = (status) => {
+        switch ((status || '').toLowerCase()) {
+          case 'below_target': return 'unter Ziel';
+          case 'at_target':
+          case 'above_target': return 'Ziel erfüllt';
+          default: return '–';
+        }
+      };
+
+      const recommendationText = (() => {
+        const code = (rec.code || '').toLowerCase();
+        if (code === 'a_only') {
+          return 'Empfehlung: A-only – verlässliche Spieler reichen aktuell nur für ein Team.';
+        }
+        if (code === 'ab' || code === 'a_b') {
+          return 'Empfehlung: A+B – beide Teams erfüllen das Attendance-Ziel.';
+        }
+        if (code === 'a_focus') {
+          return 'Empfehlung: A-Team-Fokus – Priorisiere Team A, Team B liegt unter Ziel.';
+        }
+        return rec.reason ? `Empfehlung: ${rec.reason}` : '';
+      })();
+
+      const teamBlocks = ['A', 'B'].map(team => {
+        const needMeta = callupNeeds[team] || {};
+        const plannedSlots = needMeta.planned_slots || {};
+        const targetSlots = needMeta.target_slots || {};
+        const targetCountFromCallup = Number.isFinite(callupTeams?.[team]?.target_count)
+          ? Number(callupTeams[team].target_count)
+          : null;
+        const targetRange = targets[team];
+        const targetLabel = targetCountFromCallup
+          ? `Ziel: ≥${targetCountFromCallup}`
+          : (targetRange && Number.isFinite(targetRange.low)) ? `Ziel: ≥${fmtNum(targetRange.low, 0)}` : 'Ziel: –';
+        const missingSlots = missing?.[team] || {};
+        const plannedStart = Number.isFinite(plannedSlots.Start) ? plannedSlots.Start
+          : (Number.isFinite(targetSlots.Start) && Number.isFinite(missingSlots.Start) ? targetSlots.Start - missingSlots.Start : null);
+        const plannedErsatz = Number.isFinite(plannedSlots.Ersatz) ? plannedSlots.Ersatz
+          : (Number.isFinite(targetSlots.Ersatz) && Number.isFinite(missingSlots.Ersatz) ? targetSlots.Ersatz - missingSlots.Ersatz : null);
+        const targetStart = Number.isFinite(targetSlots.Start) ? targetSlots.Start : null;
+        const targetErsatz = Number.isFinite(targetSlots.Ersatz) ? targetSlots.Ersatz : null;
+        const plannedText = (plannedStart != null || plannedErsatz != null)
+          ? `Starter ${plannedStart ?? '–'}/${targetStart ?? '–'}, Ersatz ${plannedErsatz ?? '–'}/${targetErsatz ?? '–'}`
+          : 'Kapazität nicht bekannt';
+        const expectedTotal = expected?.[team]?.total;
+        const expectedLabel = `Erwartet: ${fmtNum(expectedTotal)} Spieler`;
+        const status = statusLabel(targetStatus?.[team]);
+        return `<div style="margin:0 0 10px;">
+          <strong>Team ${team}</strong><br />
+          <span class="muted">${plannedText}</span><br />
+          ${expectedLabel} · ${targetLabel}<br />
+          <span class="muted">Status: ${status}</span>
+        </div>`;
+      }).join('');
+
       const block = [
         `<h3 style="margin:0 0 6px">Erwartete Anwesenheit</h3>`,
-        `<p style="margin:0 0 4px">Team A: <strong>${fmt(expected?.A?.total)}</strong> · Team B: <strong>${fmt(expected?.B?.total)}</strong></p>`,
-        `<p class="muted" style="margin:0 0 6px">Fehlende Slots (Start/Ersatz): A ${missing?.A ? `${missing.A.Start||0}/${missing.A.Ersatz||0}` : "–"}, B ${missing?.B ? `${missing.B.Start||0}/${missing.B.Ersatz||0}` : "–"}</p>`,
+        `<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:8px;">${teamBlocks}</div>`,
       ];
-      if (rec.code) {
-        block.push(`<p style="margin:0"><strong>Empfehlung:</strong> ${escapeHtml(rec.code)} — ${escapeHtml(rec.reason || "")}</p>`);
+      if (recommendationText) {
+        block.push(`<p style="margin:4px 0 0;"><strong>${escapeHtml(recommendationText)}</strong></p>`);
+      } else if (rec.code || rec.reason) {
+        block.push(`<p style="margin:4px 0 0;"><strong>Empfehlung:</strong> ${escapeHtml(rec.code || rec.reason || '')}</p>`);
       }
       attendanceSummaryBox.innerHTML = block.join("");
       attendanceSummaryBox.style.display = "block";
@@ -1850,10 +1938,10 @@
         const playersArray = (!Array.isArray(payload) && Array.isArray(payload.players)) ? payload.players : [];
         state.callupMeta = extractCallupMeta(payload, playersArray, schema);
         state.latestPayload = payload;
+        state.callupSuggestions = extractCallupSuggestions(payload);
         renderAttendanceSummary(payload.attendance);
         state.playersArray = playersArray;
         state.callupCandidates = collectCallupCandidates(playersArray);
-        state.callupSuggestions = extractCallupSuggestions(payload);
         renderCallupSuggestions(state.callupSuggestions);
         state.allianceOverview = normalizeAllianceOverview(payload?.alliance_next_event_overview);
         renderAllianceOverview();
