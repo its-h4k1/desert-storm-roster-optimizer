@@ -1922,6 +1922,112 @@ def main():
             "target_count": int(target_count),
         }
 
+    roster_status_by_canon = {}
+    for row in out_df.itertuples(index=False):
+        canon_key = str(getattr(row, "Canonical", ""))
+        group_val = getattr(row, "Group", "") or ""
+        role_val = getattr(row, "Role", "") or ""
+        roster_status_by_canon[canon_key] = f"{group_val}-{role_val}" if group_val and role_val else "-"
+
+    hist_idx = hist.set_index("canon") if "canon" in hist.columns else pd.DataFrame()
+    pool_metrics_idx = pool.set_index("canon") if "canon" in pool.columns else pd.DataFrame()
+
+    def _overview_metrics(canon: str) -> Dict[str, object]:
+        if canon in pool_metrics_idx.index:
+            row = pool_metrics_idx.loc[canon]
+            noshow_overall = _float_default(getattr(row, "noshow_rate", 0.0), 0.0)
+            noshow_rolling = _float_default(getattr(row, "w_noshow_rate", noshow_overall), noshow_overall)
+            attend_prob_val = _float_default(getattr(row, "attend_prob", None), None)
+            events_seen_val = _int_default(getattr(row, "events_seen", None), 0)
+            return {
+                "noshow_overall": noshow_overall,
+                "noshow_rolling": noshow_rolling,
+                "attend_prob": attend_prob_val,
+                "events_seen": events_seen_val,
+                "noshow_count": _int_default(getattr(row, "noshows_total", getattr(row, "noshow_count", None)), 0),
+            }
+
+        if canon in hist_idx.index:
+            row = hist_idx.loc[canon]
+            events_seen_val = _int_default(getattr(row, "assignments_total", None), 0)
+            noshow_overall = _float_default(getattr(row, "noshow_rate", 0.0), 0.0)
+            noshow_rolling = _float_default(getattr(row, "w_noshow_rate", noshow_overall), noshow_overall)
+            base_prob = (1.0 - noshow_rolling) if events_seen_val > 0 else 1.0 - prior_with_pad
+            attend_prob_val = max(min(base_prob, 1.0), 0.0)
+            return {
+                "noshow_overall": noshow_overall,
+                "noshow_rolling": noshow_rolling,
+                "attend_prob": attend_prob_val,
+                "events_seen": events_seen_val,
+                "noshow_count": _int_default(getattr(row, "noshows_total", None), 0),
+            }
+
+        return {
+            "noshow_overall": None,
+            "noshow_rolling": None,
+            "attend_prob": None,
+            "events_seen": 0,
+            "noshow_count": 0,
+        }
+
+    def _contact_recommendation(entry: Dict[str, object]) -> str:
+        if entry.get("event_status") == "decline" or entry.get("is_absent_next_event"):
+            return "no"
+        attend_prob_val = entry.get("attend_prob")
+        if isinstance(attend_prob_val, (int, float)) and not pd.isna(attend_prob_val):
+            if attend_prob_val >= float(callup_config.callup_min_attend_prob):
+                return "yes"
+        return "maybe"
+
+    overview_players: List[Dict[str, object]] = []
+    for row in alliance_df.itertuples(index=False):
+        canon_key = getattr(row, "canon", "") or ""
+        display_val = getattr(row, "DisplayName", canon_key) or canon_key
+        metrics = _overview_metrics(canon_key)
+        events_seen_val = metrics.get("events_seen", 0) or 0
+        no_data_flag = events_seen_val <= 0
+        low_n_flag = 0 < events_seen_val <= callup_config.low_n_max_events
+        event_status_val = next_event_status.get(str(canon_key), "open")
+        is_absent_flag = bool(canon_key in absent_now)
+        absence_meta = active_abs_meta.get(str(canon_key), {}) if active_abs_meta else {}
+
+        entry = {
+            "display": display_val,
+            "canon": canon_key,
+            "in_alliance": int(getattr(row, "InAlliance", 0)),
+            "roster_status": roster_status_by_canon.get(canon_key, "-"),
+            "event_status": event_status_val,
+            "is_absent_next_event": is_absent_flag,
+            "absence": {
+                "reason": absence_meta.get("reason", ""),
+                "scope": absence_meta.get("scope", ""),
+                "from": absence_meta.get("from", ""),
+                "to": absence_meta.get("to", ""),
+            },
+            "attend_prob": metrics.get("attend_prob"),
+            "noshow_overall": metrics.get("noshow_overall"),
+            "noshow_rolling": metrics.get("noshow_rolling"),
+            "events_seen": events_seen_val,
+            "noshow_count": metrics.get("noshow_count"),
+            "flags": {
+                "no_data": bool(no_data_flag),
+                "low_n": bool(low_n_flag),
+            },
+        }
+        entry["contact_recommendation"] = _contact_recommendation(entry)
+        overview_players.append(entry)
+
+    overview_players = sorted(overview_players, key=lambda e: (str(e.get("display") or "")))
+
+    alliance_overview_payload = {
+        "schema": 1,
+        "meta": {
+            "callup_min_attend_prob": float(callup_config.callup_min_attend_prob),
+            "players": len(overview_players),
+        },
+        "players": overview_players,
+    }
+
     json_payload = {
         "generated_at": datetime.now(TZ).isoformat(),
         "schema": schema_block,
@@ -1952,6 +2058,7 @@ def main():
         "event_response_conflicts": event_response_conflicts,
         "attendance": attendance_summary,
         "callup_suggestions": callup_suggestions,
+        "alliance_next_event_overview": alliance_overview_payload,
     }
 
     _write_outputs(out_dir, out_df, json_payload)

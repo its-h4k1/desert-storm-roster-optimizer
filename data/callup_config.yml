@@ -6,6 +6,7 @@
 # - high_rolling_threshold: Rolling-No-Show-Rate, ab der automatisch ein Callup empfohlen wird.
 # - rolling_uptick_min: Minimaler Rolling-Wert, bevor ein Rolling-Uptick geprüft wird.
 # - rolling_uptick_delta: Zusätzliche Differenz, die Rolling gegenüber Overall haben muss (in Prozentpunkten).
+# - callup_min_attend_prob: Mindestwahrscheinlichkeit für Attendance, um eine aktive Kontaktaufnahme zu empfehlen.
 version: 1
 min_events: 3
 low_n_max_events: 2
@@ -13,3 +14,4 @@ high_overall_threshold: 0.40
 high_rolling_threshold: 0.50
 rolling_uptick_min: 0.25
 rolling_uptick_delta: 0.10
+callup_min_attend_prob: 0.60

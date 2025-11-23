@@ -25,6 +25,7 @@ class CallupConfig:
     high_rolling_threshold: float
     rolling_uptick_min: float
     rolling_uptick_delta: float
+    callup_min_attend_prob: float
 
     def to_snapshot(self) -> Dict[str, Any]:
         return asdict(self)
@@ -38,6 +39,7 @@ DEFAULT_CALLOUP_CONFIG = CallupConfig(
     high_rolling_threshold=0.50,
     rolling_uptick_min=0.25,
     rolling_uptick_delta=0.10,
+    callup_min_attend_prob=0.60,
 )
 
 
