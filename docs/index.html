@@ -727,57 +727,81 @@
       }
 
       const needs = (suggestions && typeof suggestions === 'object' && suggestions.needs) ? suggestions.needs : {};
-      const attendanceStatus = (state.latestPayload && state.latestPayload.attendance && state.latestPayload.attendance.target_status)
-        ? state.latestPayload.attendance.target_status
-        : {};
-      const cards = [];
-      Object.entries(suggestions.teams).forEach(([team, data]) => {
-        const list = Array.isArray(data?.suggestions) ? data.suggestions : [];
+      const attendance = state.latestPayload?.attendance || {};
+      const expectedByTeam = attendance.expected_by_team || {};
+      const targets = attendance.targets || {};
+      const thresholdPercent = (() => {
+        const raw = Number(suggestions?.meta?.min_attend_prob);
+        const fallback = Number(attendance.threshold);
+        const val = Number.isFinite(raw) ? raw : (Number.isFinite(fallback) ? fallback : 0.6);
+        return Math.round(val * 100);
+      })();
+      const candidatePool = Number.isFinite(Number(suggestions?.meta?.candidates))
+        ? Number(suggestions.meta.candidates)
+        : null;
+
+      const fmtNum = (val, digits = 1) => {
+        const num = Number(val);
+        return Number.isFinite(num) ? num.toFixed(digits) : '–';
+      };
+      const fmtInt = (val) => {
+        const num = Number(val);
+        return Number.isFinite(num) ? num.toFixed(0) : '–';
+      };
+
+      const buildDiff = (expected, target) => {
+        if (!Number.isFinite(expected) || !Number.isFinite(target)) return { sign: '', abs: null };
+        const diff = target - expected;
+        const sign = diff > 0 ? '–' : (diff < 0 ? '+' : '');
+        return { sign, abs: Math.abs(diff) };
+      };
+
+      const buildAutoCallupText = () => {
+        if (candidatePool == null || candidatePool <= 0) {
+          return `keine weiteren Spieler ≥ ${thresholdPercent} % AttendProb im Pool.`;
+        }
+        return `${candidatePool} weitere Spieler ≥ ${thresholdPercent} % AttendProb verfügbar (über Allianz-Übersicht/Callup-Assistent).`;
+      };
+
+      const buildRecommendation = (expected, target) => {
+        if (!Number.isFinite(expected) || !Number.isFinite(target)) return '';
+        if (expected < 0.8 * target) {
+          return 'deutlich unter Ziel – aktiv Zusagen einsammeln und als Fixplätze eintragen.';
+        }
+        if (expected < target) {
+          return 'knapp unter Ziel – bei Gelegenheit 1–2 sichere Zusagen zusätzlich einholen.';
+        }
+        return 'Ziel erreicht – weitere Zusagen optional, aber nicht nötig.';
+      };
+
+      const cards = Object.entries(suggestions.teams).map(([team, data]) => {
         const needMeta = needs[team] || {};
-        const missing = needMeta.missing || {};
-        const expectedGap = Number(needMeta.expected_gap || 0);
-        const goalStatusRaw = (attendanceStatus?.[team] || '').toLowerCase();
-        const goalMet = goalStatusRaw === 'at_target' || goalStatusRaw === 'above_target';
-        const needLines = [];
-        if (missing.Start || missing.Ersatz) {
-          const parts = [];
-          if (missing.Start) parts.push(`Start: ${missing.Start}`);
-          if (missing.Ersatz) parts.push(`Ersatz: ${missing.Ersatz}`);
-          needLines.push(`Slots fehlen: ${parts.join(', ')}`);
-        }
-        if (expectedGap > 0) {
-          needLines.push(`Erwartung unter Ziel: ${expectedGap.toFixed(1)} Spieler`);
-        }
-        const needsBlock = needLines.length ? `<ul class="muted" style="margin:6px 0 8px;padding-left:18px;">
-          ${needLines.map(line => `<li>${escapeHtml(line)}</li>`).join('')}
-        </ul>` : '<p class="muted" style="margin:6px 0 8px;">Keine Lücke erkannt.</p>';
+        const plannedSlots = needMeta.planned_slots || {};
+        const targetSlots = needMeta.target_slots || {};
+        const startersUsed = Number(plannedSlots.Start);
+        const benchUsed = Number(plannedSlots.Ersatz);
+        const startersTotal = Number(targetSlots.Start);
+        const benchTotal = Number(targetSlots.Ersatz);
+        const expected = Number(expectedByTeam?.[team]?.total ?? needMeta.expected_attendance?.total);
+        const targetFromCallup = Number(data?.target_count);
+        const targetRange = targets?.[team];
+        const targetAttendance = Number.isFinite(targetFromCallup)
+          ? targetFromCallup
+          : (Number.isFinite(targetRange?.low) ? targetRange.low : null);
+        const diff = buildDiff(expected, targetAttendance);
+        const autoCallupText = buildAutoCallupText();
+        const recommendation = buildRecommendation(expected, targetAttendance);
 
-        const rows = list.map(item => {
-          const prob = Number.isFinite(Number(item.attend_prob)) ? `${Math.round(Number(item.attend_prob) * 100)}%` : '–';
-          const role = item.recommended_role || 'Ersatz';
-          const reason = item.reason || '';
-          const risk = item.risk || '';
-          return `<tr><td>${escapeHtml(item.display || item.canon || '?')}</td><td>${escapeHtml(role)}</td><td>${escapeHtml(prob)}</td><td>${escapeHtml(risk)}</td><td class="reason">${escapeHtml(reason)}</td></tr>`;
-        }).join('');
-
-        let table;
-        if (list.length) {
-          table = `<table><thead><tr><th>Spieler</th><th>Empfehlung</th><th>Attend</th><th>Risiko</th><th>Begründung</th></tr></thead><tbody>${rows}</tbody></table>`;
-        } else {
-          if (goalMet) {
-            table = '<p class="muted">Attendance-Ziel erreicht, zusätzliche Kandidaten sind aus Sicht des Modells nicht erforderlich.</p>';
-          } else {
-            table = '<p class="muted">Attendance-Ziel wird aktuell klar verfehlt, im Pool gibt es jedoch keine weiteren Kandidaten, die die Callup-Schwelle erfüllen. Nutze ggf. die Allianz-Übersicht für manuelle Callups.</p>';
-          }
-        }
-
-        cards.push(`
+        return `
           <div class="callup-suggestion-card">
-            <h3>Team ${escapeHtml(team)} ${data?.target_count ? `(Ziel: ${data.target_count})` : ''}</h3>
-            ${needsBlock}
-            ${table}
+            <h3>Team ${escapeHtml(team)} – Anwesenheit (nächstes Event)</h3>
+            <p style="margin:0 0 4px">Erwartete Anwesenheit: ${fmtNum(expected)} Spieler</p>
+            <p style="margin:0 0 4px">Soll-Anwesenheit: ${fmtNum(targetAttendance, 1)} Spieler (${diff.sign}${diff.abs == null ? '–' : diff.abs.toFixed(1)} unter Ziel)</p>
+            <p style="margin:0 0 4px">Slots: Start ${fmtInt(startersUsed)}/${fmtInt(startersTotal)}, Ersatz ${fmtInt(benchUsed)}/${fmtInt(benchTotal)}</p>
+            <p style="margin:0 0 4px">Auto-Callup: ${escapeHtml(autoCallupText)}</p>
+            <p style="margin:0">Empfehlung: ${escapeHtml(recommendation || '')}</p>
           </div>
-        `);
+        `;
       });
 
       callupSuggestionsContent.innerHTML = `<div class="callup-suggestion-grid">${cards.join('')}</div>`;
