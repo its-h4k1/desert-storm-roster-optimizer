@@ -12,6 +12,7 @@ Korrekturen:
 from __future__ import annotations
 import re
 from datetime import datetime, timezone
+from pathlib import Path
 import unicodedata
 import pandas as pd
 from typing import List, Dict, Set, Mapping
@@ -387,6 +388,76 @@ def build_deterministic_roster(
 
     # Safety: harte Assertions (kein Doppler)
     assert not out.duplicated("PlayerName").any(), "Duplicate players in roster"
+
+    # Debug-Export: macht transparent, wie EB-Parameter und Low-N-Regeln wirken.
+    # - p0 (Team-Prior, ggf. winsorized/gerundet) und n0 (Pseudo-Counts) schieben
+    #   die EB-Schätzung (no_show_eb) Richtung Team-Mittel.
+    # - Low-N-Flags (z. B. wenige Events) greifen ergänzend und können trotz
+    #   identischer Rohhistorie zu unterschiedlichen AttendProb-Werten führen.
+    # - Die vorangestellte canonical_name-Normalisierung bündelt Alias-Historie;
+    #   fehlende oder auf Aliase verteilte Historie erklärt abweichende Raw-Raten.
+    debug_df = df.copy()
+    debug_df["name"] = debug_df["PlayerName"]
+    missing_players = set(out["PlayerName"])
+    missing_players -= set(debug_df["PlayerName"].tolist())
+    if missing_players:
+        debug_df = pd.concat(
+            [debug_df, pd.DataFrame({"PlayerName": sorted(missing_players)})],
+            ignore_index=True,
+        )
+        debug_df["name"] = debug_df.get("name", pd.Series(index=debug_df.index))
+        debug_df.loc[debug_df["name"].isna(), "name"] = debug_df.loc[
+            debug_df["name"].isna(), "PlayerName"
+        ]
+
+    def _safe_numeric(series, fallback=None, as_int: bool = False):
+        if series is None:
+            return pd.Series([fallback] * len(debug_df), index=debug_df.index)
+        out_series = pd.to_numeric(series, errors="coerce")
+        if as_int:
+            out_series = out_series.fillna(0).astype(int)
+        elif fallback is not None:
+            out_series = out_series.fillna(fallback)
+        return out_series
+
+    debug_df["events_seen"] = _safe_numeric(debug_df.get("events_seen"), as_int=True)
+    debug_df["shows_total"] = _safe_numeric(debug_df.get("shows_total"), fallback=pd.NA)
+    debug_df["noshows_total"] = _safe_numeric(debug_df.get("noshows_total"), fallback=pd.NA)
+    debug_df["no_show_raw"] = _safe_numeric(debug_df.get("w_noshow_rate"), fallback=pd.NA)
+    if "no_show_raw" in debug_df.columns:
+        fallback_raw = _safe_numeric(debug_df.get("noshow_rate"), fallback=pd.NA)
+        debug_df["no_show_raw"] = debug_df["no_show_raw"].where(
+            pd.notna(debug_df["no_show_raw"]), fallback_raw
+        )
+    debug_df["no_show_eb"] = _safe_numeric(debug_df.get("eb_p_hat"), fallback=pd.NA)
+    debug_df["attend_prob"] = _safe_numeric(debug_df.get("attend_prob"), fallback=pd.NA)
+    debug_df["eb_prior_p0"] = _safe_numeric(
+        debug_df.get("eb_prior_p0"), fallback=getattr(_CFG, "PRIOR_FALLBACK", pd.NA)
+    )
+    debug_df["eb_n0"] = _safe_numeric(debug_df.get("eb_n0"), fallback=getattr(_CFG, "EB_N0", pd.NA))
+    debug_df["is_low_n"] = debug_df.get("is_low_n", pd.Series([pd.NA] * len(debug_df)))
+    debug_df["in_roster"] = debug_df["PlayerName"].isin(out["PlayerName"]).astype(bool)
+
+    debug_export = debug_df[
+        [
+            "name",
+            "events_seen",
+            "shows_total",
+            "noshows_total",
+            "no_show_raw",
+            "no_show_eb",
+            "attend_prob",
+            "eb_prior_p0",
+            "eb_n0",
+            "is_low_n",
+            "in_roster",
+        ]
+    ].copy()
+
+    debug_path = Path("out") / "debug_attendance.csv"
+    debug_path.parent.mkdir(parents=True, exist_ok=True)
+    debug_export.to_csv(debug_path, index=False)
+    print(f"[debug] Attendance-Export geschrieben: {debug_path}")
 
     return out
 
