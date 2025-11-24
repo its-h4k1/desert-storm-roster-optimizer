@@ -1217,6 +1217,16 @@ def main():
         "PrefBoost": pool_for_builder.get("PrefBoost", pd.Series([pd.NA]*len(pool_for_builder))),
         "events_seen": pool_for_builder["events_seen"],
         "risk_penalty": pool_for_builder["risk_penalty"],
+        "shows_total": pool_for_builder.get("shows_total", pd.Series([pd.NA] * len(pool_for_builder))),
+        "noshows_total": pool_for_builder.get("noshows_total", pd.Series([pd.NA] * len(pool_for_builder))),
+        "noshow_rate": pool_for_builder.get("noshow_rate", pd.Series([pd.NA] * len(pool_for_builder))),
+        "w_noshow_rate": pool_for_builder.get("w_noshow_rate", pd.Series([pd.NA] * len(pool_for_builder))),
+        "attend_prob_raw": pool_for_builder.get("attend_prob_raw", pd.Series([pd.NA] * len(pool_for_builder))),
+        "eb_p_hat": pool_for_builder.get("eb_p_hat", pd.Series([pd.NA] * len(pool_for_builder))),
+        "eb_sigma": pool_for_builder.get("eb_sigma", pd.Series([pd.NA] * len(pool_for_builder))),
+        "eb_prior_p0": pd.Series([p0] * len(pool_for_builder), index=pool_for_builder.index),
+        "eb_n0": pd.Series([cfg.EB_N0] * len(pool_for_builder), index=pool_for_builder.index),
+        "is_low_n": pool_for_builder["events_seen"] <= callup_config.low_n_max_events,
     })
 
     # 7) Roster bauen
