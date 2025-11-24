@@ -730,6 +730,8 @@
       const attendance = state.latestPayload?.attendance || {};
       const expectedByTeam = attendance.expected_by_team || {};
       const targets = attendance.targets || {};
+      const teamTargets = attendance.targets_by_team || {};
+      const teamTargetDiffs = attendance.target_diff || {};
       const thresholdPercent = (() => {
         const raw = Number(suggestions?.meta?.min_attend_prob);
         const fallback = Number(attendance.threshold);
@@ -749,11 +751,15 @@
         return Number.isFinite(num) ? num.toFixed(0) : '–';
       };
 
-      const buildDiff = (expected, target) => {
-        if (!Number.isFinite(expected) || !Number.isFinite(target)) return { sign: '', abs: null };
-        const diff = target - expected;
-        const sign = diff > 0 ? '–' : (diff < 0 ? '+' : '');
-        return { sign, abs: Math.abs(diff) };
+      const buildDiff = (expected, target, diffOverride) => {
+        const expectedNum = Number(expected);
+        const targetNum = Number(target);
+        const diffVal = Number.isFinite(diffOverride)
+          ? Number(diffOverride)
+          : (Number.isFinite(expectedNum) && Number.isFinite(targetNum) ? expectedNum - targetNum : null);
+        if (!Number.isFinite(diffVal)) return { direction: null, abs: null };
+        if (diffVal === 0) return { direction: 'im Ziel', abs: 0 };
+        return { direction: diffVal < 0 ? 'unter' : 'über', abs: Math.abs(diffVal) };
       };
 
       const buildAutoCallupText = () => {
@@ -785,18 +791,23 @@
         const expected = Number(expectedByTeam?.[team]?.total ?? needMeta.expected_attendance?.total);
         const targetFromCallup = Number(data?.target_count);
         const targetRange = targets?.[team];
-        const targetAttendance = Number.isFinite(targetFromCallup)
-          ? targetFromCallup
-          : (Number.isFinite(targetRange?.low) ? targetRange.low : null);
-        const diff = buildDiff(expected, targetAttendance);
+        const targetAttendance = Number.isFinite(teamTargets?.[team])
+          ? Number(teamTargets[team])
+          : (Number.isFinite(targetFromCallup) ? targetFromCallup : (Number.isFinite(targetRange?.low) ? targetRange.low : null));
+        const diff = buildDiff(expected, targetAttendance, teamTargetDiffs?.[team]);
         const autoCallupText = buildAutoCallupText();
         const recommendation = buildRecommendation(expected, targetAttendance);
+        const diffLabel = (() => {
+          if (!diff.direction) return '–';
+          if (diff.direction === 'im Ziel') return 'im Ziel';
+          return `${diff.abs?.toFixed(1) ?? '–'} ${diff.direction} Ziel`;
+        })();
 
         return `
           <div class="callup-suggestion-card">
             <h3>Team ${escapeHtml(team)} – Anwesenheit (nächstes Event)</h3>
             <p style="margin:0 0 4px">Erwartete Anwesenheit: ${fmtNum(expected)} Spieler</p>
-            <p style="margin:0 0 4px">Soll-Anwesenheit: ${fmtNum(targetAttendance, 1)} Spieler (${diff.sign}${diff.abs == null ? '–' : diff.abs.toFixed(1)} unter Ziel)</p>
+            <p style="margin:0 0 4px">Soll-Anwesenheit: ${fmtNum(targetAttendance, 0)} Spieler (${diffLabel})</p>
             <p style="margin:0 0 4px">Slots: Start ${fmtInt(startersUsed)}/${fmtInt(startersTotal)}, Ersatz ${fmtInt(benchUsed)}/${fmtInt(benchTotal)}</p>
             <p style="margin:0 0 4px">Auto-Callup: ${escapeHtml(autoCallupText)}</p>
             <p style="margin:0">Empfehlung: ${escapeHtml(recommendation || '')}</p>
@@ -2063,6 +2074,7 @@
       const rec = attendance.recommendation || {};
       const missing = attendance.missing_slots || {};
       const targets = attendance.targets || {};
+      const teamTargets = attendance.targets_by_team || {};
       const targetStatus = attendance.target_status || {};
       const callupNeeds = state.callupSuggestions?.needs || {};
       const callupTeams = state.callupSuggestions?.teams || {};
@@ -2098,9 +2110,12 @@
           ? Number(callupTeams[team].target_count)
           : null;
         const targetRange = targets[team];
-        const targetLabel = targetCountFromCallup
-          ? `Ziel: ≥${targetCountFromCallup}`
-          : (targetRange && Number.isFinite(targetRange.low)) ? `Ziel: ≥${fmtNum(targetRange.low, 0)}` : 'Ziel: –';
+        const targetFromTeam = Number.isFinite(teamTargets?.[team]) ? Number(teamTargets[team]) : null;
+        const targetLabel = Number.isFinite(targetFromTeam)
+          ? `Ziel: ≥${fmtNum(targetFromTeam, 0)}`
+          : (targetCountFromCallup
+            ? `Ziel: ≥${targetCountFromCallup}`
+            : (targetRange && Number.isFinite(targetRange.low)) ? `Ziel: ≥${fmtNum(targetRange.low, 0)}` : 'Ziel: –');
         const missingSlots = missing?.[team] || {};
         const plannedStart = Number.isFinite(plannedSlots.Start) ? plannedSlots.Start
           : (Number.isFinite(targetSlots.Start) && Number.isFinite(missingSlots.Start) ? targetSlots.Start - missingSlots.Start : null);

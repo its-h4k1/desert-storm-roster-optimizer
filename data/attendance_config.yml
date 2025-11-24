@@ -9,6 +9,11 @@ attendance:
   min_bench_A: 0.45
   min_bench_B: 0.45
 
+  # Ziel-Anwesenheitsquote pro Team (Anteil der verfügbaren Slots, der
+  # als "Soll-Anwesenheit" angepeilt wird). Wird pro Team mit Start+Ersatz
+  # multipliziert und auf ganze Spieler gerundet.
+  attendance_target_fraction: 0.8
+
   # Erwartete Anwesenheit (Summe AttendProb je Team) – dient als Zielkorridor.
   target_expected_A:
     low: 24.0  # Untergrenze: Builder wird als "zu locker" betrachtet.

@@ -1,4 +1,5 @@
 from pathlib import Path
+import math
 import sys
 
 import pandas as pd
@@ -197,6 +198,113 @@ def test_team_b_uses_fallback_pool_when_needed():
     assert fallback_names == {"low1", "low2"}
     bench = roster[roster["Role"] == "Ersatz"]
     assert bench.empty
+
+
+def test_attendance_targets_respect_slots(monkeypatch, tmp_path):
+    data_dir = tmp_path / "data"
+    data_dir.mkdir()
+
+    def _write(path, header, rows):
+        path.write_text(
+            ",".join(header)
+            + "\n"
+            + "\n".join(",".join(map(str, r)) for r in rows),
+            encoding="utf-8",
+        )
+
+    cfg_text = """
+attendance:
+  attendance_target_fraction: 0.8
+  min_start_A: 0.6
+  min_start_B: 0.6
+  min_bench_A: 0.5
+  min_bench_B: 0.5
+  target_expected_A:
+    low: 18
+    high: 26
+  target_expected_B:
+    low: 18
+    high: 26
+  hard_commit_floor: 0.9
+  no_response_multiplier: 0.6
+  high_reliability_balance_ratio: 1.8
+"""
+    (data_dir / "attendance_config.yml").write_text(cfg_text, encoding="utf-8")
+
+    _write(
+        data_dir / "events.csv",
+        ["EventID", "Slot", "PlayerName", "RoleAtRegistration", "Teilgenommen"],
+        [["DS-2030-01-01-A", 1, "Alpha", "Damage", 1], ["DS-2030-01-01-A", 2, "Bravo", "Damage", 0]],
+    )
+    _write(
+        data_dir / "alliance.csv",
+        ["PlayerName", "InAlliance"],
+        [["Alpha", 1], ["Bravo", 1], ["Charlie", 1]],
+    )
+    _write(data_dir / "absences.csv", ["PlayerName", "From", "To", "InAlliance"], [])
+    _write(
+        data_dir / "event_signups_next.csv",
+        ["PlayerName", "Group", "Role", "Commitment"],
+        [["Charlie", "A", "Start", "hard"], ["Alpha", "A", "Start", "none"]],
+    )
+    _write(
+        data_dir / "event_responses_next.csv",
+        ["PlayerName", "Status"],
+        [["Bravo", "no_response"]],
+    )
+
+    captured: dict[str, object] = {}
+
+    def _capture_writer(out_dir, roster_df, json_payload):
+        captured["payload"] = json_payload
+        captured["roster"] = roster_df
+
+    monkeypatch.setattr(main_mod, "_write_outputs", _capture_writer)
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        [
+            "prog",
+            "--events",
+            "data/events.csv",
+            "--alliance",
+            "data/alliance.csv",
+            "--absences",
+            "data/absences.csv",
+            "--event-signups",
+            "data/event_signups_next.csv",
+            "--event-responses",
+            "data/event_responses_next.csv",
+            "--out",
+            "generated",
+        ],
+    )
+
+    main_mod.main()
+
+    payload = captured.get("payload") or {}
+    attendance = payload.get("attendance") or {}
+    targets_by_team = attendance.get("targets_by_team") or {}
+    slots_by_team = attendance.get("slots_by_team") or {}
+    expected = attendance.get("expected_by_team") or {}
+    diffs = attendance.get("target_diff") or {}
+
+    assert targets_by_team.get("A") == 24
+    assert targets_by_team.get("B") == 24
+    assert targets_by_team["A"] <= slots_by_team.get("A", {}).get("max_slots", 0)
+    assert targets_by_team["B"] <= slots_by_team.get("B", {}).get("max_slots", 0)
+
+    assert math.isclose(
+        diffs.get("A", 0.0),
+        expected.get("A", {}).get("total", 0.0) - targets_by_team.get("A", 0),
+        rel_tol=1e-6,
+    )
+    assert math.isclose(
+        diffs.get("B", 0.0),
+        expected.get("B", {}).get("total", 0.0) - targets_by_team.get("B", 0),
+        rel_tol=1e-6,
+    )
 
 
 def test_b_fallback_tie_break_prefers_low_event_count(monkeypatch, tmp_path):
