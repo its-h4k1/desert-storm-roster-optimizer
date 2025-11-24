@@ -394,15 +394,6 @@
       };
 
       const SETTINGS_KEY = 'dsro-event-assignments-settings';
-      const url = new URL(location.href);
-      const playerPrefillRaw = url.searchParams.get('player') || '';
-      const playerPrefillCanon = canonicalNameJS(playerPrefillRaw);
-      // Commitment existierte bereits als CSV-Spalte, wurde in dieser UI jedoch ignoriert; jetzt wird sie mitgelesen und mitgeschrieben.
-      const DEFAULT_HEADERS = ['PlayerName','Group','Role','Commitment','Source','Note'];
-      const DEFAULT_RESPONSE_HEADERS = ['PlayerName','Status','Source','Note'];
-      const ALLOWED_RESPONSE_STATUSES = ['decline','no_response'];
-      const branchOverride = (new URL(location.href)).searchParams.get('branch');
-      const cacheBuster = `?v=${Date.now()}`;
       const canonicalNameJS = (window.dsroShared && typeof window.dsroShared.canonicalNameJS === 'function')
         ? window.dsroShared.canonicalNameJS
         : (value => {
@@ -425,6 +416,15 @@
             if (adminIdx !== -1) return path.slice(0, adminIdx + 1);
             return path.endsWith('/') ? path : path.replace(/[^/]*$/, '/');
           });
+      const url = new URL(location.href);
+      const playerPrefillRaw = url.searchParams.get('player') || '';
+      const playerPrefillCanon = canonicalNameJS(playerPrefillRaw);
+      // Commitment existierte bereits als CSV-Spalte, wurde in dieser UI jedoch ignoriert; jetzt wird sie mitgelesen und mitgeschrieben.
+      const DEFAULT_HEADERS = ['PlayerName','Group','Role','Commitment','Source','Note'];
+      const DEFAULT_RESPONSE_HEADERS = ['PlayerName','Status','Source','Note'];
+      const ALLOWED_RESPONSE_STATUSES = ['decline','no_response'];
+      const branchOverride = (new URL(location.href)).searchParams.get('branch');
+      const cacheBuster = `?v=${Date.now()}`;
       const buildLatestJsonUrl = (window.dsroShared && typeof window.dsroShared.buildLatestJsonUrl === 'function')
         ? window.dsroShared.buildLatestJsonUrl
         : ({ branchOverride: bOverride, cacheBuster: buster, siteRoot }) => {
