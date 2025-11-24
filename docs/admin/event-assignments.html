@@ -497,6 +497,7 @@
         eventSignupCommit: null,
         currentBranch: branchOverride || 'main',
         buildSyncStatus: null,
+        playerNames: [],
       };
 
       // Konzept-Notiz: Dauerhafte Gruppenpräferenzen (data/alliance.csv: PrefGroup/PrefMode/PrefBoost) steuern den Optimizer langfristig.
@@ -906,13 +907,142 @@
         state.alliancePool.forEach(n => set.add(n.display || n.canon || ''));
         state.rosterPlayers.forEach(p => set.add(p.name));
         state.responses.forEach(r => set.add(r.PlayerName || ''));
-        const names = Array.from(set).sort((a,b) => a.localeCompare(b, 'de', { sensitivity:'base' }));
+        state.playerNames = Array.from(set).sort((a,b) => a.localeCompare(b, 'de', { sensitivity:'base' }));
         elements.playerOptions.innerHTML = '';
-        names.forEach(name => {
+        state.playerNames.forEach(name => {
           const opt = document.createElement('option');
           opt.value = name;
           elements.playerOptions.appendChild(opt);
         });
+        refreshAutocompletes();
+      }
+
+      function attachPlayerAutocomplete(inputEl, getNamesFn, opts={}) {
+        if (!inputEl) return null;
+        const maxItems = Number(opts.maxItems) || 8;
+        const parent = inputEl.parentElement;
+        if (parent && !parent.classList.contains('autocomplete-wrapper')) {
+          parent.classList.add('autocomplete-wrapper');
+        }
+        const dropdown = document.createElement('div');
+        dropdown.className = 'autocomplete-menu';
+        dropdown.style.display = 'none';
+        (parent || inputEl).appendChild(dropdown);
+
+        let items = [];
+        let activeIndex = -1;
+        let blurTimer = null;
+
+        const closeMenu = () => {
+          dropdown.style.display = 'none';
+          dropdown.innerHTML = '';
+          items = [];
+          activeIndex = -1;
+        };
+
+        const commitValue = (value) => {
+          inputEl.value = value;
+          closeMenu();
+          inputEl.dispatchEvent(new Event('input', { bubbles: true }));
+        };
+
+        const setActive = (nextIndex) => {
+          activeIndex = nextIndex;
+          Array.from(dropdown.children).forEach((child, idx) => {
+            if (idx === activeIndex) child.classList.add('active');
+            else child.classList.remove('active');
+          });
+        };
+
+        const renderList = (list) => {
+          dropdown.innerHTML = '';
+          list.forEach((name, idx) => {
+            const btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = 'autocomplete-item';
+            btn.textContent = name;
+            btn.addEventListener('mousedown', (e) => {
+              e.preventDefault();
+              commitValue(name);
+            });
+            btn.addEventListener('mousemove', () => setActive(idx));
+            dropdown.appendChild(btn);
+          });
+          dropdown.style.display = list.length ? 'block' : 'none';
+        };
+
+        const updateList = () => {
+          const query = inputEl.value || '';
+          const canonQuery = canonicalNameJS(query);
+          if (!canonQuery) { closeMenu(); return; }
+          const names = (typeof getNamesFn === 'function' ? getNamesFn() : []) || [];
+          const filtered = names
+            .map(name => ({ name, canon: canonicalNameJS(name) }))
+            .filter(entry => {
+              if (!entry.canon) return false;
+              return entry.canon.startsWith(canonQuery) || entry.canon.includes(canonQuery);
+            })
+            .slice(0, maxItems)
+            .map(entry => entry.name);
+          items = filtered;
+          activeIndex = filtered.length ? 0 : -1;
+          renderList(filtered);
+          setActive(activeIndex);
+        };
+
+        inputEl.addEventListener('input', updateList);
+        inputEl.addEventListener('focus', updateList);
+        inputEl.addEventListener('keydown', (e) => {
+          if (e.key === 'ArrowDown') {
+            if (!items.length) updateList();
+            if (items.length) {
+              e.preventDefault();
+              e.stopPropagation();
+              const next = activeIndex < items.length - 1 ? activeIndex + 1 : 0;
+              setActive(next);
+            }
+          } else if (e.key === 'ArrowUp') {
+            if (!items.length) updateList();
+            if (items.length) {
+              e.preventDefault();
+              e.stopPropagation();
+              const next = activeIndex > 0 ? activeIndex - 1 : items.length - 1;
+              setActive(next);
+            }
+          } else if (e.key === 'Enter') {
+            if (items.length && activeIndex >= 0) {
+              e.preventDefault();
+              e.stopImmediatePropagation();
+              commitValue(items[activeIndex]);
+            }
+          } else if (e.key === 'Escape') {
+            if (dropdown.style.display !== 'none') {
+              e.preventDefault();
+              e.stopPropagation();
+              closeMenu();
+            }
+          }
+        });
+
+        inputEl.addEventListener('blur', () => {
+          blurTimer = setTimeout(() => closeMenu(), 140);
+        });
+        dropdown.addEventListener('mousedown', () => {
+          if (blurTimer) { clearTimeout(blurTimer); blurTimer = null; }
+        });
+
+        return { refresh: updateList, close: closeMenu };
+      }
+
+      const autocompleteControllers = [];
+      function initAutocompletes() {
+        const getNames = () => state.playerNames;
+        const opts = { maxItems: 8 };
+        if (elements.playerInput) autocompleteControllers.push(attachPlayerAutocomplete(elements.playerInput, getNames, opts));
+        if (elements.responsePlayerInput) autocompleteControllers.push(attachPlayerAutocomplete(elements.responsePlayerInput, getNames, opts));
+      }
+      function refreshAutocompletes() {
+        autocompleteControllers.forEach(ctrl => { if (ctrl && typeof ctrl.refresh === 'function') ctrl.refresh(); });
       }
 
       function applyPlayerPrefill() {
@@ -1470,6 +1600,7 @@
 
       restoreSettings();
       initEvents();
+      initAutocompletes();
       reloadData();
     })();
   </script>
