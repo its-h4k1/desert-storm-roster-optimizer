@@ -1230,6 +1230,7 @@ def main():
     })
 
     # 7) Roster bauen
+    min_b_starters_cfg = callup_config.min_b_starters if callup_config.min_b_starters else MIN_B_STARTERS
     roster = build_deterministic_roster(
         probs_for_builder,
         forced_assignments=[
@@ -1239,7 +1240,7 @@ def main():
         capacities_by_group_role=capacities_remaining,
         min_attend_start=min_start_thresholds,
         min_attend_sub=min_bench_thresholds,
-        min_b_starters=MIN_B_STARTERS,
+        min_b_starters=min_b_starters_cfg,
         allow_unfilled=True,
     )  # PlayerName = canon
 
@@ -2163,6 +2164,10 @@ def main():
         "callup_suggestions": callup_suggestions,
         "alliance_next_event_overview": alliance_overview_payload,
     }
+
+    selection_debug = roster.attrs.get("selection_debug")
+    if selection_debug:
+        json_payload["debug_selection"] = selection_debug
 
     _write_outputs(out_dir, out_df, json_payload)
 

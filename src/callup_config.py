@@ -26,6 +26,7 @@ class CallupConfig:
     rolling_uptick_min: float
     rolling_uptick_delta: float
     callup_min_attend_prob: float
+    min_b_starters: int
 
     def to_snapshot(self) -> Dict[str, Any]:
         return asdict(self)
@@ -40,6 +41,7 @@ DEFAULT_CALLOUP_CONFIG = CallupConfig(
     rolling_uptick_min=0.25,
     rolling_uptick_delta=0.10,
     callup_min_attend_prob=0.60,
+    min_b_starters=3,
 )
 
 
@@ -101,6 +103,8 @@ def load_callup_config(path: str | Path = "data/callup_config.yml") -> Tuple[Cal
                 continue
             if field in {"min_events", "low_n_max_events", "version"}:
                 val = _coerce_int(raw.get(field), values[field])
+            elif field in {"min_b_starters"}:
+                val = max(_coerce_int(raw.get(field), values[field]), 0)
             else:
                 val = _coerce_float(raw.get(field), values[field])
             if val == values[field]:

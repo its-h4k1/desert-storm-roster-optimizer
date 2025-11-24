@@ -11,6 +11,7 @@ Korrekturen:
 
 from __future__ import annotations
 import re
+from collections import defaultdict
 from datetime import datetime, timezone
 from pathlib import Path
 import unicodedata
@@ -26,6 +27,7 @@ STARTERS_PER_GROUP = 20
 SUBS_PER_GROUP = 10
 GROUPS = ["A", "B"]
 MIN_B_STARTERS = 3
+_TIE_BREAK_KEY = "score>primary>secondary>events_seen>name"
 
 # --------------------------------------------
 # Namensnormalisierung (Zero-Width + Homoglyph)
@@ -115,6 +117,8 @@ def build_deterministic_roster(
             .fillna(0)
             .astype(int)
         )
+    else:
+        df["events_seen"] = pd.Series([0] * len(df), index=df.index)
 
     if "risk_penalty" in df.columns:
         df["risk_penalty"] = (
@@ -174,6 +178,7 @@ def build_deterministic_roster(
 
     used: Set[str] = set()
     rows: List[Dict[str, str]] = []
+    selection_trace: Dict[str, List[Dict[str, object]]] = defaultdict(list)
 
     # Vorbelegte Slots (harte Zusagen)
     caps = {
@@ -188,6 +193,64 @@ def build_deterministic_roster(
                 except Exception:
                     val = caps[g][r]
                 caps[g][r] = max(0, val)
+
+    start_no_data_cap = getattr(_CFG, "START_NO_DATA_CAP", 0)
+    start_no_data_taken = {g: 0 for g in GROUPS}
+    guard_enabled = has_events_seen and start_no_data_cap >= 0
+
+    def _to_float(val, default=None):
+        try:
+            if pd.isna(val):
+                return default
+        except Exception:
+            return default
+        try:
+            return float(val)
+        except Exception:
+            return default
+
+    def _to_int(val, default=None):
+        try:
+            if pd.isna(val):
+                return default
+        except Exception:
+            return default
+        try:
+            return int(val)
+        except Exception:
+            return default
+
+    def _log_decision(
+        player: str,
+        *,
+        stage_label: str,
+        rank: int | None,
+        selected: bool,
+        reason: str,
+        group: str | None,
+        role: str | None,
+        score_for_stage,
+        attend_for_stage,
+        eb_for_stage,
+        is_low_n,
+        events_seen_val,
+    ) -> None:
+        selection_trace[player].append(
+            {
+                "stage": stage_label,
+                "rank_in_stage": rank,
+                "selected": bool(selected),
+                "cutoff_reason": reason,
+                "group": group,
+                "role": role,
+                "score_for_stage": _to_float(score_for_stage),
+                "attend_prob": _to_float(attend_for_stage),
+                "no_show_eb": _to_float(eb_for_stage),
+                "is_low_n": False if is_low_n is None else bool(is_low_n),
+                "events_seen": _to_int(events_seen_val, default=0),
+                "tie_break_key": _TIE_BREAK_KEY,
+            }
+        )
 
     forced_count = {g: {"Start": 0, "Ersatz": 0} for g in GROUPS}
     for item in forced_assignments:
@@ -206,24 +269,36 @@ def build_deterministic_roster(
             "_selection_stage": "forced",
         })
         forced_count[g][r] += 1
-
-    start_no_data_cap = getattr(_CFG, "START_NO_DATA_CAP", 0)
-    start_no_data_taken = {g: 0 for g in GROUPS}
-    guard_enabled = has_events_seen and start_no_data_cap >= 0
+        _log_decision(
+            p,
+            stage_label="forced",
+            rank=None,
+            selected=True,
+            reason="forced assignment",
+            group=g,
+            role=r,
+            score_for_stage=None,
+            attend_for_stage=None,
+            eb_for_stage=None,
+            is_low_n=None,
+            events_seen_val=None,
+        )
 
     def _sort_candidates(group: str, role: str) -> pd.DataFrame:
         score_col = f"score_{group}_{'start' if role == 'Start' else 'sub'}"
         primary = f"p_{'start' if role == 'Start' else 'sub'}_{group}"
         secondary = f"p_{'sub' if role == 'Start' else 'start'}_{group}"
-        return (
+        sorted_df = (
             df[~df["PlayerName"].isin(used)]
             .copy()
             .sort_values(
-                [score_col, primary, secondary, "PlayerName"],
-                ascending=[False, False, False, True],
+                [score_col, primary, secondary, "events_seen", "PlayerName"],
+                ascending=[False, False, False, True, True],
                 kind="mergesort",  # stabil
             )
         )
+        sorted_df["_stage_rank"] = range(1, len(sorted_df) + 1)
+        return sorted_df
 
     _USE_DEFAULT = object()
 
@@ -232,6 +307,7 @@ def build_deterministic_roster(
         role: str,
         count: int,
         *,
+        stage_label: str,
         min_attend_override=_USE_DEFAULT,
     ) -> pd.DataFrame:
         candidates = _sort_candidates(group, role)
@@ -274,16 +350,15 @@ def build_deterministic_roster(
         remaining = count
 
         def _take_from(available_df: pd.DataFrame, remaining_slots: int) -> tuple[pd.DataFrame, int]:
-            if remaining_slots <= 0 or available_df.empty:
+            if available_df.empty:
                 return pd.DataFrame(columns=available_df.columns), remaining_slots
 
             chosen_idx: List[int] = []
             local_remaining = remaining_slots
             for idx, row in available_df.iterrows():
-                if local_remaining <= 0:
-                    break
                 score_col = f"score_{group}_{'start' if role == 'Start' else 'sub'}"
                 attend_col = f"attend_{'start' if role == 'Start' else 'sub'}_{group}"
+                rank_val = _to_int(row.get("_stage_rank"), default=None)
                 if min_attend_override is _USE_DEFAULT:
                     min_attend = _resolve_min_attend(
                         min_attend_start if role == "Start" else min_attend_sub
@@ -291,25 +366,57 @@ def build_deterministic_roster(
                 else:
                     min_attend = min_attend_override
                 base_attend = row.get(attend_col, row.get(score_col, 0.0))
-                if min_attend is not None and base_attend < min_attend:
-                    continue
-                is_no_data = False
-                if guard_enabled and role == "Start":
-                    ev_val = row.get("events_seen")
-                    try:
-                        ev_int = int(ev_val)
-                    except (TypeError, ValueError):
-                        ev_int = 0
-                    is_no_data = ev_int <= 0
-                    if is_no_data and start_no_data_taken[group] >= start_no_data_cap:
-                        continue
-                chosen_idx.append(idx)
-                local_remaining -= 1
-                if guard_enabled and role == "Start" and is_no_data:
-                    start_no_data_taken[group] += 1
+                cutoff_reason = "selected"
+                selected_flag = False
+
+                if local_remaining <= 0:
+                    cutoff_reason = (
+                        "MIN_B_STARTERS reached" if stage_label == "B-start-fallback" else "no slots left"
+                    )
+                elif min_attend is not None and base_attend < min_attend:
+                    cutoff_reason = "threshold gate"
+                else:
+                    is_no_data = False
+                    if guard_enabled and role == "Start":
+                        ev_val = row.get("events_seen")
+                        try:
+                            ev_int = int(ev_val)
+                        except (TypeError, ValueError):
+                            ev_int = 0
+                        is_no_data = ev_int <= 0
+                        if is_no_data and start_no_data_taken[group] >= start_no_data_cap:
+                            cutoff_reason = "start_no_data_cap"
+                        else:
+                            cutoff_reason = "selected"
+                            selected_flag = True
+                            local_remaining -= 1
+                            if is_no_data:
+                                start_no_data_taken[group] += 1
+                    else:
+                        cutoff_reason = "selected"
+                        selected_flag = True
+                        local_remaining -= 1
+
+                _log_decision(
+                    row.PlayerName,
+                    stage_label=stage_label,
+                    rank=rank_val,
+                    selected=selected_flag,
+                    reason=cutoff_reason,
+                    group=group,
+                    role=role,
+                    score_for_stage=row.get(score_col),
+                    attend_for_stage=base_attend,
+                    eb_for_stage=row.get("eb_p_hat"),
+                    is_low_n=row.get("is_low_n"),
+                    events_seen_val=row.get("events_seen"),
+                )
+
+                if selected_flag:
+                    chosen_idx.append(idx)
 
             if not chosen_idx:
-                return pd.DataFrame(columns=available_df.columns), remaining_slots
+                return pd.DataFrame(columns=available_df.columns), local_remaining
             return available_df.loc[chosen_idx], local_remaining
 
         for mask in categories:
@@ -343,7 +450,13 @@ def build_deterministic_roster(
         )
 
     def _consume(group: str, role: str, cap: int, stage_label: str, *, min_attend=_USE_DEFAULT) -> pd.DataFrame:
-        picked = _pick_for(group, role, cap, min_attend_override=min_attend)
+        picked = _pick_for(
+            group,
+            role,
+            cap,
+            stage_label=stage_label,
+            min_attend_override=min_attend,
+        )
         for row in picked.itertuples(index=False):
             used.add(row.PlayerName)
             rows.append(
@@ -361,11 +474,10 @@ def build_deterministic_roster(
 
     b_primary = _consume("B", "Start", caps["B"]["Start"], stage_label="B-start-main")
     try:
-        min_b_needed = int(min_b_starters) if min_b_starters is not None else None
+        min_b_needed_raw = int(min_b_starters) if min_b_starters is not None else MIN_B_STARTERS
     except Exception:
-        min_b_needed = None
-    if min_b_needed is not None:
-        min_b_needed = max(min_b_needed, 0)
+        min_b_needed_raw = MIN_B_STARTERS
+    min_b_needed = max(min_b_needed_raw, 0)
     if min_b_needed:
         fallback_target = min(min_b_needed, caps["B"]["Start"])
         if len(b_primary) < fallback_target:
@@ -388,6 +500,54 @@ def build_deterministic_roster(
 
     # Safety: harte Assertions (kein Doppler)
     assert not out.duplicated("PlayerName").any(), "Duplicate players in roster"
+
+    all_players = sorted(set(df["PlayerName"].tolist()) | set(selection_trace.keys()))
+    selection_summary: List[Dict[str, object]] = []
+    for player in all_players:
+        trace = selection_trace.get(player, [])
+        first_stage = trace[0]["stage"] if trace else None
+        selected_entry = next((entry for entry in trace if entry.get("selected")), None)
+        final_entry = selected_entry or (trace[-1] if trace else None)
+        if final_entry is None:
+            final_entry = {
+                "stage": "skipped",
+                "rank_in_stage": None,
+                "selected": False,
+                "cutoff_reason": "not_considered",
+                "tie_break_key": _TIE_BREAK_KEY,
+                "score_for_stage": None,
+                "attend_prob": None,
+                "no_show_eb": None,
+                "is_low_n": None,
+                "events_seen": None,
+            }
+        stage_history = "; ".join(
+            f"{entry.get('stage')}:{entry.get('cutoff_reason')}" for entry in trace
+        )
+        selection_summary.append(
+            {
+                "canonical_name": player,
+                "selection_stage": final_entry.get("stage", "skipped"),
+                "first_stage": first_stage,
+                "rank_in_stage": final_entry.get("rank_in_stage"),
+                "selected": bool(final_entry.get("selected", False)),
+                "cutoff_reason": final_entry.get("cutoff_reason"),
+                "tie_break_key": final_entry.get("tie_break_key", _TIE_BREAK_KEY),
+                "score_for_stage": final_entry.get("score_for_stage"),
+                "attend_prob": final_entry.get("attend_prob"),
+                "no_show_eb": final_entry.get("no_show_eb"),
+                "is_low_n": final_entry.get("is_low_n"),
+                "events_seen": final_entry.get("events_seen"),
+                "stage_history": stage_history,
+            }
+        )
+
+    selection_debug_df = pd.DataFrame(selection_summary)
+    selection_debug_path = Path("out") / "debug_selection.csv"
+    selection_debug_path.parent.mkdir(parents=True, exist_ok=True)
+    selection_debug_df.to_csv(selection_debug_path, index=False)
+    print(f"[debug] Selection-Export geschrieben: {selection_debug_path}")
+    out.attrs["selection_debug"] = selection_summary
 
     # Debug-Export: macht transparent, wie EB-Parameter und Low-N-Regeln wirken.
     # - p0 (Team-Prior, ggf. winsorized/gerundet) und n0 (Pseudo-Counts) schieben
