@@ -5,6 +5,7 @@
     min_start_B: 0.55,
     min_bench_A: 0.45,
     min_bench_B: 0.45,
+    attendance_target_fraction: 0.8,
     target_expected_A: { low: 24.0, high: 28.0 },
     target_expected_B: { low: 24.0, high: 28.0 },
     hard_commit_floor: 0.92,
@@ -33,6 +34,7 @@
     targetAHigh: $("#targetAHigh"),
     targetBLow: $("#targetBLow"),
     targetBHigh: $("#targetBHigh"),
+    targetFraction: $("#targetFraction"),
     hardCommitFloor: $("#hardCommitFloor"),
     noResponseMultiplier: $("#noResponseMultiplier"),
     reliabilityRatio: $("#reliabilityRatio"),
@@ -40,6 +42,7 @@
     minStartBLabel: $("#minStartBLabel"),
     minBenchALabel: $("#minBenchALabel"),
     minBenchBLabel: $("#minBenchBLabel"),
+    targetFractionLabel: $("#targetFractionLabel"),
     hardCommitLabel: $("#hardCommitLabel"),
     noResponseLabel: $("#noResponseLabel"),
   };
@@ -77,6 +80,11 @@
       min_start_B: parseNumber(snap.min_start_B, DEFAULTS.min_start_B, { min: 0, max: 1 }),
       min_bench_A: parseNumber(snap.min_bench_A, DEFAULTS.min_bench_A, { min: 0, max: 1 }),
       min_bench_B: parseNumber(snap.min_bench_B, DEFAULTS.min_bench_B, { min: 0, max: 1 }),
+      attendance_target_fraction: parseNumber(
+        snap.attendance_target_fraction,
+        DEFAULTS.attendance_target_fraction,
+        { min: 0.1, max: 1 },
+      ),
       target_expected_A: {
         low: parseNumber(snap.target_expected_A?.low, DEFAULTS.target_expected_A.low, { min: 0, max: 60 }),
         high: parseNumber(snap.target_expected_A?.high, DEFAULTS.target_expected_A.high, { min: 0, max: 60 }),
@@ -141,6 +149,7 @@
     elements.minStartB.value = cfg.min_start_B;
     elements.minBenchA.value = cfg.min_bench_A;
     elements.minBenchB.value = cfg.min_bench_B;
+    elements.targetFraction.value = cfg.attendance_target_fraction;
     elements.targetALow.value = cfg.target_expected_A.low;
     elements.targetAHigh.value = cfg.target_expected_A.high;
     elements.targetBLow.value = cfg.target_expected_B.low;
@@ -160,6 +169,7 @@
     elements.minStartBLabel.textContent = Number(elements.minStartB.value).toFixed(2);
     elements.minBenchALabel.textContent = Number(elements.minBenchA.value).toFixed(2);
     elements.minBenchBLabel.textContent = Number(elements.minBenchB.value).toFixed(2);
+    elements.targetFractionLabel.textContent = Number(elements.targetFraction.value).toFixed(2);
     elements.hardCommitLabel.textContent = Number(elements.hardCommitFloor.value).toFixed(2);
     elements.noResponseLabel.textContent = Number(elements.noResponseMultiplier.value).toFixed(2);
   }
@@ -187,6 +197,11 @@
         low: parseNumber(elements.targetBLow.value, DEFAULTS.target_expected_B.low, { min: 5, max: 60 }),
         high: parseNumber(elements.targetBHigh.value, DEFAULTS.target_expected_B.high, { min: 5, max: 60 }),
       },
+      attendance_target_fraction: parseNumber(
+        elements.targetFraction.value,
+        DEFAULTS.attendance_target_fraction,
+        { min: 0.1, max: 1 },
+      ),
       hard_commit_floor: parseNumber(elements.hardCommitFloor.value, DEFAULTS.hard_commit_floor, { min: 0.2, max: 1 }),
       no_response_multiplier: parseNumber(
         elements.noResponseMultiplier.value,

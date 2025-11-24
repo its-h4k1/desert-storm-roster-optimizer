@@ -29,6 +29,7 @@ class AttendanceConfig:
     min_start_B: float
     min_bench_A: float
     min_bench_B: float
+    attendance_target_fraction: float
     target_expected_A: AttendanceBand
     target_expected_B: AttendanceBand
     hard_commit_floor: float
@@ -53,6 +54,7 @@ class AttendanceConfig:
             "min_start_B": float(self.min_start_B),
             "min_bench_A": float(self.min_bench_A),
             "min_bench_B": float(self.min_bench_B),
+            "attendance_target_fraction": float(self.attendance_target_fraction),
             "target_expected_A": self.target_expected_A.to_snapshot(),
             "target_expected_B": self.target_expected_B.to_snapshot(),
             "hard_commit_floor": float(self.hard_commit_floor),
@@ -68,6 +70,7 @@ DEFAULT_ATTENDANCE_CONFIG = AttendanceConfig(
     min_start_B=0.55,
     min_bench_A=0.45,
     min_bench_B=0.45,
+    attendance_target_fraction=0.8,
     target_expected_A=AttendanceBand(low=24.0, high=28.0),
     target_expected_B=AttendanceBand(low=24.0, high=28.0),
     hard_commit_floor=0.92,
@@ -159,6 +162,7 @@ def load_attendance_config(
             low=float(values["target_expected_B"]["low"]),
             high=float(values["target_expected_B"]["high"]),
         ),
+        attendance_target_fraction=float(values["attendance_target_fraction"]),
         hard_commit_floor=float(values["hard_commit_floor"]),
         no_response_multiplier=float(values["no_response_multiplier"]),
         high_reliability_balance_ratio=float(values["high_reliability_balance_ratio"]),

@@ -1338,6 +1338,31 @@ def main():
         for g in GROUPS
     }
 
+    # Per-Team-Soll-Anwesenheit: basiert auf verfügbaren Slots (Starter + Ersatz)
+    # und einer globalen Zielquote. Der Wert wird auf ganze Spieler gerundet und
+    # nie größer als die maximale Slot-Anzahl pro Team gesetzt. Die alten
+    # globalen Zielkorridore werden weiterhin für die Bandbreite genutzt, aber
+    # nicht mehr direkt einem Team zugeschlagen.
+    attendance_target_fraction = min(
+        max(float(getattr(attendance_config, "attendance_target_fraction", 0.8)), 0.0),
+        1.0,
+    )
+    slot_caps_by_team = {}
+    attendance_target_by_team: Dict[str, int] = {}
+    attendance_diff_by_team: Dict[str, float] = {}
+    for g in GROUPS:
+        starters_cap = int(target_caps_by_group_role.get(g, {}).get("Start", STARTERS_PER_GROUP))
+        bench_cap = int(target_caps_by_group_role.get(g, {}).get("Ersatz", SUBS_PER_GROUP))
+        max_slots = max(0, starters_cap + bench_cap)
+        slot_caps_by_team[g] = {
+            "starters_total": starters_cap,
+            "bench_total": bench_cap,
+            "max_slots": max_slots,
+        }
+        target_raw = round(max_slots * attendance_target_fraction)
+        attendance_target_by_team[g] = int(min(target_raw, max_slots))
+        attendance_diff_by_team[g] = expected_attendance[g]["total"] - attendance_target_by_team[g]
+
     def _by(grp: str, role: str) -> List[str]:
         return out_df[(out_df["Group"] == grp) & (out_df["Role"] == role)]["PlayerName"].tolist()
 
@@ -1885,6 +1910,9 @@ def main():
             },
             "missing_slots": missing,
             "expected_attendance": expected_meta,
+            "attendance_target": attendance_target_by_team.get(g),
+            "attendance_diff": attendance_diff_by_team.get(g),
+            "slots": slot_caps_by_team.get(g, {}),
             "risk_level": risk_level,
             "risk_text": risk_text,
             "summary": "; ".join(parts),
@@ -1904,6 +1932,10 @@ def main():
         "missing_slots": missing_slots,
         "pool_total_expected": float(pool["attend_prob"].sum()),
         "targets": attendance_targets,
+        "targets_by_team": attendance_target_by_team,
+        "target_fraction": attendance_target_fraction,
+        "target_diff": attendance_diff_by_team,
+        "slots_by_team": slot_caps_by_team,
         "target_status": attendance_target_status,
         "config_snapshot": attendance_config.to_snapshot(),
         "config_source": attendance_config_meta,
@@ -1941,8 +1973,7 @@ def main():
     for g in GROUPS:
         target_caps = target_caps_by_group_role.get(g, {})
         expected_gap = max(
-            (attendance_targets.get(g, {}).get("low", expected_attendance[g]["total"]))
-            - expected_attendance[g]["total"],
+            attendance_target_by_team.get(g, 0) - expected_attendance[g]["total"],
             0.0,
         )
         nominal_prob = max(nominal_prob_by_team.get(g, 0.5), 0.01)
