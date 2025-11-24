@@ -1,3 +1,4 @@
+from pathlib import Path
 import sys
 
 import pandas as pd
@@ -196,3 +197,38 @@ def test_team_b_uses_fallback_pool_when_needed():
     assert fallback_names == {"low1", "low2"}
     bench = roster[roster["Role"] == "Ersatz"]
     assert bench.empty
+
+
+def test_b_fallback_tie_break_prefers_low_event_count(monkeypatch, tmp_path):
+    df = pd.DataFrame(
+        {
+            "PlayerName": ["veteran", "newbie"],
+            "attend_prob": [0.5, 0.5],
+            "PrefGroup": ["B", "B"],
+            "PrefMode": ["soft", "soft"],
+            "PrefBoost": [0.0, 0.0],
+            "risk_penalty": [0.0, 0.0],
+            "events_seen": [10, 2],
+        }
+    )
+
+    monkeypatch.chdir(tmp_path)
+
+    roster = utils_mod.build_deterministic_roster(
+        df,
+        capacities_by_group_role={"A": {"Start": 0, "Ersatz": 0}, "B": {"Start": 1, "Ersatz": 0}},
+        min_attend_start={"A": None, "B": 0.8},
+        min_attend_sub=0.8,
+        min_b_starters=1,
+        allow_unfilled=True,
+    )
+
+    starters_b = roster[(roster["Group"] == "B") & (roster["Role"] == "Start")]
+    assert starters_b.iloc[0]["PlayerName"] == "newbie"
+
+    debug_path = Path("out") / "debug_selection.csv"
+    debug_df = pd.read_csv(debug_path)
+    diag = debug_df.set_index("canonical_name")
+    assert diag.loc["veteran", "selection_stage"] == "B-start-fallback"
+    assert diag.loc["newbie", "selection_stage"] == "B-start-fallback"
+    assert diag.loc["veteran", "cutoff_reason"] in {"no slots left", "MIN_B_STARTERS reached"}
