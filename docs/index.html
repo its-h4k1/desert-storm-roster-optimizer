@@ -69,6 +69,8 @@
     .roster-controls{margin:12px 0 20px;display:flex;gap:12px;flex-wrap:wrap;align-items:center}
     .player-meta-toggle{font-size:0.9em;color:var(--fg);display:inline-flex;align-items:center;gap:8px;cursor:pointer;user-select:none}
     .player-meta-toggle input{width:16px;height:16px}
+    .filter-note{font-size:0.9em;color:var(--muted)}
+    .filter-commit-callup tbody tr[data-has-commit-callup="false"]{display:none}
     .btn{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);background:#fff;border-radius:8px;padding:7px 10px;font-weight:600;cursor:pointer;color:var(--fg);box-shadow:0 4px 10px rgba(0,0,0,0.04)}
     .btn:disabled{opacity:0.55;cursor:not-allowed;box-shadow:none}
     .player-name-row{font-size:14px;font-weight:600}
@@ -164,6 +166,11 @@
         <input type="checkbox" id="callup-toggle" checked />
         Callup-Empfehlungen anzeigen
       </label>
+      <label class="player-meta-toggle" title="Blendet Spieler ohne verbindliche Zusage oder Callup-Badge aus">
+        <input type="checkbox" id="commit-callup-toggle" />
+        Nur Spieler mit Zusage/Callup anzeigen
+      </label>
+      <span id="commit-callup-filter-note" class="filter-note" style="display:none">Gefilterte Ansicht – Spieler ohne Zusage/Callup werden ausgeblendet.</span>
       <button id="callup-export" class="btn" type="button" disabled title="Keine Callup-Kandidaten im aktuellen Roster">
         📥 Callup-Kandidaten als CSV exportieren
       </button>
@@ -308,10 +315,13 @@
       allianceFilters: { contactYesOnly: true, hideRoster: true, hideAbsent: true, showFormer: false },
       latestPayload: null,
       playersArray: [],
+      showCommitCallupOnly: false,
     };
     const rosterRoot = document.getElementById("roster-root");
     const playerMetaToggle = document.getElementById("player-meta-toggle");
     const callupToggle = document.getElementById("callup-toggle");
+    const commitCallupToggle = document.getElementById("commit-callup-toggle");
+    const commitCallupFilterNote = document.getElementById("commit-callup-filter-note");
     const callupNote = document.getElementById("callup-note");
     const attendanceSummaryBox = document.getElementById("attendance-summary");
     const overviewMeta = document.getElementById("overview-meta");
@@ -336,6 +346,16 @@
     const signupInline = document.getElementById("signup-inline");
     const diagnosticsToggle = document.getElementById("diagnostics-toggle");
     const diagnosticsContent = document.getElementById("diagnostics-content");
+
+    const updateCommitCallupFilter = () => {
+      if (rosterRoot) {
+        rosterRoot.classList.toggle("filter-commit-callup", state.showCommitCallupOnly);
+      }
+      if (commitCallupFilterNote) {
+        commitCallupFilterNote.style.display = state.showCommitCallupOnly ? "inline" : "none";
+      }
+    };
+
     if (playerMetaToggle) {
       state.showPlayerMeta = Boolean(playerMetaToggle.checked);
       playerMetaToggle.addEventListener("change", (event) => {
@@ -354,6 +374,13 @@
         }
         document.body.classList.toggle("hide-callups", !state.showCallups);
         updateCallupNote(state.callupMeta);
+      });
+    }
+    if (commitCallupToggle) {
+      state.showCommitCallupOnly = Boolean(commitCallupToggle.checked);
+      commitCallupToggle.addEventListener("change", (event) => {
+        state.showCommitCallupOnly = Boolean(event.target.checked);
+        updateCommitCallupFilter();
       });
     }
     if (callupExportBtn) {
@@ -421,6 +448,7 @@
       rosterRoot.classList.toggle("hide-callups", !state.showCallups);
     }
     document.body.classList.toggle("hide-callups", !state.showCallups);
+    updateCommitCallupFilter();
     updateCallupNote(state.callupMeta);
     updateCallupExportButton(state.callupMeta, state.callupCandidates);
 
@@ -2473,6 +2501,7 @@
               row: r,
               playersByCanon: state.playersByCanon || {},
             });
+            const hasCommitOrCallup = Boolean(forcedSource || (normalizedCallup && normalizedCallup.recommended));
             const forcedBadge = buildFixBadge(forcedSource);
             const callupBadge = p ? buildCallupBadge(normalizedCallup) : '';
             if (historyBadge) nameHTML += ` ${historyBadge}`;
@@ -2499,6 +2528,7 @@
               lastNoShowDate: lastNoShowValue,
             });
             const tr = document.createElement("tr");
+            tr.dataset.hasCommitCallup = hasCommitOrCallup ? "true" : "false";
             tr.innerHTML = `
               <td class="num">${pad(i+1)}</td>
               <td>
