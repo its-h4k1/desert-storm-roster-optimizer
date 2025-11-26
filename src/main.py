@@ -1199,8 +1199,16 @@ def main():
     for canon_val in seen_forced:
         next_event_status[canon_val] = "hard_commitment"
 
+    callup_canons = {
+        str(c)
+        for c in (entry.get("canon") for entry in signup_file_entries)
+        if c is not None and not pd.isna(c) and str(c).strip()
+    }
+
     # 6) Input für Builder (nur Rest-Slots)
     pool_for_builder = pool[~pool["canon"].isin(seen_forced)].copy()
+    if callup_config.callups_only_mode:
+        pool_for_builder = pool_for_builder[pool_for_builder["canon"].isin(callup_canons)].copy()
     # Team-Logik:
     #  - Team A Starter: immer voll besetzen (kein Attend-Filter)
     #  - Team B Starter: nur Spieler über der globalen Attend-Schwelle
