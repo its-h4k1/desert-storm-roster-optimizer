@@ -1,5 +1,5 @@
 {
-  "generated_at": "2025-11-26T22:24:36.561199+01:00",
+  "generated_at": "2025-11-26T22:29:38.401221+01:00",
   "schema": {
     "version": 4,
     "csv": [
@@ -33,8 +33,8 @@
     "prior": {
       "fallback": 0.18,
       "pad": 0.02,
-      "team_mean": 0.7001759374823487,
-      "value": 0.7201759374823488
+      "team_mean": 0.7001759374823435,
+      "value": 0.7201759374823435
     },
     "metrics": {
       "risk_penalty": {
@@ -49,31 +49,31 @@
   "signup_pool": {
     "source": "data/event_signups_next.csv",
     "stats": {
-      "file_rows_total": 31,
-      "file_entries_total": 31,
-      "raw_rows": 31,
-      "rows_with_playername": 31,
-      "rows_with_canon": 31,
-      "file_rows_with_playername": 31,
-      "file_rows_with_canon": 31,
-      "total_entries": 31,
-      "processed_entries_total": 31,
-      "applied_entries": 31,
+      "file_rows_total": 32,
+      "file_entries_total": 32,
+      "raw_rows": 32,
+      "rows_with_playername": 32,
+      "rows_with_canon": 32,
+      "file_rows_with_playername": 32,
+      "file_rows_with_canon": 32,
+      "total_entries": 32,
+      "processed_entries_total": 32,
+      "applied_entries": 32,
       "ignored_entries": 0,
-      "hard_commit_rows_total": 31,
-      "hard_commit_total": 31,
-      "hard_commit_applied": 31,
+      "hard_commit_rows_total": 32,
+      "hard_commit_total": 32,
+      "hard_commit_applied": 32,
       "hard_commit_invalid": 0,
       "hard_commit_overbooked": 0,
       "hard_commit_missing_from_roster": 0,
-      "hard_commitments_total": 31,
-      "hard_commitments_applied": 31,
+      "hard_commitments_total": 32,
+      "hard_commitments_applied": 32,
       "hard_commitments_invalid": 0,
       "hard_commitments_overbooked": 0,
       "hard_commitments_missing_from_roster": 0,
-      "in_roster_hard_commitments": 31,
-      "forced_total": 31,
-      "forced_in_roster": 31,
+      "in_roster_hard_commitments": 32,
+      "forced_total": 32,
+      "forced_in_roster": 32,
       "forced_out_of_roster": 0,
       "extra_entries_total": 0,
       "extra_entries_by_group": {
@@ -480,6 +480,24 @@
       },
       {
         "row_index": 24,
+        "player": "cindy934",
+        "canon": "cindy934",
+        "group_pref": "B",
+        "role_pref": "Start",
+        "commitment": "hard",
+        "source": "manual",
+        "note": "",
+        "in_alliance": true,
+        "in_player_pool": true,
+        "is_absent_next_event": false,
+        "pref_group_in_pool": null,
+        "status": "forced",
+        "resolved_group": "B",
+        "resolved_role": "Start",
+        "overbooked": false
+      },
+      {
+        "row_index": 25,
         "player": "Cupra290",
         "canon": "cupra290",
         "group_pref": "B",
@@ -497,7 +515,7 @@
         "overbooked": false
       },
       {
-        "row_index": 25,
+        "row_index": 26,
         "player": "Dany Bossss",
         "canon": "dany bossss",
         "group_pref": "B",
@@ -515,7 +533,7 @@
         "overbooked": false
       },
       {
-        "row_index": 26,
+        "row_index": 27,
         "player": "Darkface 46",
         "canon": "darkface 46",
         "group_pref": "B",
@@ -533,7 +551,7 @@
         "overbooked": false
       },
       {
-        "row_index": 27,
+        "row_index": 28,
         "player": "Evil Activities",
         "canon": "evil activities",
         "group_pref": "B",
@@ -551,7 +569,7 @@
         "overbooked": false
       },
       {
-        "row_index": 28,
+        "row_index": 29,
         "player": "Fenworld",
         "canon": "fenworld",
         "group_pref": "B",
@@ -569,7 +587,7 @@
         "overbooked": false
       },
       {
-        "row_index": 29,
+        "row_index": 30,
         "player": "Kurdun Laneti",
         "canon": "kurdun laneti",
         "group_pref": "B",
@@ -587,7 +605,7 @@
         "overbooked": false
       },
       {
-        "row_index": 30,
+        "row_index": 31,
         "player": "Maik1234567890",
         "canon": "maik1234567890",
         "group_pref": "B",
@@ -605,7 +623,7 @@
         "overbooked": false
       },
       {
-        "row_index": 31,
+        "row_index": 32,
         "player": "Moscha",
         "canon": "moscha",
         "group_pref": "B",
@@ -623,7 +641,7 @@
         "overbooked": false
       },
       {
-        "row_index": 32,
+        "row_index": 33,
         "player": "Pickopf",
         "canon": "pickopf",
         "group_pref": "B",
@@ -863,6 +881,16 @@
         "overbooked": false
       },
       {
+        "player": "cindy934",
+        "canon": "cindy934",
+        "group": "B",
+        "role": "Start",
+        "source": "manual",
+        "note": "",
+        "commitment": "hard",
+        "overbooked": false
+      },
+      {
         "player": "Cupra290",
         "canon": "cupra290",
         "group": "B",
@@ -955,31 +983,31 @@
     ],
     "invalid_forced_signups": [],
     "overbooked_forced_signups": [],
-    "file_rows_total": 31,
-    "file_entries_total": 31,
-    "raw_rows": 31,
-    "rows_with_playername": 31,
-    "rows_with_canon": 31,
-    "file_rows_with_playername": 31,
-    "file_rows_with_canon": 31,
-    "total_entries": 31,
-    "processed_entries_total": 31,
-    "applied_entries": 31,
+    "file_rows_total": 32,
+    "file_entries_total": 32,
+    "raw_rows": 32,
+    "rows_with_playername": 32,
+    "rows_with_canon": 32,
+    "file_rows_with_playername": 32,
+    "file_rows_with_canon": 32,
+    "total_entries": 32,
+    "processed_entries_total": 32,
+    "applied_entries": 32,
     "ignored_entries": 0,
-    "hard_commit_rows_total": 31,
-    "hard_commit_total": 31,
-    "hard_commit_applied": 31,
+    "hard_commit_rows_total": 32,
+    "hard_commit_total": 32,
+    "hard_commit_applied": 32,
     "hard_commit_invalid": 0,
     "hard_commit_overbooked": 0,
     "hard_commit_missing_from_roster": 0,
-    "hard_commitments_total": 31,
-    "hard_commitments_applied": 31,
+    "hard_commitments_total": 32,
+    "hard_commitments_applied": 32,
     "hard_commitments_invalid": 0,
     "hard_commitments_overbooked": 0,
     "hard_commitments_missing_from_roster": 0,
-    "in_roster_hard_commitments": 31,
-    "forced_total": 31,
-    "forced_in_roster": 31,
+    "in_roster_hard_commitments": 32,
+    "forced_total": 32,
+    "forced_in_roster": 32,
     "forced_out_of_roster": 0,
     "extra_entries_total": 0,
     "extra_entries_by_group": {
@@ -1016,6 +1044,7 @@
     },
     "B": {
       "Start": [
+        "Aegolas",
         "Alstermaus",
         "BjörnBärchi",
         "Colombo123",
@@ -1038,18 +1067,18 @@
   "event_signups": {
     "scope": "next_event",
     "source": "data/event_signups_next.csv",
-    "raw_rows": 31,
-    "rows_with_playername": 31,
-    "rows_with_canon": 31,
-    "file_rows_total": 31,
-    "file_rows_with_playername": 31,
-    "file_rows_with_canon": 31,
-    "total_entries": 31,
-    "applied_entries": 31,
+    "raw_rows": 32,
+    "rows_with_playername": 32,
+    "rows_with_canon": 32,
+    "file_rows_total": 32,
+    "file_rows_with_playername": 32,
+    "file_rows_with_canon": 32,
+    "total_entries": 32,
+    "applied_entries": 32,
     "ignored_entries": 0,
-    "hard_commitments": 31,
-    "hard_commit_rows_total": 31,
-    "hard_commitments_applied": 31,
+    "hard_commitments": 32,
+    "hard_commit_rows_total": 32,
+    "hard_commitments_applied": 32,
     "hard_commitments_invalid": 0,
     "hard_commitments_overbooked": 0,
     "extra_entries_total": 0,
@@ -1057,8 +1086,8 @@
       "A": 0,
       "B": 0
     },
-    "forced_total": 31,
-    "forced_in_roster": 31,
+    "forced_total": 32,
+    "forced_in_roster": 32,
     "forced_out_of_roster": 0
   },
   "forced_signups": [
@@ -1275,6 +1304,16 @@
     {
       "player": "BjörnBärchi",
       "canon": "björnbärchi",
+      "group": "B",
+      "role": "Start",
+      "source": "manual",
+      "note": "",
+      "commitment": "hard",
+      "overbooked": false
+    },
+    {
+      "player": "cindy934",
+      "canon": "cindy934",
       "group": "B",
       "role": "Start",
       "source": "manual",
@@ -2014,13 +2053,13 @@
       "group": "A",
       "role": "Start",
       "noshow_overall": 0.25,
-      "noshow_rolling": 0.21113561645764023,
+      "noshow_rolling": 0.21113561645775425,
       "attend_prob": 0.92,
       "last_seen": "2025-11-21",
       "last_noshow_date": "2025-10-24",
       "events_seen": 12,
       "noshow_count": 3,
-      "risk_penalty": 0.023319057783774785,
+      "risk_penalty": 0.023319057783774768,
       "selection_stage": "forced",
       "is_absent_next_event": false,
       "callup": {
@@ -2039,10 +2078,10 @@
       "has_forced_signup": true,
       "next_event_status": "hard_commitment",
       "eb": {
-        "p0": 0.7001759374823487,
+        "p0": 0.7001759374823435,
         "n0": 4.0,
-        "p_hat": 0.3625439843705872,
-        "sigma": 0.11659528891887393
+        "p_hat": 0.3625439843705859,
+        "sigma": 0.11659528891887383
       },
       "event_signup": {
         "group": "A",
@@ -2058,13 +2097,13 @@
       "group": "A",
       "role": "Start",
       "noshow_overall": 0.23076923076923073,
-      "noshow_rolling": 0.18764712091310276,
+      "noshow_rolling": 0.1876471209133076,
       "attend_prob": 0.92,
       "last_seen": "2025-11-21",
       "last_noshow_date": "2025-10-03",
       "events_seen": 13,
       "noshow_count": 3,
-      "risk_penalty": 0.022350154582817847,
+      "risk_penalty": 0.022350154582817833,
       "selection_stage": "forced",
       "is_absent_next_event": false,
       "callup": {
@@ -2083,10 +2122,10 @@
       "has_forced_signup": true,
       "next_event_status": "hard_commitment",
       "eb": {
-        "p0": 0.7001759374823487,
+        "p0": 0.7001759374823435,
         "n0": 4.0,
-        "p_hat": 0.3412178676429056,
-        "sigma": 0.11175077291408923
+        "p_hat": 0.34121786764290435,
+        "sigma": 0.11175077291408915
       },
       "event_signup": {
         "group": "A",
@@ -2108,7 +2147,7 @@
       "last_noshow_date": null,
       "events_seen": 6,
       "noshow_count": 0,
-      "risk_penalty": 0.027077730537657947,
+      "risk_penalty": 0.027077730537657885,
       "selection_stage": "forced",
       "is_absent_next_event": false,
       "callup": {
@@ -2127,10 +2166,10 @@
       "has_forced_signup": true,
       "next_event_status": "hard_commitment",
       "eb": {
-        "p0": 0.7001759374823487,
+        "p0": 0.7001759374823435,
         "n0": 4.0,
-        "p_hat": 0.2800703749929395,
-        "sigma": 0.13538865268828973
+        "p_hat": 0.2800703749929374,
+        "sigma": 0.13538865268828942
       },
       "event_signup": {
         "group": "A",
@@ -2146,13 +2185,13 @@
       "group": "A",
       "role": "Start",
       "noshow_overall": 0.7777777777777778,
-      "noshow_rolling": 0.7777098742406724,
+      "noshow_rolling": 0.7777098742406489,
       "attend_prob": 0.92,
       "last_seen": "2025-11-07",
       "last_noshow_date": "2025-11-21",
       "events_seen": 9,
       "noshow_count": 7,
-      "risk_penalty": 0.02302387850669732,
+      "risk_penalty": 0.023023878506697366,
       "selection_stage": "forced",
       "is_absent_next_event": false,
       "callup": {
@@ -2183,10 +2222,10 @@
       "has_forced_signup": true,
       "next_event_status": "hard_commitment",
       "eb": {
-        "p0": 0.7001759374823487,
+        "p0": 0.7001759374823435,
         "n0": 4.0,
-        "p_hat": 0.7539002884561073,
-        "sigma": 0.11511939253348659
+        "p_hat": 0.7539002884561057,
+        "sigma": 0.11511939253348683
       },
       "event_signup": {
         "group": "A",
@@ -2208,7 +2247,7 @@
       "last_noshow_date": null,
       "events_seen": 13,
       "noshow_count": 0,
-      "risk_penalty": 0.017486859405177607,
+      "risk_penalty": 0.01748685940517756,
       "selection_stage": "forced",
       "is_absent_next_event": false,
       "callup": {
@@ -2227,10 +2266,10 @@
       "has_forced_signup": true,
       "next_event_status": "hard_commitment",
       "eb": {
-        "p0": 0.7001759374823487,
+        "p0": 0.7001759374823435,
         "n0": 4.0,
-        "p_hat": 0.16474727940761147,
-        "sigma": 0.08743429702588804
+        "p_hat": 0.16474727940761025,
+        "sigma": 0.08743429702588779
       },
       "event_signup": {
         "group": "A",
@@ -2252,7 +2291,7 @@
       "last_noshow_date": null,
       "events_seen": 13,
       "noshow_count": 0,
-      "risk_penalty": 0.017486859405177607,
+      "risk_penalty": 0.01748685940517756,
       "selection_stage": "forced",
       "is_absent_next_event": false,
       "callup": {
@@ -2271,10 +2310,10 @@
       "has_forced_signup": true,
       "next_event_status": "hard_commitment",
       "eb": {
-        "p0": 0.7001759374823487,
+        "p0": 0.7001759374823435,
         "n0": 4.0,
-        "p_hat": 0.16474727940761147,
-        "sigma": 0.08743429702588804
+        "p_hat": 0.16474727940761025,
+        "sigma": 0.08743429702588779
       },
       "event_signup": {
         "group": "A",
@@ -2290,13 +2329,13 @@
       "group": "A",
       "role": "Start",
       "noshow_overall": 0.8571428571428572,
-      "noshow_rolling": 0.8231189510494012,
+      "noshow_rolling": 0.8231189510492577,
       "attend_prob": 0.92,
       "last_seen": "2025-11-21",
       "last_noshow_date": "2025-11-07",
       "events_seen": 7,
       "noshow_count": 6,
-      "risk_penalty": 0.02309124000908312,
+      "risk_penalty": 0.023091240009083195,
       "selection_stage": "forced",
       "is_absent_next_event": false,
       "callup": {
@@ -2327,10 +2366,10 @@
       "has_forced_signup": true,
       "next_event_status": "hard_commitment",
       "eb": {
-        "p0": 0.7001759374823487,
+        "p0": 0.7001759374823435,
         "n0": 4.0,
-        "p_hat": 0.8000639772663086,
-        "sigma": 0.11545620004541558
+        "p_hat": 0.8000639772663067,
+        "sigma": 0.11545620004541597
       },
       "event_signup": {
         "group": "A",
@@ -2352,7 +2391,7 @@
       "last_noshow_date": null,
       "events_seen": 5,
       "noshow_count": 0,
-      "risk_penalty": 0.02928142904029407,
+      "risk_penalty": 0.029281429040294005,
       "selection_stage": "forced",
       "is_absent_next_event": false,
       "callup": {
@@ -2371,10 +2410,10 @@
       "has_forced_signup": true,
       "next_event_status": "hard_commitment",
       "eb": {
-        "p0": 0.7001759374823487,
+        "p0": 0.7001759374823435,
         "n0": 4.0,
-        "p_hat": 0.31118930554771057,
-        "sigma": 0.14640714520147036
+        "p_hat": 0.31118930554770824,
+        "sigma": 0.14640714520147002
       },
       "event_signup": {
         "group": "A",
@@ -2396,7 +2435,7 @@
       "last_noshow_date": null,
       "events_seen": 8,
       "noshow_count": 0,
-      "risk_penalty": 0.023463238888767488,
+      "risk_penalty": 0.023463238888767432,
       "selection_stage": "forced",
       "is_absent_next_event": false,
       "callup": {
@@ -2415,10 +2454,10 @@
       "has_forced_signup": true,
       "next_event_status": "hard_commitment",
       "eb": {
-        "p0": 0.7001759374823487,
+        "p0": 0.7001759374823435,
         "n0": 4.0,
-        "p_hat": 0.23339197916078291,
-        "sigma": 0.11731619444383744
+        "p_hat": 0.23339197916078117,
+        "sigma": 0.11731619444383715
       },
       "event_signup": {
         "group": "A",
@@ -2434,13 +2473,13 @@
       "group": "A",
       "role": "Start",
       "noshow_overall": 0.3076923076923077,
-      "noshow_rolling": 0.2628224263760305,
+      "noshow_rolling": 0.26282242637592335,
       "attend_prob": 0.92,
       "last_seen": "2025-11-21",
       "last_noshow_date": "2025-10-17",
       "events_seen": 13,
       "noshow_count": 4,
-      "risk_penalty": 0.023094409025044133,
+      "risk_penalty": 0.023094409025044123,
       "selection_stage": "forced",
       "is_absent_next_event": false,
       "callup": {
@@ -2459,10 +2498,10 @@
       "has_forced_signup": true,
       "next_event_status": "hard_commitment",
       "eb": {
-        "p0": 0.7001759374823487,
+        "p0": 0.7001759374823435,
         "n0": 4.0,
-        "p_hat": 0.40004139705467034,
-        "sigma": 0.11547204512522066
+        "p_hat": 0.40004139705466907,
+        "sigma": 0.11547204512522061
       },
       "event_signup": {
         "group": "A",
@@ -2478,13 +2517,13 @@
       "group": "A",
       "role": "Start",
       "noshow_overall": 0.09090909090909094,
-      "noshow_rolling": 0.06616593913502067,
+      "noshow_rolling": 0.06616593913509561,
       "attend_prob": 0.92,
       "last_seen": "2025-11-21",
       "last_noshow_date": "2025-09-05",
       "events_seen": 11,
       "noshow_count": 1,
-      "risk_penalty": 0.021747338854881525,
+      "risk_penalty": 0.021747338854881483,
       "selection_stage": "forced",
       "is_absent_next_event": false,
       "callup": {
@@ -2503,10 +2542,10 @@
       "has_forced_signup": true,
       "next_event_status": "hard_commitment",
       "eb": {
-        "p0": 0.7001759374823487,
+        "p0": 0.7001759374823435,
         "n0": 4.0,
-        "p_hat": 0.253380249995293,
-        "sigma": 0.10873669427440762
+        "p_hat": 0.25338024999529163,
+        "sigma": 0.10873669427440741
       },
       "event_signup": {
         "group": "A",
@@ -2528,7 +2567,7 @@
       "last_noshow_date": null,
       "events_seen": 9,
       "noshow_count": 0,
-      "risk_penalty": 0.021975629033437832,
+      "risk_penalty": 0.021975629033437773,
       "selection_stage": "forced",
       "is_absent_next_event": false,
       "callup": {
@@ -2547,10 +2586,10 @@
       "has_forced_signup": true,
       "next_event_status": "hard_commitment",
       "eb": {
-        "p0": 0.7001759374823487,
+        "p0": 0.7001759374823435,
         "n0": 4.0,
-        "p_hat": 0.21543874999456886,
-        "sigma": 0.10987814516718915
+        "p_hat": 0.21543874999456725,
+        "sigma": 0.10987814516718886
       },
       "event_signup": {
         "group": "A",
@@ -2566,13 +2605,13 @@
       "group": "A",
       "role": "Start",
       "noshow_overall": 0.25,
-      "noshow_rolling": 0.22944074776572032,
+      "noshow_rolling": 0.22944074776579937,
       "attend_prob": 0.92,
       "last_seen": "2025-11-21",
       "last_noshow_date": "2025-10-24",
       "events_seen": 12,
       "noshow_count": 3,
-      "risk_penalty": 0.023319057783774785,
+      "risk_penalty": 0.023319057783774768,
       "selection_stage": "forced",
       "is_absent_next_event": false,
       "callup": {
@@ -2591,10 +2630,10 @@
       "has_forced_signup": true,
       "next_event_status": "hard_commitment",
       "eb": {
-        "p0": 0.7001759374823487,
+        "p0": 0.7001759374823435,
         "n0": 4.0,
-        "p_hat": 0.3625439843705872,
-        "sigma": 0.11659528891887393
+        "p_hat": 0.3625439843705859,
+        "sigma": 0.11659528891887383
       },
       "event_signup": {
         "group": "A",
@@ -2616,7 +2655,7 @@
       "last_noshow_date": null,
       "events_seen": 2,
       "noshow_count": 0,
-      "risk_penalty": 0.03771295302868889,
+      "risk_penalty": 0.03771295302868887,
       "selection_stage": "forced",
       "is_absent_next_event": false,
       "callup": {
@@ -2642,10 +2681,10 @@
       "has_forced_signup": true,
       "next_event_status": "hard_commitment",
       "eb": {
-        "p0": 0.7001759374823487,
+        "p0": 0.7001759374823435,
         "n0": 4.0,
-        "p_hat": 0.46678395832156583,
-        "sigma": 0.18856476514344445
+        "p_hat": 0.46678395832156233,
+        "sigma": 0.18856476514344434
       },
       "event_signup": {
         "group": "A",
@@ -2661,13 +2700,13 @@
       "group": "A",
       "role": "Start",
       "noshow_overall": 0.07692307692307687,
-      "noshow_rolling": 0.05546670609424098,
+      "noshow_rolling": 0.05546670609434745,
       "attend_prob": 0.92,
       "last_seen": "2025-11-21",
       "last_noshow_date": "2025-08-28",
       "events_seen": 13,
       "noshow_count": 1,
-      "risk_penalty": 0.019640485525975627,
+      "risk_penalty": 0.01964048552597559,
       "selection_stage": "forced",
       "is_absent_next_event": false,
       "callup": {
@@ -2686,10 +2725,10 @@
       "has_forced_signup": true,
       "next_event_status": "hard_commitment",
       "eb": {
-        "p0": 0.7001759374823487,
+        "p0": 0.7001759374823435,
         "n0": 4.0,
-        "p_hat": 0.2235708088193762,
-        "sigma": 0.09820242762987813
+        "p_hat": 0.22357080881937494,
+        "sigma": 0.09820242762987794
       },
       "event_signup": {
         "group": "A",
@@ -2705,13 +2744,13 @@
       "group": "A",
       "role": "Start",
       "noshow_overall": 0.19999999999999996,
-      "noshow_rolling": 0.1464902404301558,
+      "noshow_rolling": 0.1464902404303261,
       "attend_prob": 0.92,
       "last_seen": "2025-11-21",
       "last_noshow_date": "2025-08-28",
       "events_seen": 10,
       "noshow_count": 2,
-      "risk_penalty": 0.02451241418220166,
+      "risk_penalty": 0.024512414182201635,
       "selection_stage": "forced",
       "is_absent_next_event": false,
       "callup": {
@@ -2730,10 +2769,10 @@
       "has_forced_signup": true,
       "next_event_status": "hard_commitment",
       "eb": {
-        "p0": 0.7001759374823487,
+        "p0": 0.7001759374823435,
         "n0": 4.0,
-        "p_hat": 0.3429074107092425,
-        "sigma": 0.12256207091100829
+        "p_hat": 0.342907410709241,
+        "sigma": 0.12256207091100817
       },
       "event_signup": {
         "group": "A",
@@ -2749,13 +2788,13 @@
       "group": "A",
       "role": "Start",
       "noshow_overall": 0.11111111111111116,
-      "noshow_rolling": 0.1385693111598214,
+      "noshow_rolling": 0.13856931115998883,
       "attend_prob": 0.92,
       "last_seen": "2025-11-14",
       "last_noshow_date": "2025-11-21",
       "events_seen": 9,
       "noshow_count": 1,
-      "risk_penalty": 0.024312629820675644,
+      "risk_penalty": 0.024312629820675606,
       "selection_stage": "forced",
       "is_absent_next_event": false,
       "callup": {
@@ -2774,10 +2813,10 @@
       "has_forced_signup": true,
       "next_event_status": "hard_commitment",
       "eb": {
-        "p0": 0.7001759374823487,
+        "p0": 0.7001759374823435,
         "n0": 4.0,
-        "p_hat": 0.2923618269176458,
-        "sigma": 0.12156314910337822
+        "p_hat": 0.2923618269176442,
+        "sigma": 0.12156314910337802
       },
       "event_signup": {
         "group": "A",
@@ -2793,13 +2832,13 @@
       "group": "A",
       "role": "Start",
       "noshow_overall": 0.33333333333333337,
-      "noshow_rolling": 0.30400696084035583,
+      "noshow_rolling": 0.30400696084001577,
       "attend_prob": 0.92,
       "last_seen": "2025-11-21",
       "last_noshow_date": "2025-10-31",
       "events_seen": 3,
       "noshow_count": 1,
-      "risk_penalty": 0.03522461056226317,
+      "risk_penalty": 0.03522461056226319,
       "selection_stage": "forced",
       "is_absent_next_event": false,
       "callup": {
@@ -2818,10 +2857,10 @@
       "has_forced_signup": true,
       "next_event_status": "hard_commitment",
       "eb": {
-        "p0": 0.7001759374823487,
+        "p0": 0.7001759374823435,
         "n0": 4.0,
-        "p_hat": 0.5429576785613421,
-        "sigma": 0.17612305281131585
+        "p_hat": 0.5429576785613391,
+        "sigma": 0.17612305281131593
       },
       "event_signup": {
         "group": "A",
@@ -2843,7 +2882,7 @@
       "last_noshow_date": null,
       "events_seen": 13,
       "noshow_count": 0,
-      "risk_penalty": 0.017486859405177607,
+      "risk_penalty": 0.01748685940517756,
       "selection_stage": "forced",
       "is_absent_next_event": false,
       "callup": {
@@ -2862,10 +2901,10 @@
       "has_forced_signup": true,
       "next_event_status": "hard_commitment",
       "eb": {
-        "p0": 0.7001759374823487,
+        "p0": 0.7001759374823435,
         "n0": 4.0,
-        "p_hat": 0.16474727940761147,
-        "sigma": 0.08743429702588804
+        "p_hat": 0.16474727940761025,
+        "sigma": 0.08743429702588779
       },
       "event_signup": {
         "group": "A",
@@ -2881,13 +2920,13 @@
       "group": "A",
       "role": "Start",
       "noshow_overall": 0.15384615384615385,
-      "noshow_rolling": 0.12481422538779463,
+      "noshow_rolling": 0.12481422538767628,
       "attend_prob": 0.92,
       "last_seen": "2025-11-21",
       "last_noshow_date": "2025-09-26",
       "events_seen": 13,
       "noshow_count": 2,
-      "risk_penalty": 0.021220942274928788,
+      "risk_penalty": 0.02122094227492876,
       "selection_stage": "forced",
       "is_absent_next_event": false,
       "callup": {
@@ -2906,10 +2945,10 @@
       "has_forced_signup": true,
       "next_event_status": "hard_commitment",
       "eb": {
-        "p0": 0.7001759374823487,
+        "p0": 0.7001759374823435,
         "n0": 4.0,
-        "p_hat": 0.2823943382311409,
-        "sigma": 0.10610471137464393
+        "p_hat": 0.28239433823113963,
+        "sigma": 0.10610471137464379
       },
       "event_signup": {
         "group": "A",
@@ -2920,18 +2959,60 @@
       "has_event_signup": true
     },
     {
+      "display": "Aegolas",
+      "canon": "aegolas",
+      "group": "B",
+      "role": "Start",
+      "noshow_overall": 0.7272727272727273,
+      "noshow_rolling": 0.7525167261846522,
+      "attend_prob": 0.257504288578213,
+      "last_seen": "2025-10-24",
+      "last_noshow_date": "2025-11-14",
+      "events_seen": 11,
+      "noshow_count": 8,
+      "risk_penalty": 0.02244879475982871,
+      "selection_stage": "B-start-fallback",
+      "is_absent_next_event": false,
+      "callup": {
+        "recommended": true,
+        "reasons": [
+          {
+            "code": "high_overall",
+            "label": "High No-Show overall 72.7%"
+          },
+          {
+            "code": "high_rolling",
+            "label": "High No-Show rolling 75.3%"
+          }
+        ]
+      },
+      "callup_recommended": true,
+      "callup_reason_codes": [
+        "high_overall",
+        "high_rolling"
+      ],
+      "callup_reason": "high_overall",
+      "next_event_status": "open",
+      "eb": {
+        "p0": 0.7001759374823435,
+        "n0": 4.0,
+        "p_hat": 0.7200469166619583,
+        "sigma": 0.11224397379914355
+      }
+    },
+    {
       "display": "Alstermaus",
       "canon": "alstermaus",
       "group": "B",
       "role": "Start",
       "noshow_overall": 0.4,
-      "noshow_rolling": 0.4011604977283333,
+      "noshow_rolling": 0.4011604977283878,
       "attend_prob": 0.92,
       "last_seen": "2025-11-14",
       "last_noshow_date": "2025-11-21",
       "events_seen": 5,
       "noshow_count": 2,
-      "risk_penalty": 0.03155209468875745,
+      "risk_penalty": 0.031552094688757464,
       "selection_stage": "forced",
       "is_absent_next_event": false,
       "callup": {
@@ -2957,10 +3038,10 @@
       "has_forced_signup": true,
       "next_event_status": "hard_commitment",
       "eb": {
-        "p0": 0.7001759374823487,
+        "p0": 0.7001759374823435,
         "n0": 4.0,
-        "p_hat": 0.5334115277699328,
-        "sigma": 0.15776047344378724
+        "p_hat": 0.5334115277699305,
+        "sigma": 0.1577604734437873
       },
       "event_signup": {
         "group": "B",
@@ -2976,13 +3057,13 @@
       "group": "B",
       "role": "Start",
       "noshow_overall": 0.6,
-      "noshow_rolling": 0.610497454914035,
+      "noshow_rolling": 0.6104974549134676,
       "attend_prob": 0.92,
       "last_seen": "2025-11-14",
       "last_noshow_date": "2025-11-21",
       "events_seen": 5,
       "noshow_count": 3,
-      "risk_penalty": 0.03027297189579242,
+      "risk_penalty": 0.030272971895792464,
       "selection_stage": "forced",
       "is_absent_next_event": false,
       "callup": {
@@ -3013,10 +3094,10 @@
       "has_forced_signup": true,
       "next_event_status": "hard_commitment",
       "eb": {
-        "p0": 0.7001759374823487,
+        "p0": 0.7001759374823435,
         "n0": 4.0,
-        "p_hat": 0.6445226388810439,
-        "sigma": 0.15136485947896208
+        "p_hat": 0.6445226388810416,
+        "sigma": 0.1513648594789623
       },
       "event_signup": {
         "group": "B",
@@ -3032,13 +3113,13 @@
       "group": "B",
       "role": "Start",
       "noshow_overall": 0.7142857142857143,
-      "noshow_rolling": 0.7266240532037767,
-      "attend_prob": 0.26462462334016457,
+      "noshow_rolling": 0.7266240532038044,
+      "attend_prob": 0.26462462334016656,
       "last_seen": "2025-11-07",
       "last_noshow_date": "2025-11-21",
       "events_seen": 7,
       "noshow_count": 5,
-      "risk_penalty": 0.026220490302617618,
+      "risk_penalty": 0.026220490302617666,
       "selection_stage": "B-start-fallback",
       "is_absent_next_event": false,
       "callup": {
@@ -3062,10 +3143,10 @@
       "callup_reason": "high_overall",
       "next_event_status": "open",
       "eb": {
-        "p0": 0.7001759374823487,
+        "p0": 0.7001759374823435,
         "n0": 4.0,
-        "p_hat": 0.7091548863572178,
-        "sigma": 0.13110245151308808
+        "p_hat": 0.7091548863572158,
+        "sigma": 0.13110245151308833
       }
     },
     {
@@ -3080,7 +3161,7 @@
       "last_noshow_date": null,
       "events_seen": 9,
       "noshow_count": 0,
-      "risk_penalty": 0.021975629033437832,
+      "risk_penalty": 0.021975629033437773,
       "selection_stage": "forced",
       "is_absent_next_event": false,
       "callup": {
@@ -3099,10 +3180,10 @@
       "has_forced_signup": true,
       "next_event_status": "hard_commitment",
       "eb": {
-        "p0": 0.7001759374823487,
+        "p0": 0.7001759374823435,
         "n0": 4.0,
-        "p_hat": 0.21543874999456886,
-        "sigma": 0.10987814516718915
+        "p_hat": 0.21543874999456725,
+        "sigma": 0.10987814516718886
       },
       "event_signup": {
         "group": "B",
@@ -3118,13 +3199,13 @@
       "group": "B",
       "role": "Start",
       "noshow_overall": 0.4,
-      "noshow_rolling": 0.3994195825988649,
+      "noshow_rolling": 0.39941958259896004,
       "attend_prob": 0.92,
       "last_seen": "2025-11-21",
       "last_noshow_date": "2025-11-14",
       "events_seen": 5,
       "noshow_count": 2,
-      "risk_penalty": 0.03155209468875745,
+      "risk_penalty": 0.031552094688757464,
       "selection_stage": "forced",
       "is_absent_next_event": false,
       "callup": {
@@ -3150,10 +3231,10 @@
       "has_forced_signup": true,
       "next_event_status": "hard_commitment",
       "eb": {
-        "p0": 0.7001759374823487,
+        "p0": 0.7001759374823435,
         "n0": 4.0,
-        "p_hat": 0.5334115277699328,
-        "sigma": 0.15776047344378724
+        "p_hat": 0.5334115277699305,
+        "sigma": 0.1577604734437873
       },
       "event_signup": {
         "group": "B",
@@ -3175,7 +3256,7 @@
       "last_noshow_date": "2025-11-21",
       "events_seen": 3,
       "noshow_count": 3,
-      "risk_penalty": 0.026643455096815094,
+      "risk_penalty": 0.026643455096815278,
       "selection_stage": "forced",
       "is_absent_next_event": false,
       "callup": {
@@ -3206,10 +3287,10 @@
       "has_forced_signup": true,
       "next_event_status": "hard_commitment",
       "eb": {
-        "p0": 0.7001759374823487,
+        "p0": 0.7001759374823435,
         "n0": 4.0,
-        "p_hat": 0.828671964275628,
-        "sigma": 0.13321727548407547
+        "p_hat": 0.8286719642756248,
+        "sigma": 0.1332172754840764
       },
       "event_signup": {
         "group": "B",
@@ -3225,13 +3306,13 @@
       "group": "B",
       "role": "Start",
       "noshow_overall": 0.6666666666666667,
-      "noshow_rolling": 0.634239209007654,
+      "noshow_rolling": 0.634239209007793,
       "attend_prob": 0.92,
       "last_seen": "2025-11-07",
       "last_noshow_date": "2025-11-14",
       "events_seen": 9,
       "noshow_count": 6,
-      "risk_penalty": 0.024995946334098313,
+      "risk_penalty": 0.024995946334098348,
       "selection_stage": "forced",
       "is_absent_next_event": false,
       "callup": {
@@ -3262,10 +3343,10 @@
       "has_forced_signup": true,
       "next_event_status": "hard_commitment",
       "eb": {
-        "p0": 0.7001759374823487,
+        "p0": 0.7001759374823435,
         "n0": 4.0,
-        "p_hat": 0.6769772115330304,
-        "sigma": 0.12497973167049156
+        "p_hat": 0.6769772115330288,
+        "sigma": 0.12497973167049173
       },
       "event_signup": {
         "group": "B",
@@ -3281,13 +3362,13 @@
       "group": "B",
       "role": "Start",
       "noshow_overall": 0.19999999999999996,
-      "noshow_rolling": 0.18895356616084014,
+      "noshow_rolling": 0.18895356616094627,
       "attend_prob": 0.92,
       "last_seen": "2025-11-21",
       "last_noshow_date": "2025-10-31",
       "events_seen": 5,
       "noshow_count": 1,
-      "risk_penalty": 0.031238615510205143,
+      "risk_penalty": 0.031238615510205122,
       "selection_stage": "forced",
       "is_absent_next_event": false,
       "callup": {
@@ -3306,10 +3387,10 @@
       "has_forced_signup": true,
       "next_event_status": "hard_commitment",
       "eb": {
-        "p0": 0.7001759374823487,
+        "p0": 0.7001759374823435,
         "n0": 4.0,
-        "p_hat": 0.4223004166588217,
-        "sigma": 0.1561930775510257
+        "p_hat": 0.42230041665881934,
+        "sigma": 0.1561930775510256
       },
       "event_signup": {
         "group": "B",
@@ -3331,7 +3412,7 @@
       "last_noshow_date": null,
       "events_seen": 2,
       "noshow_count": 0,
-      "risk_penalty": 0.03771295302868889,
+      "risk_penalty": 0.03771295302868887,
       "selection_stage": "forced",
       "is_absent_next_event": false,
       "callup": {
@@ -3357,10 +3438,10 @@
       "has_forced_signup": true,
       "next_event_status": "hard_commitment",
       "eb": {
-        "p0": 0.7001759374823487,
+        "p0": 0.7001759374823435,
         "n0": 4.0,
-        "p_hat": 0.46678395832156583,
-        "sigma": 0.18856476514344445
+        "p_hat": 0.46678395832156233,
+        "sigma": 0.18856476514344434
       },
       "event_signup": {
         "group": "B",
@@ -3376,13 +3457,13 @@
       "group": "B",
       "role": "Start",
       "noshow_overall": 0.07692307692307687,
-      "noshow_rolling": 0.05899165735094525,
+      "noshow_rolling": 0.058991657351007865,
       "attend_prob": 0.92,
       "last_seen": "2025-11-21",
       "last_noshow_date": "2025-09-05",
       "events_seen": 13,
       "noshow_count": 1,
-      "risk_penalty": 0.019640485525975627,
+      "risk_penalty": 0.01964048552597559,
       "selection_stage": "forced",
       "is_absent_next_event": false,
       "callup": {
@@ -3401,10 +3482,10 @@
       "has_forced_signup": true,
       "next_event_status": "hard_commitment",
       "eb": {
-        "p0": 0.7001759374823487,
+        "p0": 0.7001759374823435,
         "n0": 4.0,
-        "p_hat": 0.2235708088193762,
-        "sigma": 0.09820242762987813
+        "p_hat": 0.22357080881937494,
+        "sigma": 0.09820242762987794
       },
       "event_signup": {
         "group": "B",
@@ -3426,7 +3507,7 @@
       "last_noshow_date": "2025-10-31",
       "events_seen": 1,
       "noshow_count": 1,
-      "risk_penalty": 0.03486419272900535,
+      "risk_penalty": 0.03486419272900556,
       "selection_stage": "forced",
       "is_absent_next_event": false,
       "callup": {
@@ -3452,10 +3533,10 @@
       "has_forced_signup": true,
       "next_event_status": "hard_commitment",
       "eb": {
-        "p0": 0.7001759374823487,
+        "p0": 0.7001759374823435,
         "n0": 4.0,
-        "p_hat": 0.760140749985879,
-        "sigma": 0.17432096364502675
+        "p_hat": 0.7601407499858748,
+        "sigma": 0.17432096364502778
       },
       "event_signup": {
         "group": "B",
@@ -3471,13 +3552,13 @@
       "group": "B",
       "role": "Start",
       "noshow_overall": 0.5833333333333333,
-      "noshow_rolling": 0.5441284934231329,
+      "noshow_rolling": 0.5441284934233689,
       "attend_prob": 0.92,
       "last_seen": "2025-11-21",
       "last_noshow_date": "2025-11-07",
       "events_seen": 12,
       "noshow_count": 7,
-      "risk_penalty": 0.023631178386987618,
+      "risk_penalty": 0.023631178386987632,
       "selection_stage": "forced",
       "is_absent_next_event": false,
       "callup": {
@@ -3508,10 +3589,10 @@
       "has_forced_signup": true,
       "next_event_status": "hard_commitment",
       "eb": {
-        "p0": 0.7001759374823487,
+        "p0": 0.7001759374823435,
         "n0": 4.0,
-        "p_hat": 0.6125439843705872,
-        "sigma": 0.11815589193493808
+        "p_hat": 0.6125439843705859,
+        "sigma": 0.11815589193493815
       },
       "event_signup": {
         "group": "B",
@@ -3527,13 +3608,13 @@
       "group": "B",
       "role": "Start",
       "noshow_overall": 0.7142857142857143,
-      "noshow_rolling": 0.6765074465939138,
-      "attend_prob": 0.26462462334016457,
+      "noshow_rolling": 0.6765074465937226,
+      "attend_prob": 0.26462462334016656,
       "last_seen": "2025-11-14",
       "last_noshow_date": "2025-11-21",
       "events_seen": 7,
       "noshow_count": 5,
-      "risk_penalty": 0.026220490302617618,
+      "risk_penalty": 0.026220490302617666,
       "selection_stage": "B-start-fallback",
       "is_absent_next_event": false,
       "callup": {
@@ -3557,10 +3638,10 @@
       "callup_reason": "high_overall",
       "next_event_status": "open",
       "eb": {
-        "p0": 0.7001759374823487,
+        "p0": 0.7001759374823435,
         "n0": 4.0,
-        "p_hat": 0.7091548863572178,
-        "sigma": 0.13110245151308808
+        "p_hat": 0.7091548863572158,
+        "sigma": 0.13110245151308833
       }
     },
     {
@@ -3569,14 +3650,14 @@
       "group": "B",
       "role": "Start",
       "noshow_overall": 0.375,
-      "noshow_rolling": 0.381134542574017,
-      "attend_prob": 0.4888883153438448,
+      "noshow_rolling": 0.3811345425738716,
+      "attend_prob": 0.92,
       "last_seen": "2025-11-21",
       "last_noshow_date": "2025-11-07",
       "events_seen": 8,
       "noshow_count": 3,
       "risk_penalty": 0.027719705495372178,
-      "selection_stage": "B-start-fallback",
+      "selection_stage": "forced",
       "is_absent_next_event": false,
       "callup": {
         "recommended": false,
@@ -3585,13 +3666,27 @@
       "callup_recommended": false,
       "callup_reason_codes": [],
       "callup_reason": null,
-      "next_event_status": "open",
+      "forced_signup": {
+        "commitment": "hard",
+        "source": "manual",
+        "note": "",
+        "overbooked": false
+      },
+      "has_forced_signup": true,
+      "next_event_status": "hard_commitment",
       "eb": {
-        "p0": 0.7001759374823487,
+        "p0": 0.7001759374823435,
         "n0": 4.0,
-        "p_hat": 0.48339197916078297,
+        "p_hat": 0.4833919791607812,
         "sigma": 0.13859852747686088
-      }
+      },
+      "event_signup": {
+        "group": "B",
+        "role": "Start",
+        "source": "manual",
+        "note": ""
+      },
+      "has_event_signup": true
     },
     {
       "display": "abu47",
@@ -3728,10 +3823,10 @@
   ],
   "callup_stats": {
     "schema": 2,
-    "recommended_total": 13,
+    "recommended_total": 14,
     "reasons": {
-      "high_overall": 10,
-      "high_rolling": 8,
+      "high_overall": 11,
+      "high_rolling": 9,
       "low_n": 3
     },
     "rules": {
@@ -4484,9 +4579,9 @@
         "total": 18.400000000000006
       },
       "B": {
-        "starters": 11.138137562024175,
+        "starters": 11.826753535258547,
         "subs": 0.0,
-        "total": 11.138137562024175
+        "total": 11.826753535258547
       }
     },
     "missing_slots": {
@@ -4495,11 +4590,11 @@
         "Ersatz": 10
       },
       "B": {
-        "Start": 6,
+        "Start": 5,
         "Ersatz": 10
       }
     },
-    "pool_total_expected": 38.88208424637236,
+    "pool_total_expected": 39.31319593102868,
     "targets": {
       "A": {
         "low": 24.0,
@@ -4517,7 +4612,7 @@
     "target_fraction": 0.8,
     "target_diff": {
       "A": -5.599999999999994,
-      "B": -12.861862437975825
+      "B": -12.173246464741453
     },
     "slots_by_team": {
       "A": {
@@ -4560,7 +4655,7 @@
       "issues": []
     },
     "threshold": 0.6,
-    "reliable_pool": 31,
+    "reliable_pool": 32,
     "teams": {
       "A": {
         "starters": {
@@ -4604,11 +4699,11 @@
       },
       "B": {
         "starters": {
-          "total": 14,
-          "at_threshold": 11,
+          "total": 15,
+          "at_threshold": 12,
           "below_threshold": 3,
           "fallback": 3,
-          "forced": 11
+          "forced": 12
         },
         "bench": {
           "total": 0,
@@ -4617,27 +4712,27 @@
           "forced": 0
         },
         "missing_slots": {
-          "Start": 6,
+          "Start": 5,
           "Ersatz": 10
         },
         "expected_attendance": {
-          "starters": 11.138137562024175,
+          "starters": 11.826753535258547,
           "subs": 0.0,
-          "total": 11.138137562024175
+          "total": 11.826753535258547
         },
         "attendance_target": 24,
-        "attendance_diff": -12.861862437975825,
+        "attendance_diff": -12.173246464741453,
         "slots": {
           "starters_total": 20,
           "bench_total": 10,
           "max_slots": 30
         },
         "risk_level": "high",
-        "risk_text": "6 Starter-Slots bewusst frei – keine weiteren Spieler ≥ 60%; 3 Starter für Team B aus Fallback < Schwelle; 3 Starter unter Schwelle 60% (Team A wird immer aufgefüllt)",
-        "summary": "Starter: 14 (≥ Schwelle: 11, unter Schwelle: 3); Erwartete Anwesenheit Starter: 11.1; Fallback-Starter (< Schwelle): 3; Ersatz-Slots frei: 10; Risiken: 6 Starter-Slots bewusst frei – keine weiteren Spieler ≥ 60%; 3 Starter für Team B aus Fallback < Schwelle; 3 Starter unter Schwelle 60% (Team A wird immer aufgefüllt)",
+        "risk_text": "5 Starter-Slots bewusst frei – keine weiteren Spieler ≥ 60%; 3 Starter für Team B aus Fallback < Schwelle; 3 Starter unter Schwelle 60% (Team A wird immer aufgefüllt)",
+        "summary": "Starter: 15 (≥ Schwelle: 12, unter Schwelle: 3); Erwartete Anwesenheit Starter: 11.8; Fallback-Starter (< Schwelle): 3; Ersatz-Slots frei: 10; Risiken: 5 Starter-Slots bewusst frei – keine weiteren Spieler ≥ 60%; 3 Starter für Team B aus Fallback < Schwelle; 3 Starter unter Schwelle 60% (Team A wird immer aufgefüllt)",
         "stage_counts": {
           "start": {
-            "forced": 11,
+            "forced": 12,
             "B-start-fallback": 3
           },
           "bench": {}
@@ -4645,7 +4740,7 @@
       }
     },
     "recommendation": {
-      "text": "Team A: 20 Starter, erwartete Anwesenheit 18.4 | Team B: 14 Starter, Fallback 3, erwartete Anwesenheit 11.1"
+      "text": "Team A: 20 Starter, erwartete Anwesenheit 18.4 | Team B: 15 Starter, Fallback 3, erwartete Anwesenheit 11.8"
     }
   },
   "callup_suggestions": {
@@ -4680,7 +4775,7 @@
       },
       "B": {
         "missing": {
-          "Start": 6,
+          "Start": 5,
           "Ersatz": 10
         },
         "target_slots": {
@@ -4688,17 +4783,17 @@
           "Ersatz": 10
         },
         "planned_slots": {
-          "Start": 14,
+          "Start": 15,
           "Ersatz": 0
         },
         "expected_attendance": {
-          "starters": 11.138137562024175,
+          "starters": 11.826753535258547,
           "subs": 0.0,
-          "total": 11.138137562024175
+          "total": 11.826753535258547
         },
-        "expected_gap": 12.861862437975825,
-        "expected_gap_players": 29,
-        "suggested_callups": 29
+        "expected_gap": 12.173246464741453,
+        "expected_gap_players": 28,
+        "suggested_callups": 28
       }
     },
     "teams": {
@@ -4708,7 +4803,7 @@
       },
       "B": {
         "suggestions": [],
-        "target_count": 29
+        "target_count": 28
       }
     }
   },
@@ -4735,9 +4830,9 @@
           "from": "",
           "to": ""
         },
-        "attend_prob": 0.4865254015981123,
+        "attend_prob": 0.4865254015981346,
         "noshow_overall": 0.5,
-        "noshow_rolling": 0.5134745984018877,
+        "noshow_rolling": 0.5134745984018654,
         "events_seen": 2,
         "noshow_count": 1,
         "flags": {
@@ -4750,7 +4845,7 @@
         "display": "Aegolas",
         "canon": "aegolas",
         "in_alliance": 1,
-        "roster_status": "-",
+        "roster_status": "B-Start",
         "event_status": "open",
         "is_absent_next_event": false,
         "absence": {
@@ -4759,9 +4854,9 @@
           "from": "",
           "to": ""
         },
-        "attend_prob": 0.25750428857821156,
+        "attend_prob": 0.257504288578213,
         "noshow_overall": 0.7272727272727273,
-        "noshow_rolling": 0.7525167261846368,
+        "noshow_rolling": 0.7525167261846522,
         "events_seen": 11,
         "noshow_count": 8,
         "flags": {
@@ -4785,7 +4880,7 @@
         },
         "attend_prob": 0.92,
         "noshow_overall": 0.25,
-        "noshow_rolling": 0.21113561645764023,
+        "noshow_rolling": 0.21113561645775425,
         "events_seen": 12,
         "noshow_count": 3,
         "flags": {
@@ -4809,7 +4904,7 @@
         },
         "attend_prob": 0.92,
         "noshow_overall": 0.4,
-        "noshow_rolling": 0.4011604977283333,
+        "noshow_rolling": 0.4011604977283878,
         "events_seen": 5,
         "noshow_count": 2,
         "flags": {
@@ -4831,7 +4926,7 @@
           "from": "",
           "to": ""
         },
-        "attend_prob": 0.16965220234775452,
+        "attend_prob": 0.16965220234775788,
         "noshow_overall": 1.0,
         "noshow_rolling": 1.0,
         "events_seen": 2,
@@ -4855,7 +4950,7 @@
           "from": "",
           "to": ""
         },
-        "attend_prob": 0.1261130196880641,
+        "attend_prob": 0.1261130196880666,
         "noshow_overall": 1.0,
         "noshow_rolling": 1.0,
         "events_seen": 4,
@@ -4881,7 +4976,7 @@
         },
         "attend_prob": 0.92,
         "noshow_overall": 0.6,
-        "noshow_rolling": 0.610497454914035,
+        "noshow_rolling": 0.6104974549134676,
         "events_seen": 5,
         "noshow_count": 3,
         "flags": {
@@ -4905,7 +5000,7 @@
         },
         "attend_prob": 0.92,
         "noshow_overall": 0.23076923076923073,
-        "noshow_rolling": 0.18764712091310276,
+        "noshow_rolling": 0.1876471209133076,
         "events_seen": 13,
         "noshow_count": 3,
         "flags": {
@@ -4927,7 +5022,7 @@
           "from": "",
           "to": ""
         },
-        "attend_prob": 0.20499505728511566,
+        "attend_prob": 0.20499505728511966,
         "noshow_overall": 1.0,
         "noshow_rolling": 1.0,
         "events_seen": 1,
@@ -4951,7 +5046,7 @@
           "from": "",
           "to": ""
         },
-        "attend_prob": 0.14468458062755696,
+        "attend_prob": 0.14468458062755987,
         "noshow_overall": 1.0,
         "noshow_rolling": 1.0,
         "events_seen": 3,
@@ -4975,7 +5070,7 @@
           "from": "",
           "to": ""
         },
-        "attend_prob": 0.20499505728511566,
+        "attend_prob": 0.20499505728511966,
         "noshow_overall": 1.0,
         "noshow_rolling": 1.0,
         "events_seen": 1,
@@ -5047,9 +5142,9 @@
           "from": "",
           "to": ""
         },
-        "attend_prob": 0.26462462334016457,
+        "attend_prob": 0.26462462334016656,
         "noshow_overall": 0.7142857142857143,
-        "noshow_rolling": 0.7266240532037767,
+        "noshow_rolling": 0.7266240532038044,
         "events_seen": 7,
         "noshow_count": 5,
         "flags": {
@@ -5071,7 +5166,7 @@
           "from": "",
           "to": ""
         },
-        "attend_prob": 0.16965220234775452,
+        "attend_prob": 0.16965220234775788,
         "noshow_overall": 1.0,
         "noshow_rolling": 1.0,
         "events_seen": 2,
@@ -5119,7 +5214,7 @@
           "from": "",
           "to": ""
         },
-        "attend_prob": 0.16965220234775452,
+        "attend_prob": 0.16965220234775788,
         "noshow_overall": 1.0,
         "noshow_rolling": 1.0,
         "events_seen": 2,
@@ -5169,7 +5264,7 @@
         },
         "attend_prob": 0.92,
         "noshow_overall": 0.4,
-        "noshow_rolling": 0.3994195825988649,
+        "noshow_rolling": 0.39941958259896004,
         "events_seen": 5,
         "noshow_count": 2,
         "flags": {
@@ -5215,7 +5310,7 @@
           "from": "",
           "to": ""
         },
-        "attend_prob": 0.20499505728511566,
+        "attend_prob": 0.20499505728511966,
         "noshow_overall": 1.0,
         "noshow_rolling": 1.0,
         "events_seen": 1,
@@ -5263,7 +5358,7 @@
           "from": "",
           "to": ""
         },
-        "attend_prob": 0.20499505728511566,
+        "attend_prob": 0.20499505728511966,
         "noshow_overall": 1.0,
         "noshow_rolling": 1.0,
         "events_seen": 1,
@@ -5287,7 +5382,7 @@
           "from": "",
           "to": ""
         },
-        "attend_prob": 0.16965220234775452,
+        "attend_prob": 0.16965220234775788,
         "noshow_overall": 1.0,
         "noshow_rolling": 1.0,
         "events_seen": 2,
@@ -5313,7 +5408,7 @@
         },
         "attend_prob": 0.92,
         "noshow_overall": 0.7777777777777778,
-        "noshow_rolling": 0.7777098742406724,
+        "noshow_rolling": 0.7777098742406489,
         "events_seen": 9,
         "noshow_count": 7,
         "flags": {
@@ -5359,7 +5454,7 @@
           "from": "",
           "to": ""
         },
-        "attend_prob": 0.1117611204865485,
+        "attend_prob": 0.11176112048655079,
         "noshow_overall": 1.0,
         "noshow_rolling": 1.0,
         "events_seen": 5,
@@ -5383,7 +5478,7 @@
           "from": "",
           "to": ""
         },
-        "attend_prob": 0.20499505728511566,
+        "attend_prob": 0.20499505728511966,
         "noshow_overall": 1.0,
         "noshow_rolling": 1.0,
         "events_seen": 1,
@@ -5407,7 +5502,7 @@
           "from": "",
           "to": ""
         },
-        "attend_prob": 0.20499505728511566,
+        "attend_prob": 0.20499505728511966,
         "noshow_overall": 1.0,
         "noshow_rolling": 1.0,
         "events_seen": 1,
@@ -5455,7 +5550,7 @@
           "from": "",
           "to": ""
         },
-        "attend_prob": 0.20499505728511566,
+        "attend_prob": 0.20499505728511966,
         "noshow_overall": 1.0,
         "noshow_rolling": 1.0,
         "events_seen": 1,
@@ -5481,7 +5576,7 @@
         },
         "attend_prob": 0.92,
         "noshow_overall": 0.6666666666666667,
-        "noshow_rolling": 0.634239209007654,
+        "noshow_rolling": 0.634239209007793,
         "events_seen": 9,
         "noshow_count": 6,
         "flags": {
@@ -5505,7 +5600,7 @@
         },
         "attend_prob": 0.92,
         "noshow_overall": 0.19999999999999996,
-        "noshow_rolling": 0.18895356616084014,
+        "noshow_rolling": 0.18895356616094627,
         "events_seen": 5,
         "noshow_count": 1,
         "flags": {
@@ -5527,7 +5622,7 @@
           "from": "",
           "to": ""
         },
-        "attend_prob": 0.20499505728511566,
+        "attend_prob": 0.20499505728511966,
         "noshow_overall": 1.0,
         "noshow_rolling": 1.0,
         "events_seen": 1,
@@ -5551,9 +5646,9 @@
           "from": "",
           "to": ""
         },
-        "attend_prob": 0.17684478272460827,
+        "attend_prob": 0.17684478272461007,
         "noshow_overall": 0.8571428571428572,
-        "noshow_rolling": 0.8302374345990939,
+        "noshow_rolling": 0.8302374345991572,
         "events_seen": 7,
         "noshow_count": 6,
         "flags": {
@@ -5575,7 +5670,7 @@
           "from": "",
           "to": ""
         },
-        "attend_prob": 0.16965220234775452,
+        "attend_prob": 0.16965220234775788,
         "noshow_overall": 1.0,
         "noshow_rolling": 1.0,
         "events_seen": 2,
@@ -5599,7 +5694,7 @@
           "from": "",
           "to": ""
         },
-        "attend_prob": 0.16965220234775452,
+        "attend_prob": 0.16965220234775788,
         "noshow_overall": 1.0,
         "noshow_rolling": 1.0,
         "events_seen": 2,
@@ -5647,7 +5742,7 @@
           "from": "",
           "to": ""
         },
-        "attend_prob": 0.20499505728511566,
+        "attend_prob": 0.20499505728511966,
         "noshow_overall": 1.0,
         "noshow_rolling": 1.0,
         "events_seen": 1,
@@ -5697,7 +5792,7 @@
         },
         "attend_prob": 0.92,
         "noshow_overall": 0.8571428571428572,
-        "noshow_rolling": 0.8231189510494012,
+        "noshow_rolling": 0.8231189510492577,
         "events_seen": 7,
         "noshow_count": 6,
         "flags": {
@@ -5719,9 +5814,9 @@
           "from": "",
           "to": ""
         },
-        "attend_prob": 0.21718895169731023,
+        "attend_prob": 0.21718895169731248,
         "noshow_overall": 0.8,
-        "noshow_rolling": 0.7778760309473349,
+        "noshow_rolling": 0.777876030947279,
         "events_seen": 5,
         "noshow_count": 4,
         "flags": {
@@ -5743,7 +5838,7 @@
           "from": "",
           "to": ""
         },
-        "attend_prob": 0.20499505728511566,
+        "attend_prob": 0.20499505728511966,
         "noshow_overall": 1.0,
         "noshow_rolling": 1.0,
         "events_seen": 1,
@@ -5791,7 +5886,7 @@
           "from": "",
           "to": ""
         },
-        "attend_prob": 0.16965220234775452,
+        "attend_prob": 0.16965220234775788,
         "noshow_overall": 1.0,
         "noshow_rolling": 1.0,
         "events_seen": 2,
@@ -5815,7 +5910,7 @@
           "from": "",
           "to": ""
         },
-        "attend_prob": 0.14468458062755696,
+        "attend_prob": 0.14468458062755987,
         "noshow_overall": 1.0,
         "noshow_rolling": 1.0,
         "events_seen": 3,
@@ -5839,9 +5934,9 @@
           "from": "",
           "to": ""
         },
-        "attend_prob": 0.8586653073659534,
+        "attend_prob": 0.8586653073658017,
         "noshow_overall": 0.18181818181818177,
-        "noshow_rolling": 0.14133469263404663,
+        "noshow_rolling": 0.1413346926341983,
         "events_seen": 11,
         "noshow_count": 2,
         "flags": {
@@ -5863,7 +5958,7 @@
           "from": "",
           "to": ""
         },
-        "attend_prob": 0.20499505728511566,
+        "attend_prob": 0.20499505728511966,
         "noshow_overall": 1.0,
         "noshow_rolling": 1.0,
         "events_seen": 1,
@@ -5887,9 +5982,9 @@
           "from": "",
           "to": ""
         },
-        "attend_prob": 0.6633513480727791,
+        "attend_prob": 0.6633513480726306,
         "noshow_overall": 0.33333333333333337,
-        "noshow_rolling": 0.33664865192722093,
+        "noshow_rolling": 0.33664865192736937,
         "events_seen": 9,
         "noshow_count": 3,
         "flags": {
@@ -5911,7 +6006,7 @@
           "from": "",
           "to": ""
         },
-        "attend_prob": 0.16965220234775452,
+        "attend_prob": 0.16965220234775788,
         "noshow_overall": 1.0,
         "noshow_rolling": 1.0,
         "events_seen": 2,
@@ -5959,7 +6054,7 @@
           "from": "",
           "to": ""
         },
-        "attend_prob": 0.16965220234775452,
+        "attend_prob": 0.16965220234775788,
         "noshow_overall": 1.0,
         "noshow_rolling": 1.0,
         "events_seen": 2,
@@ -6007,7 +6102,7 @@
           "from": "",
           "to": ""
         },
-        "attend_prob": 0.20499505728511566,
+        "attend_prob": 0.20499505728511966,
         "noshow_overall": 1.0,
         "noshow_rolling": 1.0,
         "events_seen": 1,
@@ -6031,9 +6126,9 @@
           "from": "",
           "to": ""
         },
-        "attend_prob": 0.2451473686664925,
+        "attend_prob": 0.24514736866649509,
         "noshow_overall": 0.75,
-        "noshow_rolling": 0.757090386308063,
+        "noshow_rolling": 0.7570903863078529,
         "events_seen": 4,
         "noshow_count": 3,
         "flags": {
@@ -6079,7 +6174,7 @@
           "from": "",
           "to": ""
         },
-        "attend_prob": 0.20499505728511566,
+        "attend_prob": 0.20499505728511966,
         "noshow_overall": 1.0,
         "noshow_rolling": 1.0,
         "events_seen": 1,
@@ -6105,7 +6200,7 @@
         },
         "attend_prob": 0.92,
         "noshow_overall": 0.3076923076923077,
-        "noshow_rolling": 0.2628224263760305,
+        "noshow_rolling": 0.26282242637592335,
         "events_seen": 13,
         "noshow_count": 4,
         "flags": {
@@ -6129,7 +6224,7 @@
         },
         "attend_prob": 0.92,
         "noshow_overall": 0.09090909090909094,
-        "noshow_rolling": 0.06616593913502067,
+        "noshow_rolling": 0.06616593913509561,
         "events_seen": 11,
         "noshow_count": 1,
         "flags": {
@@ -6153,7 +6248,7 @@
         },
         "attend_prob": 0.92,
         "noshow_overall": 0.07692307692307687,
-        "noshow_rolling": 0.05899165735094525,
+        "noshow_rolling": 0.058991657351007865,
         "events_seen": 13,
         "noshow_count": 1,
         "flags": {
@@ -6175,7 +6270,7 @@
           "from": "",
           "to": ""
         },
-        "attend_prob": 0.16965220234775452,
+        "attend_prob": 0.16965220234775788,
         "noshow_overall": 1.0,
         "noshow_rolling": 1.0,
         "events_seen": 2,
@@ -6199,7 +6294,7 @@
           "from": "",
           "to": ""
         },
-        "attend_prob": 0.20499505728511566,
+        "attend_prob": 0.20499505728511966,
         "noshow_overall": 1.0,
         "noshow_rolling": 1.0,
         "events_seen": 1,
@@ -6247,9 +6342,9 @@
           "from": "2025-11-26",
           "to": "2025-11-29"
         },
-        "attend_prob": 0.5283388771362945,
+        "attend_prob": 0.5283388771363441,
         "noshow_overall": 0.5,
-        "noshow_rolling": 0.47166112286370554,
+        "noshow_rolling": 0.4716611228636559,
         "events_seen": 6,
         "noshow_count": 3,
         "flags": {
@@ -6319,9 +6414,9 @@
           "from": "2025-11-26",
           "to": "2025-11-29"
         },
-        "attend_prob": 0.45346148880253057,
+        "attend_prob": 0.45346148880232184,
         "noshow_overall": 0.5,
-        "noshow_rolling": 0.5465385111974694,
+        "noshow_rolling": 0.5465385111976782,
         "events_seen": 12,
         "noshow_count": 6,
         "flags": {
@@ -6343,7 +6438,7 @@
           "from": "",
           "to": ""
         },
-        "attend_prob": 0.16965220234775452,
+        "attend_prob": 0.16965220234775788,
         "noshow_overall": 1.0,
         "noshow_rolling": 1.0,
         "events_seen": 2,
@@ -6367,7 +6462,7 @@
           "from": "",
           "to": ""
         },
-        "attend_prob": 0.14468458062755696,
+        "attend_prob": 0.14468458062755987,
         "noshow_overall": 1.0,
         "noshow_rolling": 1.0,
         "events_seen": 3,
@@ -6391,7 +6486,7 @@
           "from": "",
           "to": ""
         },
-        "attend_prob": 0.20499505728511566,
+        "attend_prob": 0.20499505728511966,
         "noshow_overall": 1.0,
         "noshow_rolling": 1.0,
         "events_seen": 1,
@@ -6417,7 +6512,7 @@
         },
         "attend_prob": 0.92,
         "noshow_overall": 0.25,
-        "noshow_rolling": 0.22944074776572032,
+        "noshow_rolling": 0.22944074776579937,
         "events_seen": 12,
         "noshow_count": 3,
         "flags": {
@@ -6439,7 +6534,7 @@
           "from": "",
           "to": ""
         },
-        "attend_prob": 0.20499505728511566,
+        "attend_prob": 0.20499505728511966,
         "noshow_overall": 1.0,
         "noshow_rolling": 1.0,
         "events_seen": 1,
@@ -6465,7 +6560,7 @@
         },
         "attend_prob": 0.92,
         "noshow_overall": 0.5833333333333333,
-        "noshow_rolling": 0.5441284934231329,
+        "noshow_rolling": 0.5441284934233689,
         "events_seen": 12,
         "noshow_count": 7,
         "flags": {
@@ -6487,7 +6582,7 @@
           "from": "",
           "to": ""
         },
-        "attend_prob": 0.20499505728511566,
+        "attend_prob": 0.20499505728511966,
         "noshow_overall": 1.0,
         "noshow_rolling": 1.0,
         "events_seen": 1,
@@ -6511,7 +6606,7 @@
           "from": "",
           "to": ""
         },
-        "attend_prob": 0.1261130196880641,
+        "attend_prob": 0.1261130196880666,
         "noshow_overall": 1.0,
         "noshow_rolling": 1.0,
         "events_seen": 4,
@@ -6559,7 +6654,7 @@
           "from": "",
           "to": ""
         },
-        "attend_prob": 0.20499505728511566,
+        "attend_prob": 0.20499505728511966,
         "noshow_overall": 1.0,
         "noshow_rolling": 1.0,
         "events_seen": 1,
@@ -6583,7 +6678,7 @@
           "from": "",
           "to": ""
         },
-        "attend_prob": 0.20499505728511566,
+        "attend_prob": 0.20499505728511966,
         "noshow_overall": 1.0,
         "noshow_rolling": 1.0,
         "events_seen": 1,
@@ -6609,7 +6704,7 @@
         },
         "attend_prob": 0.92,
         "noshow_overall": 0.07692307692307687,
-        "noshow_rolling": 0.05546670609424098,
+        "noshow_rolling": 0.05546670609434745,
         "events_seen": 13,
         "noshow_count": 1,
         "flags": {
@@ -6631,9 +6726,9 @@
           "from": "",
           "to": ""
         },
-        "attend_prob": 0.26462462334016457,
+        "attend_prob": 0.26462462334016656,
         "noshow_overall": 0.7142857142857143,
-        "noshow_rolling": 0.6765074465939138,
+        "noshow_rolling": 0.6765074465937226,
         "events_seen": 7,
         "noshow_count": 5,
         "flags": {
@@ -6679,7 +6774,7 @@
           "from": "",
           "to": ""
         },
-        "attend_prob": 0.20499505728511566,
+        "attend_prob": 0.20499505728511966,
         "noshow_overall": 1.0,
         "noshow_rolling": 1.0,
         "events_seen": 1,
@@ -6703,9 +6798,9 @@
           "from": "2025-11-26",
           "to": "2025-11-29"
         },
-        "attend_prob": 0.5523370214702747,
+        "attend_prob": 0.5523370214704277,
         "noshow_overall": 0.4444444444444444,
-        "noshow_rolling": 0.44766297852972525,
+        "noshow_rolling": 0.44766297852957226,
         "events_seen": 9,
         "noshow_count": 4,
         "flags": {
@@ -6729,7 +6824,7 @@
         },
         "attend_prob": 0.92,
         "noshow_overall": 0.19999999999999996,
-        "noshow_rolling": 0.1464902404301558,
+        "noshow_rolling": 0.1464902404303261,
         "events_seen": 10,
         "noshow_count": 2,
         "flags": {
@@ -6775,7 +6870,7 @@
           "from": "",
           "to": ""
         },
-        "attend_prob": 0.07678535632572135,
+        "attend_prob": 0.07678535632572289,
         "noshow_overall": 1.0,
         "noshow_rolling": 1.0,
         "events_seen": 9,
@@ -6799,7 +6894,7 @@
           "from": "",
           "to": ""
         },
-        "attend_prob": 0.20499505728511566,
+        "attend_prob": 0.20499505728511966,
         "noshow_overall": 1.0,
         "noshow_rolling": 1.0,
         "events_seen": 1,
@@ -6823,7 +6918,7 @@
           "from": "",
           "to": ""
         },
-        "attend_prob": 0.20499505728511566,
+        "attend_prob": 0.20499505728511966,
         "noshow_overall": 1.0,
         "noshow_rolling": 1.0,
         "events_seen": 1,
@@ -6847,9 +6942,9 @@
           "from": "",
           "to": ""
         },
-        "attend_prob": 0.24207997196178743,
+        "attend_prob": 0.24207997196178915,
         "noshow_overall": 0.75,
-        "noshow_rolling": 0.7480135470726925,
+        "noshow_rolling": 0.7480135470724432,
         "events_seen": 8,
         "noshow_count": 6,
         "flags": {
@@ -6871,7 +6966,7 @@
           "from": "",
           "to": ""
         },
-        "attend_prob": 0.16965220234775452,
+        "attend_prob": 0.16965220234775788,
         "noshow_overall": 1.0,
         "noshow_rolling": 1.0,
         "events_seen": 2,
@@ -6895,9 +6990,9 @@
           "from": "2025-11-26",
           "to": "2025-11-29"
         },
-        "attend_prob": 0.7138603853521877,
+        "attend_prob": 0.7138603853521556,
         "noshow_overall": 0.33333333333333337,
-        "noshow_rolling": 0.28613961464781235,
+        "noshow_rolling": 0.28613961464784443,
         "events_seen": 12,
         "noshow_count": 4,
         "flags": {
@@ -6921,7 +7016,7 @@
         },
         "attend_prob": 0.92,
         "noshow_overall": 0.11111111111111116,
-        "noshow_rolling": 0.1385693111598214,
+        "noshow_rolling": 0.13856931115998883,
         "events_seen": 9,
         "noshow_count": 1,
         "flags": {
@@ -6969,7 +7064,7 @@
         },
         "attend_prob": 0.92,
         "noshow_overall": 0.33333333333333337,
-        "noshow_rolling": 0.30400696084035583,
+        "noshow_rolling": 0.30400696084001577,
         "events_seen": 3,
         "noshow_count": 1,
         "flags": {
@@ -6991,7 +7086,7 @@
           "from": "",
           "to": ""
         },
-        "attend_prob": 0.20499505728511566,
+        "attend_prob": 0.20499505728511966,
         "noshow_overall": 1.0,
         "noshow_rolling": 1.0,
         "events_seen": 1,
@@ -7007,7 +7102,7 @@
         "canon": "cindy934",
         "in_alliance": 1,
         "roster_status": "B-Start",
-        "event_status": "open",
+        "event_status": "hard_commitment",
         "is_absent_next_event": false,
         "absence": {
           "reason": "",
@@ -7015,16 +7110,16 @@
           "from": "",
           "to": ""
         },
-        "attend_prob": 0.4888883153438448,
+        "attend_prob": 0.92,
         "noshow_overall": 0.375,
-        "noshow_rolling": 0.381134542574017,
+        "noshow_rolling": 0.3811345425738716,
         "events_seen": 8,
         "noshow_count": 3,
         "flags": {
           "no_data": false,
           "low_n": false
         },
-        "contact_recommendation": "maybe"
+        "contact_recommendation": "yes"
       },
       {
         "display": "ilishelbymf",
@@ -7087,7 +7182,7 @@
           "from": "",
           "to": ""
         },
-        "attend_prob": 0.20499505728511566,
+        "attend_prob": 0.20499505728511966,
         "noshow_overall": 1.0,
         "noshow_rolling": 1.0,
         "events_seen": 1,
@@ -7159,7 +7254,7 @@
           "from": "",
           "to": ""
         },
-        "attend_prob": 0.16965220234775452,
+        "attend_prob": 0.16965220234775788,
         "noshow_overall": 1.0,
         "noshow_rolling": 1.0,
         "events_seen": 2,
@@ -7185,7 +7280,7 @@
         },
         "attend_prob": 0.92,
         "noshow_overall": 0.15384615384615385,
-        "noshow_rolling": 0.12481422538779463,
+        "noshow_rolling": 0.12481422538767628,
         "events_seen": 13,
         "noshow_count": 2,
         "flags": {
@@ -7207,9 +7302,9 @@
           "from": "2025-11-26",
           "to": "2025-11-29"
         },
-        "attend_prob": 0.8153397635022385,
+        "attend_prob": 0.8153397635020202,
         "noshow_overall": 0.25,
-        "noshow_rolling": 0.18466023649776153,
+        "noshow_rolling": 0.1846602364979798,
         "events_seen": 4,
         "noshow_count": 1,
         "flags": {
@@ -7231,7 +7326,7 @@
           "from": "",
           "to": ""
         },
-        "attend_prob": 0.20499505728511566,
+        "attend_prob": 0.20499505728511966,
         "noshow_overall": 1.0,
         "noshow_rolling": 1.0,
         "events_seen": 1,
@@ -7247,18 +7342,18 @@
   "debug_selection": [
     {
       "canonical_name": "aegolas",
-      "selection_stage": "B-bench",
+      "selection_stage": "B-start-fallback",
       "first_stage": "B-start-main",
-      "rank_in_stage": 1,
-      "selected": false,
-      "cutoff_reason": "threshold gate",
+      "rank_in_stage": 3,
+      "selected": true,
+      "cutoff_reason": "selected",
       "tie_break_key": "score>primary>secondary>events_seen>name",
-      "score_for_stage": 0.23505549381838287,
-      "attend_prob": 0.25750428857821156,
-      "no_show_eb": 0.7200469166619597,
+      "score_for_stage": 0.23505549381838428,
+      "attend_prob": 0.257504288578213,
+      "no_show_eb": 0.7200469166619583,
       "is_low_n": false,
       "events_seen": 11,
-      "stage_history": "B-start-main:threshold gate; B-start-main:threshold gate; B-start-fallback:MIN_B_STARTERS reached; A-bench:threshold gate; A-bench:threshold gate; B-bench:threshold gate; B-bench:threshold gate"
+      "stage_history": "B-start-main:threshold gate; B-start-main:threshold gate; B-start-fallback:selected"
     },
     {
       "canonical_name": "alonzo mosley",
@@ -7294,13 +7389,13 @@
       "canonical_name": "amy0815",
       "selection_stage": "B-bench",
       "first_stage": "B-start-main",
-      "rank_in_stage": 31,
+      "rank_in_stage": 30,
       "selected": false,
       "cutoff_reason": "threshold gate",
       "tie_break_key": "score>primary>secondary>events_seen>name",
-      "score_for_stage": 0.13942169635040824,
-      "attend_prob": 0.16965220234775452,
-      "no_show_eb": 0.8001172916548992,
+      "score_for_stage": 0.1394216963504114,
+      "attend_prob": 0.16965220234775788,
+      "no_show_eb": 0.8001172916548956,
       "is_low_n": true,
       "events_seen": 2,
       "stage_history": "B-start-main:threshold gate; B-start-main:threshold gate; B-start-fallback:MIN_B_STARTERS reached; A-bench:threshold gate; A-bench:threshold gate; B-bench:threshold gate; B-bench:threshold gate"
@@ -7324,13 +7419,13 @@
       "canonical_name": "baldurbabu",
       "selection_stage": "B-bench",
       "first_stage": "B-start-main",
-      "rank_in_stage": 47,
+      "rank_in_stage": 46,
       "selected": false,
       "cutoff_reason": "threshold gate",
       "tie_break_key": "score>primary>secondary>events_seen>name",
-      "score_for_stage": 0.10231400811730264,
-      "attend_prob": 0.1261130196880641,
-      "no_show_eb": 0.8500879687411744,
+      "score_for_stage": 0.10231400811730497,
+      "attend_prob": 0.1261130196880666,
+      "no_show_eb": 0.8500879687411718,
       "is_low_n": false,
       "events_seen": 4,
       "stage_history": "B-start-main:threshold gate; B-start-main:threshold gate; B-start-fallback:MIN_B_STARTERS reached; A-bench:threshold gate; A-bench:threshold gate; B-bench:threshold gate; B-bench:threshold gate"
@@ -7369,13 +7464,13 @@
       "canonical_name": "caplap",
       "selection_stage": "B-bench",
       "first_stage": "B-start-main",
-      "rank_in_stage": 5,
+      "rank_in_stage": 4,
       "selected": false,
       "cutoff_reason": "threshold gate",
       "tie_break_key": "score>primary>secondary>events_seen>name",
-      "score_for_stage": 0.17013086455611032,
-      "attend_prob": 0.20499505728511566,
-      "no_show_eb": 0.760140749985879,
+      "score_for_stage": 0.1701308645561141,
+      "attend_prob": 0.20499505728511966,
+      "no_show_eb": 0.7601407499858748,
       "is_low_n": true,
       "events_seen": 1,
       "stage_history": "B-start-main:threshold gate; B-start-main:threshold gate; B-start-fallback:MIN_B_STARTERS reached; A-bench:threshold gate; A-bench:threshold gate; B-bench:threshold gate; B-bench:threshold gate"
@@ -7384,43 +7479,43 @@
       "canonical_name": "capsharky",
       "selection_stage": "B-bench",
       "first_stage": "B-start-main",
-      "rank_in_stage": 6,
+      "rank_in_stage": 5,
       "selected": false,
       "cutoff_reason": "threshold gate",
       "tie_break_key": "score>primary>secondary>events_seen>name",
-      "score_for_stage": 0.17013086455611032,
-      "attend_prob": 0.20499505728511566,
-      "no_show_eb": 0.760140749985879,
+      "score_for_stage": 0.1701308645561141,
+      "attend_prob": 0.20499505728511966,
+      "no_show_eb": 0.7601407499858748,
       "is_low_n": true,
       "events_seen": 1,
       "stage_history": "B-start-main:threshold gate; B-start-main:threshold gate; B-start-fallback:MIN_B_STARTERS reached; A-bench:threshold gate; A-bench:threshold gate; B-bench:threshold gate; B-bench:threshold gate"
     },
     {
       "canonical_name": "cindy934",
+      "selection_stage": "forced",
+      "first_stage": "forced",
+      "rank_in_stage": null,
+      "selected": true,
+      "cutoff_reason": "forced assignment",
+      "tie_break_key": "score>primary>secondary>events_seen>name",
+      "score_for_stage": null,
+      "attend_prob": null,
+      "no_show_eb": null,
+      "is_low_n": false,
+      "events_seen": 0,
+      "stage_history": "forced:forced assignment"
+    },
+    {
+      "canonical_name": "colombo123",
       "selection_stage": "B-start-fallback",
       "first_stage": "B-start-main",
       "rank_in_stage": 1,
       "selected": true,
       "cutoff_reason": "selected",
       "tie_break_key": "score>primary>secondary>events_seen>name",
-      "score_for_stage": 0.46116860984847263,
-      "attend_prob": 0.4888883153438448,
-      "no_show_eb": 0.48339197916078297,
-      "is_low_n": false,
-      "events_seen": 8,
-      "stage_history": "B-start-main:threshold gate; B-start-main:threshold gate; B-start-fallback:selected"
-    },
-    {
-      "canonical_name": "colombo123",
-      "selection_stage": "B-start-fallback",
-      "first_stage": "B-start-main",
-      "rank_in_stage": 2,
-      "selected": true,
-      "cutoff_reason": "selected",
-      "tie_break_key": "score>primary>secondary>events_seen>name",
-      "score_for_stage": 0.23840413303754696,
-      "attend_prob": 0.26462462334016457,
-      "no_show_eb": 0.7091548863572178,
+      "score_for_stage": 0.2384041330375489,
+      "attend_prob": 0.26462462334016656,
+      "no_show_eb": 0.7091548863572158,
       "is_low_n": false,
       "events_seen": 7,
       "stage_history": "B-start-main:threshold gate; B-start-main:threshold gate; B-start-fallback:selected"
@@ -7429,13 +7524,13 @@
       "canonical_name": "commanderpiwi",
       "selection_stage": "B-bench",
       "first_stage": "B-start-main",
-      "rank_in_stage": 32,
+      "rank_in_stage": 31,
       "selected": false,
       "cutoff_reason": "threshold gate",
       "tie_break_key": "score>primary>secondary>events_seen>name",
-      "score_for_stage": 0.13942169635040824,
-      "attend_prob": 0.16965220234775452,
-      "no_show_eb": 0.8001172916548992,
+      "score_for_stage": 0.1394216963504114,
+      "attend_prob": 0.16965220234775788,
+      "no_show_eb": 0.8001172916548956,
       "is_low_n": true,
       "events_seen": 2,
       "stage_history": "B-start-main:threshold gate; B-start-main:threshold gate; B-start-fallback:MIN_B_STARTERS reached; A-bench:threshold gate; A-bench:threshold gate; B-bench:threshold gate; B-bench:threshold gate"
@@ -7444,13 +7539,13 @@
       "canonical_name": "crzdr79",
       "selection_stage": "B-bench",
       "first_stage": "B-start-main",
-      "rank_in_stage": 7,
+      "rank_in_stage": 6,
       "selected": false,
       "cutoff_reason": "threshold gate",
       "tie_break_key": "score>primary>secondary>events_seen>name",
-      "score_for_stage": 0.17013086455611032,
-      "attend_prob": 0.20499505728511566,
-      "no_show_eb": 0.760140749985879,
+      "score_for_stage": 0.1701308645561141,
+      "attend_prob": 0.20499505728511966,
+      "no_show_eb": 0.7601407499858748,
       "is_low_n": true,
       "events_seen": 1,
       "stage_history": "B-start-main:threshold gate; B-start-main:threshold gate; B-start-fallback:MIN_B_STARTERS reached; A-bench:threshold gate; A-bench:threshold gate; B-bench:threshold gate; B-bench:threshold gate"
@@ -7459,13 +7554,13 @@
       "canonical_name": "cs8888",
       "selection_stage": "B-bench",
       "first_stage": "B-start-main",
-      "rank_in_stage": 44,
+      "rank_in_stage": 43,
       "selected": false,
       "cutoff_reason": "threshold gate",
       "tie_break_key": "score>primary>secondary>events_seen>name",
-      "score_for_stage": 0.11804112553074186,
-      "attend_prob": 0.14468458062755696,
-      "no_show_eb": 0.828671964275628,
+      "score_for_stage": 0.1180411255307446,
+      "attend_prob": 0.14468458062755987,
+      "no_show_eb": 0.8286719642756248,
       "is_low_n": false,
       "events_seen": 3,
       "stage_history": "B-start-main:threshold gate; B-start-main:threshold gate; B-start-fallback:MIN_B_STARTERS reached; A-bench:threshold gate; A-bench:threshold gate; B-bench:threshold gate; B-bench:threshold gate"
@@ -7534,13 +7629,13 @@
       "canonical_name": "darkhold",
       "selection_stage": "B-bench",
       "first_stage": "B-start-main",
-      "rank_in_stage": 8,
+      "rank_in_stage": 7,
       "selected": false,
       "cutoff_reason": "threshold gate",
       "tie_break_key": "score>primary>secondary>events_seen>name",
-      "score_for_stage": 0.17013086455611032,
-      "attend_prob": 0.20499505728511566,
-      "no_show_eb": 0.760140749985879,
+      "score_for_stage": 0.1701308645561141,
+      "attend_prob": 0.20499505728511966,
+      "no_show_eb": 0.7601407499858748,
       "is_low_n": true,
       "events_seen": 1,
       "stage_history": "B-start-main:threshold gate; B-start-main:threshold gate; B-start-fallback:MIN_B_STARTERS reached; A-bench:threshold gate; A-bench:threshold gate; B-bench:threshold gate; B-bench:threshold gate"
@@ -7549,13 +7644,13 @@
       "canonical_name": "der mok",
       "selection_stage": "B-bench",
       "first_stage": "B-start-main",
-      "rank_in_stage": 9,
+      "rank_in_stage": 8,
       "selected": false,
       "cutoff_reason": "threshold gate",
       "tie_break_key": "score>primary>secondary>events_seen>name",
-      "score_for_stage": 0.17013086455611032,
-      "attend_prob": 0.20499505728511566,
-      "no_show_eb": 0.760140749985879,
+      "score_for_stage": 0.1701308645561141,
+      "attend_prob": 0.20499505728511966,
+      "no_show_eb": 0.7601407499858748,
       "is_low_n": true,
       "events_seen": 1,
       "stage_history": "B-start-main:threshold gate; B-start-main:threshold gate; B-start-fallback:MIN_B_STARTERS reached; A-bench:threshold gate; A-bench:threshold gate; B-bench:threshold gate; B-bench:threshold gate"
@@ -7564,13 +7659,13 @@
       "canonical_name": "derole83",
       "selection_stage": "B-bench",
       "first_stage": "B-start-main",
-      "rank_in_stage": 33,
+      "rank_in_stage": 32,
       "selected": false,
       "cutoff_reason": "threshold gate",
       "tie_break_key": "score>primary>secondary>events_seen>name",
-      "score_for_stage": 0.13942169635040824,
-      "attend_prob": 0.16965220234775452,
-      "no_show_eb": 0.8001172916548992,
+      "score_for_stage": 0.1394216963504114,
+      "attend_prob": 0.16965220234775788,
+      "no_show_eb": 0.8001172916548956,
       "is_low_n": true,
       "events_seen": 2,
       "stage_history": "B-start-main:threshold gate; B-start-main:threshold gate; B-start-fallback:MIN_B_STARTERS reached; A-bench:threshold gate; A-bench:threshold gate; B-bench:threshold gate; B-bench:threshold gate"
@@ -7594,13 +7689,13 @@
       "canonical_name": "dna16",
       "selection_stage": "B-bench",
       "first_stage": "B-start-main",
-      "rank_in_stage": 34,
+      "rank_in_stage": 33,
       "selected": false,
       "cutoff_reason": "threshold gate",
       "tie_break_key": "score>primary>secondary>events_seen>name",
-      "score_for_stage": 0.13942169635040824,
-      "attend_prob": 0.16965220234775452,
-      "no_show_eb": 0.8001172916548992,
+      "score_for_stage": 0.1394216963504114,
+      "attend_prob": 0.16965220234775788,
+      "no_show_eb": 0.8001172916548956,
       "is_low_n": true,
       "events_seen": 2,
       "stage_history": "B-start-main:threshold gate; B-start-main:threshold gate; B-start-fallback:MIN_B_STARTERS reached; A-bench:threshold gate; A-bench:threshold gate; B-bench:threshold gate; B-bench:threshold gate"
@@ -7609,13 +7704,13 @@
       "canonical_name": "domdom15",
       "selection_stage": "B-bench",
       "first_stage": "B-start-main",
-      "rank_in_stage": 49,
+      "rank_in_stage": 48,
       "selected": false,
       "cutoff_reason": "threshold gate",
       "tie_break_key": "score>primary>secondary>events_seen>name",
-      "score_for_stage": 0.09026710207636321,
-      "attend_prob": 0.1117611204865485,
-      "no_show_eb": 0.8667448611032662,
+      "score_for_stage": 0.09026710207636535,
+      "attend_prob": 0.11176112048655079,
+      "no_show_eb": 0.8667448611032638,
       "is_low_n": false,
       "events_seen": 5,
       "stage_history": "B-start-main:threshold gate; B-start-main:threshold gate; B-start-fallback:MIN_B_STARTERS reached; A-bench:threshold gate; A-bench:threshold gate; B-bench:threshold gate; B-bench:threshold gate"
@@ -7624,13 +7719,13 @@
       "canonical_name": "doodo12",
       "selection_stage": "B-bench",
       "first_stage": "B-start-main",
-      "rank_in_stage": 10,
+      "rank_in_stage": 9,
       "selected": false,
       "cutoff_reason": "threshold gate",
       "tie_break_key": "score>primary>secondary>events_seen>name",
-      "score_for_stage": 0.17013086455611032,
-      "attend_prob": 0.20499505728511566,
-      "no_show_eb": 0.760140749985879,
+      "score_for_stage": 0.1701308645561141,
+      "attend_prob": 0.20499505728511966,
+      "no_show_eb": 0.7601407499858748,
       "is_low_n": true,
       "events_seen": 1,
       "stage_history": "B-start-main:threshold gate; B-start-main:threshold gate; B-start-fallback:MIN_B_STARTERS reached; A-bench:threshold gate; A-bench:threshold gate; B-bench:threshold gate; B-bench:threshold gate"
@@ -7639,13 +7734,13 @@
       "canonical_name": "dragon0407",
       "selection_stage": "B-bench",
       "first_stage": "B-start-main",
-      "rank_in_stage": 11,
+      "rank_in_stage": 10,
       "selected": false,
       "cutoff_reason": "threshold gate",
       "tie_break_key": "score>primary>secondary>events_seen>name",
-      "score_for_stage": 0.17013086455611032,
-      "attend_prob": 0.20499505728511566,
-      "no_show_eb": 0.760140749985879,
+      "score_for_stage": 0.1701308645561141,
+      "attend_prob": 0.20499505728511966,
+      "no_show_eb": 0.7601407499858748,
       "is_low_n": true,
       "events_seen": 1,
       "stage_history": "B-start-main:threshold gate; B-start-main:threshold gate; B-start-fallback:MIN_B_STARTERS reached; A-bench:threshold gate; A-bench:threshold gate; B-bench:threshold gate; B-bench:threshold gate"
@@ -7669,13 +7764,13 @@
       "canonical_name": "estintore",
       "selection_stage": "B-bench",
       "first_stage": "B-start-main",
-      "rank_in_stage": 12,
+      "rank_in_stage": 11,
       "selected": false,
       "cutoff_reason": "threshold gate",
       "tie_break_key": "score>primary>secondary>events_seen>name",
-      "score_for_stage": 0.17013086455611032,
-      "attend_prob": 0.20499505728511566,
-      "no_show_eb": 0.760140749985879,
+      "score_for_stage": 0.1701308645561141,
+      "attend_prob": 0.20499505728511966,
+      "no_show_eb": 0.7601407499858748,
       "is_low_n": true,
       "events_seen": 1,
       "stage_history": "B-start-main:threshold gate; B-start-main:threshold gate; B-start-fallback:MIN_B_STARTERS reached; A-bench:threshold gate; A-bench:threshold gate; B-bench:threshold gate; B-bench:threshold gate"
@@ -7714,13 +7809,13 @@
       "canonical_name": "ginge4",
       "selection_stage": "B-bench",
       "first_stage": "B-start-main",
-      "rank_in_stage": 13,
+      "rank_in_stage": 12,
       "selected": false,
       "cutoff_reason": "threshold gate",
       "tie_break_key": "score>primary>secondary>events_seen>name",
-      "score_for_stage": 0.17013086455611032,
-      "attend_prob": 0.20499505728511566,
-      "no_show_eb": 0.760140749985879,
+      "score_for_stage": 0.1701308645561141,
+      "attend_prob": 0.20499505728511966,
+      "no_show_eb": 0.7601407499858748,
       "is_low_n": true,
       "events_seen": 1,
       "stage_history": "B-start-main:threshold gate; B-start-main:threshold gate; B-start-fallback:MIN_B_STARTERS reached; A-bench:threshold gate; A-bench:threshold gate; B-bench:threshold gate; B-bench:threshold gate"
@@ -7729,13 +7824,13 @@
       "canonical_name": "globi3000",
       "selection_stage": "B-bench",
       "first_stage": "B-start-main",
-      "rank_in_stage": 30,
+      "rank_in_stage": 29,
       "selected": false,
       "cutoff_reason": "threshold gate",
       "tie_break_key": "score>primary>secondary>events_seen>name",
-      "score_for_stage": 0.15375354271552516,
-      "attend_prob": 0.17684478272460827,
-      "no_show_eb": 0.8000639772663086,
+      "score_for_stage": 0.15375354271552688,
+      "attend_prob": 0.17684478272461007,
+      "no_show_eb": 0.8000639772663067,
       "is_low_n": false,
       "events_seen": 7,
       "stage_history": "B-start-main:threshold gate; B-start-main:threshold gate; B-start-fallback:MIN_B_STARTERS reached; A-bench:threshold gate; A-bench:threshold gate; B-bench:threshold gate; B-bench:threshold gate"
@@ -7744,13 +7839,13 @@
       "canonical_name": "grizzly che",
       "selection_stage": "B-bench",
       "first_stage": "B-start-main",
-      "rank_in_stage": 35,
+      "rank_in_stage": 34,
       "selected": false,
       "cutoff_reason": "threshold gate",
       "tie_break_key": "score>primary>secondary>events_seen>name",
-      "score_for_stage": 0.13942169635040824,
-      "attend_prob": 0.16965220234775452,
-      "no_show_eb": 0.8001172916548992,
+      "score_for_stage": 0.1394216963504114,
+      "attend_prob": 0.16965220234775788,
+      "no_show_eb": 0.8001172916548956,
       "is_low_n": true,
       "events_seen": 2,
       "stage_history": "B-start-main:threshold gate; B-start-main:threshold gate; B-start-fallback:MIN_B_STARTERS reached; A-bench:threshold gate; A-bench:threshold gate; B-bench:threshold gate; B-bench:threshold gate"
@@ -7759,13 +7854,13 @@
       "canonical_name": "hann1453",
       "selection_stage": "B-bench",
       "first_stage": "B-start-main",
-      "rank_in_stage": 36,
+      "rank_in_stage": 35,
       "selected": false,
       "cutoff_reason": "threshold gate",
       "tie_break_key": "score>primary>secondary>events_seen>name",
-      "score_for_stage": 0.13942169635040824,
-      "attend_prob": 0.16965220234775452,
-      "no_show_eb": 0.8001172916548992,
+      "score_for_stage": 0.1394216963504114,
+      "attend_prob": 0.16965220234775788,
+      "no_show_eb": 0.8001172916548956,
       "is_low_n": true,
       "events_seen": 2,
       "stage_history": "B-start-main:threshold gate; B-start-main:threshold gate; B-start-fallback:MIN_B_STARTERS reached; A-bench:threshold gate; A-bench:threshold gate; B-bench:threshold gate; B-bench:threshold gate"
@@ -7774,13 +7869,13 @@
       "canonical_name": "hejoe",
       "selection_stage": "B-bench",
       "first_stage": "B-start-main",
-      "rank_in_stage": 14,
+      "rank_in_stage": 13,
       "selected": false,
       "cutoff_reason": "threshold gate",
       "tie_break_key": "score>primary>secondary>events_seen>name",
-      "score_for_stage": 0.17013086455611032,
-      "attend_prob": 0.20499505728511566,
-      "no_show_eb": 0.760140749985879,
+      "score_for_stage": 0.1701308645561141,
+      "attend_prob": 0.20499505728511966,
+      "no_show_eb": 0.7601407499858748,
       "is_low_n": true,
       "events_seen": 1,
       "stage_history": "B-start-main:threshold gate; B-start-main:threshold gate; B-start-fallback:MIN_B_STARTERS reached; A-bench:threshold gate; A-bench:threshold gate; B-bench:threshold gate; B-bench:threshold gate"
@@ -7804,13 +7899,13 @@
       "canonical_name": "jaymacmacjay",
       "selection_stage": "B-bench",
       "first_stage": "B-start-main",
-      "rank_in_stage": 15,
+      "rank_in_stage": 14,
       "selected": false,
       "cutoff_reason": "threshold gate",
       "tie_break_key": "score>primary>secondary>events_seen>name",
-      "score_for_stage": 0.17013086455611032,
-      "attend_prob": 0.20499505728511566,
-      "no_show_eb": 0.760140749985879,
+      "score_for_stage": 0.1701308645561141,
+      "attend_prob": 0.20499505728511966,
+      "no_show_eb": 0.7601407499858748,
       "is_low_n": true,
       "events_seen": 1,
       "stage_history": "B-start-main:threshold gate; B-start-main:threshold gate; B-start-fallback:MIN_B_STARTERS reached; A-bench:threshold gate; A-bench:threshold gate; B-bench:threshold gate; B-bench:threshold gate"
@@ -7849,13 +7944,13 @@
       "canonical_name": "john doe 0815",
       "selection_stage": "B-bench",
       "first_stage": "B-start-main",
-      "rank_in_stage": 4,
+      "rank_in_stage": 3,
       "selected": false,
       "cutoff_reason": "threshold gate",
       "tie_break_key": "score>primary>secondary>events_seen>name",
-      "score_for_stage": 0.1900116533867755,
-      "attend_prob": 0.21718895169731023,
-      "no_show_eb": 0.755633749992155,
+      "score_for_stage": 0.19001165338677767,
+      "attend_prob": 0.21718895169731248,
+      "no_show_eb": 0.7556337499921527,
       "is_low_n": false,
       "events_seen": 5,
       "stage_history": "B-start-main:threshold gate; B-start-main:threshold gate; B-start-fallback:MIN_B_STARTERS reached; A-bench:threshold gate; A-bench:threshold gate; B-bench:threshold gate; B-bench:threshold gate"
@@ -7864,13 +7959,13 @@
       "canonical_name": "joschy81",
       "selection_stage": "B-bench",
       "first_stage": "B-start-main",
-      "rank_in_stage": 16,
+      "rank_in_stage": 15,
       "selected": false,
       "cutoff_reason": "threshold gate",
       "tie_break_key": "score>primary>secondary>events_seen>name",
-      "score_for_stage": 0.17013086455611032,
-      "attend_prob": 0.20499505728511566,
-      "no_show_eb": 0.760140749985879,
+      "score_for_stage": 0.1701308645561141,
+      "attend_prob": 0.20499505728511966,
+      "no_show_eb": 0.7601407499858748,
       "is_low_n": true,
       "events_seen": 1,
       "stage_history": "B-start-main:threshold gate; B-start-main:threshold gate; B-start-fallback:MIN_B_STARTERS reached; A-bench:threshold gate; A-bench:threshold gate; B-bench:threshold gate; B-bench:threshold gate"
@@ -7879,13 +7974,13 @@
       "canonical_name": "kaiserslautern1900",
       "selection_stage": "B-bench",
       "first_stage": "B-start-main",
-      "rank_in_stage": 37,
+      "rank_in_stage": 36,
       "selected": false,
       "cutoff_reason": "threshold gate",
       "tie_break_key": "score>primary>secondary>events_seen>name",
-      "score_for_stage": 0.13942169635040824,
-      "attend_prob": 0.16965220234775452,
-      "no_show_eb": 0.8001172916548992,
+      "score_for_stage": 0.1394216963504114,
+      "attend_prob": 0.16965220234775788,
+      "no_show_eb": 0.8001172916548956,
       "is_low_n": true,
       "events_seen": 2,
       "stage_history": "B-start-main:threshold gate; B-start-main:threshold gate; B-start-fallback:MIN_B_STARTERS reached; A-bench:threshold gate; A-bench:threshold gate; B-bench:threshold gate; B-bench:threshold gate"
@@ -7894,13 +7989,13 @@
       "canonical_name": "kamikaze82",
       "selection_stage": "B-bench",
       "first_stage": "B-start-main",
-      "rank_in_stage": 45,
+      "rank_in_stage": 44,
       "selected": false,
       "cutoff_reason": "threshold gate",
       "tie_break_key": "score>primary>secondary>events_seen>name",
-      "score_for_stage": 0.11804112553074186,
-      "attend_prob": 0.14468458062755696,
-      "no_show_eb": 0.828671964275628,
+      "score_for_stage": 0.1180411255307446,
+      "attend_prob": 0.14468458062755987,
+      "no_show_eb": 0.8286719642756248,
       "is_low_n": false,
       "events_seen": 3,
       "stage_history": "B-start-main:threshold gate; B-start-main:threshold gate; B-start-fallback:MIN_B_STARTERS reached; A-bench:threshold gate; A-bench:threshold gate; B-bench:threshold gate; B-bench:threshold gate"
@@ -7909,13 +8004,13 @@
       "canonical_name": "king21king",
       "selection_stage": "B-bench",
       "first_stage": "B-start-main",
-      "rank_in_stage": 17,
+      "rank_in_stage": 16,
       "selected": false,
       "cutoff_reason": "threshold gate",
       "tie_break_key": "score>primary>secondary>events_seen>name",
-      "score_for_stage": 0.17013086455611032,
-      "attend_prob": 0.20499505728511566,
-      "no_show_eb": 0.760140749985879,
+      "score_for_stage": 0.1701308645561141,
+      "attend_prob": 0.20499505728511966,
+      "no_show_eb": 0.7601407499858748,
       "is_low_n": true,
       "events_seen": 1,
       "stage_history": "B-start-main:threshold gate; B-start-main:threshold gate; B-start-fallback:MIN_B_STARTERS reached; A-bench:threshold gate; A-bench:threshold gate; B-bench:threshold gate; B-bench:threshold gate"
@@ -7924,13 +8019,13 @@
       "canonical_name": "kinkel27",
       "selection_stage": "B-bench",
       "first_stage": "B-start-main",
-      "rank_in_stage": 38,
+      "rank_in_stage": 37,
       "selected": false,
       "cutoff_reason": "threshold gate",
       "tie_break_key": "score>primary>secondary>events_seen>name",
-      "score_for_stage": 0.13942169635040824,
-      "attend_prob": 0.16965220234775452,
-      "no_show_eb": 0.8001172916548992,
+      "score_for_stage": 0.1394216963504114,
+      "attend_prob": 0.16965220234775788,
+      "no_show_eb": 0.8001172916548956,
       "is_low_n": true,
       "events_seen": 2,
       "stage_history": "B-start-main:threshold gate; B-start-main:threshold gate; B-start-fallback:MIN_B_STARTERS reached; A-bench:threshold gate; A-bench:threshold gate; B-bench:threshold gate; B-bench:threshold gate"
@@ -7969,13 +8064,13 @@
       "canonical_name": "kurme",
       "selection_stage": "B-bench",
       "first_stage": "B-start-main",
-      "rank_in_stage": 39,
+      "rank_in_stage": 38,
       "selected": false,
       "cutoff_reason": "threshold gate",
       "tie_break_key": "score>primary>secondary>events_seen>name",
-      "score_for_stage": 0.13942169635040824,
-      "attend_prob": 0.16965220234775452,
-      "no_show_eb": 0.8001172916548992,
+      "score_for_stage": 0.1394216963504114,
+      "attend_prob": 0.16965220234775788,
+      "no_show_eb": 0.8001172916548956,
       "is_low_n": true,
       "events_seen": 2,
       "stage_history": "B-start-main:threshold gate; B-start-main:threshold gate; B-start-fallback:MIN_B_STARTERS reached; A-bench:threshold gate; A-bench:threshold gate; B-bench:threshold gate; B-bench:threshold gate"
@@ -7984,13 +8079,13 @@
       "canonical_name": "larzde",
       "selection_stage": "B-bench",
       "first_stage": "B-start-main",
-      "rank_in_stage": 18,
+      "rank_in_stage": 17,
       "selected": false,
       "cutoff_reason": "threshold gate",
       "tie_break_key": "score>primary>secondary>events_seen>name",
-      "score_for_stage": 0.17013086455611032,
-      "attend_prob": 0.20499505728511566,
-      "no_show_eb": 0.760140749985879,
+      "score_for_stage": 0.1701308645561141,
+      "attend_prob": 0.20499505728511966,
+      "no_show_eb": 0.7601407499858748,
       "is_low_n": true,
       "events_seen": 1,
       "stage_history": "B-start-main:threshold gate; B-start-main:threshold gate; B-start-fallback:MIN_B_STARTERS reached; A-bench:threshold gate; A-bench:threshold gate; B-bench:threshold gate; B-bench:threshold gate"
@@ -7999,13 +8094,13 @@
       "canonical_name": "leraxo",
       "selection_stage": "B-bench",
       "first_stage": "B-start-main",
-      "rank_in_stage": 3,
+      "rank_in_stage": 2,
       "selected": false,
       "cutoff_reason": "threshold gate",
       "tie_break_key": "score>primary>secondary>events_seen>name",
-      "score_for_stage": 0.21538270607415944,
-      "attend_prob": 0.2451473686664925,
-      "no_show_eb": 0.7250879687411744,
+      "score_for_stage": 0.21538270607416193,
+      "attend_prob": 0.24514736866649509,
+      "no_show_eb": 0.7250879687411718,
       "is_low_n": false,
       "events_seen": 4,
       "stage_history": "B-start-main:threshold gate; B-start-main:threshold gate; B-start-fallback:MIN_B_STARTERS reached; A-bench:threshold gate; A-bench:threshold gate; B-bench:threshold gate; B-bench:threshold gate"
@@ -8074,13 +8169,13 @@
       "canonical_name": "major fibonacci",
       "selection_stage": "B-bench",
       "first_stage": "B-start-main",
-      "rank_in_stage": 40,
+      "rank_in_stage": 39,
       "selected": false,
       "cutoff_reason": "threshold gate",
       "tie_break_key": "score>primary>secondary>events_seen>name",
-      "score_for_stage": 0.13942169635040824,
-      "attend_prob": 0.16965220234775452,
-      "no_show_eb": 0.8001172916548992,
+      "score_for_stage": 0.1394216963504114,
+      "attend_prob": 0.16965220234775788,
+      "no_show_eb": 0.8001172916548956,
       "is_low_n": true,
       "events_seen": 2,
       "stage_history": "B-start-main:threshold gate; B-start-main:threshold gate; B-start-fallback:MIN_B_STARTERS reached; A-bench:threshold gate; A-bench:threshold gate; B-bench:threshold gate; B-bench:threshold gate"
@@ -8089,13 +8184,13 @@
       "canonical_name": "manu1206",
       "selection_stage": "B-bench",
       "first_stage": "B-start-main",
-      "rank_in_stage": 19,
+      "rank_in_stage": 18,
       "selected": false,
       "cutoff_reason": "threshold gate",
       "tie_break_key": "score>primary>secondary>events_seen>name",
-      "score_for_stage": 0.17013086455611032,
-      "attend_prob": 0.20499505728511566,
-      "no_show_eb": 0.760140749985879,
+      "score_for_stage": 0.1701308645561141,
+      "attend_prob": 0.20499505728511966,
+      "no_show_eb": 0.7601407499858748,
       "is_low_n": true,
       "events_seen": 1,
       "stage_history": "B-start-main:threshold gate; B-start-main:threshold gate; B-start-fallback:MIN_B_STARTERS reached; A-bench:threshold gate; A-bench:threshold gate; B-bench:threshold gate; B-bench:threshold gate"
@@ -8119,13 +8214,13 @@
       "canonical_name": "moda33",
       "selection_stage": "B-bench",
       "first_stage": "B-start-main",
-      "rank_in_stage": 20,
+      "rank_in_stage": 19,
       "selected": false,
       "cutoff_reason": "threshold gate",
       "tie_break_key": "score>primary>secondary>events_seen>name",
-      "score_for_stage": 0.17013086455611032,
-      "attend_prob": 0.20499505728511566,
-      "no_show_eb": 0.760140749985879,
+      "score_for_stage": 0.1701308645561141,
+      "attend_prob": 0.20499505728511966,
+      "no_show_eb": 0.7601407499858748,
       "is_low_n": true,
       "events_seen": 1,
       "stage_history": "B-start-main:threshold gate; B-start-main:threshold gate; B-start-fallback:MIN_B_STARTERS reached; A-bench:threshold gate; A-bench:threshold gate; B-bench:threshold gate; B-bench:threshold gate"
@@ -8149,13 +8244,13 @@
       "canonical_name": "nikelas69",
       "selection_stage": "B-bench",
       "first_stage": "B-start-main",
-      "rank_in_stage": 41,
+      "rank_in_stage": 40,
       "selected": false,
       "cutoff_reason": "threshold gate",
       "tie_break_key": "score>primary>secondary>events_seen>name",
-      "score_for_stage": 0.13942169635040824,
-      "attend_prob": 0.16965220234775452,
-      "no_show_eb": 0.8001172916548992,
+      "score_for_stage": 0.1394216963504114,
+      "attend_prob": 0.16965220234775788,
+      "no_show_eb": 0.8001172916548956,
       "is_low_n": true,
       "events_seen": 2,
       "stage_history": "B-start-main:threshold gate; B-start-main:threshold gate; B-start-fallback:MIN_B_STARTERS reached; A-bench:threshold gate; A-bench:threshold gate; B-bench:threshold gate; B-bench:threshold gate"
@@ -8164,13 +8259,13 @@
       "canonical_name": "nktobi",
       "selection_stage": "B-bench",
       "first_stage": "B-start-main",
-      "rank_in_stage": 42,
+      "rank_in_stage": 41,
       "selected": false,
       "cutoff_reason": "threshold gate",
       "tie_break_key": "score>primary>secondary>events_seen>name",
-      "score_for_stage": 0.13942169635040824,
-      "attend_prob": 0.16965220234775452,
-      "no_show_eb": 0.8001172916548992,
+      "score_for_stage": 0.1394216963504114,
+      "attend_prob": 0.16965220234775788,
+      "no_show_eb": 0.8001172916548956,
       "is_low_n": true,
       "events_seen": 2,
       "stage_history": "B-start-main:threshold gate; B-start-main:threshold gate; B-start-fallback:MIN_B_STARTERS reached; A-bench:threshold gate; A-bench:threshold gate; B-bench:threshold gate; B-bench:threshold gate"
@@ -8179,13 +8274,13 @@
       "canonical_name": "ognastea",
       "selection_stage": "B-bench",
       "first_stage": "B-start-main",
-      "rank_in_stage": 46,
+      "rank_in_stage": 45,
       "selected": false,
       "cutoff_reason": "threshold gate",
       "tie_break_key": "score>primary>secondary>events_seen>name",
-      "score_for_stage": 0.11804112553074186,
-      "attend_prob": 0.14468458062755696,
-      "no_show_eb": 0.828671964275628,
+      "score_for_stage": 0.1180411255307446,
+      "attend_prob": 0.14468458062755987,
+      "no_show_eb": 0.8286719642756248,
       "is_low_n": false,
       "events_seen": 3,
       "stage_history": "B-start-main:threshold gate; B-start-main:threshold gate; B-start-fallback:MIN_B_STARTERS reached; A-bench:threshold gate; A-bench:threshold gate; B-bench:threshold gate; B-bench:threshold gate"
@@ -8194,13 +8289,13 @@
       "canonical_name": "olympusbimbus",
       "selection_stage": "B-bench",
       "first_stage": "B-start-main",
-      "rank_in_stage": 21,
+      "rank_in_stage": 20,
       "selected": false,
       "cutoff_reason": "threshold gate",
       "tie_break_key": "score>primary>secondary>events_seen>name",
-      "score_for_stage": 0.17013086455611032,
-      "attend_prob": 0.20499505728511566,
-      "no_show_eb": 0.760140749985879,
+      "score_for_stage": 0.1701308645561141,
+      "attend_prob": 0.20499505728511966,
+      "no_show_eb": 0.7601407499858748,
       "is_low_n": true,
       "events_seen": 1,
       "stage_history": "B-start-main:threshold gate; B-start-main:threshold gate; B-start-fallback:MIN_B_STARTERS reached; A-bench:threshold gate; A-bench:threshold gate; B-bench:threshold gate; B-bench:threshold gate"
@@ -8224,13 +8319,13 @@
       "canonical_name": "pick lussy",
       "selection_stage": "B-bench",
       "first_stage": "B-start-main",
-      "rank_in_stage": 22,
+      "rank_in_stage": 21,
       "selected": false,
       "cutoff_reason": "threshold gate",
       "tie_break_key": "score>primary>secondary>events_seen>name",
-      "score_for_stage": 0.17013086455611032,
-      "attend_prob": 0.20499505728511566,
-      "no_show_eb": 0.760140749985879,
+      "score_for_stage": 0.1701308645561141,
+      "attend_prob": 0.20499505728511966,
+      "no_show_eb": 0.7601407499858748,
       "is_low_n": true,
       "events_seen": 1,
       "stage_history": "B-start-main:threshold gate; B-start-main:threshold gate; B-start-fallback:MIN_B_STARTERS reached; A-bench:threshold gate; A-bench:threshold gate; B-bench:threshold gate; B-bench:threshold gate"
@@ -8254,13 +8349,13 @@
       "canonical_name": "pushingsky",
       "selection_stage": "B-bench",
       "first_stage": "B-start-main",
-      "rank_in_stage": 23,
+      "rank_in_stage": 22,
       "selected": false,
       "cutoff_reason": "threshold gate",
       "tie_break_key": "score>primary>secondary>events_seen>name",
-      "score_for_stage": 0.17013086455611032,
-      "attend_prob": 0.20499505728511566,
-      "no_show_eb": 0.760140749985879,
+      "score_for_stage": 0.1701308645561141,
+      "attend_prob": 0.20499505728511966,
+      "no_show_eb": 0.7601407499858748,
       "is_low_n": true,
       "events_seen": 1,
       "stage_history": "B-start-main:threshold gate; B-start-main:threshold gate; B-start-fallback:MIN_B_STARTERS reached; A-bench:threshold gate; A-bench:threshold gate; B-bench:threshold gate; B-bench:threshold gate"
@@ -8269,13 +8364,13 @@
       "canonical_name": "pustxblumx",
       "selection_stage": "B-bench",
       "first_stage": "B-start-main",
-      "rank_in_stage": 48,
+      "rank_in_stage": 47,
       "selected": false,
       "cutoff_reason": "threshold gate",
       "tie_break_key": "score>primary>secondary>events_seen>name",
-      "score_for_stage": 0.10231400811730264,
-      "attend_prob": 0.1261130196880641,
-      "no_show_eb": 0.8500879687411744,
+      "score_for_stage": 0.10231400811730497,
+      "attend_prob": 0.1261130196880666,
+      "no_show_eb": 0.8500879687411718,
       "is_low_n": false,
       "events_seen": 4,
       "stage_history": "B-start-main:threshold gate; B-start-main:threshold gate; B-start-fallback:MIN_B_STARTERS reached; A-bench:threshold gate; A-bench:threshold gate; B-bench:threshold gate; B-bench:threshold gate"
@@ -8314,13 +8409,13 @@
       "canonical_name": "saribaron",
       "selection_stage": "B-bench",
       "first_stage": "B-start-main",
-      "rank_in_stage": 24,
+      "rank_in_stage": 23,
       "selected": false,
       "cutoff_reason": "threshold gate",
       "tie_break_key": "score>primary>secondary>events_seen>name",
-      "score_for_stage": 0.17013086455611032,
-      "attend_prob": 0.20499505728511566,
-      "no_show_eb": 0.760140749985879,
+      "score_for_stage": 0.1701308645561141,
+      "attend_prob": 0.20499505728511966,
+      "no_show_eb": 0.7601407499858748,
       "is_low_n": true,
       "events_seen": 1,
       "stage_history": "B-start-main:threshold gate; B-start-main:threshold gate; B-start-fallback:MIN_B_STARTERS reached; A-bench:threshold gate; A-bench:threshold gate; B-bench:threshold gate; B-bench:threshold gate"
@@ -8329,13 +8424,13 @@
       "canonical_name": "satauman",
       "selection_stage": "B-bench",
       "first_stage": "B-start-main",
-      "rank_in_stage": 25,
+      "rank_in_stage": 24,
       "selected": false,
       "cutoff_reason": "threshold gate",
       "tie_break_key": "score>primary>secondary>events_seen>name",
-      "score_for_stage": 0.17013086455611032,
-      "attend_prob": 0.20499505728511566,
-      "no_show_eb": 0.760140749985879,
+      "score_for_stage": 0.1701308645561141,
+      "attend_prob": 0.20499505728511966,
+      "no_show_eb": 0.7601407499858748,
       "is_low_n": true,
       "events_seen": 1,
       "stage_history": "B-start-main:threshold gate; B-start-main:threshold gate; B-start-fallback:MIN_B_STARTERS reached; A-bench:threshold gate; A-bench:threshold gate; B-bench:threshold gate; B-bench:threshold gate"
@@ -8359,13 +8454,13 @@
       "canonical_name": "schlumpfsoldat 4714",
       "selection_stage": "B-start-fallback",
       "first_stage": "B-start-main",
-      "rank_in_stage": 3,
+      "rank_in_stage": 2,
       "selected": true,
       "cutoff_reason": "selected",
       "tie_break_key": "score>primary>secondary>events_seen>name",
-      "score_for_stage": 0.23840413303754696,
-      "attend_prob": 0.26462462334016457,
-      "no_show_eb": 0.7091548863572178,
+      "score_for_stage": 0.2384041330375489,
+      "attend_prob": 0.26462462334016656,
+      "no_show_eb": 0.7091548863572158,
       "is_low_n": false,
       "events_seen": 7,
       "stage_history": "B-start-main:threshold gate; B-start-main:threshold gate; B-start-fallback:selected"
@@ -8374,13 +8469,13 @@
       "canonical_name": "slepy83",
       "selection_stage": "B-bench",
       "first_stage": "B-start-main",
-      "rank_in_stage": 26,
+      "rank_in_stage": 25,
       "selected": false,
       "cutoff_reason": "threshold gate",
       "tie_break_key": "score>primary>secondary>events_seen>name",
-      "score_for_stage": 0.17013086455611032,
-      "attend_prob": 0.20499505728511566,
-      "no_show_eb": 0.760140749985879,
+      "score_for_stage": 0.1701308645561141,
+      "attend_prob": 0.20499505728511966,
+      "no_show_eb": 0.7601407499858748,
       "is_low_n": true,
       "events_seen": 1,
       "stage_history": "B-start-main:threshold gate; B-start-main:threshold gate; B-start-fallback:MIN_B_STARTERS reached; A-bench:threshold gate; A-bench:threshold gate; B-bench:threshold gate; B-bench:threshold gate"
@@ -8404,13 +8499,13 @@
       "canonical_name": "toto 69",
       "selection_stage": "B-bench",
       "first_stage": "B-start-main",
-      "rank_in_stage": 50,
+      "rank_in_stage": 49,
       "selected": false,
       "cutoff_reason": "threshold gate",
       "tie_break_key": "score>primary>secondary>events_seen>name",
-      "score_for_stage": 0.061317154953703906,
-      "attend_prob": 0.07678535632572135,
-      "no_show_eb": 0.9077464423022612,
+      "score_for_stage": 0.06131715495370533,
+      "attend_prob": 0.07678535632572289,
+      "no_show_eb": 0.9077464423022595,
       "is_low_n": false,
       "events_seen": 9,
       "stage_history": "B-start-main:threshold gate; B-start-main:threshold gate; B-start-fallback:MIN_B_STARTERS reached; A-bench:threshold gate; A-bench:threshold gate; B-bench:threshold gate; B-bench:threshold gate"
@@ -8419,13 +8514,13 @@
       "canonical_name": "wadson17",
       "selection_stage": "B-bench",
       "first_stage": "B-start-main",
-      "rank_in_stage": 27,
+      "rank_in_stage": 26,
       "selected": false,
       "cutoff_reason": "threshold gate",
       "tie_break_key": "score>primary>secondary>events_seen>name",
-      "score_for_stage": 0.17013086455611032,
-      "attend_prob": 0.20499505728511566,
-      "no_show_eb": 0.760140749985879,
+      "score_for_stage": 0.1701308645561141,
+      "attend_prob": 0.20499505728511966,
+      "no_show_eb": 0.7601407499858748,
       "is_low_n": true,
       "events_seen": 1,
       "stage_history": "B-start-main:threshold gate; B-start-main:threshold gate; B-start-fallback:MIN_B_STARTERS reached; A-bench:threshold gate; A-bench:threshold gate; B-bench:threshold gate; B-bench:threshold gate"
@@ -8434,13 +8529,13 @@
       "canonical_name": "wellsyone",
       "selection_stage": "B-bench",
       "first_stage": "B-start-main",
-      "rank_in_stage": 28,
+      "rank_in_stage": 27,
       "selected": false,
       "cutoff_reason": "threshold gate",
       "tie_break_key": "score>primary>secondary>events_seen>name",
-      "score_for_stage": 0.17013086455611032,
-      "attend_prob": 0.20499505728511566,
-      "no_show_eb": 0.760140749985879,
+      "score_for_stage": 0.1701308645561141,
+      "attend_prob": 0.20499505728511966,
+      "no_show_eb": 0.7601407499858748,
       "is_low_n": true,
       "events_seen": 1,
       "stage_history": "B-start-main:threshold gate; B-start-main:threshold gate; B-start-fallback:MIN_B_STARTERS reached; A-bench:threshold gate; A-bench:threshold gate; B-bench:threshold gate; B-bench:threshold gate"
@@ -8449,13 +8544,13 @@
       "canonical_name": "x scorpion x",
       "selection_stage": "B-bench",
       "first_stage": "B-start-main",
-      "rank_in_stage": 29,
+      "rank_in_stage": 28,
       "selected": false,
       "cutoff_reason": "threshold gate",
       "tie_break_key": "score>primary>secondary>events_seen>name",
-      "score_for_stage": 0.17013086455611032,
-      "attend_prob": 0.20499505728511566,
-      "no_show_eb": 0.760140749985879,
+      "score_for_stage": 0.1701308645561141,
+      "attend_prob": 0.20499505728511966,
+      "no_show_eb": 0.7601407499858748,
       "is_low_n": true,
       "events_seen": 1,
       "stage_history": "B-start-main:threshold gate; B-start-main:threshold gate; B-start-fallback:MIN_B_STARTERS reached; A-bench:threshold gate; A-bench:threshold gate; B-bench:threshold gate; B-bench:threshold gate"
@@ -8464,13 +8559,13 @@
       "canonical_name": "yoda0201",
       "selection_stage": "B-bench",
       "first_stage": "B-start-main",
-      "rank_in_stage": 2,
+      "rank_in_stage": 1,
       "selected": false,
       "cutoff_reason": "threshold gate",
       "tie_break_key": "score>primary>secondary>events_seen>name",
-      "score_for_stage": 0.21755192308435778,
-      "attend_prob": 0.24207997196178743,
-      "no_show_eb": 0.7333919791607829,
+      "score_for_stage": 0.21755192308435944,
+      "attend_prob": 0.24207997196178915,
+      "no_show_eb": 0.7333919791607811,
       "is_low_n": false,
       "events_seen": 8,
       "stage_history": "B-start-main:threshold gate; B-start-main:threshold gate; B-start-fallback:MIN_B_STARTERS reached; A-bench:threshold gate; A-bench:threshold gate; B-bench:threshold gate; B-bench:threshold gate"
@@ -8479,13 +8574,13 @@
       "canonical_name": "yusam 83",
       "selection_stage": "B-bench",
       "first_stage": "B-start-main",
-      "rank_in_stage": 43,
+      "rank_in_stage": 42,
       "selected": false,
       "cutoff_reason": "threshold gate",
       "tie_break_key": "score>primary>secondary>events_seen>name",
-      "score_for_stage": 0.13942169635040824,
-      "attend_prob": 0.16965220234775452,
-      "no_show_eb": 0.8001172916548992,
+      "score_for_stage": 0.1394216963504114,
+      "attend_prob": 0.16965220234775788,
+      "no_show_eb": 0.8001172916548956,
       "is_low_n": true,
       "events_seen": 2,
       "stage_history": "B-start-main:threshold gate; B-start-main:threshold gate; B-start-fallback:MIN_B_STARTERS reached; A-bench:threshold gate; A-bench:threshold gate; B-bench:threshold gate; B-bench:threshold gate"
