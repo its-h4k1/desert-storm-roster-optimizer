@@ -70,7 +70,6 @@
     .player-meta-toggle{font-size:0.9em;color:var(--fg);display:inline-flex;align-items:center;gap:8px;cursor:pointer;user-select:none}
     .player-meta-toggle input{width:16px;height:16px}
     .filter-note{font-size:0.9em;color:var(--muted)}
-    .filter-commit-callup tbody tr[data-has-commit-callup="false"]{display:none}
     .btn{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);background:#fff;border-radius:8px;padding:7px 10px;font-weight:600;cursor:pointer;color:var(--fg);box-shadow:0 4px 10px rgba(0,0,0,0.04)}
     .btn:disabled{opacity:0.55;cursor:not-allowed;box-shadow:none}
     .player-name-row{font-size:14px;font-weight:600}
@@ -347,19 +346,19 @@
     const diagnosticsToggle = document.getElementById("diagnostics-toggle");
     const diagnosticsContent = document.getElementById("diagnostics-content");
 
-    const updateCommitCallupFilter = () => {
-      if (rosterRoot) {
-        rosterRoot.classList.toggle("filter-commit-callup", state.showCommitCallupOnly);
-        const rows = rosterRoot.querySelectorAll("tbody tr");
-        rows.forEach(row => {
-          const hasCommitCallup = row.dataset.hasCommitCallup === "true";
-          row.style.display = (state.showCommitCallupOnly && !hasCommitCallup) ? "none" : "";
-        });
-      }
+    function applyCommitCallupFilter(active) {
+      const rows = document.querySelectorAll('tr[data-player-row="true"]');
+      rows.forEach(row => {
+        const hasCommitCallup = row.dataset.hasCommitCallup === "true";
+        row.style.display = (!active || hasCommitCallup) ? "" : "none";
+      });
+
       if (commitCallupFilterNote) {
-        commitCallupFilterNote.style.display = state.showCommitCallupOnly ? "inline" : "none";
+        commitCallupFilterNote.style.display = active ? "inline" : "none";
       }
-    };
+    }
+
+    const updateCommitCallupFilter = () => applyCommitCallupFilter(state.showCommitCallupOnly);
 
     if (playerMetaToggle) {
       state.showPlayerMeta = Boolean(playerMetaToggle.checked);
@@ -580,6 +579,14 @@
       const label = "Callup";
       const title = reasonText ? `Callup empfohlen: ${reasonText}` : "Callup empfohlen";
       return `<span class="tag tag-callup callup-badge" title="${escapeHtml(title)}">🔔 ${escapeHtml(label)}</span>`;
+    }
+
+    function hasCommitOrCallup(player, forcedSignup = null, normalizedCallup = null) {
+      const normalizedForced = normalizeForcedSignup(forcedSignup);
+      const callup = normalizedCallup || normalizeCallup(player);
+      const hasCommit = Boolean(normalizedForced && normalizedForced.commitment === "hard");
+      const hasCallup = Boolean(callup && callup.recommended === true);
+      return hasCommit || hasCallup;
     }
 
     function extractCallupMeta(payload, playersArray, schema = {}) {
@@ -2509,7 +2516,7 @@
             });
             const forcedBadge = buildFixBadge(forcedSource);
             const callupBadge = p ? buildCallupBadge(normalizedCallup) : '';
-            const hasCommitOrCallup = Boolean(forcedBadge || callupBadge);
+            const hasCommitOrCallupFlag = hasCommitOrCallup(p, forcedSource, normalizedCallup);
             if (historyBadge) nameHTML += ` ${historyBadge}`;
             if (forcedBadge) nameHTML += ` ${forcedBadge}`;
             if (callupBadge) nameHTML += ` ${callupBadge}`;
@@ -2534,7 +2541,8 @@
               lastNoShowDate: lastNoShowValue,
             });
             const tr = document.createElement("tr");
-            tr.dataset.hasCommitCallup = hasCommitOrCallup ? "true" : "false";
+            tr.dataset.playerRow = "true";
+            tr.dataset.hasCommitCallup = hasCommitOrCallupFlag ? "true" : "false";
             tr.innerHTML = `
               <td class="num">${pad(i+1)}</td>
               <td>
