@@ -350,6 +350,11 @@
     const updateCommitCallupFilter = () => {
       if (rosterRoot) {
         rosterRoot.classList.toggle("filter-commit-callup", state.showCommitCallupOnly);
+        const rows = rosterRoot.querySelectorAll("tbody tr");
+        rows.forEach(row => {
+          const hasCommitCallup = row.dataset.hasCommitCallup === "true";
+          row.style.display = (state.showCommitCallupOnly && !hasCommitCallup) ? "none" : "";
+        });
       }
       if (commitCallupFilterNote) {
         commitCallupFilterNote.style.display = state.showCommitCallupOnly ? "inline" : "none";
@@ -382,6 +387,7 @@
         state.showCommitCallupOnly = Boolean(event.target.checked);
         updateCommitCallupFilter();
       });
+      updateCommitCallupFilter();
     }
     if (callupExportBtn) {
       callupExportBtn.addEventListener("click", () => {
@@ -2572,6 +2578,7 @@
         renderForcedDiagnostics(state.forcedDiagnostics, signupMeta);
         updateCallupNote(state.callupMeta);
         updateCallupExportButton(state.callupMeta, state.callupCandidates);
+        updateCommitCallupFilter();
 
         const ts = new Date().toISOString().replace('T',' ').slice(0,19) + " UTC";
         const schemaVersion = (schema && schema.version != null) ? ` · schema v${schema.version}` : "";
