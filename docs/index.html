@@ -453,7 +453,7 @@
       rosterRoot.classList.toggle("hide-callups", !state.showCallups);
     }
     document.body.classList.toggle("hide-callups", !state.showCallups);
-    updateCommitCallupFilter();
+    updateFixedCommitFilter();
     updateCallupNote(state.callupMeta);
     updateCallupExportButton(state.callupMeta, state.callupCandidates);
 
@@ -2583,7 +2583,7 @@
         renderForcedDiagnostics(state.forcedDiagnostics, signupMeta);
         updateCallupNote(state.callupMeta);
         updateCallupExportButton(state.callupMeta, state.callupCandidates);
-        updateCommitCallupFilter();
+        updateFixedCommitFilter();
 
         const ts = new Date().toISOString().replace('T',' ').slice(0,19) + " UTC";
         const schemaVersion = (schema && schema.version != null) ? ` · schema v${schema.version}` : "";
