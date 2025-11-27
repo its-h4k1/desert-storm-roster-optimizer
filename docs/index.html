@@ -165,11 +165,11 @@
         <input type="checkbox" id="callup-toggle" checked />
         Callup-Empfehlungen anzeigen
       </label>
-      <label class="player-meta-toggle" title="Blendet Spieler ohne verbindliche Zusage oder Callup-Badge aus">
+      <label class="player-meta-toggle" title="Blendet Spieler ohne feste Zusage aus">
         <input type="checkbox" id="commit-callup-toggle" />
-        Nur Spieler mit Zusage/Callup anzeigen
+        Nur feste Zusagen anzeigen
       </label>
-      <span id="commit-callup-filter-note" class="filter-note" style="display:none">Gefilterte Ansicht – Spieler ohne Zusage/Callup werden ausgeblendet.</span>
+      <span id="commit-callup-filter-note" class="filter-note" style="display:none">Gefilterte Ansicht – es werden nur Spieler mit fester Zusage angezeigt.</span>
       <button id="callup-export" class="btn" type="button" disabled title="Keine Callup-Kandidaten im aktuellen Roster">
         📥 Callup-Kandidaten als CSV exportieren
       </button>
@@ -314,7 +314,7 @@
       allianceFilters: { contactYesOnly: true, hideRoster: true, hideAbsent: true, showFormer: false },
       latestPayload: null,
       playersArray: [],
-      showCommitCallupOnly: false,
+      showFixedCommitOnly: false,
     };
     const rosterRoot = document.getElementById("roster-root");
     const playerMetaToggle = document.getElementById("player-meta-toggle");
@@ -346,11 +346,11 @@
     const diagnosticsToggle = document.getElementById("diagnostics-toggle");
     const diagnosticsContent = document.getElementById("diagnostics-content");
 
-    function applyCommitCallupFilter(active) {
+    function applyFixedCommitFilter(active) {
       const rows = document.querySelectorAll('tr[data-player-row="true"]');
       rows.forEach(row => {
-        const hasCommitCallup = row.dataset.hasCommitCallup === "true";
-        row.style.display = (!active || hasCommitCallup) ? "" : "none";
+        const hasFixedCommit = row.dataset.hasFixedCommit === "true";
+        row.style.display = (!active || hasFixedCommit) ? "" : "none";
       });
 
       if (commitCallupFilterNote) {
@@ -358,7 +358,7 @@
       }
     }
 
-    const updateCommitCallupFilter = () => applyCommitCallupFilter(state.showCommitCallupOnly);
+    const updateFixedCommitFilter = () => applyFixedCommitFilter(state.showFixedCommitOnly);
 
     if (playerMetaToggle) {
       state.showPlayerMeta = Boolean(playerMetaToggle.checked);
@@ -381,12 +381,12 @@
       });
     }
     if (commitCallupToggle) {
-      state.showCommitCallupOnly = Boolean(commitCallupToggle.checked);
+      state.showFixedCommitOnly = Boolean(commitCallupToggle.checked);
       commitCallupToggle.addEventListener("change", (event) => {
-        state.showCommitCallupOnly = Boolean(event.target.checked);
-        updateCommitCallupFilter();
+        state.showFixedCommitOnly = Boolean(event.target.checked);
+        updateFixedCommitFilter();
       });
-      updateCommitCallupFilter();
+      updateFixedCommitFilter();
     }
     if (callupExportBtn) {
       callupExportBtn.addEventListener("click", () => {
@@ -581,12 +581,9 @@
       return `<span class="tag tag-callup callup-badge" title="${escapeHtml(title)}">🔔 ${escapeHtml(label)}</span>`;
     }
 
-    function hasCommitOrCallup(player, forcedSignup = null, normalizedCallup = null) {
+    function hasFixedCommit(player, forcedSignup = null) {
       const normalizedForced = normalizeForcedSignup(forcedSignup);
-      const callup = normalizedCallup || normalizeCallup(player);
-      const hasCommit = Boolean(normalizedForced && normalizedForced.commitment === "hard");
-      const hasCallup = Boolean(callup && callup.recommended === true);
-      return hasCommit || hasCallup;
+      return Boolean(normalizedForced && normalizedForced.commitment === "hard");
     }
 
     function extractCallupMeta(payload, playersArray, schema = {}) {
@@ -2516,7 +2513,7 @@
             });
             const forcedBadge = buildFixBadge(forcedSource);
             const callupBadge = p ? buildCallupBadge(normalizedCallup) : '';
-            const hasCommitOrCallupFlag = hasCommitOrCallup(p, forcedSource, normalizedCallup);
+            const hasFixedCommitFlag = hasFixedCommit(p, forcedSource);
             if (historyBadge) nameHTML += ` ${historyBadge}`;
             if (forcedBadge) nameHTML += ` ${forcedBadge}`;
             if (callupBadge) nameHTML += ` ${callupBadge}`;
@@ -2542,7 +2539,7 @@
             });
             const tr = document.createElement("tr");
             tr.dataset.playerRow = "true";
-            tr.dataset.hasCommitCallup = hasCommitOrCallupFlag ? "true" : "false";
+            tr.dataset.hasFixedCommit = hasFixedCommitFlag ? "true" : "false";
             tr.innerHTML = `
               <td class="num">${pad(i+1)}</td>
               <td>
