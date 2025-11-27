@@ -2501,9 +2501,9 @@
               row: r,
               playersByCanon: state.playersByCanon || {},
             });
-            const hasCommitOrCallup = Boolean(forcedSource || (normalizedCallup && normalizedCallup.recommended));
             const forcedBadge = buildFixBadge(forcedSource);
             const callupBadge = p ? buildCallupBadge(normalizedCallup) : '';
+            const hasCommitOrCallup = Boolean(forcedBadge || callupBadge);
             if (historyBadge) nameHTML += ` ${historyBadge}`;
             if (forcedBadge) nameHTML += ` ${forcedBadge}`;
             if (callupBadge) nameHTML += ` ${callupBadge}`;
