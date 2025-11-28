@@ -142,22 +142,20 @@
   <div id="init-error" class="init-error" style="display:none"></div>
 
   <!-- Abschnittsstruktur: Überblick (Status & Empfehlung), Teams A/B (Roster & Details), Allianz & Callup (Arbeitsbereich), Diagnose (Debug). -->
-  <section id="section-overview" class="page-section">
-    <div class="section-header">
-      <h2>Event-Überblick</h2>
-      <p class="muted">Status des nächsten Desert Storm inkl. Anwesenheit &amp; Empfehlung.</p>
-    </div>
-    <div class="overview-grid">
-      <div id="attendance-summary" class="diag" style="display:none"></div>
-      <!-- Hinweis auf Attendance-Target / fehlende Zusagen -->
-      <p id="attendance-summary-help" class="muted legend" style="display:none;margin:4px 0 0">Das Tool peilt eine Ziel-Anwesenheit (Attendance-Target) an. Der Hinweis „Fehlen ca. … Zusagen“ zeigt, wie viele Zusagen bzw. wie viel Attendance ungefähr noch fehlt, um dieses Ziel zu erreichen.</p>
-      <div id="overview-meta" class="diag">
-        <h3 style="margin:0 0 6px">Event-Metadaten</h3>
-        <p class="muted" id="overview-meta-note">Wird geladen …</p>
-        <ul class="meta-list" id="overview-meta-list" style="display:none"></ul>
+    <section id="section-overview" class="page-section">
+      <div class="section-header">
+        <h2>Event-Überblick</h2>
+        <p class="muted">Status des nächsten Desert Storm inkl. Anwesenheit &amp; Empfehlung.</p>
       </div>
-    </div>
-  </section>
+      <div class="overview-grid">
+        <div id="attendance-summary" class="diag" style="display:none"></div>
+        <div id="overview-meta" class="diag">
+          <h3 style="margin:0 0 6px">Event-Metadaten</h3>
+          <p class="muted" id="overview-meta-note">Wird geladen …</p>
+          <ul class="meta-list" id="overview-meta-list" style="display:none"></ul>
+        </div>
+      </div>
+    </section>
 
   <section id="section-teams" class="page-section">
     <div class="section-header">
@@ -337,11 +335,10 @@
     const rosterRoot = document.getElementById("roster-root");
     const playerMetaToggle = document.getElementById("player-meta-toggle");
     const callupToggle = document.getElementById("callup-toggle");
-    const commitCallupToggle = document.getElementById("commit-callup-toggle");
-    const commitCallupFilterNote = document.getElementById("commit-callup-filter-note");
-    const callupNote = document.getElementById("callup-note");
-    const attendanceSummaryBox = document.getElementById("attendance-summary");
-    const attendanceSummaryHelp = document.getElementById("attendance-summary-help");
+      const commitCallupToggle = document.getElementById("commit-callup-toggle");
+      const commitCallupFilterNote = document.getElementById("commit-callup-filter-note");
+      const callupNote = document.getElementById("callup-note");
+      const attendanceSummaryBox = document.getElementById("attendance-summary");
     const overviewMeta = document.getElementById("overview-meta");
     const overviewMetaNote = document.getElementById("overview-meta-note");
     const overviewMetaList = document.getElementById("overview-meta-list");
@@ -2115,152 +2112,153 @@
       h2.innerHTML = `${base}<span class="counts">${suffix}</span>`;
     }
 
-    function renderAttendanceSummary(attendance) {
-      if (!attendanceSummaryBox) return;
-      if (!attendance || typeof attendance !== "object") {
-        attendanceSummaryBox.style.display = "none";
-        attendanceSummaryBox.innerHTML = "";
-        if (attendanceSummaryHelp) attendanceSummaryHelp.style.display = "none";
-        return;
-      }
+      function renderAttendanceSummary(attendance) {
+        if (!attendanceSummaryBox) return;
+        if (!attendance || typeof attendance !== "object") {
+          attendanceSummaryBox.style.display = "none";
+          attendanceSummaryBox.innerHTML = "";
+          return;
+        }
 
-      const schema = Number(attendance.schema);
-      const fmtNum = (val, digits = 1) => {
-        const num = Number(val);
-        return Number.isFinite(num) ? num.toFixed(digits) : "–";
-      };
-      const fmtInt = (val) => {
-        const num = Number(val);
-        return Number.isFinite(num) ? num.toFixed(0) : "0";
-      };
+        // Tooltip for context around the Attendance-Target hint.
+        const attendanceTargetTooltip = "Das Tool peilt eine Ziel-Anwesenheit (Attendance-Target) an. Wenn der Hinweis ‚Fehlen ca. … Zusagen‘ erscheint, zeigt er, wie viel Attendance bzw. wie viele Zusagen noch fehlen, um dieses Ziel zu erreichen.";
+        const attendanceTargetIcon = `<span class="info-icon" title="${escapeHtml(attendanceTargetTooltip)}">🛈</span>`;
 
-      if (Number.isFinite(schema) && schema >= 2) {
-        const threshold = Number(attendance.threshold);
-        const teams = attendance.teams || {};
-        const thresholdLabel = Number.isFinite(threshold)
-          ? `Schwelle: ≥${(threshold * 100).toFixed(0)}% AttendProb`
-          : "Schwelle: –";
+        const schema = Number(attendance.schema);
+        const fmtNum = (val, digits = 1) => {
+          const num = Number(val);
+          return Number.isFinite(num) ? num.toFixed(digits) : "–";
+        };
+        const fmtInt = (val) => {
+          const num = Number(val);
+          return Number.isFinite(num) ? num.toFixed(0) : "0";
+        };
 
-        const blocks = Object.entries(teams).map(([team, meta]) => {
-          const starters = meta?.starters || {};
-          const bench = meta?.bench || {};
-          const missing = meta?.missing_slots || {};
-          const expected = meta?.expected_attendance || {};
-          const riskText = meta?.risk_text || "Risiko gering";
-          const fallback = Number.isFinite(Number(starters.fallback)) ? Number(starters.fallback) : 0;
-          const starterLine = `Starter: ${fmtInt(starters.total)} (≥ Schwelle: ${fmtInt(starters.at_threshold)}, unter: ${fmtInt(starters.below_threshold)})`;
-          const fallbackLine = fallback ? `<span class="muted">Fallback-Starter unter Schwelle: ${fmtInt(fallback)}</span><br />` : '';
-          const benchLine = `Ersatz: ${fmtInt(bench.total)} (≥ Schwelle: ${fmtInt(bench.at_threshold)}, unter: ${fmtInt(bench.below_threshold)})`;
-          const expectedLine = `Erwartete Anwesenheit Starter: ${fmtNum(expected.starters)}`;
-          const missingLine = (missing.Start || missing.Ersatz)
-            ? `Bewusst frei: Start ${fmtInt(missing.Start || 0)} · Ersatz ${fmtInt(missing.Ersatz || 0)}`
-            : '';
-          return `<div style="margin:0 0 10px;">
-            <strong>Team ${escapeHtml(team)}</strong><br />
-            <span class="muted">${escapeHtml(starterLine)}</span><br />
-            ${fallbackLine}
-            <span class="muted">${escapeHtml(benchLine)}</span><br />
-            ${escapeHtml(expectedLine)}<br />
-            ${missingLine ? `<span class="muted">${escapeHtml(missingLine)}</span><br />` : ''}
-            <span class="muted">${escapeHtml(riskText)}</span>
-          </div>`;
-        }).join('');
+        if (Number.isFinite(schema) && schema >= 2) {
+          const threshold = Number(attendance.threshold);
+          const teams = attendance.teams || {};
+          const thresholdLabel = Number.isFinite(threshold)
+            ? `Schwelle: ≥${(threshold * 100).toFixed(0)}% AttendProb`
+            : "Schwelle: –";
 
-        const recommendationText = (attendance.recommendation?.text || "").toString();
-        const block = [
-          `<h3 style="margin:0 0 6px">Erwartete Anwesenheit</h3>`,
-          `<p class="muted" style="margin:0 0 4px">${escapeHtml(thresholdLabel)}</p>`,
-          `<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:8px;">${blocks}</div>`,
-        ];
+          const blocks = Object.entries(teams).map(([team, meta]) => {
+            const starters = meta?.starters || {};
+            const bench = meta?.bench || {};
+            const missing = meta?.missing_slots || {};
+            const expected = meta?.expected_attendance || {};
+            const riskText = meta?.risk_text || "Risiko gering";
+            const fallback = Number.isFinite(Number(starters.fallback)) ? Number(starters.fallback) : 0;
+            const starterLine = `Starter: ${fmtInt(starters.total)} (≥ Schwelle: ${fmtInt(starters.at_threshold)}, unter: ${fmtInt(starters.below_threshold)})`;
+            const fallbackLine = fallback ? `<span class="muted">Fallback-Starter unter Schwelle: ${fmtInt(fallback)}</span><br />` : '';
+            const benchLine = `Ersatz: ${fmtInt(bench.total)} (≥ Schwelle: ${fmtInt(bench.at_threshold)}, unter: ${fmtInt(bench.below_threshold)})`;
+            const expectedLine = `Erwartete Anwesenheit Starter: ${fmtNum(expected.starters)}`;
+            const missingLine = (missing.Start || missing.Ersatz)
+              ? `Bewusst frei: Start ${fmtInt(missing.Start || 0)} · Ersatz ${fmtInt(missing.Ersatz || 0)}`
+              : '';
+            return `<div style="margin:0 0 10px;">
+              <strong>Team ${escapeHtml(team)}</strong><br />
+              <span class="muted">${escapeHtml(starterLine)}</span><br />
+              ${fallbackLine}
+              <span class="muted">${escapeHtml(benchLine)}</span><br />
+              ${escapeHtml(expectedLine)}<br />
+              ${missingLine ? `<span class="muted">${escapeHtml(missingLine)}</span><br />` : ''}
+              <span class="muted">${escapeHtml(riskText)}</span>
+            </div>`;
+          }).join('');
+
+          const recommendationText = (attendance.recommendation?.text || "").toString();
+          const block = [
+            `<h3 style="margin:0 0 6px">Erwartete Anwesenheit ${attendanceTargetIcon}</h3>`,
+            `<p class="muted" style="margin:0 0 4px">${escapeHtml(thresholdLabel)}</p>`,
+            `<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:8px;">${blocks}</div>`,
+          ];
           if (recommendationText) {
             block.push(`<p style="margin:4px 0 0;"><strong>${escapeHtml(recommendationText)}</strong></p>`);
           }
+          attendanceSummaryBox.innerHTML = block.join("");
+          attendanceSummaryBox.style.display = "block";
+          return;
+        }
+
+        const expected = attendance.expected_by_team || {};
+        const rec = attendance.recommendation || {};
+        const missing = attendance.missing_slots || {};
+        const targets = attendance.targets || {};
+        const teamTargets = attendance.targets_by_team || {};
+        const targetStatus = attendance.target_status || {};
+        const callupNeeds = state.callupSuggestions?.needs || {};
+        const callupTeams = state.callupSuggestions?.teams || {};
+
+        const statusLabel = (status) => {
+          switch ((status || '').toLowerCase()) {
+            case 'below_target': return 'unter Ziel';
+            case 'at_target':
+            case 'above_target': return 'Ziel erfüllt';
+            default: return '–';
+          }
+        };
+
+        const recommendationText = (() => {
+          const code = (rec.code || '').toLowerCase();
+          if (code === 'a_only') {
+            return 'Empfehlung: A-only – verlässliche Spieler reichen aktuell nur für ein Team.';
+          }
+          if (code === 'ab' || code === 'a_b') {
+            return 'Empfehlung: A+B – beide Teams erfüllen das Attendance-Ziel.';
+          }
+          if (code === 'a_focus') {
+            return 'Empfehlung: A-Team-Fokus – Priorisiere Team A, Team B liegt unter Ziel.';
+          }
+          return rec.reason ? `Empfehlung: ${rec.reason}` : '';
+        })();
+
+        const teamBlocks = ['A', 'B'].map(team => {
+          const needMeta = callupNeeds[team] || {};
+          const plannedSlots = needMeta.planned_slots || {};
+          const targetSlots = needMeta.target_slots || {};
+          const targetCountFromCallup = Number.isFinite(callupTeams?.[team]?.target_count)
+            ? Number(callupTeams[team].target_count)
+            : null;
+          const targetRange = targets[team];
+          const targetFromTeam = Number.isFinite(teamTargets?.[team]) ? Number(teamTargets[team]) : null;
+          const targetLabel = Number.isFinite(targetFromTeam)
+            ? `Ziel: ≥${fmtNum(targetFromTeam, 0)}`
+            : (targetCountFromCallup
+              ? `Ziel: ≥${targetCountFromCallup}`
+              : (targetRange && Number.isFinite(targetRange.low)) ? `Ziel: ≥${fmtNum(targetRange.low, 0)}` : 'Ziel: –');
+          const missingSlots = missing?.[team] || {};
+          const plannedStart = Number.isFinite(plannedSlots.Start) ? plannedSlots.Start
+            : (Number.isFinite(targetSlots.Start) && Number.isFinite(missingSlots.Start) ? targetSlots.Start - missingSlots.Start : null);
+          const plannedErsatz = Number.isFinite(plannedSlots.Ersatz) ? plannedSlots.Ersatz
+            : (Number.isFinite(targetSlots.Ersatz) && Number.isFinite(missingSlots.Ersatz) ? targetSlots.Ersatz - missingSlots.Ersatz : null);
+          const targetStart = Number.isFinite(targetSlots.Start) ? targetSlots.Start : null;
+          const targetErsatz = Number.isFinite(targetSlots.Ersatz) ? targetSlots.Ersatz : null;
+          const plannedText = (plannedStart != null || plannedErsatz != null)
+            ? `Starter ${plannedStart ?? '–'}/${targetStart ?? '–'}, Ersatz ${plannedErsatz ?? '–'}/${targetErsatz ?? '–'}`
+            : 'Kapazität nicht bekannt';
+          const expectedTotal = expected?.[team]?.total;
+          const expectedLabel = `Erwartet: ${fmtNum(expectedTotal)} Spieler`;
+          const status = statusLabel(targetStatus?.[team]);
+          return `<div style="margin:0 0 10px;">
+            <strong>Team ${team}</strong><br />
+            <span class="muted">${plannedText}</span><br />
+            ${expectedLabel} · ${targetLabel}<br />
+            <span class="muted">Status: ${status}</span>
+          </div>`;
+        }).join('');
+
+        const block = [
+          `<h3 style="margin:0 0 6px">Erwartete Anwesenheit ${attendanceTargetIcon}</h3>`,
+          `<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:8px;">${teamBlocks}</div>`,
+        ];
+        if (recommendationText) {
+          block.push(`<p style="margin:4px 0 0;"><strong>${escapeHtml(recommendationText)}</strong></p>`);
+        } else if (rec.code || rec.reason) {
+          block.push(`<p style="margin:4px 0 0;"><strong>Empfehlung:</strong> ${escapeHtml(rec.code || rec.reason || '')}</p>`);
+        }
         attendanceSummaryBox.innerHTML = block.join("");
         attendanceSummaryBox.style.display = "block";
-        if (attendanceSummaryHelp) attendanceSummaryHelp.style.display = "block";
-        return;
       }
-
-      const expected = attendance.expected_by_team || {};
-      const rec = attendance.recommendation || {};
-      const missing = attendance.missing_slots || {};
-      const targets = attendance.targets || {};
-      const teamTargets = attendance.targets_by_team || {};
-      const targetStatus = attendance.target_status || {};
-      const callupNeeds = state.callupSuggestions?.needs || {};
-      const callupTeams = state.callupSuggestions?.teams || {};
-
-      const statusLabel = (status) => {
-        switch ((status || '').toLowerCase()) {
-          case 'below_target': return 'unter Ziel';
-          case 'at_target':
-          case 'above_target': return 'Ziel erfüllt';
-          default: return '–';
-        }
-      };
-
-      const recommendationText = (() => {
-        const code = (rec.code || '').toLowerCase();
-        if (code === 'a_only') {
-          return 'Empfehlung: A-only – verlässliche Spieler reichen aktuell nur für ein Team.';
-        }
-        if (code === 'ab' || code === 'a_b') {
-          return 'Empfehlung: A+B – beide Teams erfüllen das Attendance-Ziel.';
-        }
-        if (code === 'a_focus') {
-          return 'Empfehlung: A-Team-Fokus – Priorisiere Team A, Team B liegt unter Ziel.';
-        }
-        return rec.reason ? `Empfehlung: ${rec.reason}` : '';
-      })();
-
-      const teamBlocks = ['A', 'B'].map(team => {
-        const needMeta = callupNeeds[team] || {};
-        const plannedSlots = needMeta.planned_slots || {};
-        const targetSlots = needMeta.target_slots || {};
-        const targetCountFromCallup = Number.isFinite(callupTeams?.[team]?.target_count)
-          ? Number(callupTeams[team].target_count)
-          : null;
-        const targetRange = targets[team];
-        const targetFromTeam = Number.isFinite(teamTargets?.[team]) ? Number(teamTargets[team]) : null;
-        const targetLabel = Number.isFinite(targetFromTeam)
-          ? `Ziel: ≥${fmtNum(targetFromTeam, 0)}`
-          : (targetCountFromCallup
-            ? `Ziel: ≥${targetCountFromCallup}`
-            : (targetRange && Number.isFinite(targetRange.low)) ? `Ziel: ≥${fmtNum(targetRange.low, 0)}` : 'Ziel: –');
-        const missingSlots = missing?.[team] || {};
-        const plannedStart = Number.isFinite(plannedSlots.Start) ? plannedSlots.Start
-          : (Number.isFinite(targetSlots.Start) && Number.isFinite(missingSlots.Start) ? targetSlots.Start - missingSlots.Start : null);
-        const plannedErsatz = Number.isFinite(plannedSlots.Ersatz) ? plannedSlots.Ersatz
-          : (Number.isFinite(targetSlots.Ersatz) && Number.isFinite(missingSlots.Ersatz) ? targetSlots.Ersatz - missingSlots.Ersatz : null);
-        const targetStart = Number.isFinite(targetSlots.Start) ? targetSlots.Start : null;
-        const targetErsatz = Number.isFinite(targetSlots.Ersatz) ? targetSlots.Ersatz : null;
-        const plannedText = (plannedStart != null || plannedErsatz != null)
-          ? `Starter ${plannedStart ?? '–'}/${targetStart ?? '–'}, Ersatz ${plannedErsatz ?? '–'}/${targetErsatz ?? '–'}`
-          : 'Kapazität nicht bekannt';
-        const expectedTotal = expected?.[team]?.total;
-        const expectedLabel = `Erwartet: ${fmtNum(expectedTotal)} Spieler`;
-        const status = statusLabel(targetStatus?.[team]);
-        return `<div style="margin:0 0 10px;">
-          <strong>Team ${team}</strong><br />
-          <span class="muted">${plannedText}</span><br />
-          ${expectedLabel} · ${targetLabel}<br />
-          <span class="muted">Status: ${status}</span>
-        </div>`;
-      }).join('');
-
-      const block = [
-        `<h3 style="margin:0 0 6px">Erwartete Anwesenheit</h3>`,
-        `<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:8px;">${teamBlocks}</div>`,
-      ];
-      if (recommendationText) {
-        block.push(`<p style="margin:4px 0 0;"><strong>${escapeHtml(recommendationText)}</strong></p>`);
-      } else if (rec.code || rec.reason) {
-        block.push(`<p style="margin:4px 0 0;"><strong>Empfehlung:</strong> ${escapeHtml(rec.code || rec.reason || '')}</p>`);
-      }
-      attendanceSummaryBox.innerHTML = block.join("");
-      attendanceSummaryBox.style.display = "block";
-      if (attendanceSummaryHelp) attendanceSummaryHelp.style.display = "block";
-    }
 
     function renderOverviewMeta(payload, schema = {}) {
       if (!overviewMeta || !overviewMetaList || !overviewMetaNote) return;
