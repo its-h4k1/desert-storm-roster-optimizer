@@ -76,6 +76,7 @@
     .player-meta-row{font-size:11px;color:#777;margin-top:2px;display:none}
     .show-player-meta .player-meta-row{display:block}
     .hide-callups .callup-badge{display:none}
+    .is-hidden{display:none!important}
     #absences,#event-responses{margin-top:48px;padding-top:24px;border-top:1px solid var(--line)}
     #absences h2,#event-responses h2{margin:0 0 8px}
     #absences .absences-empty,#event-responses .absences-empty{color:var(--muted);margin:0}
@@ -173,7 +174,10 @@
         <input type="checkbox" id="commit-callup-toggle" />
         Nur feste Zusagen anzeigen
       </label>
-      <span id="commit-callup-filter-note" class="filter-note" style="display:none">Gefilterte Ansicht – es werden nur Spieler mit fester Zusage angezeigt.</span>
+      <span id="commit-callup-filter-note" class="filter-note" style="display:none">Gefilterte Teams-Ansicht – es werden nur Spieler mit fester Zusage (🔒) in den Roster-Tabellen gezeigt.</span>
+      <div class="filter-note" id="commit-callup-filter-help">
+        Zeigt nur Spieler mit fester Zusage (🔒, Commitment=hard) in den Teams A/B. Callups ohne Fixplatz werden ausgeblendet. Kennzahlen bleiben unverändert.
+      </div>
       <button id="callup-export" class="btn" type="button" disabled title="Keine Callup-Kandidaten im aktuellen Roster">
         📥 Callup-Kandidaten als CSV exportieren
       </button>
@@ -306,6 +310,7 @@
     const state = {
       showPlayerMeta: false,
       showCallups: true,
+      rosterFilters: { showFixedCommitmentsOnly: false },
       absences: { entries: [], active: [], error: null, loading: true },
       absenceDebug: null,
       absenceConflicts: [],
@@ -320,8 +325,8 @@
       allianceFilters: { contactYesOnly: true, hideRoster: true, hideAbsent: true, showFormer: false },
       latestPayload: null,
       playersArray: [],
-      showFixedCommitOnly: false,
     };
+    const rosterFilterState = state.rosterFilters;
     const rosterRoot = document.getElementById("roster-root");
     const playerMetaToggle = document.getElementById("player-meta-toggle");
     const callupToggle = document.getElementById("callup-toggle");
@@ -404,19 +409,19 @@
       return fetchJsonWithErrors(LATEST_JSON_URL, { cache: "no-store" });
     }
 
-    function applyFixedCommitFilter(active) {
-      const rows = document.querySelectorAll('tr[data-player-row="true"]');
+    // Zentrale Stelle für rosterbezogene Filter (leicht erweiterbar für weitere Flags)
+    function applyRosterFilters(filterState = rosterFilterState) {
+      const rows = document.querySelectorAll('#roster-root tr[data-player-row="true"]');
       rows.forEach(row => {
-        const hasFixedCommit = row.dataset.hasFixedCommit === "true";
-        row.style.display = (!active || hasFixedCommit) ? "" : "none";
+        const hasFixedCommit = row.dataset.fixedCommit === "true";
+        const hideRow = Boolean(filterState.showFixedCommitmentsOnly && !hasFixedCommit);
+        row.classList.toggle('is-hidden', hideRow);
       });
 
       if (commitCallupFilterNote) {
-        commitCallupFilterNote.style.display = active ? "inline" : "none";
+        commitCallupFilterNote.style.display = filterState.showFixedCommitmentsOnly ? "inline" : "none";
       }
     }
-
-    const updateFixedCommitFilter = () => applyFixedCommitFilter(state.showFixedCommitOnly);
 
     if (playerMetaToggle) {
       state.showPlayerMeta = Boolean(playerMetaToggle.checked);
@@ -439,12 +444,12 @@
       });
     }
     if (commitCallupToggle) {
-      state.showFixedCommitOnly = Boolean(commitCallupToggle.checked);
+      rosterFilterState.showFixedCommitmentsOnly = Boolean(commitCallupToggle.checked);
       commitCallupToggle.addEventListener("change", (event) => {
-        state.showFixedCommitOnly = Boolean(event.target.checked);
-        updateFixedCommitFilter();
+        rosterFilterState.showFixedCommitmentsOnly = Boolean(event.target.checked);
+        applyRosterFilters();
       });
-      updateFixedCommitFilter();
+      applyRosterFilters();
     }
     if (callupExportBtn) {
       callupExportBtn.addEventListener("click", () => {
@@ -511,7 +516,7 @@
       rosterRoot.classList.toggle("hide-callups", !state.showCallups);
     }
     document.body.classList.toggle("hide-callups", !state.showCallups);
-    updateFixedCommitFilter();
+    applyRosterFilters();
     updateCallupNote(state.callupMeta);
     updateCallupExportButton(state.callupMeta, state.callupCandidates);
 
@@ -2464,7 +2469,7 @@
           });
           const tr = document.createElement("tr");
           tr.dataset.playerRow = "true";
-          tr.dataset.hasFixedCommit = hasFixedCommitFlag ? "true" : "false";
+          tr.dataset.fixedCommit = hasFixedCommitFlag ? "true" : "false";
           tr.innerHTML = `
             <td class="num">${pad(i+1)}</td>
             <td>
@@ -2490,6 +2495,9 @@
         window.__bucketCounts[key] = keyCounts;
         writeBucketCounts(key, keyCounts);
       }
+
+      // Ensure visual filters stay applied after re-rendering the roster
+      applyRosterFilters();
     }
 
     function processLatestPayload(payload) {
@@ -2648,7 +2656,7 @@
       safeRenderSection("forced-diagnostics", () => renderForcedDiagnostics(state.forcedDiagnostics, signupMeta), document.getElementById("forced-diagnostics"));
       safeRenderSection("callup-note", () => updateCallupNote(state.callupMeta), callupNote);
       safeRenderSection("callup-export", () => updateCallupExportButton(state.callupMeta, state.callupCandidates), callupExportBtn);
-      safeRenderSection("fixed-commit-filter", () => updateFixedCommitFilter(), commitCallupToggle);
+      safeRenderSection("fixed-commit-filter", () => applyRosterFilters(), commitCallupToggle);
 
       const ts = new Date().toISOString().replace('T',' ').slice(0,19) + " UTC";
       const schemaVersion = (schema && schema.version != null) ? ` · schema v${schema.version}` : "";
