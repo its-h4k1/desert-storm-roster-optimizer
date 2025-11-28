@@ -48,6 +48,28 @@
   const DEFAULT_WORKER_BASE = "https://ds-commit.hak1.workers.dev/";
   const DEFAULT_DISPATCH_URL = `${DEFAULT_WORKER_BASE}dispatch`;
 
+  async function fetchJsonWithErrors(url, { cache = "no-store" } = {}) {
+    let response;
+    try {
+      response = await fetch(url, { cache });
+    } catch (err) {
+      const wrapped = new Error(err?.message || "Netzwerkfehler");
+      wrapped.cause = err;
+      throw wrapped;
+    }
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status} ${response.statusText}`);
+    }
+    const text = await response.text();
+    try {
+      return JSON.parse(text);
+    } catch (err) {
+      const parseErr = new Error("Antwort ist kein gültiges JSON");
+      parseErr.cause = err;
+      throw parseErr;
+    }
+  }
+
   class RosterBuildTriggerError extends Error {
     constructor(message, { status, body } = {}) {
       super(message);
@@ -145,6 +167,7 @@
     escapeHtml,
     computeSiteRoot,
     buildLatestJsonUrl,
+    fetchJsonWithErrors,
     triggerRosterBuild,
     RosterBuildTriggerError,
     DEFAULT_WORKER_BASE,
