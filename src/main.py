@@ -518,6 +518,157 @@ def _mark_absences_for_next_event(abs_df: pd.DataFrame, *, reference_ts: pd.Time
     return df
 
 
+def _init_absence_payloads(absences_path: str, *, next_event_ts: pd.Timestamp, next_event_meta: Dict[str, object]) -> tuple[Dict[str, object], Dict[str, object]]:
+    """Build empty payload dictionaries for absence reporting.
+
+    These payloads are populated later once absences have been loaded and
+    filtered. Keeping the initialization centralized makes the structure of the
+    expected outputs explicit without altering any runtime behaviour.
+    """
+
+    absences_payload = {
+        "schema": 1,
+        "source": str(Path(absences_path)) if absences_path else "",
+        "total_entries": 0,
+        "active_entries": 0,
+        "players": [],
+    }
+
+    absence_debug = {
+        "schema": 2,
+        "source": str(Path(absences_path)) if absences_path else "",
+        "raw_count": 0,
+        "active_for_next_event": 0,
+        "file_entries": [],
+        "next_event_absences": [],
+        "stats": {
+            "file_entries": 0,
+            "active_for_next_event": 0,
+            "unique_active_players": 0,
+        },
+        "reference_event": {
+            "event_date": next_event_ts.isoformat(),
+            "source": next_event_meta.get("source"),
+            "last_event_id": next_event_meta.get("last_event_id"),
+            "last_event_date": next_event_meta.get("last_event_date"),
+        },
+    }
+
+    return absences_payload, absence_debug
+
+
+def _init_event_response_payload(event_responses_path: str) -> Dict[str, object]:
+    """Return the default payload structure for event responses."""
+
+    return {
+        "schema": 1,
+        "scope": "next_event",
+        "source": str(Path(event_responses_path)) if event_responses_path else "",
+        "file_entries": [],
+        "stats": {
+            "file_entries": 0,
+            "declines": 0,
+            "no_responses": 0,
+            "applied_entries": 0,
+            "ignored_entries": 0,
+            "removed_from_pool": 0,
+            "penalties": 0,
+        },
+        "removed_from_pool": [],
+        "penalty_applied": [],
+    }
+
+
+def _load_primary_data(args) -> Dict[str, object]:
+    """Load all core inputs (events, alliance, aliases, preferences, absences)."""
+
+    norm_patterns = _normalize_event_patterns(args.events)
+    events_df = _load_events(norm_patterns)
+    next_event_ts, next_event_meta = _infer_next_event_ts(events_df)
+    alliance_df = _load_alliance(args.alliance)
+
+    alias_map: Dict[str, str] = {}
+    if args.aliases:
+        try:
+            alias_map = load_alias_map(args.aliases)
+            print(f"[ok] aliases loaded: {len(alias_map)} Regeln")
+        except AliasResolutionError as e:
+            print(f"[warn] aliases konnten nicht geladen werden: {e}")
+        except Exception as e:
+            print(f"[warn] aliases konnten nicht geladen werden: {e}")
+
+    def to_canon(value):
+        if value is None or pd.isna(value):
+            return pd.NA
+        base = canonical_name(value)
+        return alias_map.get(base, base)
+
+    prefs_df = None
+    if args.preferences:
+        try:
+            prefs_df = _load_preferences(args.preferences)
+            print(f"[ok] preferences loaded: {len(prefs_df)} Einträge")
+        except Exception as e:
+            print(f"[warn] preferences nicht nutzbar: {e}")
+
+    abs_df = None
+    if args.absences:
+        abs_path = Path(args.absences)
+        if not abs_path.exists():
+            print(f"[info] absences: {abs_path} fehlt – überspringe")
+        else:
+            try:
+                abs_df = _load_absences(args.absences)
+                abs_df["canon"] = abs_df["canon"].map(to_canon)
+                abs_df = abs_df[abs_df["canon"].notna()].copy()
+                print(f"[ok] absences loaded: {len(abs_df)} Einträge")
+            except Exception as e:
+                print(f"[warn] absences nicht nutzbar: {e}")
+
+    return {
+        "events_df": events_df,
+        "next_event_ts": next_event_ts,
+        "next_event_meta": next_event_meta,
+        "alliance_df": alliance_df,
+        "alias_map": alias_map,
+        "to_canon": to_canon,
+        "prefs_df": prefs_df,
+        "abs_df": abs_df,
+    }
+
+
+def _load_event_overlays(args, to_canon) -> Dict[str, object]:
+    """Load signups and responses for the next event."""
+
+    event_signups_df, event_signup_load_meta = _load_event_signups(args.event_signups, to_canon)
+    print(
+        "[info] event signups geladen: "
+        f"{len(event_signups_df)} Einträge (Pool für nächstes Event) – "
+        f"raw={event_signup_load_meta.get('raw_rows', 0)}, "
+        f"with_name={event_signup_load_meta.get('rows_with_playername', 0)}, "
+        f"canonical={event_signup_load_meta.get('rows_with_canon', 0)}, "
+        f"hard={event_signup_load_meta.get('hard_commitments', 0)}"
+    )
+
+    event_responses_df, event_response_meta = _load_event_responses(args.event_responses, to_canon)
+    print(
+        "[info] event responses geladen: "
+        f"{len(event_responses_df)} Einträge (Absagen/No-Response) – "
+        f"raw={event_response_meta.get('raw_rows', 0)}, "
+        f"with_name={event_response_meta.get('rows_with_playername', 0)}, "
+        f"canonical={event_response_meta.get('rows_with_canon', 0)}, "
+        f"declines={event_response_meta.get('declines', 0)}, "
+        f"no_response={event_response_meta.get('no_responses', 0)}"
+    )
+
+    return {
+        "event_signups_df": event_signups_df,
+        "event_responses_df": event_responses_df,
+        "event_signup_load_meta": event_signup_load_meta,
+        "event_response_meta": event_response_meta,
+    }
+
+
 # --------------------------
 # Writer
 # --------------------------
@@ -587,117 +738,30 @@ def main():
     callup_min_attend_prob = min(max(float(callup_config.callup_min_attend_prob), 0.0), 1.0)
     out_dir = Path(args.out)
 
-    # 1) Daten laden
-    norm_patterns = _normalize_event_patterns(args.events)
-    events_df = _load_events(norm_patterns)
-    next_event_ts, next_event_meta = _infer_next_event_ts(events_df)
-    alliance_df = _load_alliance(args.alliance)
+    primary_data = _load_primary_data(args)
+    events_df = primary_data["events_df"]
+    next_event_ts = primary_data["next_event_ts"]
+    next_event_meta = primary_data["next_event_meta"]
+    alliance_df = primary_data["alliance_df"]
+    alias_map = primary_data["alias_map"]
+    to_canon = primary_data["to_canon"]
+    prefs_df = primary_data["prefs_df"]
+    abs_df = primary_data["abs_df"]
 
-    alias_map: Dict[str, str] = {}
-    if args.aliases:
-        try:
-            alias_map = load_alias_map(args.aliases)
-            print(f"[ok] aliases loaded: {len(alias_map)} Regeln")
-        except AliasResolutionError as e:
-            print(f"[warn] aliases konnten nicht geladen werden: {e}")
-        except Exception as e:
-            print(f"[warn] aliases konnten nicht geladen werden: {e}")
-
-    def to_canon(value):
-        if value is None or pd.isna(value):
-            return pd.NA
-        base = canonical_name(value)
-        return alias_map.get(base, base)
-
-    prefs_df = None
-    if args.preferences:
-        try:
-            prefs_df = _load_preferences(args.preferences)
-            print(f"[ok] preferences loaded: {len(prefs_df)} Einträge")
-        except Exception as e:
-            print(f"[warn] preferences nicht nutzbar: {e}")
-
-    abs_df = None
+    absences_payload, absence_debug = _init_absence_payloads(
+        args.absences, next_event_ts=next_event_ts, next_event_meta=next_event_meta
+    )
+    event_responses_payload: Dict[str, object] = _init_event_response_payload(args.event_responses)
     active_abs_meta: Dict[str, Dict[str, str]] = {}
     absent_now: set[str] = set()
-    absences_payload = {
-        "schema": 1,
-        "source": str(Path(args.absences)) if args.absences else "",
-        "total_entries": 0,
-        "active_entries": 0,
-        "players": [],
-    }
-    absence_debug = {
-        "schema": 2,
-        "source": str(Path(args.absences)) if args.absences else "",
-        "raw_count": 0,
-        "active_for_next_event": 0,
-        "file_entries": [],
-        "next_event_absences": [],
-        "stats": {
-            "file_entries": 0,
-            "active_for_next_event": 0,
-        "unique_active_players": 0,
-        },
-    }
-    event_responses_payload: Dict[str, object] = {
-        "schema": 1,
-        "scope": "next_event",
-        "source": str(Path(args.event_responses)) if args.event_responses else "",
-        "file_entries": [],
-        "stats": {
-            "file_entries": 0,
-            "declines": 0,
-            "no_responses": 0,
-            "applied_entries": 0,
-            "ignored_entries": 0,
-            "removed_from_pool": 0,
-            "penalties": 0,
-        },
-        "removed_from_pool": [],
-        "penalty_applied": [],
-    }
-    absence_debug["reference_event"] = {
-        "event_date": next_event_ts.isoformat(),
-        "source": next_event_meta.get("source"),
-        "last_event_id": next_event_meta.get("last_event_id"),
-        "last_event_date": next_event_meta.get("last_event_date"),
-    }
     absence_conflicts: List[Dict] = []
     event_response_conflicts: List[Dict] = []
-    if args.absences:
-        abs_path = Path(args.absences)
-        if not abs_path.exists():
-            print(f"[info] absences: {abs_path} fehlt – überspringe")
-        else:
-            try:
-                abs_df = _load_absences(args.absences)
-                abs_df["canon"] = abs_df["canon"].map(to_canon)
-                abs_df = abs_df[abs_df["canon"].notna()].copy()
-                print(f"[ok] absences loaded: {len(abs_df)} Einträge")
-            except Exception as e:
-                print(f"[warn] absences nicht nutzbar: {e}")
 
-    event_signups_df, event_signup_load_meta = _load_event_signups(args.event_signups, to_canon)
-    print(
-        "[info] event signups geladen: "
-        f"{len(event_signups_df)} Einträge (Pool für nächstes Event) – "
-        f"raw={event_signup_load_meta.get('raw_rows', 0)}, "
-        f"with_name={event_signup_load_meta.get('rows_with_playername', 0)}, "
-        f"canonical={event_signup_load_meta.get('rows_with_canon', 0)}, "
-        f"hard={event_signup_load_meta.get('hard_commitments', 0)}"
-    )
-
-    event_responses_df, event_response_meta = _load_event_responses(args.event_responses, to_canon)
-    print(
-        "[info] event responses geladen: "
-        f"{len(event_responses_df)} Einträge (Absagen/No-Response) – "
-        f"raw={event_response_meta.get('raw_rows', 0)}, "
-        f"with_name={event_response_meta.get('rows_with_playername', 0)}, "
-        f"canonical={event_response_meta.get('rows_with_canon', 0)}, "
-        f"declines={event_response_meta.get('declines', 0)}, "
-        f"no_response={event_response_meta.get('no_responses', 0)}"
-    )
+    overlays = _load_event_overlays(args, to_canon)
+    event_signups_df = overlays["event_signups_df"]
+    event_responses_df = overlays["event_responses_df"]
+    event_signup_load_meta = overlays["event_signup_load_meta"]
+    event_response_meta = overlays["event_response_meta"]
 
     # 2) Metriken berechnen
     role_probs = compute_role_probs(
