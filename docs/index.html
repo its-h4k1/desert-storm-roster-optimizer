@@ -119,6 +119,8 @@
     .admin-inline-link{color:inherit;text-decoration:none;display:inline-flex;align-items:center;gap:4px;padding:2px 6px;border-radius:8px;border:1px solid var(--line);background:#fff}
     .admin-inline-link:hover{border-color:#c8d5ec}
     .prefill-highlight{box-shadow:0 0 0 2px #bfdbfe;transition:box-shadow 0.25s ease;background:linear-gradient(90deg,#eff6ff,transparent)}
+    .init-error{border:1px solid #f7c5c5;background:#fff5f5;color:#7f1d1d;padding:12px 14px;border-radius:10px;box-shadow:0 6px 18px rgba(0,0,0,0.04);font-weight:600;margin:12px 0 0}
+    .section-fallback{color:#7f1d1d;font-weight:600;margin:6px 0 0}
   </style>
 </head>
 <body>
@@ -134,6 +136,8 @@
     <a href="#section-alliance">Allianz &amp; Callup</a>
     <a href="#section-diagnostics">Diagnose</a>
   </nav>
+
+  <div id="init-error" class="init-error" style="display:none"></div>
 
   <!-- Abschnittsstruktur: Überblick (Status & Empfehlung), Teams A/B (Roster & Details), Allianz & Callup (Arbeitsbereich), Diagnose (Debug). -->
   <section id="section-overview" class="page-section">
@@ -291,6 +295,8 @@
     const LATEST_JSON_URL = dsroShared.buildLatestJsonUrl({ branchOverride, cacheBuster, siteRoot: SITE_ROOT });
     const canonicalNameJS = dsroShared.canonicalNameJS;
     const escapeHtml = dsroShared.escapeHtml;
+    const fetchJsonWithErrors = dsroShared.fetchJsonWithErrors;
+    const initErrorBlock = document.getElementById("init-error");
     // Main roster UI expects latest.json at: docs/out/latest.json (served as out/latest.json on GitHub Pages).
     // Konfiguration: Prior-Defaults (werden durch schema.prior überschrieben)
     const DEFAULT_PRIOR_FALLBACK = 0.18;
@@ -345,6 +351,58 @@
     const signupInline = document.getElementById("signup-inline");
     const diagnosticsToggle = document.getElementById("diagnostics-toggle");
     const diagnosticsContent = document.getElementById("diagnostics-content");
+
+    function safeRenderSection(sectionId, renderFn, fallbackTarget) {
+      try {
+        renderFn();
+      } catch (err) {
+        console.error(`DS_RENDER_${sectionId.toUpperCase()}_FAILED`, err);
+        if (fallbackTarget) {
+          renderSectionFallback(fallbackTarget);
+        }
+      }
+    }
+
+    function renderSectionFallback(target, message = "Dieser Abschnitt konnte nicht geladen werden.") {
+      const el = typeof target === "string" ? document.querySelector(target) : target;
+      if (!el) return;
+      if (el.children.length === 0 || el.tagName === "P") {
+        el.textContent = message;
+      } else {
+        el.innerHTML = `<p class="section-fallback">${escapeHtml(message)}</p>`;
+      }
+      if (typeof el.classList?.remove === "function") {
+        el.classList.remove("muted");
+      }
+      el.style.display = "block";
+    }
+
+    function clearInitError() {
+      if (initErrorBlock) {
+        initErrorBlock.style.display = "none";
+        initErrorBlock.textContent = "";
+      }
+    }
+
+    function showInitError(message) {
+      if (initErrorBlock) {
+        initErrorBlock.textContent = message;
+        initErrorBlock.style.display = "block";
+      }
+      markPlaceholdersAsFailed(message);
+    }
+
+    function markPlaceholdersAsFailed(message) {
+      renderSectionFallback(overviewMetaNote, message);
+      renderSectionFallback(allianceSummary, message);
+      renderSectionFallback(allianceTable, message);
+      renderSectionFallback(eventResponsesContainer, message);
+      renderSectionFallback(absencesContainer, message);
+    }
+
+    async function loadLatestJson() {
+      return fetchJsonWithErrors(LATEST_JSON_URL, { cache: "no-store" });
+    }
 
     function applyFixedCommitFilter(active) {
       const rows = document.querySelectorAll('tr[data-player-row="true"]');
@@ -2237,362 +2295,380 @@
       }
     }
 
-    fetch(LATEST_JSON_URL, { cache: "no-store" })
-      .then(r=>{ if(!r.ok) throw new Error(r.status+" "+r.statusText); return r.json(); })
-      .then(payload => {
-        const schema = (!Array.isArray(payload) && payload && typeof payload === "object") ? (payload.schema || {}) : {};
-        const ebEnabled = Boolean(schema && schema.eb && schema.eb.enabled);
-
-        // -------- payload -> rows (kompatibel zu alter Struktur) --------
-        const toRows = (payload) => {
-          if (Array.isArray(payload)) return payload; // alte Struktur weiterhin akzeptieren
-          const playersByDisplay = Object.fromEntries((payload.players || []).map(p => [p.display, p]));
-          const groups = payload.groups || {};
-          const out = [];
-          for (const G of ["A","B"]) {
-            const g = groups[G] || {};
-            for (const R of ["Start","Ersatz"]) {
-              const list = (g[R] || []);
-              list.forEach((name, idx) => {
-                const p = playersByDisplay[name] || {};
-                const eb = (p.eb && typeof p.eb === "object") ? {
-                  p_hat: toNumber(p.eb.p_hat),
-                  sigma: toNumber(p.eb.sigma),
-                } : null;
-                out.push({
-                  Group: G,
-                  Role: R,
-                  Slot: idx + 1,
-                  PlayerName: name,
-                  NoShowOverall: toNumber(p.noshow_overall),
-                  NoShowRolling: toNumber(p.noshow_rolling),
-                  EB: eb,
-                  EventsSeen: toNumber(p.events_seen),
-                });
-              });
-            }
+    function renderRosterBuckets({ rows, playersMap, playersArray, activeAbsenceSet, ebEnabled, schema, hasEventsSeen }) {
+      const observedFromPlayers = playersArray
+        .map(p => {
+          if (!p || typeof p !== "object") return null;
+          const seen = toNumber(p.events_seen);
+          const hasData = (seen == null) || (seen > 0);
+          if (p.eb && p.eb.p_hat != null && hasData) {
+            const v = toNumber(p.eb.p_hat);
+            if (v != null) return v;
           }
-          return out;
-        };
-        const rows = toRows(payload);
+          if (p.noshow_rolling != null && hasData) {
+            const v = toNumber(p.noshow_rolling);
+            if (v != null) return v;
+          }
+          if (p.noshow_overall != null && hasData) {
+            const v = toNumber(p.noshow_overall);
+            if (v != null) return v;
+          }
+          return null;
+        })
+        .filter(v => v != null);
 
-        const playersArray = (!Array.isArray(payload) && Array.isArray(payload.players)) ? payload.players : [];
-        state.callupMeta = extractCallupMeta(payload, playersArray, schema);
-        state.latestPayload = payload;
-        renderOverviewMeta(payload, schema);
-        state.callupSuggestions = extractCallupSuggestions(payload);
-        renderAttendanceSummary(payload.attendance);
-        state.playersArray = playersArray;
-        state.callupCandidates = collectCallupCandidates(playersArray);
-        renderCallupSuggestions(state.callupSuggestions);
-        state.allianceOverview = normalizeAllianceOverview(payload?.alliance_next_event_overview);
-        renderAllianceOverview();
-        // Datengrundlage (latest.json):
-        // - forced_signups (Array) sowie players[].forced_signup markieren verbindliche Zusagen aus event_signups_next.csv
-        //   inkl. commitment (hard), source (manual/callup-confirmed), note & overbooked-Flag.
-        // - players[].event_signup + has_event_signup spiegeln die ursprünglichen Event-Pool-Einträge.
-        const playersMap = Object.fromEntries(
-          playersArray
-            .filter(p => p && typeof p === "object" && typeof p.display === "string")
-            .map(p => {
-              const normalizedCallup = normalizeCallup(p);
-              const merged = { ...p };
-              if (normalizedCallup) merged.callup = normalizedCallup;
-              return [p.display, merged];
-            })
-        );
-        const playersByCanon = {};
-        playersArray.forEach(p => {
-          if (!p || typeof p !== "object") return;
-          const canonSource = typeof p.canon === "string" && p.canon.trim() ? p.canon : p.display;
-          const canon = canonicalNameJS(canonSource || "");
-          if (!canon) return;
-          const normalizedCallup = normalizeCallup(p);
-          playersByCanon[canon] = {
-            display: p.display,
-            group: p.group,
-            role: p.role,
-            has_event_signup: Boolean(p.has_event_signup || p.event_signup),
-            event_signup: p.event_signup || null,
-            has_forced_signup: Boolean(p.has_forced_signup || p.forced_signup),
-            forced_signup: p.forced_signup || null,
-            callup: normalizedCallup,
-            callup_recommended: normalizedCallup ? Boolean(normalizedCallup.recommended) : Boolean(p.callup_recommended),
-            is_absent_next_event: Boolean(p.is_absent_next_event),
-          };
-        });
-        state.playersByCanon = playersByCanon;
-        state.absenceDebug = payload.absence_debug || null;
-        state.absenceConflicts = Array.isArray(payload.absence_conflicts) ? payload.absence_conflicts : [];
-        renderAbsenceDiagnostics(state.absenceDebug, state.absenceConflicts);
-        const absencesApplied = applyAbsencesFromPayload(payload.absences);
-        if (!absencesApplied) {
-          fetchAbsences();
-        }
-        const responsesApplied = applyEventResponsesFromPayload(payload.event_responses);
-        if (!responsesApplied) {
-          state.eventResponses.loading = false;
-          state.eventResponses.error = new Error('Keine Event-Antworten im Payload');
-          updateEventResponsesUI();
-        }
-        state.eventResponseConflicts = Array.isArray(payload.event_response_conflicts)
-          ? payload.event_response_conflicts
-          : [];
-        const activeAbsenceSet = new Set([
-          ...((state.absences.active || []).map(a => canonicalNameJS(a?.canon || a?.playerName || ''))),
-          ...(playersArray
-            .filter(p => p && p.is_absent_next_event)
-            .map(p => canonicalNameJS(p.canon || p.display || ''))),
-        ].filter(Boolean));
-        const extraSignups = {
-          A: (payload && payload.groups && Array.isArray(payload.groups.A?.extra_signups)) ? payload.groups.A.extra_signups : [],
-          B: (payload && payload.groups && Array.isArray(payload.groups.B?.extra_signups)) ? payload.groups.B.extra_signups : [],
-        };
-        const signupPoolBlock = (payload && typeof payload.signup_pool === 'object') ? payload.signup_pool : {};
-        state.forcedDiagnostics = {
-          forced: Array.isArray(signupPoolBlock.forced_signups)
-            ? signupPoolBlock.forced_signups
-            : (Array.isArray(payload.forced_signups) ? payload.forced_signups : []),
-          invalid: Array.isArray(signupPoolBlock.invalid_forced_signups)
-            ? signupPoolBlock.invalid_forced_signups
-            : (Array.isArray(payload.invalid_forced_signups) ? payload.invalid_forced_signups : []),
-          overbooked: Array.isArray(signupPoolBlock.overbooked_forced_signups)
-            ? signupPoolBlock.overbooked_forced_signups
-            : (Array.isArray(payload.overbooked_forced_signups) ? payload.overbooked_forced_signups : []),
-          rows: Array.isArray(signupPoolBlock.file_entries) ? signupPoolBlock.file_entries : [],
-        };
-        const hasEventsSeen = playersArray.some(p => p && Object.prototype.hasOwnProperty.call(p, "events_seen"));
-
-        state.forcedLookup = buildForcedLookup(payload);
-
-        const observedFromPlayers = playersArray
-          .map(p => {
-            if (!p || typeof p !== "object") return null;
-            const seen = toNumber(p.events_seen);
-            const hasData = (seen == null) || (seen > 0);
-            if (p.eb && p.eb.p_hat != null && hasData) {
-              const v = toNumber(p.eb.p_hat);
-              if (v != null) return v;
-            }
-            if (p.noshow_rolling != null && hasData) {
-              const v = toNumber(p.noshow_rolling);
-              if (v != null) return v;
-            }
-            if (p.noshow_overall != null && hasData) {
-              const v = toNumber(p.noshow_overall);
-              if (v != null) return v;
-            }
-            return null;
-          })
-          .filter(v => v != null);
-
-        // -------- Prior (für No-Data-Spieler) dynamisch bestimmen --------
-        // Schätze den Mittelwert der beobachteten Raten (EB bevorzugt, sonst rolling → overall)
-        let observed = observedFromPlayers;
-        if (!observed.length) {
-          observed = rows.map(r => {
-            const seen = toNumber(r.EventsSeen);
-            const hasData = (seen == null) || (seen > 0);
-            if (r.EB && r.EB.p_hat != null && hasData) {
-              const v = toNumber(r.EB.p_hat);
-              if (v != null) return v;
-            }
-            if (r.NoShowRolling != null && hasData) {
-              const v = toNumber(r.NoShowRolling);
-              if (v != null) return v;
-            }
-            if (r.NoShowOverall != null && hasData) {
-              const v = toNumber(r.NoShowOverall);
-              if (v != null) return v;
-            }
-            return null;
-          }).filter(v => v != null);
-        }
-        const avg = (arr)=> arr.reduce((a,b)=>a+b,0)/Math.max(1,arr.length);
-        const fallbackPrior = (schema.prior && schema.prior.fallback != null && isFinite(schema.prior.fallback)) ? Number(schema.prior.fallback) : DEFAULT_PRIOR_FALLBACK;
-        const priorPad = (schema.prior && schema.prior.pad != null && isFinite(schema.prior.pad)) ? Number(schema.prior.pad) : DEFAULT_PRIOR_PAD;
-        const teamMeanSchema = (schema.prior && schema.prior.team_mean != null && isFinite(schema.prior.team_mean)) ? Number(schema.prior.team_mean) : null;
-        const priorValueSchema = (schema.prior && schema.prior.value != null && isFinite(schema.prior.value)) ? Number(schema.prior.value) : null;
-        const priorBase = observed.length ? avg(observed) : fallbackPrior;
-        const teamMean = (teamMeanSchema != null) ? teamMeanSchema : priorBase;
-        const PRIOR_NOSHOW = clamp(priorValueSchema != null ? priorValueSchema : (teamMean + priorPad));
-
-        // -------- Effektive Rate je Spieler für Sortierung --------
-        const effRate = (r) => {
-          if (r.EB && r.EB.p_hat != null) {
+      let observed = observedFromPlayers;
+      if (!observed.length) {
+        observed = rows.map(r => {
+          const seen = toNumber(r.EventsSeen);
+          const hasData = (seen == null) || (seen > 0);
+          if (r.EB && r.EB.p_hat != null && hasData) {
             const v = toNumber(r.EB.p_hat);
-            if (v != null) return clamp(v);
+            if (v != null) return v;
           }
-          const rolling = toNumber(r.NoShowRolling);
-          if (rolling != null) return clamp(rolling);
-          const overall = toNumber(r.NoShowOverall);
-          if (overall != null) return clamp(overall);
-          return PRIOR_NOSHOW;
-        };
+          if (r.NoShowRolling != null && hasData) {
+            const v = toNumber(r.NoShowRolling);
+            if (v != null) return v;
+          }
+          if (r.NoShowOverall != null && hasData) {
+            const v = toNumber(r.NoShowOverall);
+            if (v != null) return v;
+          }
+          return null;
+        }).filter(v => v != null);
+      }
+      const avg = (arr)=> arr.reduce((a,b)=>a+b,0)/Math.max(1,arr.length);
+      const fallbackPrior = (schema.prior && schema.prior.fallback != null && isFinite(schema.prior.fallback)) ? Number(schema.prior.fallback) : DEFAULT_PRIOR_FALLBACK;
+      const priorPad = (schema.prior && schema.prior.pad != null && isFinite(schema.prior.pad)) ? Number(schema.prior.pad) : DEFAULT_PRIOR_PAD;
+      const teamMeanSchema = (schema.prior && schema.prior.team_mean != null && isFinite(schema.prior.team_mean)) ? Number(schema.prior.team_mean) : null;
+      const priorValueSchema = (schema.prior && schema.prior.value != null && isFinite(schema.prior.value)) ? Number(schema.prior.value) : null;
+      const priorBase = observed.length ? avg(observed) : fallbackPrior;
+      const teamMean = (teamMeanSchema != null) ? teamMeanSchema : priorBase;
+      const PRIOR_NOSHOW = clamp(priorValueSchema != null ? priorValueSchema : (teamMean + priorPad));
 
-        // Sort-Hinweis im UI
-        document.getElementById("sort-note").textContent =
-          `Sortierung: niedrigste Risiko-Schätzung zuerst (Primär: ${ebEnabled ? "EB p̂" : "rolling"}, Fallback: ${ebEnabled ? "rolling → overall" : "overall"}, Prior ≈ ${(PRIOR_NOSHOW*100).toFixed(1)}%).`;
+      const effRate = (r) => {
+        if (r.EB && r.EB.p_hat != null) {
+          const v = toNumber(r.EB.p_hat);
+          if (v != null) return clamp(v);
+        }
+        const rolling = toNumber(r.NoShowRolling);
+        if (rolling != null) return clamp(rolling);
+        const overall = toNumber(r.NoShowOverall);
+        if (overall != null) return clamp(overall);
+        return PRIOR_NOSHOW;
+      };
 
-        // -------- Buckets bilden --------
-        const targets = ["A-Start","A-Ersatz","B-Start","B-Ersatz"];
-        const buckets = Object.fromEntries(targets.map(k => [k, []]));
-        rows.forEach(r=>{
-          const canonRow = canonicalNameJS(r.PlayerName || '');
-          if (canonRow && activeAbsenceSet.has(canonRow)) return;
-          const key = `${r.Group}-${r.Role}`;
-          if (buckets[key]) buckets[key].push(r);
+      document.getElementById("sort-note").textContent =
+        `Sortierung: niedrigste Risiko-Schätzung zuerst (Primär: ${ebEnabled ? "EB p̂" : "rolling"}, Fallback: ${ebEnabled ? "rolling → overall" : "overall"}, Prior ≈ ${(PRIOR_NOSHOW*100).toFixed(1)}%).`;
+
+      const targets = ["A-Start","A-Ersatz","B-Start","B-Ersatz"];
+      const buckets = Object.fromEntries(targets.map(k => [k, []]));
+      rows.forEach(r=>{
+        const canonRow = canonicalNameJS(r.PlayerName || '');
+        if (canonRow && activeAbsenceSet.has(canonRow)) return;
+        const key = `${r.Group}-${r.Role}`;
+        if (buckets[key]) buckets[key].push(r);
+      });
+
+      for (const key of targets) {
+        buckets[key].sort((a,b)=>{
+          const da = effRate(a), db = effRate(b);
+          if (Math.abs(da - db) > EPS) return da - db;
+          const oaVal = (toNumber(a.NoShowOverall) != null) ? toNumber(a.NoShowOverall) : 1;
+          const obVal = (toNumber(b.NoShowOverall) != null) ? toNumber(b.NoShowOverall) : 1;
+          const oa = oaVal ?? 1;
+          const ob = obVal ?? 1;
+          if (Math.abs(oa - ob) > EPS) return oa - ob;
+          return (a.PlayerName||"").localeCompare(b.PlayerName||"");
+        });
+      }
+
+      for (const key of targets) {
+        const tbody = document.querySelector(`#${key} tbody`);
+        if (!tbody) continue;
+        tbody.innerHTML = "";
+        (buckets[key] || []).forEach((r, i) => {
+          const histOverall = toNumber(r.NoShowOverall);
+          const histRolling = toNumber(r.NoShowRolling);
+          const p = playersMap[r.PlayerName] || {};
+
+          const seenSource = Number.isFinite(p.events_seen) ? Number(p.events_seen) : null;
+          const seenFallback = Object.prototype.hasOwnProperty.call(r, "EventsSeen") ? toNumber(r.EventsSeen) : null;
+          const seen = (seenSource != null) ? seenSource : seenFallback;
+
+          const missesSource = Number.isFinite(p.noshow_count) ? Number(p.noshow_count) : null;
+          const missesFallback = Object.prototype.hasOwnProperty.call(r, "NoShowCount") ? toNumber(r.NoShowCount) : null;
+          const misses = (missesSource != null) ? missesSource : missesFallback;
+
+          const seenKnown = (p && Object.prototype.hasOwnProperty.call(p, "events_seen")) ||
+            Object.prototype.hasOwnProperty.call(r, "EventsSeen");
+          const annotate = seenKnown || hasEventsSeen;
+
+          const participated = (seen != null && seen > 0);
+          const noData = annotate ? !participated : false;
+          const lowN = annotate ? (participated && seen <= BADGE_SETTINGS.lowNMax) : false;
+          const neverMissed = annotate ? (participated && misses === 0) : false;
+          const singleMiss = annotate ? (participated && misses === 1) : false;
+
+          const historyBadge = noData
+            ? '<span class="tag tag-nd" title="Keine Historie – events_seen = 0">No&nbsp;Data</span>'
+            : (lowN ? '<span class="tag tag-low" title="Wenig Historie – events_seen ∈ {1,2}">low&nbsp;n</span>' : '');
+
+          const histRate = (histRolling ?? histOverall);
+
+          const tip = buildChipTooltip(p, histRolling, histOverall);
+
+          const shownOverall = noData ? null : histOverall;
+          const shownRolling = noData ? null : histRolling;
+          const badge = classifyNoShowBadge({
+            rate: histRate,
+            eventsSeen: annotate ? seen : null,
+            flags: { noData, neverMissed, lowN, singleMiss },
+          });
+          const chipKlass = BADGE_CLASS_BY_LEVEL[badge.level] || BADGE_CLASS_BY_LEVEL.nodata;
+          const reasonHint = badge.reason ? ` · badge=${badge.reason}` : "";
+          const tooltip = `${tip}${reasonHint}`.replace(/"/g, '&quot;');
+          let nameHTML = `${r.PlayerName || ""}`;
+          const normalizedCallup = normalizeCallup(p);
+          const forcedSource = resolveForcedSignup({
+            forcedLookup: state.forcedLookup || new Map(),
+            player: p,
+            row: r,
+            playersByCanon: state.playersByCanon || {},
+          });
+          const forcedBadge = buildFixBadge(forcedSource);
+          const callupBadge = p ? buildCallupBadge(normalizedCallup) : '';
+          const hasFixedCommitFlag = hasFixedCommit(p, forcedSource);
+          if (historyBadge) nameHTML += ` ${historyBadge}`;
+          if (forcedBadge) nameHTML += ` ${forcedBadge}`;
+          if (callupBadge) nameHTML += ` ${callupBadge}`;
+          if (p && (p.has_event_signup || p.event_signup)) {
+            nameHTML += ' <span class="tag tag-event" title="Zusage im Event-Pool (nächstes Event)">Event-Zusage</span>';
+          }
+          const noshowCountOverall = Number.isFinite(p.noshow_count_overall) ? Number(p.noshow_count_overall) :
+            (Number.isFinite(p.noshow_count) ? Number(p.noshow_count) :
+            (Object.prototype.hasOwnProperty.call(r, "NoShowCount") ? toNumber(r.NoShowCount) : null));
+          const dataNote = noData
+            ? "Datenlage: keine Historie"
+            : (lowN ? "Datenlage: wenig Historie" : "");
+          const callupReason = (normalizedCallup && normalizedCallup.recommended) ? formatCallupReasons(normalizedCallup) : "";
+          const lastSeenValue = p ? (p.last_seen || p.LastSeenDate) : (r.LastSeenDate || null);
+          const lastNoShowValue = p ? (p.last_noshow_date || p.LastNoShowDate) : (r.LastNoShowDate || null);
+          const metaText = buildPlayerMetaText({
+            eventsSeen: seen,
+            noshowCountOverall,
+            dataNote,
+            callupReason,
+            lastSeenDate: lastSeenValue,
+            lastNoShowDate: lastNoShowValue,
+          });
+          const tr = document.createElement("tr");
+          tr.dataset.playerRow = "true";
+          tr.dataset.hasFixedCommit = hasFixedCommitFlag ? "true" : "false";
+          tr.innerHTML = `
+            <td class="num">${pad(i+1)}</td>
+            <td>
+              <div class="player-name-row">${nameHTML}</div>
+              <div class="player-meta-row">${metaText}</div>
+            </td>
+            <td><span class="${chipKlass}" title="${tooltip}">${pc(shownOverall)}</span></td>
+            <td><span class="${chipKlass}" title="${tooltip}">${pc(shownRolling)}</span></td>
+          `;
+          tbody.appendChild(tr);
         });
 
-        // -------- Buckets nach No-Show (aufsteigend) sortieren --------
-        for (const key of targets) {
-          buckets[key].sort((a,b)=>{
-            const da = effRate(a), db = effRate(b);
-            if (Math.abs(da - db) > EPS) return da - db;              // 1) No-Show (ASC)
-            const oaVal = (toNumber(a.NoShowOverall) != null) ? toNumber(a.NoShowOverall) : 1;
-            const obVal = (toNumber(b.NoShowOverall) != null) ? toNumber(b.NoShowOverall) : 1;
-            const oa = oaVal ?? 1;
-            const ob = obVal ?? 1;
-            if (Math.abs(oa - ob) > EPS) return oa - ob;              // 2) Overall (ASC) als Tiebreak
-            return (a.PlayerName||"").localeCompare(b.PlayerName||""); // 3) Name
-          });
-        }
+        if (!window.__bucketCounts) window.__bucketCounts = {};
+        const keyCounts = { known:0, lown:0, nd:0 };
+        (buckets[key] || []).forEach(row => {
+          const pp = playersMap[row.PlayerName] || {};
+          const seenVal = Number.isFinite(pp.events_seen) ? Number(pp.events_seen) :
+            (Object.prototype.hasOwnProperty.call(row, "EventsSeen") ? toNumber(row.EventsSeen) : null);
+          if (!(seenVal > 0)) { keyCounts.nd++; return; }
+          if (seenVal <= BADGE_SETTINGS.lowNMax) { keyCounts.lown++; return; }
+          keyCounts.known++;
+        });
+        window.__bucketCounts[key] = keyCounts;
+        writeBucketCounts(key, keyCounts);
+      }
+    }
 
-        // -------- Render --------
-        for (const key of targets) {
-          const tbody = document.querySelector(`#${key} tbody`);
-          tbody.innerHTML = "";
-          (buckets[key] || []).forEach((r, i) => {
-            const histOverall = toNumber(r.NoShowOverall);
-            const histRolling = toNumber(r.NoShowRolling);
-            const p = playersMap[r.PlayerName] || {};
+    function processLatestPayload(payload) {
+      const schema = (!Array.isArray(payload) && payload && typeof payload === "object") ? (payload.schema || {}) : {};
+      const ebEnabled = Boolean(schema && schema.eb && schema.eb.enabled);
 
-            const seenSource = Number.isFinite(p.events_seen) ? Number(p.events_seen) : null;
-            const seenFallback = Object.prototype.hasOwnProperty.call(r, "EventsSeen") ? toNumber(r.EventsSeen) : null;
-            const seen = (seenSource != null) ? seenSource : seenFallback;
-
-            const missesSource = Number.isFinite(p.noshow_count) ? Number(p.noshow_count) : null;
-            const missesFallback = Object.prototype.hasOwnProperty.call(r, "NoShowCount") ? toNumber(r.NoShowCount) : null;
-            const misses = (missesSource != null) ? missesSource : missesFallback;
-
-            const seenKnown = (p && Object.prototype.hasOwnProperty.call(p, "events_seen")) ||
-              Object.prototype.hasOwnProperty.call(r, "EventsSeen");
-            const annotate = seenKnown || hasEventsSeen;
-
-            const participated = (seen != null && seen > 0);
-            const noData = annotate ? !participated : false;
-            const lowN = annotate ? (participated && seen <= BADGE_SETTINGS.lowNMax) : false;
-            const neverMissed = annotate ? (participated && misses === 0) : false;
-            const singleMiss = annotate ? (participated && misses === 1) : false;
-
-            const historyBadge = noData
-              ? '<span class="tag tag-nd" title="Keine Historie – events_seen = 0">No&nbsp;Data</span>'
-              : (lowN ? '<span class="tag tag-low" title="Wenig Historie – events_seen ∈ {1,2}">low&nbsp;n</span>' : '');
-
-            const histRate = (histRolling ?? histOverall);
-
-            const tip = buildChipTooltip(p, histRolling, histOverall);
-
-            const shownOverall = noData ? null : histOverall;
-            const shownRolling = noData ? null : histRolling;
-            const badge = classifyNoShowBadge({
-              rate: histRate,
-              eventsSeen: annotate ? seen : null,
-              flags: { noData, neverMissed, lowN, singleMiss },
+      const toRows = (payload) => {
+        if (Array.isArray(payload)) return payload;
+        const playersByDisplay = Object.fromEntries((payload.players || []).map(p => [p.display, p]));
+        const groups = payload.groups || {};
+        const out = [];
+        for (const G of ["A","B"]) {
+          const g = groups[G] || {};
+          for (const R of ["Start","Ersatz"]) {
+            const list = (g[R] || []);
+            list.forEach((name, idx) => {
+              const p = playersByDisplay[name] || {};
+              const eb = (p.eb && typeof p.eb === "object") ? {
+                p_hat: toNumber(p.eb.p_hat),
+                sigma: toNumber(p.eb.sigma),
+              } : null;
+              out.push({
+                Group: G,
+                Role: R,
+                Slot: idx + 1,
+                PlayerName: name,
+                NoShowOverall: toNumber(p.noshow_overall),
+                NoShowRolling: toNumber(p.noshow_rolling),
+                EB: eb,
+                EventsSeen: toNumber(p.events_seen),
+              });
             });
-            const chipKlass = BADGE_CLASS_BY_LEVEL[badge.level] || BADGE_CLASS_BY_LEVEL.nodata;
-            const reasonHint = badge.reason ? ` · badge=${badge.reason}` : "";
-            const tooltip = `${tip}${reasonHint}`.replace(/"/g, '&quot;');
-            let nameHTML = `${r.PlayerName || ""}`;
+          }
+        }
+        return out;
+      };
+
+      const rows = toRows(payload);
+      const playersArray = (!Array.isArray(payload) && Array.isArray(payload.players)) ? payload.players : [];
+
+      state.callupMeta = extractCallupMeta(payload, playersArray, schema);
+      state.latestPayload = payload;
+      state.playersArray = playersArray;
+      state.callupCandidates = collectCallupCandidates(playersArray);
+
+      safeRenderSection("overview-meta", () => renderOverviewMeta(payload, schema), overviewMeta);
+      safeRenderSection("attendance-summary", () => renderAttendanceSummary(payload.attendance), attendanceSummaryBox);
+
+      state.callupSuggestions = extractCallupSuggestions(payload);
+      safeRenderSection("callup-suggestions", () => renderCallupSuggestions(state.callupSuggestions), callupSuggestionsContent);
+
+      state.allianceOverview = normalizeAllianceOverview(payload?.alliance_next_event_overview);
+      safeRenderSection("alliance-overview", () => renderAllianceOverview(), allianceTable);
+
+      const playersMap = Object.fromEntries(
+        playersArray
+          .filter(p => p && typeof p === "object" && typeof p.display === "string")
+          .map(p => {
             const normalizedCallup = normalizeCallup(p);
-            const forcedSource = resolveForcedSignup({
-              forcedLookup: state.forcedLookup || new Map(),
-              player: p,
-              row: r,
-              playersByCanon: state.playersByCanon || {},
-            });
-            const forcedBadge = buildFixBadge(forcedSource);
-            const callupBadge = p ? buildCallupBadge(normalizedCallup) : '';
-            const hasFixedCommitFlag = hasFixedCommit(p, forcedSource);
-            if (historyBadge) nameHTML += ` ${historyBadge}`;
-            if (forcedBadge) nameHTML += ` ${forcedBadge}`;
-            if (callupBadge) nameHTML += ` ${callupBadge}`;
-            if (p && (p.has_event_signup || p.event_signup)) {
-              nameHTML += ' <span class="tag tag-event" title="Zusage im Event-Pool (nächstes Event)">Event-Zusage</span>';
-            }
-            const noshowCountOverall = Number.isFinite(p.noshow_count_overall) ? Number(p.noshow_count_overall) :
-              (Number.isFinite(p.noshow_count) ? Number(p.noshow_count) :
-              (Object.prototype.hasOwnProperty.call(r, "NoShowCount") ? toNumber(r.NoShowCount) : null));
-            const dataNote = noData
-              ? "Datenlage: keine Historie"
-              : (lowN ? "Datenlage: wenig Historie" : "");
-            const callupReason = (normalizedCallup && normalizedCallup.recommended) ? formatCallupReasons(normalizedCallup) : "";
-            const lastSeenValue = p ? (p.last_seen || p.LastSeenDate) : (r.LastSeenDate || null);
-            const lastNoShowValue = p ? (p.last_noshow_date || p.LastNoShowDate) : (r.LastNoShowDate || null);
-            const metaText = buildPlayerMetaText({
-              eventsSeen: seen,
-              noshowCountOverall,
-              dataNote,
-              callupReason,
-              lastSeenDate: lastSeenValue,
-              lastNoShowDate: lastNoShowValue,
-            });
-            const tr = document.createElement("tr");
-            tr.dataset.playerRow = "true";
-            tr.dataset.hasFixedCommit = hasFixedCommitFlag ? "true" : "false";
-            tr.innerHTML = `
-              <td class="num">${pad(i+1)}</td>
-              <td>
-                <div class="player-name-row">${nameHTML}</div>
-                <div class="player-meta-row">${metaText}</div>
-              </td>
-              <td><span class="${chipKlass}" title="${tooltip}">${pc(shownOverall)}</span></td>
-              <td><span class="${chipKlass}" title="${tooltip}">${pc(shownRolling)}</span></td>
-            `;
-            tbody.appendChild(tr);
-          });
-
-          if (!window.__bucketCounts) window.__bucketCounts = {};
-          const keyCounts = { known:0, lown:0, nd:0 };
-          (buckets[key] || []).forEach(row => {
-            const pp = playersMap[row.PlayerName] || {};
-            const seenVal = Number.isFinite(pp.events_seen) ? Number(pp.events_seen) :
-              (Object.prototype.hasOwnProperty.call(row, "EventsSeen") ? toNumber(row.EventsSeen) : null);
-            if (!(seenVal > 0)) { keyCounts.nd++; return; }
-            if (seenVal <= BADGE_SETTINGS.lowNMax) { keyCounts.lown++; return; }
-            keyCounts.known++;
-          });
-          window.__bucketCounts[key] = keyCounts;
-          writeBucketCounts(key, keyCounts);
-        }
-
-        const signupMeta = (signupPoolBlock && typeof signupPoolBlock.stats === 'object')
-          ? signupPoolBlock.stats
-          : (payload.signup_pool || payload.event_signups || null);
-        const filteredExtraSignups = {
-          A: (extraSignups.A || []).filter(item => {
-            const canon = canonicalNameJS(item?.canon || item?.player || '');
-            return !(canon && activeAbsenceSet.has(canon));
-          }),
-          B: (extraSignups.B || []).filter(item => {
-            const canon = canonicalNameJS(item?.canon || item?.player || '');
-            return !(canon && activeAbsenceSet.has(canon));
-          }),
+            const merged = { ...p };
+            if (normalizedCallup) merged.callup = normalizedCallup;
+            return [p.display, merged];
+          })
+      );
+      const playersByCanon = {};
+      playersArray.forEach(p => {
+        if (!p || typeof p !== "object") return;
+        const canonSource = typeof p.canon === "string" && p.canon.trim() ? p.canon : p.display;
+        const canon = canonicalNameJS(canonSource || "");
+        if (!canon) return;
+        const normalizedCallup = normalizeCallup(p);
+        playersByCanon[canon] = {
+          display: p.display,
+          group: p.group,
+          role: p.role,
+          has_event_signup: Boolean(p.has_event_signup || p.event_signup),
+          event_signup: p.event_signup || null,
+          has_forced_signup: Boolean(p.has_forced_signup || p.forced_signup),
+          forced_signup: p.forced_signup || null,
+          callup: normalizedCallup,
+          callup_recommended: normalizedCallup ? Boolean(normalizedCallup.recommended) : Boolean(p.callup_recommended),
+          is_absent_next_event: Boolean(p.is_absent_next_event),
         };
-        renderExtraSignups(filteredExtraSignups, signupMeta, state.forcedDiagnostics);
-        renderForcedDiagnostics(state.forcedDiagnostics, signupMeta);
-        updateCallupNote(state.callupMeta);
-        updateCallupExportButton(state.callupMeta, state.callupCandidates);
-        updateFixedCommitFilter();
-
-        const ts = new Date().toISOString().replace('T',' ').slice(0,19) + " UTC";
-        const schemaVersion = (schema && schema.version != null) ? ` · schema v${schema.version}` : "";
-        document.getElementById("stamp").textContent = `Stand: ${ts}${schemaVersion}`;
-      })
-      .catch(err=>{
-        document.body.insertAdjacentHTML("beforeend",
-          `<p style="color:#b00">Fehler beim Laden von <code>latest.json</code>: ${String(err)}</p>`);
       });
+      state.playersByCanon = playersByCanon;
+      state.absenceDebug = payload.absence_debug || null;
+      state.absenceConflicts = Array.isArray(payload.absence_conflicts) ? payload.absence_conflicts : [];
+      safeRenderSection("absence-diagnostics", () => renderAbsenceDiagnostics(state.absenceDebug, state.absenceConflicts), absenceDiag);
+
+      const absencesApplied = applyAbsencesFromPayload(payload.absences);
+      if (!absencesApplied) {
+        fetchAbsences();
+      }
+
+      const responsesApplied = applyEventResponsesFromPayload(payload.event_responses);
+      if (!responsesApplied) {
+        state.eventResponses.loading = false;
+        state.eventResponses.error = new Error('Keine Event-Antworten im Payload');
+      }
+      state.eventResponseConflicts = Array.isArray(payload.event_response_conflicts)
+        ? payload.event_response_conflicts
+        : [];
+      safeRenderSection("event-responses", () => updateEventResponsesUI(), eventResponsesContainer);
+
+      const activeAbsenceSet = new Set([
+        ...((state.absences.active || []).map(a => canonicalNameJS(a?.canon || a?.playerName || ''))),
+        ...(playersArray
+          .filter(p => p && p.is_absent_next_event)
+          .map(p => canonicalNameJS(p.canon || p.display || ''))),
+      ].filter(Boolean));
+      const extraSignups = {
+        A: (payload && payload.groups && Array.isArray(payload.groups.A?.extra_signups)) ? payload.groups.A.extra_signups : [],
+        B: (payload && payload.groups && Array.isArray(payload.groups.B?.extra_signups)) ? payload.groups.B.extra_signups : [],
+      };
+      const signupPoolBlock = (payload && typeof payload.signup_pool === 'object') ? payload.signup_pool : {};
+      state.forcedDiagnostics = {
+        forced: Array.isArray(signupPoolBlock.forced_signups)
+          ? signupPoolBlock.forced_signups
+          : (Array.isArray(payload.forced_signups) ? payload.forced_signups : []),
+        invalid: Array.isArray(signupPoolBlock.invalid_forced_signups)
+          ? signupPoolBlock.invalid_forced_signups
+          : (Array.isArray(payload.invalid_forced_signups) ? payload.invalid_forced_signups : []),
+        overbooked: Array.isArray(signupPoolBlock.overbooked_forced_signups)
+          ? signupPoolBlock.overbooked_forced_signups
+          : (Array.isArray(payload.overbooked_forced_signups) ? payload.overbooked_forced_signups : []),
+        rows: Array.isArray(signupPoolBlock.file_entries) ? signupPoolBlock.file_entries : [],
+      };
+      const hasEventsSeen = playersArray.some(p => p && Object.prototype.hasOwnProperty.call(p, "events_seen"));
+
+      state.forcedLookup = buildForcedLookup(payload);
+
+      safeRenderSection("roster", () => renderRosterBuckets({
+        rows,
+        playersMap,
+        playersArray,
+        activeAbsenceSet,
+        ebEnabled,
+        schema,
+        hasEventsSeen,
+      }), rosterRoot);
+
+      const signupMeta = (signupPoolBlock && typeof signupPoolBlock.stats === 'object')
+        ? signupPoolBlock.stats
+        : (payload.signup_pool || payload.event_signups || null);
+      const filteredExtraSignups = {
+        A: (extraSignups.A || []).filter(item => {
+          const canon = canonicalNameJS(item?.canon || item?.player || '');
+          return !(canon && activeAbsenceSet.has(canon));
+        }),
+        B: (extraSignups.B || []).filter(item => {
+          const canon = canonicalNameJS(item?.canon || item?.player || '');
+          return !(canon && activeAbsenceSet.has(canon));
+        }),
+      };
+      safeRenderSection("extra-signups", () => renderExtraSignups(filteredExtraSignups, signupMeta, state.forcedDiagnostics), extraRoot);
+      safeRenderSection("forced-diagnostics", () => renderForcedDiagnostics(state.forcedDiagnostics, signupMeta), document.getElementById("forced-diagnostics"));
+      safeRenderSection("callup-note", () => updateCallupNote(state.callupMeta), callupNote);
+      safeRenderSection("callup-export", () => updateCallupExportButton(state.callupMeta, state.callupCandidates), callupExportBtn);
+      safeRenderSection("fixed-commit-filter", () => updateFixedCommitFilter(), commitCallupToggle);
+
+      const ts = new Date().toISOString().replace('T',' ').slice(0,19) + " UTC";
+      const schemaVersion = (schema && schema.version != null) ? ` · schema v${schema.version}` : "";
+      safeRenderSection("stamp", () => {
+        document.getElementById("stamp").textContent = `Stand: ${ts}${schemaVersion}`;
+      }, document.getElementById("stamp"));
+    }
+
+    async function initRosterUI() {
+      try {
+        const payload = await loadLatestJson();
+        clearInitError();
+        processLatestPayload(payload);
+      } catch (err) {
+        console.error("DS_INIT_LATEST_JSON_FAILED", err);
+        showInitError("⚠️ Roster konnte nicht geladen werden. Bitte prüfe out/latest.json oder den letzten Build.");
+      }
+    }
+
+    initRosterUI();
   </script>
 </body>
 </html>
