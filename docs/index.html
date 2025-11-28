@@ -64,6 +64,7 @@
     .tag-hard{background:#fee2e2;border:1px solid #fecdd3;color:#7f1d1d}
     .tag-fix{background:#f5f5f5;border:1px solid #d4d4d8;color:#3f3f46;display:inline-flex;align-items:center;gap:4px;letter-spacing:0.01em}
     .tag-callup{background:#eff6ff;border:1px solid #bfdbfe;color:#1d4ed8;display:inline-flex;align-items:center;gap:4px;letter-spacing:0.01em;font-weight:600}
+    .info-icon{display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;border:1px solid var(--line);border-radius:50%;font-size:11px;line-height:1;background:#fff;color:var(--muted);margin-left:6px;cursor:help}
     .legend{font-size:0.85em;margin:32px 0 0}
     .legend + .legend{margin-top:6px}
     .roster-controls{margin:12px 0 20px;display:flex;gap:12px;flex-wrap:wrap;align-items:center}
@@ -148,6 +149,8 @@
     </div>
     <div class="overview-grid">
       <div id="attendance-summary" class="diag" style="display:none"></div>
+      <!-- Hinweis auf Attendance-Target / fehlende Zusagen -->
+      <p id="attendance-summary-help" class="muted legend" style="display:none;margin:4px 0 0">Das Tool peilt eine Ziel-Anwesenheit (Attendance-Target) an. Der Hinweis „Fehlen ca. … Zusagen“ zeigt, wie viele Zusagen bzw. wie viel Attendance ungefähr noch fehlt, um dieses Ziel zu erreichen.</p>
       <div id="overview-meta" class="diag">
         <h3 style="margin:0 0 6px">Event-Metadaten</h3>
         <p class="muted" id="overview-meta-note">Wird geladen …</p>
@@ -184,6 +187,8 @@
     </div>
     <p class="muted" id="sort-note" style="margin:0 0 10px"></p>
     <p class="muted legend team-legend">Legende: <span class="tag tag-nd" title="Keine Historie – events_seen = 0">No&nbsp;Data</span> keine Historie · <span class="tag tag-low" title="Wenig Historie – events_seen ∈ {1,2}">low&nbsp;n</span> wenig Historie · <span class="tag tag-fix">🔒 verbindlich</span> verbindliche Zusage (Commitment=hard) · <span class="tag tag-callup callup-badge">🔔 Callup</span> Spieler, für die eine Erinnerung empfohlen wird<br />Farben basieren auf Historie (rolling→overall), EB wird nur zur Sortierung verwendet.<br />No-Data = nie teilgenommen (grau). low-n ≤2 = gelb. 1 Fehltermin = nie rot.</p>
+    <!-- Kurzlegende für EB vs. Rolling (Tooltips ergänzt) -->
+    <p class="muted legend legend-inline">EB = geglättete, konservative No-Show-Risiko-Schätzung (strafe Declines/kein Feedback) · Rolling = reine Historie ohne Glättung (Shows/Events, reagiert schneller)</p>
     <div id="roster-root" class="team-grid">
       <div class="team-card">
         <h3>Team A</h3>
@@ -191,14 +196,14 @@
           <section id="A-Start">
             <h2>Gruppe A · Start</h2>
             <table>
-              <thead><tr><th>#</th><th>Spieler</th><th>No-Show (overall)</th><th>No-Show (rolling)</th></tr></thead>
+              <thead><tr><th>#</th><th>Spieler</th><th title="Konservative Schätzung des No-Show-Risikos. Nutzt eine geglättete (EB) Auswertung der bisherigen Shows/No-Shows und bestraft Declines/kein Feedback.">No-Show (overall)</th><th title="Reine Historie ohne Glättung (Shows / Events). Reagiert schneller, ist aber bei wenigen Events weniger stabil.">No-Show (rolling)</th></tr></thead>
               <tbody></tbody>
             </table>
           </section>
           <section id="A-Ersatz">
             <h2>Gruppe A · Ersatz</h2>
             <table>
-              <thead><tr><th>#</th><th>Spieler</th><th>No-Show (overall)</th><th>No-Show (rolling)</th></tr></thead>
+              <thead><tr><th>#</th><th>Spieler</th><th title="Konservative Schätzung des No-Show-Risikos. Nutzt eine geglättete (EB) Auswertung der bisherigen Shows/No-Shows und bestraft Declines/kein Feedback.">No-Show (overall)</th><th title="Reine Historie ohne Glättung (Shows / Events). Reagiert schneller, ist aber bei wenigen Events weniger stabil.">No-Show (rolling)</th></tr></thead>
               <tbody></tbody>
             </table>
           </section>
@@ -206,18 +211,20 @@
       </div>
       <div class="team-card">
         <h3>Team B</h3>
+        <!-- Kurzinfo zur Fallback-Mechanik B (callup_min_attend_prob + min_b_starters) -->
+        <p class="muted" style="margin:2px 0 10px;">B wird zuerst mit Spielern über der Attendance-Schwelle (callup_min_attend_prob) gefüllt. Falls das weniger als das Minimum ergibt, werden fehlende Plätze mit Spielern unter der Schwelle aufgefüllt (Fallbacks).</p>
         <div class="team-roles">
           <section id="B-Start">
             <h2>Gruppe B · Start</h2>
             <table>
-              <thead><tr><th>#</th><th>Spieler</th><th>No-Show (overall)</th><th>No-Show (rolling)</th></tr></thead>
+              <thead><tr><th>#</th><th>Spieler</th><th title="Konservative Schätzung des No-Show-Risikos. Nutzt eine geglättete (EB) Auswertung der bisherigen Shows/No-Shows und bestraft Declines/kein Feedback.">No-Show (overall)</th><th title="Reine Historie ohne Glättung (Shows / Events). Reagiert schneller, ist aber bei wenigen Events weniger stabil.">No-Show (rolling)</th></tr></thead>
               <tbody></tbody>
             </table>
           </section>
           <section id="B-Ersatz">
             <h2>Gruppe B · Ersatz</h2>
             <table>
-              <thead><tr><th>#</th><th>Spieler</th><th>No-Show (overall)</th><th>No-Show (rolling)</th></tr></thead>
+              <thead><tr><th>#</th><th>Spieler</th><th title="Konservative Schätzung des No-Show-Risikos. Nutzt eine geglättete (EB) Auswertung der bisherigen Shows/No-Shows und bestraft Declines/kein Feedback.">No-Show (overall)</th><th title="Reine Historie ohne Glättung (Shows / Events). Reagiert schneller, ist aber bei wenigen Events weniger stabil.">No-Show (rolling)</th></tr></thead>
               <tbody></tbody>
             </table>
           </section>
@@ -334,6 +341,7 @@
     const commitCallupFilterNote = document.getElementById("commit-callup-filter-note");
     const callupNote = document.getElementById("callup-note");
     const attendanceSummaryBox = document.getElementById("attendance-summary");
+    const attendanceSummaryHelp = document.getElementById("attendance-summary-help");
     const overviewMeta = document.getElementById("overview-meta");
     const overviewMetaNote = document.getElementById("overview-meta-note");
     const overviewMetaList = document.getElementById("overview-meta-list");
@@ -2112,6 +2120,7 @@
       if (!attendance || typeof attendance !== "object") {
         attendanceSummaryBox.style.display = "none";
         attendanceSummaryBox.innerHTML = "";
+        if (attendanceSummaryHelp) attendanceSummaryHelp.style.display = "none";
         return;
       }
 
@@ -2168,6 +2177,7 @@
           }
         attendanceSummaryBox.innerHTML = block.join("");
         attendanceSummaryBox.style.display = "block";
+        if (attendanceSummaryHelp) attendanceSummaryHelp.style.display = "block";
         return;
       }
 
@@ -2249,6 +2259,7 @@
       }
       attendanceSummaryBox.innerHTML = block.join("");
       attendanceSummaryBox.style.display = "block";
+      if (attendanceSummaryHelp) attendanceSummaryHelp.style.display = "block";
     }
 
     function renderOverviewMeta(payload, schema = {}) {
