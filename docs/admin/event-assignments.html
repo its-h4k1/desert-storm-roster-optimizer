@@ -146,16 +146,29 @@
                     <label>Branch
                       <input id="branchInput" type="text" value="main" spellcheck="false">
                     </label>
-                    <label>Admin-Key
-                      <input id="adminKey" type="password" placeholder="r4-admin" autocomplete="off">
-                    </label>
+                    <div style="display:grid; gap:0.35rem;">
+                      <label style="margin:0; color:var(--text-muted); font-size:0.85rem;">Admin-Key</label>
+                      <div id="adminKeyStatus" class="pill info">Lädt Admin-Status…</div>
+                      <div id="adminKeyFallbackRow" style="display:none;">
+                        <label style="margin:0;">
+                          <span style="display:block; font-size:0.85rem; color:var(--text-muted);">Fallback setzen</span>
+                          <input id="adminKeyFallback" type="password" placeholder="Optional – wird zentral gespeichert" autocomplete="off">
+                        </label>
+                        <small class="hint" style="color:var(--text-muted);">Nur nutzen, falls der zentrale Login noch nicht gesetzt wurde.</small>
+                      </div>
+                    </div>
                   </div>
                   <div class="settings-actions">
-                    <small class="hint" style="color:var(--text-muted);">Wird lokal gespeichert; wirkt auf Speichern/Reset.</small>
+                    <small class="hint" style="color:var(--text-muted);">Worker-URL &amp; Branch werden lokal gespeichert. Admin-Key kommt aus der zentralen Verwaltung.</small>
                   </div>
                 </details>
               </div>
             </header>
+
+            <div id="adminKeyAlert" class="build-alert" style="display:none;" aria-live="polite">
+              <strong>Kein Admin-Key gesetzt</strong>
+              <p>Bitte über die Admin-Startseite einloggen. Alternativ kannst du hier kurzfristig einen Admin-Key hinterlegen; er wird im zentralen Speicher abgelegt.</p>
+            </div>
 
             <div id="buildSyncBanner" class="build-alert" style="display:none;" aria-live="polite">
               <strong>Es gibt Zusagen, die noch nicht in der aktuellen Aufstellung berücksichtigt sind.</strong>
@@ -357,7 +370,10 @@
       const elements = {
         workerUrl: document.getElementById('workerUrl'),
         branch: document.getElementById('branchInput'),
-        adminKey: document.getElementById('adminKey'),
+        adminKeyFallback: document.getElementById('adminKeyFallback'),
+        adminKeyFallbackRow: document.getElementById('adminKeyFallbackRow'),
+        adminKeyStatus: document.getElementById('adminKeyStatus'),
+        adminKeyAlert: document.getElementById('adminKeyAlert'),
         reloadBtn: document.getElementById('reloadBtn'),
         saveBtn: document.getElementById('saveBtn'),
         playerInput: document.getElementById('playerInput'),
@@ -393,7 +409,7 @@
       };
 
       const SETTINGS_KEY = 'dsro-event-assignments-settings';
-      const getAdminKey = () => dsroShared.getAdminKey(elements.adminKey?.value);
+      const getAdminKey = () => dsroShared.getAdminKey(elements.adminKeyFallback?.value);
       const canonicalNameJS = (window.dsroShared && typeof window.dsroShared.canonicalNameJS === 'function')
         ? window.dsroShared.canonicalNameJS
         : (value => {
@@ -1466,7 +1482,7 @@
         const adminKey = getAdminKey();
         const branch = elements.branch.value.trim() || 'main';
         if (!workerUrl) { setStatus('Worker-URL fehlt.', 'error'); return; }
-        if (!adminKey) { setStatus('Admin-Key erforderlich.', 'error'); return; }
+        if (!adminKey) { setStatus('Kein Admin-Key gesetzt – bitte über die Admin-Startseite einloggen.', 'error'); return; }
         const content = buildCurrentCsv();
         const responsesContent = buildResponseCsv();
         setSaving(true);
@@ -1513,7 +1529,7 @@
         const adminKey = getAdminKey();
         const branch = elements.branch.value.trim() || 'main';
         if (!workerUrl) { setStatus('Worker-URL fehlt.', 'error'); return; }
-        if (!adminKey) { setStatus('Admin-Key erforderlich.', 'error'); return; }
+        if (!adminKey) { setStatus('Kein Admin-Key gesetzt – bitte über die Admin-Startseite einloggen.', 'error'); return; }
         const confirmReset = window.confirm(
           'Neues Event vorbereiten?\n\nDamit werden alle Zusagen/Antworten für das bisherige "nächste" Event gelöscht ' +
           'und leere Dateien event_signups_next.csv & event_responses_next.csv geschrieben. ' +
@@ -1569,9 +1585,8 @@
       }
 
       function persistSettings() {
-        const payload = { workerUrl: elements.workerUrl.value, branch: elements.branch.value, adminKey: elements.adminKey.value };
+        const payload = { workerUrl: elements.workerUrl.value, branch: elements.branch.value };
         localStorage.setItem(SETTINGS_KEY, JSON.stringify(payload));
-        dsroShared.saveAdminKey(payload.adminKey);
       }
       function restoreSettings() {
         const saved = localStorage.getItem(SETTINGS_KEY);
@@ -1580,10 +1595,6 @@
             const parsed = JSON.parse(saved);
             if (parsed.workerUrl) elements.workerUrl.value = parsed.workerUrl;
             if (parsed.branch) elements.branch.value = parsed.branch;
-            if (parsed.adminKey) {
-              elements.adminKey.value = parsed.adminKey;
-              dsroShared.saveAdminKey(parsed.adminKey);
-            }
           } catch (err) { console.warn('Settings konnten nicht gelesen werden', err); }
         } else {
           const shared = localStorage.getItem('dsro-admin-settings');
@@ -1593,12 +1604,25 @@
               if (parsed.workerUrl) elements.workerUrl.value = parsed.workerUrl;
               if (parsed.customBranch) elements.branch.value = parsed.customBranch;
               if (parsed.branchSelect) elements.branch.value = parsed.branchSelect;
-              if (parsed.adminKey) {
-                elements.adminKey.value = parsed.adminKey;
-                dsroShared.saveAdminKey(parsed.adminKey);
-              }
             } catch (err) { console.warn('Shared settings konnten nicht gelesen werden', err); }
           }
+        }
+      }
+
+      function updateAdminKeyStatus() {
+        const adminKey = getAdminKey();
+        const hasKey = !!adminKey;
+        if (elements.adminKeyStatus) {
+          elements.adminKeyStatus.textContent = hasKey
+            ? 'Admin-Key ist gesetzt (zentral verwaltet).'
+            : 'Kein Admin-Key gesetzt – bitte über die Admin-Startseite einloggen.';
+          elements.adminKeyStatus.className = hasKey ? 'pill info' : 'pill';
+        }
+        if (elements.adminKeyAlert) {
+          elements.adminKeyAlert.style.display = hasKey ? 'none' : 'grid';
+        }
+        if (elements.adminKeyFallbackRow) {
+          elements.adminKeyFallbackRow.style.display = hasKey ? 'none' : 'block';
         }
       }
 
@@ -1608,15 +1632,16 @@
         elements.addBtn.addEventListener('click', addAssignment);
         if (elements.addResponseBtn) elements.addResponseBtn.addEventListener('click', addResponse);
         if (elements.resetBtn) elements.resetBtn.addEventListener('click', resetPool);
-        ['workerUrl','branch','adminKey'].forEach(key => elements[key].addEventListener('change', persistSettings));
+        ['workerUrl','branch'].forEach(key => elements[key].addEventListener('change', persistSettings));
         elements.playerInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); addAssignment(); } });
         if (elements.responsePlayerInput) {
           elements.responsePlayerInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); addResponse(); } });
         }
       }
 
-      dsroShared.applyAdminKeyInput(elements.adminKey, { onChange: persistSettings });
+      dsroShared.applyAdminKeyInput(elements.adminKeyFallback, { onChange: updateAdminKeyStatus });
       restoreSettings();
+      updateAdminKeyStatus();
       initEvents();
       initAutocompletes();
       reloadData();
