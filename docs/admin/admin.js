@@ -12,23 +12,8 @@
 })();
 
 (function(){
-  const toggle = document.querySelector('.sidebar-toggle');
-  const close = document.querySelector('.sidebar-close');
-  const overlay = document.querySelector('.admin-overlay');
-  if (!toggle && !close && !overlay) return;
-
-  const toggleSidebar = () => document.body.classList.toggle('sidebar-open');
-  const closeSidebar = () => document.body.classList.remove('sidebar-open');
-
-  toggle?.addEventListener('click', toggleSidebar);
-  close?.addEventListener('click', closeSidebar);
-  overlay?.addEventListener('click', closeSidebar);
-
-  window.addEventListener('resize', () => {
-    if (window.innerWidth >= 1200) {
-      closeSidebar();
-    }
-  });
+  if (!window.dsroShared || typeof window.dsroShared.initAdminLayout !== 'function') return;
+  window.dsroShared.initAdminLayout();
 })();
 
 // Admin-Key / Worker-Secret zentral aus shared.js lesen und aktualisieren
