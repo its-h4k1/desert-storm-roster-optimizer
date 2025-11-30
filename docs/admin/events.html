@@ -722,6 +722,8 @@
       error: document.getElementById("resolver-error"),
     };
 
+    const getAdminKey = () => dsroShared.getAdminKey(elements.adminKey?.value);
+
     const EVENT_ID_PATTERN = /^DS-\d{4}-\d{2}-\d{2}-[A-Z]$/;
 
     let originalData = [];
@@ -1908,7 +1910,7 @@
       const branch = getBranchValue();
       const strategy = elements.strategy.value;
       const workerUrl = elements.workerUrl.value.trim();
-      const adminKey = elements.adminKey.value.trim();
+      const adminKey = getAdminKey();
 
       if (lastNameValidation.unresolved.length && !allowSaveOverride) {
         showToast("Namensvalidierung offen – bitte Zuordnungen abschließen.");
@@ -2060,10 +2062,10 @@
 
     async function writeFilesSequential(files, workerUrl, adminKey) {
       if (!files.length) return;
-      const headers = { "Content-Type": "application/json" };
-      if (adminKey) {
-        headers["X-Admin-Key"] = adminKey;
-      }
+      const headers = dsroShared.buildAdminHeaders({
+        adminKey,
+        headers: { "Content-Type": "application/json" },
+      });
       for (const file of files) {
         const response = await fetch(workerUrl, {
           method: "POST",
@@ -2250,7 +2252,7 @@
       const eventId = elements.eventId.value.trim();
       const reason = `admin events upload ${eventId || "unbekannt"}`;
       const workerUrl = elements.workerUrl.value.trim();
-      const adminKey = elements.adminKey.value.trim();
+      const adminKey = getAdminKey();
       if (!workerUrl) { showToast("Worker-URL fehlt."); return; }
       if (!adminKey) { showToast("Admin-Key erforderlich."); return; }
       try {
@@ -2298,6 +2300,7 @@
         const values = JSON.parse(stored);
         elements.workerUrl.value = values.workerUrl || "https://ds-commit.hak1.workers.dev/write-file";
         elements.adminKey.value = values.adminKey || "";
+        dsroShared.saveAdminKey(values.adminKey || "");
         elements.branchSelect.value = values.branchSelect || "main";
         if (elements.branchSelect.value === "__custom") {
           elements.customBranchWrapper.classList.remove("hidden");
@@ -2310,6 +2313,7 @@
     }
 
     function persistSettings() {
+      dsroShared.saveAdminKey(elements.adminKey.value);
       if (!elements.remember.checked) {
         localStorage.removeItem("dsro-admin-settings");
         return;
@@ -2322,6 +2326,8 @@
       };
       localStorage.setItem("dsro-admin-settings", JSON.stringify(values));
     }
+
+    dsroShared.applyAdminKeyInput(elements.adminKey, { onChange: persistSettings });
 
     // Event listeners
     elements.dropzone.addEventListener("dragover", ev => {

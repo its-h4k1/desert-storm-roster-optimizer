@@ -48,6 +48,7 @@
   };
 
   let lastLoadedGeneratedAt = null;
+  const getAdminKey = () => dsroShared.getAdminKey(elements.adminKey?.value);
 
   function log(message) {
     if (!elements.statusLog) return;
@@ -237,6 +238,7 @@
         adminKey: elements.adminKey.value || "",
       };
       localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+      dsroShared.saveAdminKey(data.adminKey);
     } catch (err) {
       console.warn("Konnte Einstellungen nicht speichern", err);
     }
@@ -296,13 +298,13 @@
 
   async function persistAttendanceConfig(attendance) {
     const endpoint = (elements.workerUrl.value || "").trim() || dsroShared.DEFAULT_WORKER_BASE + "attendance-config";
-    const headers = {
-      "Content-Type": "application/json",
-      Accept: "application/json",
-    };
-    if (elements.adminKey.value) {
-      headers["X-Admin-Key"] = elements.adminKey.value;
-    }
+    const headers = dsroShared.buildAdminHeaders({
+      adminKey: getAdminKey(),
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+      },
+    });
     const payload = {
       attendance,
       ref: elements.branchInput.value || "main",
@@ -331,7 +333,7 @@
     await dsroShared.triggerRosterBuild({
       branch: elements.branchInput.value,
       reason: reasonText,
-      adminKey: elements.adminKey.value,
+      adminKey: getAdminKey(),
       workerUrl: elements.workerUrl.value,
     });
   }
@@ -425,6 +427,7 @@
 
   function init() {
     loadSettings();
+    dsroShared.applyAdminKeyInput(elements.adminKey, { onChange: storeSettings });
     wireInputs();
     loadAttendance();
   }

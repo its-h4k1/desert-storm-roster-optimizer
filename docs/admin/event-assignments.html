@@ -393,6 +393,7 @@
       };
 
       const SETTINGS_KEY = 'dsro-event-assignments-settings';
+      const getAdminKey = () => dsroShared.getAdminKey(elements.adminKey?.value);
       const canonicalNameJS = (window.dsroShared && typeof window.dsroShared.canonicalNameJS === 'function')
         ? window.dsroShared.canonicalNameJS
         : (value => {
@@ -1462,7 +1463,7 @@
       async function saveChanges() {
         if (state.loading || state.saving) return;
         const workerUrl = elements.workerUrl.value.trim();
-        const adminKey = elements.adminKey.value.trim();
+        const adminKey = getAdminKey();
         const branch = elements.branch.value.trim() || 'main';
         if (!workerUrl) { setStatus('Worker-URL fehlt.', 'error'); return; }
         if (!adminKey) { setStatus('Admin-Key erforderlich.', 'error'); return; }
@@ -1509,7 +1510,7 @@
       async function resetPool() {
         if (state.loading || state.saving) return;
         const workerUrl = elements.workerUrl.value.trim();
-        const adminKey = elements.adminKey.value.trim();
+        const adminKey = getAdminKey();
         const branch = elements.branch.value.trim() || 'main';
         if (!workerUrl) { setStatus('Worker-URL fehlt.', 'error'); return; }
         if (!adminKey) { setStatus('Admin-Key erforderlich.', 'error'); return; }
@@ -1556,7 +1557,10 @@
       }
 
       async function writeFile(workerUrl, adminKey, payload) {
-        const headers = { 'Content-Type': 'application/json', 'X-Admin-Key': adminKey };
+        const headers = dsroShared.buildAdminHeaders({
+          adminKey,
+          headers: { 'Content-Type': 'application/json' },
+        });
         const response = await fetch(workerUrl, { method:'POST', headers, body: JSON.stringify(payload) });
         if (!response.ok) { const text = await response.text().catch(() => ''); throw new Error(text || `HTTP ${response.status}`); }
         const result = await response.json().catch(() => ({}));
@@ -1567,6 +1571,7 @@
       function persistSettings() {
         const payload = { workerUrl: elements.workerUrl.value, branch: elements.branch.value, adminKey: elements.adminKey.value };
         localStorage.setItem(SETTINGS_KEY, JSON.stringify(payload));
+        dsroShared.saveAdminKey(payload.adminKey);
       }
       function restoreSettings() {
         const saved = localStorage.getItem(SETTINGS_KEY);
@@ -1575,7 +1580,10 @@
             const parsed = JSON.parse(saved);
             if (parsed.workerUrl) elements.workerUrl.value = parsed.workerUrl;
             if (parsed.branch) elements.branch.value = parsed.branch;
-            if (parsed.adminKey) elements.adminKey.value = parsed.adminKey;
+            if (parsed.adminKey) {
+              elements.adminKey.value = parsed.adminKey;
+              dsroShared.saveAdminKey(parsed.adminKey);
+            }
           } catch (err) { console.warn('Settings konnten nicht gelesen werden', err); }
         } else {
           const shared = localStorage.getItem('dsro-admin-settings');
@@ -1585,7 +1593,10 @@
               if (parsed.workerUrl) elements.workerUrl.value = parsed.workerUrl;
               if (parsed.customBranch) elements.branch.value = parsed.customBranch;
               if (parsed.branchSelect) elements.branch.value = parsed.branchSelect;
-              if (parsed.adminKey) elements.adminKey.value = parsed.adminKey;
+              if (parsed.adminKey) {
+                elements.adminKey.value = parsed.adminKey;
+                dsroShared.saveAdminKey(parsed.adminKey);
+              }
             } catch (err) { console.warn('Shared settings konnten nicht gelesen werden', err); }
           }
         }
@@ -1604,6 +1615,7 @@
         }
       }
 
+      dsroShared.applyAdminKeyInput(elements.adminKey, { onChange: persistSettings });
       restoreSettings();
       initEvents();
       initAutocompletes();

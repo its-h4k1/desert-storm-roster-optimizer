@@ -91,6 +91,7 @@
   }
 
   // Zentrale Admin-Konfiguration (u. a. Worker-Secret) liegt in localStorage unter "dsro-admin-settings".
+  // Admin-Seiten sollen den Key immer über diese Helper lesen/speichern, nicht über eigene Variablen.
   function writeSharedAdminSettings(update = {}) {
     if (typeof localStorage === "undefined") return null;
     try {
@@ -104,15 +105,19 @@
     }
   }
 
+  // Liefert den getrimmten Admin-Key aus dem Shared-Storage oder optionalen Fallbacks.
   function getAdminKey(fallback = "") {
     const shared = readSharedAdminSettings();
-    return (shared?.adminKey || fallback || "").toString();
+    return (shared?.adminKey || fallback || "").toString().trim();
   }
 
   function saveAdminKey(value) {
-    return writeSharedAdminSettings({ adminKey: (value || "").toString() });
+    return writeSharedAdminSettings({ adminKey: (value || "").toString().trim() });
   }
 
+  // Füllt ein Admin-Key-Input mit dem gespeicherten Wert und spiegelt Änderungen
+  // automatisch zurück in den Shared-Storage. Optional kann zusätzlich eine eigene
+  // onChange-Callback (z. B. Persistenz für Seiteneinstellungen) gehängt werden.
   function applyAdminKeyInput(input, { onChange } = {}) {
     if (!input) return () => {};
     const stored = getAdminKey();
@@ -133,6 +138,8 @@
     };
   }
 
+  // Baut einen Header-Satz mit X-Admin-Key (falls vorhanden). Sollte von allen
+  // Admin-Seiten für Worker-/API-Calls verwendet werden.
   function buildAdminHeaders({ adminKey, headers } = {}) {
     const base = { ...(headers || {}) };
     const key = (adminKey || getAdminKey() || "").trim();
