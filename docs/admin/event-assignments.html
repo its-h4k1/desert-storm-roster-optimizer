@@ -168,10 +168,10 @@
                 <div class="toolbar">
                   <div style="display:grid; gap:0.35rem; min-width:280px;">
                     <strong>Kontext nächstes Event</strong>
-                    <small class="hint" style="color:var(--text-muted);">Alle Einträge gelten für das kommende Event (aktuelles Roster). <code>Commitment=hard</code> = verbindliche Zusage / Fixplatz im nächsten Build; bei Event-Wechsel den Pool leeren.</small>
+                    <small class="hint" style="color:var(--text-muted);">Alle Einträge gelten für das kommende Event (aktuelles Roster). <code>Commitment=hard</code> = verbindliche Zusage / Fixplatz im nächsten Build; nach einem gespielten Event über „Neues Event vorbereiten“ leeren.</small>
                   </div>
                   <div class="toolbar-meta">
-                    <button id="resetBtn" class="ghost" style="border-color:var(--border);color:#b91c1c;">Zusage-Pool leeren</button>
+                    <button id="resetBtn" class="ghost" style="border-color:var(--border);color:#b91c1c;">Neues Event vorbereiten</button>
                     <div class="toolbar-actions">
                       <button id="reloadBtn" class="ghost">Neu laden</button>
                       <button id="saveBtn">Speichern</button>
@@ -1504,6 +1504,9 @@
         }
       }
 
+      // Manual post-event action: clears the "next event" pool and response overrides
+      // so R4/R5 can start from an empty slate for the following roster build.
+      // Assumes we intentionally drop all commitments/answers (no archiving here).
       async function resetPool() {
         if (state.loading || state.saving) return;
         const workerUrl = elements.workerUrl.value.trim();
@@ -1511,7 +1514,11 @@
         const branch = elements.branch.value.trim() || 'main';
         if (!workerUrl) { setStatus('Worker-URL fehlt.', 'error'); return; }
         if (!adminKey) { setStatus('Admin-Key erforderlich.', 'error'); return; }
-        const confirmReset = window.confirm('Pool wirklich leeren? Alle Zusagen für das nächste Event werden entfernt.');
+        const confirmReset = window.confirm(
+          'Neues Event vorbereiten?\n\nDamit werden alle Zusagen/Antworten für das bisherige "nächste" Event gelöscht ' +
+          'und leere Dateien event_signups_next.csv & event_responses_next.csv geschrieben. ' +
+          'Das ist der manuelle Startpunkt nach einem gespielten Event.'
+        );
         if (!confirmReset) return;
         const headers = state.headers.length ? state.headers : [...DEFAULT_HEADERS];
         const emptyCsv = buildCsv(headers, []);
@@ -1539,7 +1546,7 @@
           await refreshFileCommit(branch);
           renderAssignments();
           renderResponses();
-          setStatus('Pool & Responses geleert.', 'ok');
+          setStatus('Zusage-Pool & Antworten geleert: neues Event kann befüllt werden.', 'ok');
         } catch (err) {
           console.error(err);
           setStatus(`Reset fehlgeschlagen: ${err.message}`, 'error');
