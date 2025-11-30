@@ -635,6 +635,7 @@
       const repoName = "desert-storm-roster-optimizer";
       const defaultBranch = "main";
       const SETTINGS_KEY = "dsro-player-admin-settings";
+      const getAdminKey = () => dsroShared.getAdminKey(elements.adminKey?.value);
 
       // Diese Spalten kodieren das Allianz-Membership-Flag (InAlliance==1 bedeutet "im Roster").
       const ALLIANCE_MEMBERSHIP_COLUMNS = [
@@ -1528,7 +1529,7 @@
       async function saveChanges() {
         if (state.loading || state.saving) return;
         const workerUrl = elements.workerUrl.value.trim();
-        const adminKey = elements.adminKey.value.trim();
+        const adminKey = getAdminKey();
         const branch = elements.branch.value.trim() || defaultBranch;
         if (!workerUrl) {
           setStatus("Worker-URL fehlt.", "error");
@@ -1590,7 +1591,10 @@
       }
 
       async function writeFile(workerUrl, adminKey, payload) {
-        const headers = { "Content-Type": "application/json", "X-Admin-Key": adminKey };
+        const headers = dsroShared.buildAdminHeaders({
+          adminKey,
+          headers: { "Content-Type": "application/json" },
+        });
         const response = await fetch(workerUrl, {
           method: "POST",
           headers,
@@ -1614,7 +1618,10 @@
             const parsed = JSON.parse(saved);
             if (parsed.workerUrl) elements.workerUrl.value = parsed.workerUrl;
             if (parsed.branch) elements.branch.value = parsed.branch;
-            if (parsed.adminKey) elements.adminKey.value = parsed.adminKey;
+            if (parsed.adminKey) {
+              elements.adminKey.value = parsed.adminKey;
+              dsroShared.saveAdminKey(parsed.adminKey);
+            }
             return;
           } catch (err) {
             console.warn("Settings konnten nicht gelesen werden", err);
@@ -1630,7 +1637,10 @@
             } else if (parsed.branchSelect) {
               elements.branch.value = parsed.branchSelect;
             }
-            if (parsed.adminKey) elements.adminKey.value = parsed.adminKey;
+            if (parsed.adminKey) {
+              elements.adminKey.value = parsed.adminKey;
+              dsroShared.saveAdminKey(parsed.adminKey);
+            }
           } catch (err) {
             console.warn("Shared settings konnten nicht gelesen werden", err);
           }
@@ -1644,6 +1654,7 @@
           adminKey: elements.adminKey.value,
         };
         localStorage.setItem(SETTINGS_KEY, JSON.stringify(values));
+        dsroShared.saveAdminKey(values.adminKey);
       }
 
       function initEvents() {
@@ -1693,6 +1704,7 @@
         });
       }
 
+      dsroShared.applyAdminKeyInput(elements.adminKey, { onChange: persistSettings });
       restoreSettings();
       initEvents();
       reloadData();

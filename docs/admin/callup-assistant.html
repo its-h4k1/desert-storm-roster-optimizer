@@ -330,6 +330,7 @@
       };
 
       const SETTINGS_KEY = 'dsro-callups-settings';
+      const getAdminKey = () => dsroShared.getAdminKey(elements.adminKey?.value);
       const DEFAULT_HEADERS = ['EventID','PlayerName','Reminder1SentAt','Reminder1Result','Reminder2SentAt','Reminder2Result','FinalStatus','Notes'];
       const SIGNUP_HEADERS = ['PlayerName','Group','Role','Commitment','Source','Note'];
       const RAW_BASE = 'https://raw.githubusercontent.com/its-h4k1/desert-storm-roster-optimizer/main/';
@@ -1407,7 +1408,7 @@
       async function saveChanges() {
         if (state.loading || state.saving) return;
         const workerUrl = elements.workerUrl.value.trim();
-        const adminKey = elements.adminKey.value.trim();
+        const adminKey = getAdminKey();
         const branch = elements.branch.value.trim() || 'main';
         const eventId = elements.eventId.value.trim();
         if (!workerUrl) { setStatus('Worker-URL fehlt.', 'error'); return; }
@@ -1448,7 +1449,7 @@
       async function saveCallupConfig({ useDefaults = false } = {}) {
         if (state.loading || state.configSaving) return;
         const workerUrl = elements.workerUrl.value.trim();
-        const adminKey = elements.adminKey.value.trim();
+        const adminKey = getAdminKey();
         const branch = elements.branch.value.trim() || 'main';
         if (!workerUrl) { setStatus('Worker-URL fehlt.', 'error'); return; }
         if (!adminKey) { setStatus('Admin-Key erforderlich.', 'error'); return; }
@@ -1478,7 +1479,10 @@
       }
 
       async function writeFile(workerUrl, adminKey, payload) {
-        const headers = { 'Content-Type': 'application/json', 'X-Admin-Key': adminKey };
+        const headers = dsroShared.buildAdminHeaders({
+          adminKey,
+          headers: { 'Content-Type': 'application/json' },
+        });
         const res = await fetch(workerUrl, { method:'POST', headers, body: JSON.stringify(payload) });
         if (!res.ok) {
           const text = await res.text().catch(() => '');
@@ -1492,6 +1496,7 @@
       function persistSettings() {
         const values = { workerUrl: elements.workerUrl.value, branch: elements.branch.value, adminKey: elements.adminKey.value, eventId: elements.eventId.value, autoSyncSignups: elements.autoSyncSignups.checked };
         localStorage.setItem(SETTINGS_KEY, JSON.stringify(values));
+        dsroShared.saveAdminKey(values.adminKey);
       }
 
       function loadSettings() {
@@ -1504,7 +1509,10 @@
         const saved = loadSettings();
         if (saved.workerUrl) elements.workerUrl.value = saved.workerUrl;
         if (saved.branch) elements.branch.value = saved.branch;
-        if (saved.adminKey) elements.adminKey.value = saved.adminKey;
+        if (saved.adminKey) {
+          elements.adminKey.value = saved.adminKey;
+          dsroShared.saveAdminKey(saved.adminKey);
+        }
         if (saved.autoSyncSignups !== undefined) elements.autoSyncSignups.checked = Boolean(saved.autoSyncSignups);
         state.autoSyncSignups = elements.autoSyncSignups.checked;
         if (saved.eventId) { elements.eventId.value = saved.eventId; state.selectedEventId = saved.eventId; }
@@ -1552,6 +1560,7 @@
         });
       }
 
+      dsroShared.applyAdminKeyInput(elements.adminKey, { onChange: persistSettings });
       restoreSettings();
       initEvents();
       renderConfigInputs();
