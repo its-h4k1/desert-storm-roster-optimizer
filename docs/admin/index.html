@@ -206,6 +206,7 @@ itsH4K1,2025-11-14,2025-11-30,Ferien,1
   </div>
   <div class="admin-overlay"></div>
 
+  <script src="../shared.js"></script>
   <script src="admin.js"></script>
   <script>
     // ==== API-Konfiguration (Cloudflare Worker) ====
@@ -256,30 +257,33 @@ itsH4K1,2025-11-14,2025-11-30,Ferien,1
     };
 
     // ======= Einfacher Admin-Login (Shared Key) =======
-    let ADMIN_KEY = localStorage.getItem('ds_admin_key') || '';
     const authEmail = $('#authEmail');
     const btnLogin = $('#btnLogin');
     const btnLogout = $('#btnLogout');
 
+    function currentAdminKey() { return dsroShared.getAdminKey(); }
+
     function updateAuthUI() {
-      if (ADMIN_KEY) { authEmail.textContent = 'Admin'; show(btnLogin,false); show(btnLogout,true); }
+      const key = currentAdminKey();
+      if (key) { authEmail.textContent = 'Admin'; show(btnLogin,false); show(btnLogout,true); }
       else { authEmail.textContent = ''; show(btnLogin,true); show(btnLogout,false); }
     }
     updateAuthUI();
 
     btnLogin.addEventListener('click', () => {
       const k = prompt('Admin-Key eingeben (z. B. r4-admin)');
-      if (k) { ADMIN_KEY = k.trim(); localStorage.setItem('ds_admin_key', ADMIN_KEY); updateAuthUI(); }
+      if (k) { dsroShared.saveAdminKey(k.trim()); updateAuthUI(); }
     });
     btnLogout.addEventListener('click', () => {
-      ADMIN_KEY=''; localStorage.removeItem('ds_admin_key'); updateAuthUI();
+      dsroShared.saveAdminKey(''); updateAuthUI();
     });
 
     async function authedFetch(url, options = {}) {
-      if (!ADMIN_KEY) throw new Error('Nicht angemeldet (Admin-Key fehlt).');
-      const headers = Object.assign({}, options.headers || {}, {
-        'Content-Type': 'application/json',
-        'X-Admin-Key': ADMIN_KEY,
+      const adminKey = currentAdminKey();
+      if (!adminKey) throw new Error('Nicht angemeldet (Admin-Key fehlt).');
+      const headers = dsroShared.buildAdminHeaders({
+        adminKey,
+        headers: Object.assign({}, options.headers || {}, { 'Content-Type': 'application/json' }),
       });
       return fetch(url, Object.assign({}, options, { headers }));
     }

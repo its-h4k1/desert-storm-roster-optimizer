@@ -411,6 +411,7 @@
   </div>
 
   <script src="https://unpkg.com/papaparse@5.4.1/papaparse.min.js"></script>
+  <script src="../shared.js"></script>
   <script>
     (function(){
       const elements = {
@@ -451,6 +452,7 @@
         { value: "soft-A", label: "Bevorzugt A" },
         { value: "soft-B", label: "Bevorzugt B" },
       ];
+      const getAdminKey = () => (elements.adminKey.value || "").trim() || dsroShared.getAdminKey();
 
       function uiPrefToModel(value) {
         switch ((value || "none").toString()) {
@@ -735,7 +737,7 @@
       async function saveChanges() {
         if (state.loading || state.saving) return;
         const workerUrl = elements.workerUrl.value.trim();
-        const adminKey = elements.adminKey.value.trim();
+        const adminKey = getAdminKey();
         const branch = elements.branch.value.trim() || defaultBranch;
         if (!workerUrl) { setStatus("Worker-URL fehlt.", "error"); return; }
         if (!adminKey) { setStatus("Admin-Key erforderlich.", "error"); return; }
@@ -761,7 +763,10 @@
       }
 
       async function writeFile(workerUrl, adminKey, payload) {
-        const headers = { "Content-Type": "application/json", "X-Admin-Key": adminKey };
+        const headers = dsroShared.buildAdminHeaders({
+          adminKey,
+          headers: { "Content-Type": "application/json" },
+        });
         const response = await fetch(workerUrl, {
           method: "POST",
           headers,
@@ -799,6 +804,7 @@
             if (parsed.adminKey) elements.adminKey.value = parsed.adminKey;
           } catch (err) { console.warn("Shared settings konnten nicht gelesen werden", err); }
         }
+        dsroShared.saveAdminKey(elements.adminKey.value);
       }
 
       function persistSettings() {
@@ -808,6 +814,7 @@
           adminKey: elements.adminKey.value,
         };
         localStorage.setItem(SETTINGS_KEY, JSON.stringify(values));
+        dsroShared.saveAdminKey(values.adminKey);
       }
 
       function initEvents() {
@@ -823,6 +830,7 @@
         elements.adminKey.addEventListener("change", persistSettings);
       }
 
+      dsroShared.applyAdminKeyInput(elements.adminKey, { onChange: persistSettings });
       restoreSettings();
       initEvents();
       applyDensityMode(!elements.compactToggle || elements.compactToggle.checked !== false);
