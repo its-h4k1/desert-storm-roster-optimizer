@@ -552,7 +552,7 @@ label {
     box-shadow: var(--shadow-panel);
   }
 
-  body.sidebar-open .admin-sidebar {
+  .admin-shell.admin-nav-open .admin-sidebar {
     transform: translateX(0);
   }
 
@@ -564,7 +564,7 @@ label {
     opacity: 0;
   }
 
-  body.sidebar-open .admin-overlay {
+  .admin-shell.admin-nav-open + .admin-overlay {
     opacity: 1;
     pointer-events: auto;
   }

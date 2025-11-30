@@ -221,6 +221,36 @@
     return result;
   }
 
+  function initAdminLayout({ containerSelector = ".admin-shell", openClass = "admin-nav-open", closeBreakpoint = 1200 } = {}) {
+    if (typeof document === "undefined") return () => {};
+    const container = document.querySelector(containerSelector) || document.body;
+    const toggle = document.querySelector(".sidebar-toggle");
+    const close = document.querySelector(".sidebar-close");
+    const overlay = document.querySelector(".admin-overlay");
+
+    if (!container || (!toggle && !close && !overlay)) return () => {};
+
+    const toggleNav = () => container.classList.toggle(openClass);
+    const closeNav = () => container.classList.remove(openClass);
+    const handleResize = () => {
+      if (window.innerWidth >= closeBreakpoint) {
+        closeNav();
+      }
+    };
+
+    toggle?.addEventListener("click", toggleNav);
+    close?.addEventListener("click", closeNav);
+    overlay?.addEventListener("click", closeNav);
+    window.addEventListener("resize", handleResize);
+
+    return () => {
+      toggle?.removeEventListener("click", toggleNav);
+      close?.removeEventListener("click", closeNav);
+      overlay?.removeEventListener("click", closeNav);
+      window.removeEventListener("resize", handleResize);
+    };
+  }
+
   global.dsroShared = {
     canonicalNameJS,
     escapeHtml,
@@ -237,5 +267,6 @@
     saveAdminKey,
     applyAdminKeyInput,
     buildAdminHeaders,
+    initAdminLayout,
   };
 })(typeof window !== "undefined" ? window : globalThis);
