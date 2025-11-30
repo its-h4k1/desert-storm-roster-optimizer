@@ -90,6 +90,58 @@
     }
   }
 
+  // Zentrale Admin-Konfiguration (u. a. Worker-Secret) liegt in localStorage unter "dsro-admin-settings".
+  function writeSharedAdminSettings(update = {}) {
+    if (typeof localStorage === "undefined") return null;
+    try {
+      const current = readSharedAdminSettings() || {};
+      const next = { ...current, ...update };
+      localStorage.setItem("dsro-admin-settings", JSON.stringify(next));
+      return next;
+    } catch (err) {
+      console.warn("Konnte dsro-admin-settings nicht speichern", err);
+      return null;
+    }
+  }
+
+  function getAdminKey(fallback = "") {
+    const shared = readSharedAdminSettings();
+    return (shared?.adminKey || fallback || "").toString();
+  }
+
+  function saveAdminKey(value) {
+    return writeSharedAdminSettings({ adminKey: (value || "").toString() });
+  }
+
+  function applyAdminKeyInput(input, { onChange } = {}) {
+    if (!input) return () => {};
+    const stored = getAdminKey();
+    if (stored && !input.value) {
+      input.value = stored;
+    }
+    const handler = () => {
+      const trimmed = (input.value || "").trim();
+      saveAdminKey(trimmed);
+      if (typeof onChange === "function") onChange(trimmed);
+    };
+    input.addEventListener("input", handler);
+    input.addEventListener("change", handler);
+    handler();
+    return () => {
+      input.removeEventListener("input", handler);
+      input.removeEventListener("change", handler);
+    };
+  }
+
+  function buildAdminHeaders({ adminKey, headers } = {}) {
+    const base = { ...(headers || {}) };
+    const key = (adminKey || getAdminKey() || "").trim();
+    if (key) {
+      base["X-Admin-Key"] = key;
+    }
+    return base;
+  }
+
   function resolveDispatchUrl({ workerUrl, dispatchUrl } = {}) {
     const fallback = DEFAULT_DISPATCH_URL;
     const candidate = (dispatchUrl || workerUrl || "").trim();
@@ -172,5 +224,11 @@
     RosterBuildTriggerError,
     DEFAULT_WORKER_BASE,
     DEFAULT_DISPATCH_URL,
+    readSharedAdminSettings,
+    writeSharedAdminSettings,
+    getAdminKey,
+    saveAdminKey,
+    applyAdminKeyInput,
+    buildAdminHeaders,
   };
 })(typeof window !== "undefined" ? window : globalThis);

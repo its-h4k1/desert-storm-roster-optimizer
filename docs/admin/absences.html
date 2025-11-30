@@ -357,6 +357,7 @@
   <datalist id="playerOptions"></datalist>
 
   <script src="https://unpkg.com/papaparse@5.4.1/papaparse.min.js"></script>
+  <script src="../shared.js"></script>
   <script>
     (function () {
       const elements = {
@@ -393,6 +394,8 @@
       const repoName = "desert-storm-roster-optimizer";
       const defaultBranch = "main";
       const DEFAULT_HEADERS = ["PlayerName", "From", "To", "Reason", "InAlliance"];
+
+      const getAdminKey = () => (elements.adminKey.value || "").trim() || dsroShared.getAdminKey();
 
       function getBranch() {
         const raw = elements.branch.value.trim();
@@ -726,7 +729,7 @@
       async function saveChanges() {
         if (state.loading || state.saving) return;
         const workerUrl = elements.workerUrl.value.trim();
-        const adminKey = elements.adminKey.value.trim();
+        const adminKey = getAdminKey();
         const branch = getBranch();
         if (!workerUrl) { setStatus("Worker-URL fehlt.", "error"); return; }
         if (!adminKey) { setStatus("Admin-Key erforderlich.", "error"); return; }
@@ -758,7 +761,10 @@
       }
 
       async function writeFile(workerUrl, adminKey, payload) {
-        const headers = { "Content-Type": "application/json", "X-Admin-Key": adminKey };
+        const headers = dsroShared.buildAdminHeaders({
+          adminKey,
+          headers: { "Content-Type": "application/json" },
+        });
         const response = await fetch(workerUrl, {
           method: "POST",
           headers,
@@ -801,6 +807,7 @@
             }
           }
         }
+        dsroShared.saveAdminKey(elements.adminKey.value);
       }
 
       function persistSettings() {
@@ -810,6 +817,7 @@
           adminKey: elements.adminKey.value,
         };
         localStorage.setItem(SETTINGS_KEY, JSON.stringify(values));
+        dsroShared.saveAdminKey(values.adminKey);
       }
 
       function initEvents() {
@@ -824,6 +832,7 @@
         elements.adminKey.addEventListener("change", persistSettings);
       }
 
+      dsroShared.applyAdminKeyInput(elements.adminKey, { onChange: persistSettings });
       restoreSettings();
       initEvents();
       reloadData();
