@@ -124,6 +124,47 @@
       cursor: not-allowed;
     }
 
+    .admin-key-banner {
+      background: #f8fafc;
+      border: 1px solid var(--border);
+      border-radius: 0.85rem;
+      padding: 0.75rem 0.9rem;
+      display: grid;
+      gap: 0.5rem;
+      min-width: 240px;
+    }
+
+    .admin-key-status {
+      font-size: 0.9rem;
+      color: #1f2937;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .admin-key-status.ok {
+      color: #0f7b43;
+    }
+
+    .admin-key-status.warn {
+      color: #991b1b;
+    }
+
+    .admin-key-fallback {
+      display: grid;
+      gap: 0.4rem;
+      align-items: start;
+    }
+
+    .admin-key-fallback label {
+      margin: 0;
+    }
+
+    .admin-key-fallback small {
+      color: #6b7280;
+      line-height: 1.4;
+    }
+
     .page-main {
       flex: 1;
       padding: 0;
@@ -461,11 +502,18 @@
                 <label>Branch
                   <input id="branchInput" type="text" value="main" spellcheck="false">
                 </label>
-                <label>Admin-Key
-                  <input id="adminKey" type="password" placeholder="r4-admin" autocomplete="off">
-                </label>
                 <button id="reloadBtn" class="ghost">Neu laden</button>
                 <button id="saveBtn">Speichern</button>
+              </div>
+              <div class="admin-key-banner" id="adminKeyBanner">
+                <div id="adminKeyStatus" class="admin-key-status">Admin-Key wird geprüft…</div>
+                <div class="admin-key-fallback hidden" id="adminKeyFallback">
+                  <small>Kein Admin-Key gefunden? Optional hier kurz hinterlegen (wird zentral gespeichert).</small>
+                  <label>Admin-Key (Fallback)
+                    <input id="adminKey" type="password" placeholder="Admin-Key eingeben" autocomplete="off">
+                  </label>
+                  <button id="applyAdminKeyBtn" class="ghost" type="button">Admin-Key übernehmen</button>
+                </div>
               </div>
             </header>
           <main class="page-main">
@@ -571,12 +619,16 @@
   </div>
 
   <script src="https://unpkg.com/papaparse@5.4.1/papaparse.min.js"></script>
+  <script src="../shared.js"></script>
   <script>
     (function () {
       const elements = {
         workerUrl: document.getElementById("workerUrl"),
         branch: document.getElementById("branchInput"),
         adminKey: document.getElementById("adminKey"),
+        adminKeyStatus: document.getElementById("adminKeyStatus"),
+        adminKeyFallback: document.getElementById("adminKeyFallback"),
+        applyAdminKeyBtn: document.getElementById("applyAdminKeyBtn"),
         reloadBtn: document.getElementById("reloadBtn"),
         saveBtn: document.getElementById("saveBtn"),
         playerSearch: document.getElementById("playerSearch"),
@@ -635,7 +687,7 @@
       const repoName = "desert-storm-roster-optimizer";
       const defaultBranch = "main";
       const SETTINGS_KEY = "dsro-player-admin-settings";
-      const getAdminKey = () => dsroShared.getAdminKey(elements.adminKey?.value);
+      const getAdminKey = () => dsroShared.getAdminKey();
 
       // Diese Spalten kodieren das Allianz-Membership-Flag (InAlliance==1 bedeutet "im Roster").
       const ALLIANCE_MEMBERSHIP_COLUMNS = [
@@ -720,6 +772,33 @@
         return ensureTrailingNewline([headerLine, ...lines].join("\n"));
       }
 
+      function updateAdminKeyStatus() {
+        const adminKey = getAdminKey();
+        const hasKey = !!adminKey;
+        if (elements.adminKeyStatus) {
+          elements.adminKeyStatus.textContent = hasKey
+            ? "Admin-Key ist gesetzt (aus zentraler Verwaltung)."
+            : "Kein Admin-Key gesetzt – bitte über die Admin-Startseite einloggen.";
+          elements.adminKeyStatus.className = "admin-key-status " + (hasKey ? "ok" : "warn");
+        }
+        if (elements.adminKeyFallback) {
+          elements.adminKeyFallback.classList.toggle("hidden", hasKey);
+        }
+        updateSaveButtonState();
+      }
+
+      function applyAdminKeyFromFallback() {
+        if (!elements.adminKey) return;
+        const value = (elements.adminKey.value || "").trim();
+        if (!value) {
+          setStatus("Kein Admin-Key eingegeben.", "warn");
+          return;
+        }
+        dsroShared.saveAdminKey(value);
+        updateAdminKeyStatus();
+        setStatus("Admin-Key gespeichert (zentraler Store).", "ok");
+      }
+
       function setStatus(message, tone = "info") {
         const badge = elements.statusBadge;
         const text = elements.statusText;
@@ -745,7 +824,8 @@
 
       function updateSaveButtonState() {
         const hasChanges = hasAllianceChanged() || hasAliasChanged() || hasAbsenceChanged();
-        elements.saveBtn.disabled = state.loading || state.saving || !hasChanges;
+        const hasAdminKey = !!getAdminKey();
+        elements.saveBtn.disabled = state.loading || state.saving || !hasChanges || !hasAdminKey;
         elements.saveBtn.textContent = state.saving ? "Speichert…" : "Speichern";
       }
 
@@ -1536,7 +1616,7 @@
           return;
         }
         if (!adminKey) {
-          setStatus("Admin-Key erforderlich.", "error");
+          setStatus("Kein Admin-Key gesetzt – bitte über die Admin-Startseite einloggen.", "error");
           return;
         }
         const payloads = [];
@@ -1619,8 +1699,10 @@
             if (parsed.workerUrl) elements.workerUrl.value = parsed.workerUrl;
             if (parsed.branch) elements.branch.value = parsed.branch;
             if (parsed.adminKey) {
-              elements.adminKey.value = parsed.adminKey;
               dsroShared.saveAdminKey(parsed.adminKey);
+              if (elements.adminKey && !elements.adminKey.value) {
+                elements.adminKey.value = parsed.adminKey;
+              }
             }
             return;
           } catch (err) {
@@ -1638,7 +1720,6 @@
               elements.branch.value = parsed.branchSelect;
             }
             if (parsed.adminKey) {
-              elements.adminKey.value = parsed.adminKey;
               dsroShared.saveAdminKey(parsed.adminKey);
             }
           } catch (err) {
@@ -1651,10 +1732,8 @@
         const values = {
           workerUrl: elements.workerUrl.value,
           branch: elements.branch.value,
-          adminKey: elements.adminKey.value,
         };
         localStorage.setItem(SETTINGS_KEY, JSON.stringify(values));
-        dsroShared.saveAdminKey(values.adminKey);
       }
 
       function initEvents() {
@@ -1672,7 +1751,6 @@
         elements.reloadBtn.addEventListener("click", () => reloadData());
         elements.saveBtn.addEventListener("click", () => saveChanges());
         elements.workerUrl.addEventListener("change", persistSettings);
-        elements.adminKey.addEventListener("change", persistSettings);
         elements.branch.addEventListener("change", persistSettings);
         if (elements.aliasesTabButton) {
           elements.aliasesTabButton.addEventListener("click", () => {
@@ -1702,15 +1780,18 @@
             applyPlayerRename();
           }
         });
+        if (elements.applyAdminKeyBtn) {
+          elements.applyAdminKeyBtn.addEventListener("click", () => applyAdminKeyFromFallback());
+        }
       }
 
-      dsroShared.applyAdminKeyInput(elements.adminKey, { onChange: persistSettings });
+      dsroShared.applyAdminKeyInput(elements.adminKey, { onChange: updateAdminKeyStatus });
       restoreSettings();
+      updateAdminKeyStatus();
       initEvents();
       reloadData();
     })();
   </script>
-  <script src="../shared.js"></script>
   <script src="admin.js"></script>
 </body>
 </html>
