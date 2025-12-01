@@ -149,6 +149,44 @@
       flex: none;
     }
 
+    .info-box {
+      font-size: 0.9rem;
+      padding: 0.75rem 0.9rem;
+      border-radius: 0.75rem;
+      border: 1px solid var(--border);
+      background: var(--panel);
+    }
+
+    .info-box.ok {
+      border-color: rgba(37, 96, 41, 0.3);
+      background: rgba(37, 96, 41, 0.06);
+      color: #256029;
+    }
+
+    .info-box.warn {
+      border-color: rgba(217, 119, 6, 0.35);
+      background: rgba(217, 119, 6, 0.08);
+      color: #92400e;
+    }
+
+    .info-box small {
+      display: block;
+      color: var(--text-muted);
+      margin-top: 0.35rem;
+      font-size: 0.8rem;
+    }
+
+    .inline-input {
+      display: flex;
+      gap: 0.5rem;
+      align-items: center;
+      margin-top: 0.4rem;
+    }
+
+    .inline-input input {
+      flex: 1 1 auto;
+    }
+
     .dropzone {
       border: 2px dashed rgba(102, 224, 163, 0.6);
       border-radius: 0.9rem;
@@ -592,10 +630,19 @@
                     Worker URL
                     <input type="url" id="worker-url" value="https://ds-commit.hak1.workers.dev/write-file">
                   </label>
-                  <label>
-                    Admin Key (X-Admin-Key)
-                    <input type="password" id="admin-key" placeholder="••••••">
-                  </label>
+                  <div id="admin-key-status" class="info-box warn">
+                    Kein Admin-Key gesetzt – bitte über die Admin-Startseite einloggen.
+                  </div>
+                  <div id="admin-key-fallback" class="hidden">
+                    <div class="info-box" style="margin-top:0.5rem;">
+                      <strong>Fallback für den Admin-Key</strong>
+                      <small>Nur nutzen, falls der Key aus der zentralen Verwaltung fehlt.</small>
+                      <div class="inline-input">
+                        <input type="password" id="admin-key" placeholder="Admin-Key einfügen">
+                        <button type="button" id="admin-key-apply">Übernehmen</button>
+                      </div>
+                    </div>
+                  </div>
                   <label class="inline">
                     <input type="checkbox" id="remember-settings">
                     <span>Einstellungen merken</span>
@@ -690,6 +737,9 @@
       strategy: document.getElementById("strategy-select"),
       workerUrl: document.getElementById("worker-url"),
       adminKey: document.getElementById("admin-key"),
+      adminKeyStatus: document.getElementById("admin-key-status"),
+      adminKeyFallback: document.getElementById("admin-key-fallback"),
+      adminKeyApply: document.getElementById("admin-key-apply"),
       remember: document.getElementById("remember-settings"),
       saveBtn: document.getElementById("save-btn"),
       buildBtn: document.getElementById("build-btn"),
@@ -723,6 +773,20 @@
     };
 
     const getAdminKey = () => dsroShared.getAdminKey(elements.adminKey?.value);
+
+    function updateAdminKeyUi() {
+      const adminKey = getAdminKey();
+      if (elements.adminKeyStatus) {
+        elements.adminKeyStatus.textContent = adminKey
+          ? "Admin-Key ist gesetzt (aus zentraler Verwaltung)."
+          : "Kein Admin-Key gesetzt – bitte über die Admin-Startseite einloggen.";
+        elements.adminKeyStatus.classList.toggle("ok", Boolean(adminKey));
+        elements.adminKeyStatus.classList.toggle("warn", !adminKey);
+      }
+      if (elements.adminKeyFallback) {
+        elements.adminKeyFallback.classList.toggle("hidden", Boolean(adminKey));
+      }
+    }
 
     const EVENT_ID_PATTERN = /^DS-\d{4}-\d{2}-\d{2}-[A-Z]$/;
 
@@ -1256,6 +1320,11 @@
         validationErrors.push({ type: "worker", message: "Worker URL darf nicht leer sein" });
       }
 
+      const adminKey = getAdminKey();
+      if (!adminKey) {
+        validationErrors.push({ type: "admin-key", message: "Admin-Key fehlt (bitte über Admin-Startseite einloggen)." });
+      }
+
       lastNameValidation = collectNameValidationState(data);
       if (lastNameValidation.unresolved.length) {
         const unresolvedType = allowSaveOverride ? "warning" : "names";
@@ -1285,6 +1354,7 @@
       const hasBranchError = validationErrors.some(v => v.type === "branch");
       const hasWorkerError = validationErrors.some(v => v.type === "worker");
       const hasEventError = validationErrors.some(v => v.type === "event");
+      const hasAdminKeyError = validationErrors.some(v => v.type === "admin-key");
       const unresolvedBlocked = lastNameValidation.unresolved.length > 0 && !allowSaveOverride;
       const canSaveState = canSave({
         rowCount: data.length,
@@ -1292,6 +1362,7 @@
         hasBranchError,
         hasWorkerError,
         hasEventError,
+        hasAdminKeyError,
         unresolvedBlocked,
       });
       elements.saveBtn.disabled = !canSaveState;
@@ -1397,6 +1468,7 @@
       if (state.hasBranchError) return false;
       if (state.hasWorkerError) return false;
       if (state.hasEventError) return false;
+      if (state.hasAdminKeyError) return false;
       if (state.unresolvedBlocked) return false;
       return true;
     }
@@ -1917,6 +1989,12 @@
         return;
       }
 
+      if (!adminKey) {
+        updateAdminKeyUi();
+        showToast("Admin-Key fehlt – bitte über die Admin-Startseite einloggen oder Fallback setzen.");
+        return;
+      }
+
       try {
         const filePath = `data/${eventId}.csv`;
         if (strategy === "abort-if-exists") {
@@ -2254,7 +2332,11 @@
       const workerUrl = elements.workerUrl.value.trim();
       const adminKey = getAdminKey();
       if (!workerUrl) { showToast("Worker-URL fehlt."); return; }
-      if (!adminKey) { showToast("Admin-Key erforderlich."); return; }
+      if (!adminKey) {
+        updateAdminKeyUi();
+        showToast("Admin-Key fehlt – bitte über die Admin-Startseite einloggen oder Fallback setzen.");
+        return;
+      }
       try {
         const trigger = window.dsroShared?.triggerRosterBuild;
         if (typeof trigger !== "function") {
@@ -2294,42 +2376,60 @@
     }
 
     function restoreSettings() {
-      const stored = localStorage.getItem("dsro-admin-settings");
-      if (!stored) return;
       try {
-        const values = JSON.parse(stored);
+        const values = (dsroShared.readSharedAdminSettings && dsroShared.readSharedAdminSettings()) || {};
         elements.workerUrl.value = values.workerUrl || "https://ds-commit.hak1.workers.dev/write-file";
-        elements.adminKey.value = values.adminKey || "";
-        dsroShared.saveAdminKey(values.adminKey || "");
         elements.branchSelect.value = values.branchSelect || "main";
         if (elements.branchSelect.value === "__custom") {
           elements.customBranchWrapper.classList.remove("hidden");
           elements.customBranch.value = values.customBranch || "";
         }
-        elements.remember.checked = true;
+        elements.remember.checked = Boolean(values.workerUrl || values.branchSelect || values.customBranch);
       } catch (err) {
         console.warn("Settings konnten nicht geladen werden", err);
       }
+      updateAdminKeyUi();
     }
 
     function persistSettings() {
-      dsroShared.saveAdminKey(elements.adminKey.value);
       if (!elements.remember.checked) {
-        localStorage.removeItem("dsro-admin-settings");
+        const current = dsroShared.readSharedAdminSettings ? { ...(dsroShared.readSharedAdminSettings() || {}) } : {};
+        delete current.workerUrl;
+        delete current.branchSelect;
+        delete current.customBranch;
+        if (typeof dsroShared.writeSharedAdminSettings === "function") {
+          dsroShared.writeSharedAdminSettings(current);
+        }
         return;
       }
       const values = {
         workerUrl: elements.workerUrl.value,
-        adminKey: elements.adminKey.value,
         branchSelect: elements.branchSelect.value,
         customBranch: elements.customBranch.value,
       };
-      localStorage.setItem("dsro-admin-settings", JSON.stringify(values));
+      if (typeof dsroShared.writeSharedAdminSettings === "function") {
+        dsroShared.writeSharedAdminSettings(values);
+      }
     }
 
-    dsroShared.applyAdminKeyInput(elements.adminKey, { onChange: persistSettings });
+    dsroShared.applyAdminKeyInput(elements.adminKey, {
+      onChange: () => {
+        updateAdminKeyUi();
+        refreshValidationState();
+      },
+    });
 
     // Event listeners
+    if (elements.adminKeyApply) {
+      elements.adminKeyApply.addEventListener("click", () => {
+        const value = (elements.adminKey?.value || "").trim();
+        dsroShared.saveAdminKey(value);
+        updateAdminKeyUi();
+        refreshValidationState();
+        showToast(value ? "Admin-Key übernommen (Fallback)." : "Admin-Key entfernt.");
+      });
+    }
+
     elements.dropzone.addEventListener("dragover", ev => {
       ev.preventDefault();
       elements.dropzone.classList.add("dragover");
@@ -2363,7 +2463,7 @@
       refreshValidationState();
     });
 
-    [elements.eventId, elements.customBranch, elements.workerUrl, elements.adminKey].forEach(el => {
+    [elements.eventId, elements.customBranch, elements.workerUrl].forEach(el => {
       el.addEventListener("input", () => {
         refreshValidationState();
         persistSettings();
