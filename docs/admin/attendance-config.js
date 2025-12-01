@@ -17,7 +17,9 @@
   const elements = {
     workerUrl: $("#workerUrl"),
     branchInput: $("#branchInput"),
-    adminKey: $("#adminKey"),
+    adminKeyStatus: $("#adminKeyStatus"),
+    adminKeyFallback: $("#adminKeyFallback"),
+    adminKeyFallbackBtn: $("#adminKeyFallbackBtn"),
     reloadBtn: $("#reloadBtn"),
     saveBtn: $("#saveBtn"),
     statusPill: $("#statusPill"),
@@ -48,7 +50,7 @@
   };
 
   let lastLoadedGeneratedAt = null;
-  const getAdminKey = () => dsroShared.getAdminKey(elements.adminKey?.value);
+  const getAdminKey = () => dsroShared.getAdminKey();
 
   function log(message) {
     if (!elements.statusLog) return;
@@ -224,7 +226,6 @@
       const data = JSON.parse(raw);
       if (data.workerUrl) elements.workerUrl.value = data.workerUrl;
       if (data.branch) elements.branchInput.value = data.branch;
-      if (data.adminKey) elements.adminKey.value = data.adminKey;
     } catch (err) {
       console.warn("Konnte gespeicherte Einstellungen nicht laden", err);
     }
@@ -235,10 +236,8 @@
       const data = {
         workerUrl: elements.workerUrl.value || "",
         branch: elements.branchInput.value || "",
-        adminKey: elements.adminKey.value || "",
       };
       localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
-      dsroShared.saveAdminKey(data.adminKey);
     } catch (err) {
       console.warn("Konnte Einstellungen nicht speichern", err);
     }
@@ -339,15 +338,20 @@
   }
 
   function disableForm(disabled) {
-    elements.saveBtn.disabled = disabled;
+    elements.saveBtn.disabled = disabled || !getAdminKey();
     elements.reloadBtn.disabled = disabled;
     elements.workerUrl.disabled = disabled;
     elements.branchInput.disabled = disabled;
-    elements.adminKey.disabled = disabled;
   }
 
   async function saveAndRebuild() {
     const attendance = collectAttendanceFromForm();
+    const adminKey = getAdminKey();
+    if (!adminKey) {
+      log("Kein Admin-Key gesetzt – bitte über die Admin-Startseite einloggen oder den Fallback nutzen.");
+      setPill(elements.statusPill, "Admin-Key fehlt", "warning");
+      return;
+    }
     storeSettings();
     disableForm(true);
     setPill(elements.statusPill, "Speichere…", "muted");
@@ -423,12 +427,34 @@
     sliders.forEach((el) => el?.addEventListener("input", updateValueLabels));
     elements.reloadBtn?.addEventListener("click", () => loadAttendance());
     elements.saveBtn?.addEventListener("click", () => saveAndRebuild());
+    elements.adminKeyFallbackBtn?.addEventListener("click", () => {
+      const raw = elements.adminKeyFallback?.value?.trim();
+      if (!raw) return;
+      dsroShared.saveAdminKey(raw);
+      elements.adminKeyFallback.value = "";
+      refreshAdminKeyState();
+    });
+  }
+
+  function refreshAdminKeyState() {
+    const adminKey = getAdminKey();
+    if (adminKey) {
+      setPill(elements.adminKeyStatus, "Admin-Key ist gesetzt (aus zentraler Verwaltung).", "success");
+      elements.saveBtn.disabled = false;
+    } else {
+      setPill(
+        elements.adminKeyStatus,
+        "Kein Admin-Key gesetzt – bitte über die Admin-Startseite einloggen.",
+        "warning",
+      );
+      elements.saveBtn.disabled = true;
+    }
   }
 
   function init() {
     loadSettings();
-    dsroShared.applyAdminKeyInput(elements.adminKey, { onChange: storeSettings });
     wireInputs();
+    refreshAdminKeyState();
     loadAttendance();
   }
 

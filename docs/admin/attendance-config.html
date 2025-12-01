@@ -59,9 +59,14 @@
                 <label>Branch
                   <input id="branchInput" type="text" value="main" spellcheck="false">
                 </label>
-                <label>Admin-Key
-                  <input id="adminKey" type="password" placeholder="r4-admin" autocomplete="off">
-                </label>
+                <div class="hint" style="margin:0;min-width:220px;">
+                  <div id="adminKeyStatus" class="pill muted" style="margin-bottom:0.35rem;">Admin-Key prüfen…</div>
+                  <div style="display:flex;gap:0.35rem;align-items:center;flex-wrap:wrap;">
+                    <input id="adminKeyFallback" type="password" placeholder="Fallback-Admin-Key" autocomplete="off" style="flex:1;min-width:160px;">
+                    <button id="adminKeyFallbackBtn" class="ghost" type="button">Fallback setzen</button>
+                  </div>
+                  <div class="hint" style="margin-top:0.25rem;">Nur nutzen, falls der zentrale Login nicht gesetzt ist.</div>
+                </div>
                 <button id="reloadBtn" class="ghost">Neu laden</button>
                 <button id="saveBtn" class="secondary">Speichern &amp; Roster neu bauen</button>
                 <div id="statusPill" class="pill">Bereit</div>
