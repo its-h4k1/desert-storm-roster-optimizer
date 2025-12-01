@@ -772,7 +772,7 @@
       error: document.getElementById("resolver-error"),
     };
 
-    const getAdminKey = () => dsroShared.getAdminKey(elements.adminKey?.value);
+    const getAdminKey = () => dsroShared.getAdminKey();
 
     function updateAdminKeyUi() {
       const adminKey = getAdminKey();
@@ -2413,6 +2413,7 @@
     }
 
     dsroShared.applyAdminKeyInput(elements.adminKey, {
+      syncOnInput: false,
       onChange: () => {
         updateAdminKeyUi();
         refreshValidationState();

@@ -115,10 +115,12 @@
     return writeSharedAdminSettings({ adminKey: (value || "").toString().trim() });
   }
 
-  // Füllt ein Admin-Key-Input mit dem gespeicherten Wert und spiegelt Änderungen
-  // automatisch zurück in den Shared-Storage. Optional kann zusätzlich eine eigene
-  // onChange-Callback (z. B. Persistenz für Seiteneinstellungen) gehängt werden.
-  function applyAdminKeyInput(input, { onChange } = {}) {
+  // Füllt ein Admin-Key-Input mit dem gespeicherten Wert und kann Änderungen
+  // automatisch zurück in den Shared-Storage spiegeln. Optional kann zusätzlich
+  // eine eigene onChange-Callback (z. B. Persistenz für Seiteneinstellungen)
+  // gehängt werden. Mit syncOnInput=false werden Eingaben nur vorbefüllt und
+  // onChange ohne Speichern aufgerufen.
+  function applyAdminKeyInput(input, { onChange, syncOnInput = true } = {}) {
     if (!input) return () => {};
     const stored = getAdminKey();
     if (stored && !input.value) {
@@ -126,12 +128,13 @@
     }
     const handler = () => {
       const trimmed = (input.value || "").trim();
-      saveAdminKey(trimmed);
+      if (syncOnInput) saveAdminKey(trimmed);
       if (typeof onChange === "function") onChange(trimmed);
     };
+    handler();
+    if (!syncOnInput) return () => {};
     input.addEventListener("input", handler);
     input.addEventListener("change", handler);
-    handler();
     return () => {
       input.removeEventListener("input", handler);
       input.removeEventListener("change", handler);
