@@ -154,6 +154,9 @@
                           <span style="display:block; font-size:0.85rem; color:var(--text-muted);">Fallback setzen</span>
                           <input id="adminKeyFallback" type="password" placeholder="Optional – wird zentral gespeichert" autocomplete="off">
                         </label>
+                        <div class="settings-actions" style="margin:0;justify-content:flex-start;">
+                          <button id="adminKeyFallbackBtn" type="button">Admin-Key übernehmen</button>
+                        </div>
                         <small class="hint" style="color:var(--text-muted);">Nur nutzen, falls der zentrale Login noch nicht gesetzt wurde.</small>
                       </div>
                     </div>
@@ -372,6 +375,7 @@
         branch: document.getElementById('branchInput'),
         adminKeyFallback: document.getElementById('adminKeyFallback'),
         adminKeyFallbackRow: document.getElementById('adminKeyFallbackRow'),
+        adminKeyFallbackBtn: document.getElementById('adminKeyFallbackBtn'),
         adminKeyStatus: document.getElementById('adminKeyStatus'),
         adminKeyAlert: document.getElementById('adminKeyAlert'),
         reloadBtn: document.getElementById('reloadBtn'),
@@ -409,7 +413,7 @@
       };
 
       const SETTINGS_KEY = 'dsro-event-assignments-settings';
-      const getAdminKey = () => dsroShared.getAdminKey(elements.adminKeyFallback?.value);
+      const getAdminKey = () => dsroShared.getAdminKey();
       const canonicalNameJS = (window.dsroShared && typeof window.dsroShared.canonicalNameJS === 'function')
         ? window.dsroShared.canonicalNameJS
         : (value => {
@@ -1626,12 +1630,20 @@
         }
       }
 
+      function applyFallbackAdminKey() {
+        if (!elements.adminKeyFallback) return;
+        const value = (elements.adminKeyFallback.value || '').trim();
+        dsroShared.saveAdminKey(value);
+        updateAdminKeyStatus();
+      }
+
       function initEvents() {
         elements.reloadBtn.addEventListener('click', reloadData);
         elements.saveBtn.addEventListener('click', saveChanges);
         elements.addBtn.addEventListener('click', addAssignment);
         if (elements.addResponseBtn) elements.addResponseBtn.addEventListener('click', addResponse);
         if (elements.resetBtn) elements.resetBtn.addEventListener('click', resetPool);
+        if (elements.adminKeyFallbackBtn) elements.adminKeyFallbackBtn.addEventListener('click', applyFallbackAdminKey);
         ['workerUrl','branch'].forEach(key => elements[key].addEventListener('change', persistSettings));
         elements.playerInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); addAssignment(); } });
         if (elements.responsePlayerInput) {
@@ -1639,7 +1651,7 @@
         }
       }
 
-      dsroShared.applyAdminKeyInput(elements.adminKeyFallback, { onChange: updateAdminKeyStatus });
+      dsroShared.applyAdminKeyInput(elements.adminKeyFallback, { syncOnInput: false });
       restoreSettings();
       updateAdminKeyStatus();
       initEvents();

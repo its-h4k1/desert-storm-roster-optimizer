@@ -19,6 +19,7 @@
     branchInput: $("#branchInput"),
     adminKeyStatus: $("#adminKeyStatus"),
     adminKeyFallback: $("#adminKeyFallback"),
+    adminKeyFallbackRow: $("#adminKeyFallbackRow"),
     adminKeyFallbackBtn: $("#adminKeyFallbackBtn"),
     reloadBtn: $("#reloadBtn"),
     saveBtn: $("#saveBtn"),
@@ -449,9 +450,13 @@
       );
       elements.saveBtn.disabled = true;
     }
+    if (elements.adminKeyFallbackRow) {
+      elements.adminKeyFallbackRow.style.display = adminKey ? "none" : "block";
+    }
   }
 
   function init() {
+    dsroShared.applyAdminKeyInput(elements.adminKeyFallback, { syncOnInput: false });
     loadSettings();
     wireInputs();
     refreshAdminKeyState();

@@ -1785,7 +1785,7 @@
         }
       }
 
-      dsroShared.applyAdminKeyInput(elements.adminKey, { onChange: updateAdminKeyStatus });
+      dsroShared.applyAdminKeyInput(elements.adminKey, { syncOnInput: false, onChange: updateAdminKeyStatus });
       restoreSettings();
       updateAdminKeyStatus();
       initEvents();
