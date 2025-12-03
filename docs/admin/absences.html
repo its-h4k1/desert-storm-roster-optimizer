@@ -116,6 +116,31 @@
       cursor: not-allowed;
     }
 
+    .admin-key-banner {
+      background: #f8fafc;
+      border: 1px solid var(--border);
+      border-radius: 0.85rem;
+      padding: 0.75rem 0.9rem;
+      display: grid;
+      gap: 0.5rem;
+      min-width: 240px;
+    }
+
+    .admin-key-status {
+      font-size: 0.9rem;
+      color: #1f2937;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .admin-key-status.ok { color: #0f7b43; }
+    .admin-key-status.warn { color: #991b1b; }
+
+    .admin-key-fallback { display: grid; gap: 0.4rem; align-items: start; }
+    .admin-key-fallback label { margin: 0; }
+    .admin-key-fallback small { color: #6b7280; line-height: 1.4; }
+
     .page-main {
       flex: 1;
       padding: 0;
@@ -300,11 +325,20 @@
               <label>Branch
                 <input id="branchInput" type="text" value="main" spellcheck="false">
               </label>
-              <label>Admin-Key
-                <input id="adminKey" type="password" placeholder="r4-admin" autocomplete="off">
-              </label>
               <button id="reloadBtn" class="ghost">Neu laden</button>
               <button id="saveBtn">Speichern</button>
+            </div>
+            <div class="admin-key-banner" id="adminKeyBanner">
+              <div id="adminKeyStatus" class="admin-key-status">Admin-Key wird geprüft…</div>
+              <div id="adminKeyFallback" class="admin-key-fallback hidden">
+                <small>Kein Admin-Key gefunden? Optional hier kurz hinterlegen (wird zentral gespeichert).</small>
+                <div style="display:flex;align-items:flex-end;gap:0.5rem;flex-wrap:wrap;">
+                  <label>Admin-Key (Fallback)
+                    <input id="adminKeyInput" type="password" placeholder="Admin-Key eingeben" autocomplete="off">
+                  </label>
+                  <button id="applyAdminKeyBtn" class="ghost" type="button">Admin-Key übernehmen</button>
+                </div>
+              </div>
             </div>
             </header>
 
@@ -363,7 +397,6 @@
       const elements = {
         workerUrl: document.getElementById("workerUrl"),
         branch: document.getElementById("branchInput"),
-        adminKey: document.getElementById("adminKey"),
         reloadBtn: document.getElementById("reloadBtn"),
         saveBtn: document.getElementById("saveBtn"),
         addAbsenceBtn: document.getElementById("addAbsenceBtn"),
@@ -377,6 +410,10 @@
         statsPill: document.getElementById("statsPill"),
         emptyState: document.getElementById("emptyState"),
         playerOptions: document.getElementById("playerOptions"),
+        adminKeyStatus: document.getElementById("adminKeyStatus"),
+        adminKeyFallback: document.getElementById("adminKeyFallback"),
+        adminKeyInput: document.getElementById("adminKeyInput"),
+        applyAdminKeyBtn: document.getElementById("applyAdminKeyBtn"),
       };
 
       const state = {
@@ -395,7 +432,7 @@
       const defaultBranch = "main";
       const DEFAULT_HEADERS = ["PlayerName", "From", "To", "Reason", "InAlliance"];
 
-      const getAdminKey = () => (elements.adminKey.value || "").trim() || dsroShared.getAdminKey();
+      const getAdminKey = () => dsroShared.getAdminKey();
 
       function getBranch() {
         const raw = elements.branch.value.trim();
@@ -446,7 +483,8 @@
       }
 
       function updateSaveButtonState() {
-        elements.saveBtn.disabled = state.loading || state.saving || !hasChanges();
+        const hasAdminKey = !!getAdminKey();
+        elements.saveBtn.disabled = state.loading || state.saving || !hasChanges() || !hasAdminKey;
         elements.saveBtn.textContent = state.saving ? "Speichert…" : "Speichern";
       }
 
@@ -788,7 +826,6 @@
             const parsed = JSON.parse(saved);
             if (parsed.workerUrl) elements.workerUrl.value = parsed.workerUrl;
             if (parsed.branch) elements.branch.value = parsed.branch;
-            if (parsed.adminKey) elements.adminKey.value = parsed.adminKey;
           } catch (err) { console.warn("Settings konnten nicht gelesen werden", err); }
         } else {
           const shared = localStorage.getItem("dsro-admin-settings");
@@ -801,23 +838,45 @@
               } else if (parsed.branchSelect) {
                 elements.branch.value = parsed.branchSelect;
               }
-              if (parsed.adminKey) elements.adminKey.value = parsed.adminKey;
             } catch (err) {
               console.warn("Shared settings konnten nicht gelesen werden", err);
             }
           }
         }
-        dsroShared.saveAdminKey(elements.adminKey.value);
       }
 
       function persistSettings() {
         const values = {
           workerUrl: elements.workerUrl.value,
           branch: elements.branch.value,
-          adminKey: elements.adminKey.value,
         };
         localStorage.setItem(SETTINGS_KEY, JSON.stringify(values));
-        dsroShared.saveAdminKey(values.adminKey);
+      }
+
+      function updateAdminKeyStatus() {
+        const hasKey = !!getAdminKey();
+        if (elements.adminKeyStatus) {
+          elements.adminKeyStatus.textContent = hasKey
+            ? "Admin-Key ist gesetzt (aus zentraler Verwaltung)."
+            : "Kein Admin-Key gesetzt – bitte über die Admin-Startseite einloggen.";
+          elements.adminKeyStatus.className = "admin-key-status " + (hasKey ? "ok" : "warn");
+        }
+        if (elements.adminKeyFallback) {
+          elements.adminKeyFallback.classList.toggle("hidden", hasKey);
+        }
+        updateSaveButtonState();
+      }
+
+      function applyAdminKeyFromFallback() {
+        if (!elements.adminKeyInput) return;
+        const value = (elements.adminKeyInput.value || "").trim();
+        if (!value) {
+          setStatus("Kein Admin-Key eingegeben.", "warn");
+          return;
+        }
+        dsroShared.saveAdminKey(value);
+        updateAdminKeyStatus();
+        setStatus("Admin-Key gespeichert (zentraler Store).", "ok");
       }
 
       function initEvents() {
@@ -829,11 +888,12 @@
         elements.sortSelect.addEventListener("change", () => renderTable());
         elements.workerUrl.addEventListener("change", persistSettings);
         elements.branch.addEventListener("change", persistSettings);
-        elements.adminKey.addEventListener("change", persistSettings);
+        if (elements.applyAdminKeyBtn) elements.applyAdminKeyBtn.addEventListener("click", applyAdminKeyFromFallback);
       }
 
-      dsroShared.applyAdminKeyInput(elements.adminKey, { onChange: persistSettings });
+      dsroShared.applyAdminKeyInput(elements.adminKeyInput, { syncOnInput: false });
       restoreSettings();
+      updateAdminKeyStatus();
       initEvents();
       reloadData();
     })();
