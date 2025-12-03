@@ -20,6 +20,13 @@
     .admin-link{display:inline-flex;align-items:center;gap:8px;padding:8px 14px;border:1px solid var(--line);border-radius:10px;text-decoration:none;color:var(--fg);background:#fff;box-shadow:0 4px 12px rgba(0,0,0,0.05);font-weight:600}
     .admin-link:hover{border-color:#c8d5ec;box-shadow:0 6px 16px rgba(0,0,0,0.08)}
     .admin-link:active{transform:translateY(1px)}
+    .config-diag{border:1px solid var(--line);border-radius:12px;padding:10px 12px;background:#f9fafb;margin:6px 0 14px;box-shadow:0 4px 12px rgba(0,0,0,0.03)}
+    .config-diag h2{margin:0 0 4px;font-size:1.05em}
+    .config-diag .muted{margin:0}
+    .config-diag-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:6px 14px;font-size:0.95em;margin-top:6px}
+    .config-item{display:flex;flex-direction:column;gap:2px}
+    .config-label{color:var(--muted);font-weight:500}
+    .config-value{font-weight:700}
     .stamp{display:block;font-size:0.8em;line-height:1.4;margin-top:4px}
     .anchor-nav{display:flex;flex-wrap:wrap;gap:10px;margin:12px 0 20px;font-size:0.95em}
     .anchor-nav a{padding:6px 10px;border:1px solid var(--line);border-radius:8px;text-decoration:none;color:var(--fg);background:#fff;box-shadow:0 4px 12px rgba(0,0,0,0.03)}
@@ -131,6 +138,13 @@
     <div class="top-actions">
       <a class="admin-link" href="admin/index.html">Admin &amp; Tools</a>
     </div>
+  </div>
+  <div id="config-diag" class="diag config-diag">
+    <div class="section-header" style="margin:0">
+      <h2 style="margin:0">Konfig &amp; Diagnose</h2>
+      <p class="muted" id="config-diag-note" style="margin:0">Wird geladen …</p>
+    </div>
+    <div class="config-diag-grid" id="config-diag-grid" style="display:none"></div>
   </div>
   <nav class="anchor-nav">
     <a href="#section-overview">Überblick</a>
@@ -342,6 +356,9 @@
     const overviewMeta = document.getElementById("overview-meta");
     const overviewMetaNote = document.getElementById("overview-meta-note");
     const overviewMetaList = document.getElementById("overview-meta-list");
+    const configDiag = document.getElementById("config-diag");
+    const configDiagNote = document.getElementById("config-diag-note");
+    const configDiagGrid = document.getElementById("config-diag-grid");
     const callupSuggestionsSection = document.getElementById("callup-suggestions");
     const callupSuggestionsContent = document.getElementById("callup-suggestions-content");
     const callupSuggestionsNote = document.getElementById("callup-suggestions-note");
@@ -549,6 +566,15 @@
       if (v==null) return null;
       const n = Number(v);
       return Number.isFinite(n) ? n : null;
+    };
+
+    const pickFirstString = (...candidates) => {
+      for (const c of candidates) {
+        if (c == null) continue;
+        const str = typeof c === "string" ? c.trim() : String(c).trim();
+        if (str) return str;
+      }
+      return "";
     };
 
     const CALLUP_REASON_LABELS = {
@@ -2260,6 +2286,83 @@
         attendanceSummaryBox.style.display = "block";
       }
 
+    function renderConfigDiagnostics(payload) {
+      if (!configDiag || !configDiagGrid || !configDiagNote) return;
+
+      const callupConfig = payload?.callup_stats?.config_snapshot || {};
+      const callupRules = payload?.callup_stats?.rules || {};
+      const attendanceConfig = payload?.attendance?.config_snapshot || {};
+      const allianceMeta = payload?.alliance_next_event_overview?.meta || {};
+      const eventInfo = payload?.event_info
+        || payload?.event
+        || payload?.attendance?.event_info
+        || payload?.event_signups?.event_info
+        || payload?.signup_pool?.event_info
+        || {};
+
+      const eventLabel = pickFirstString(
+        eventInfo.label, eventInfo.title, eventInfo.name, eventInfo.event, eventInfo.id,
+        payload?.attendance?.event_label, allianceMeta.event_label,
+        payload?.event_signups?.event_label, payload?.signup_pool?.event_label,
+        payload?.event_signups?.scope, payload?.signup_pool?.scope,
+      );
+      const eventDate = pickFirstString(
+        eventInfo.date, eventInfo.event_date, eventInfo.start, eventInfo.start_date,
+        payload?.attendance?.event_date, allianceMeta.event_date,
+        payload?.signup_pool?.event_date,
+      );
+      const buildTimestamp = pickFirstString(payload?.generated_at);
+      const nextEventTextParts = [eventLabel, eventDate].filter(Boolean);
+      const nextEventText = nextEventTextParts.length
+        ? nextEventTextParts.join(" · ")
+        : (buildTimestamp ? `Build ${buildTimestamp}` : "n/a");
+
+      const callupsOnlyMode = callupConfig.callups_only_mode;
+      const callupsModeLabel = (callupsOnlyMode === true)
+        ? "Nur Signup-/Callup-Pool (callups_only_mode=true)"
+        : (callupsOnlyMode === false)
+          ? "Alle aktiven Mitglieder (callups_only_mode=false)"
+          : "n/a";
+
+      const callupMinAttendProb = toNumber(callupConfig.callup_min_attend_prob ?? callupRules.callup_min_attend_prob ?? payload?.attendance?.threshold);
+      const minBStarters = toNumber(callupConfig.min_b_starters ?? callupRules.min_b_starters);
+      const attendanceTargetFraction = toNumber(attendanceConfig.attendance_target_fraction ?? payload?.attendance?.target_fraction);
+      const rollingEvents = toNumber(callupConfig.rolling_window_events ?? callupRules.rolling_window_events ?? allianceMeta.rolling_window_events);
+      const rollingReference = pickFirstString(callupConfig.rolling_reference_date, callupRules.rolling_reference_date, allianceMeta.rolling_reference_date);
+
+      const formatProb = (val) => {
+        if (!Number.isFinite(val)) return "n/a";
+        return `${val.toFixed(2)} (${Math.round(val * 100)}%)`;
+      };
+      const formatNum = (val) => Number.isFinite(val) ? String(val) : "n/a";
+
+      const items = [
+        { label: "Nächstes Event", value: nextEventText || "n/a" },
+        { label: "Modus", value: callupsModeLabel },
+        { label: "Attendance-Schwelle", value: formatProb(callupMinAttendProb) },
+        { label: "B-Starter-Ziel", value: formatNum(minBStarters) },
+        { label: "Attendance-Target", value: formatProb(attendanceTargetFraction) },
+        { label: "Rolling-Fenster", value: rollingEvents || rollingReference ? [
+          rollingEvents ? `${rollingEvents} Events` : "",
+          rollingReference ? `Referenz: ${rollingReference}` : "",
+        ].filter(Boolean).join(" · ") || "n/a" : "n/a" },
+      ];
+
+      if (items.length) {
+        configDiagGrid.innerHTML = items.map(item => {
+          const value = typeof item.value === 'string' ? item.value : String(item.value ?? 'n/a');
+          return `<div class="config-item"><div class="config-label">${escapeHtml(item.label)}</div><div class="config-value">${escapeHtml(value || 'n/a')}</div></div>`;
+        }).join("");
+        configDiagGrid.style.display = 'grid';
+        configDiagNote.style.display = 'none';
+      } else {
+        configDiagGrid.innerHTML = '';
+        configDiagGrid.style.display = 'none';
+        configDiagNote.textContent = 'Keine Konfig-Daten gefunden.';
+        configDiagNote.style.display = 'block';
+      }
+    }
+
     function renderOverviewMeta(payload, schema = {}) {
       if (!overviewMeta || !overviewMetaList || !overviewMetaNote) return;
 
@@ -2552,6 +2655,7 @@
       state.playersArray = playersArray;
       state.callupCandidates = collectCallupCandidates(playersArray);
 
+      safeRenderSection("config-diag", () => renderConfigDiagnostics(payload), configDiag);
       safeRenderSection("overview-meta", () => renderOverviewMeta(payload, schema), overviewMeta);
       safeRenderSection("attendance-summary", () => renderAttendanceSummary(payload.attendance), attendanceSummaryBox);
 
