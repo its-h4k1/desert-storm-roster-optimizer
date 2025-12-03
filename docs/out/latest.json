@@ -1,5 +1,5 @@
 {
-  "generated_at": "2025-12-03T22:52:15.147674+01:00",
+  "generated_at": "2025-12-03T23:20:00.668149+01:00",
   "schema": {
     "version": 4,
     "csv": [
@@ -49,31 +49,31 @@
   "signup_pool": {
     "source": "data/event_signups_next.csv",
     "stats": {
-      "file_rows_total": 31,
-      "file_entries_total": 31,
-      "raw_rows": 31,
-      "rows_with_playername": 31,
-      "rows_with_canon": 31,
-      "file_rows_with_playername": 31,
-      "file_rows_with_canon": 31,
-      "total_entries": 31,
-      "processed_entries_total": 31,
-      "applied_entries": 31,
+      "file_rows_total": 32,
+      "file_entries_total": 32,
+      "raw_rows": 32,
+      "rows_with_playername": 32,
+      "rows_with_canon": 32,
+      "file_rows_with_playername": 32,
+      "file_rows_with_canon": 32,
+      "total_entries": 32,
+      "processed_entries_total": 32,
+      "applied_entries": 32,
       "ignored_entries": 0,
-      "hard_commit_rows_total": 31,
-      "hard_commit_total": 31,
-      "hard_commit_applied": 27,
+      "hard_commit_rows_total": 32,
+      "hard_commit_total": 32,
+      "hard_commit_applied": 28,
       "hard_commit_invalid": 4,
       "hard_commit_overbooked": 0,
       "hard_commit_missing_from_roster": 0,
-      "hard_commitments_total": 31,
-      "hard_commitments_applied": 27,
+      "hard_commitments_total": 32,
+      "hard_commitments_applied": 28,
       "hard_commitments_invalid": 4,
       "hard_commitments_overbooked": 0,
       "hard_commitments_missing_from_roster": 0,
-      "in_roster_hard_commitments": 27,
-      "forced_total": 27,
-      "forced_in_roster": 27,
+      "in_roster_hard_commitments": 28,
+      "forced_total": 28,
+      "forced_in_roster": 28,
       "forced_out_of_roster": 0,
       "extra_entries_total": 1,
       "extra_entries_by_group": {
@@ -228,6 +228,24 @@
       },
       {
         "row_index": 10,
+        "player": "Mahaja",
+        "canon": "mahaja",
+        "group_pref": "A",
+        "role_pref": "Start",
+        "commitment": "hard",
+        "source": "manual",
+        "note": "",
+        "in_alliance": true,
+        "in_player_pool": true,
+        "is_absent_next_event": false,
+        "pref_group_in_pool": null,
+        "status": "forced",
+        "resolved_group": "A",
+        "resolved_role": "Start",
+        "overbooked": false
+      },
+      {
+        "row_index": 11,
         "player": "Marikopopo",
         "canon": "marikopopo",
         "group_pref": "A",
@@ -242,7 +260,7 @@
         "reason": "absent"
       },
       {
-        "row_index": 11,
+        "row_index": 12,
         "player": "PAvluWKA",
         "canon": "pavluwka",
         "group_pref": "A",
@@ -260,7 +278,7 @@
         "overbooked": false
       },
       {
-        "row_index": 12,
+        "row_index": 13,
         "player": "Re3Slim3",
         "canon": "re3slim3",
         "group_pref": "A",
@@ -278,7 +296,7 @@
         "overbooked": false
       },
       {
-        "row_index": 13,
+        "row_index": 14,
         "player": "rompa ru",
         "canon": "rompa ru",
         "group_pref": "A",
@@ -296,7 +314,7 @@
         "overbooked": false
       },
       {
-        "row_index": 14,
+        "row_index": 15,
         "player": "Schalmei3",
         "canon": "schalmei3",
         "group_pref": "A",
@@ -314,7 +332,7 @@
         "overbooked": false
       },
       {
-        "row_index": 15,
+        "row_index": 16,
         "player": "TheFisch",
         "canon": "thefisch",
         "group_pref": "A",
@@ -332,7 +350,7 @@
         "overbooked": false
       },
       {
-        "row_index": 16,
+        "row_index": 17,
         "player": "Tobinho25",
         "canon": "tobinho25",
         "group_pref": "A",
@@ -350,7 +368,7 @@
         "overbooked": false
       },
       {
-        "row_index": 17,
+        "row_index": 18,
         "player": "ZANGE",
         "canon": "zange",
         "group_pref": "A",
@@ -368,7 +386,7 @@
         "overbooked": false
       },
       {
-        "row_index": 18,
+        "row_index": 19,
         "player": "Zombie 666 80 420",
         "canon": "zombie 666 80 420",
         "group_pref": "A",
@@ -386,7 +404,7 @@
         "overbooked": false
       },
       {
-        "row_index": 19,
+        "row_index": 20,
         "player": "abu47",
         "canon": "abu47",
         "group_pref": "B",
@@ -404,7 +422,7 @@
         "overbooked": false
       },
       {
-        "row_index": 20,
+        "row_index": 21,
         "player": "Aegolas",
         "canon": "aegolas",
         "group_pref": "B",
@@ -422,7 +440,7 @@
         "overbooked": false
       },
       {
-        "row_index": 21,
+        "row_index": 22,
         "player": "Alstermaus",
         "canon": "alstermaus",
         "group_pref": "B",
@@ -440,7 +458,7 @@
         "overbooked": false
       },
       {
-        "row_index": 22,
+        "row_index": 23,
         "player": "b1e90ff",
         "canon": "b1e90ff",
         "group_pref": "B",
@@ -458,7 +476,7 @@
         "overbooked": false
       },
       {
-        "row_index": 23,
+        "row_index": 24,
         "player": "Cupra290",
         "canon": "cupra290",
         "group_pref": "B",
@@ -476,7 +494,7 @@
         "overbooked": false
       },
       {
-        "row_index": 24,
+        "row_index": 25,
         "player": "Dany Bossss",
         "canon": "dany bossss",
         "group_pref": "B",
@@ -494,7 +512,7 @@
         "overbooked": false
       },
       {
-        "row_index": 25,
+        "row_index": 26,
         "player": "Darkface 46",
         "canon": "darkface 46",
         "group_pref": "B",
@@ -512,7 +530,7 @@
         "overbooked": false
       },
       {
-        "row_index": 26,
+        "row_index": 27,
         "player": "Fenworld",
         "canon": "fenworld",
         "group_pref": "B",
@@ -530,7 +548,7 @@
         "overbooked": false
       },
       {
-        "row_index": 27,
+        "row_index": 28,
         "player": "Globi3000",
         "canon": "globi3000",
         "group_pref": "B",
@@ -545,7 +563,7 @@
         "reason": "absent"
       },
       {
-        "row_index": 28,
+        "row_index": 29,
         "player": "Kurdun Laneti",
         "canon": "kurdun laneti",
         "group_pref": "B",
@@ -558,24 +576,6 @@
         "is_absent_next_event": true,
         "status": "invalid",
         "reason": "absent"
-      },
-      {
-        "row_index": 29,
-        "player": "Mahaja",
-        "canon": "mahaja",
-        "group_pref": "B",
-        "role_pref": "Start",
-        "commitment": "hard",
-        "source": "manual",
-        "note": "",
-        "in_alliance": true,
-        "in_player_pool": true,
-        "is_absent_next_event": false,
-        "pref_group_in_pool": null,
-        "status": "forced",
-        "resolved_group": "B",
-        "resolved_role": "Start",
-        "overbooked": false
       },
       {
         "row_index": 30,
@@ -612,6 +612,24 @@
       },
       {
         "row_index": 32,
+        "player": "Michael 3840",
+        "canon": "michael 3840",
+        "group_pref": "B",
+        "role_pref": "Start",
+        "commitment": "hard",
+        "source": "manual",
+        "note": "",
+        "in_alliance": true,
+        "in_player_pool": true,
+        "is_absent_next_event": false,
+        "pref_group_in_pool": null,
+        "status": "forced",
+        "resolved_group": "B",
+        "resolved_role": "Start",
+        "overbooked": false
+      },
+      {
+        "row_index": 33,
         "player": "Pickopf",
         "canon": "pickopf",
         "group_pref": "B",
@@ -711,6 +729,16 @@
         "overbooked": false
       },
       {
+        "player": "Mahaja",
+        "canon": "mahaja",
+        "group": "A",
+        "role": "Start",
+        "source": "manual",
+        "note": "",
+        "commitment": "hard",
+        "overbooked": false
+      },
+      {
         "player": "PAvluWKA",
         "canon": "pavluwka",
         "group": "A",
@@ -871,8 +899,8 @@
         "overbooked": false
       },
       {
-        "player": "Mahaja",
-        "canon": "mahaja",
+        "player": "Maik1234567890",
+        "canon": "maik1234567890",
         "group": "B",
         "role": "Start",
         "source": "manual",
@@ -881,8 +909,8 @@
         "overbooked": false
       },
       {
-        "player": "Maik1234567890",
-        "canon": "maik1234567890",
+        "player": "Michael 3840",
+        "canon": "michael 3840",
         "group": "B",
         "role": "Start",
         "source": "manual",
@@ -924,31 +952,31 @@
       }
     ],
     "overbooked_forced_signups": [],
-    "file_rows_total": 31,
-    "file_entries_total": 31,
-    "raw_rows": 31,
-    "rows_with_playername": 31,
-    "rows_with_canon": 31,
-    "file_rows_with_playername": 31,
-    "file_rows_with_canon": 31,
-    "total_entries": 31,
-    "processed_entries_total": 31,
-    "applied_entries": 31,
+    "file_rows_total": 32,
+    "file_entries_total": 32,
+    "raw_rows": 32,
+    "rows_with_playername": 32,
+    "rows_with_canon": 32,
+    "file_rows_with_playername": 32,
+    "file_rows_with_canon": 32,
+    "total_entries": 32,
+    "processed_entries_total": 32,
+    "applied_entries": 32,
     "ignored_entries": 0,
-    "hard_commit_rows_total": 31,
-    "hard_commit_total": 31,
-    "hard_commit_applied": 27,
+    "hard_commit_rows_total": 32,
+    "hard_commit_total": 32,
+    "hard_commit_applied": 28,
     "hard_commit_invalid": 4,
     "hard_commit_overbooked": 0,
     "hard_commit_missing_from_roster": 0,
-    "hard_commitments_total": 31,
-    "hard_commitments_applied": 27,
+    "hard_commitments_total": 32,
+    "hard_commitments_applied": 28,
     "hard_commitments_invalid": 4,
     "hard_commitments_overbooked": 0,
     "hard_commitments_missing_from_roster": 0,
-    "in_roster_hard_commitments": 27,
-    "forced_total": 27,
-    "forced_in_roster": 27,
+    "in_roster_hard_commitments": 28,
+    "forced_total": 28,
+    "forced_in_roster": 28,
     "forced_out_of_roster": 0,
     "extra_entries_total": 1,
     "extra_entries_by_group": {
@@ -968,7 +996,7 @@
         "KUBI01",
         "LittelJoe",
         "Maggyispass",
-        "Michael 3840",
+        "Mahaja",
         "PAvluWKA",
         "Re3Slim3",
         "Schalmei3",
@@ -992,8 +1020,8 @@
         "Darkface 46",
         "Fenworld",
         "Leraxo",
-        "Mahaja",
         "Maik1234567890",
+        "Michael 3840",
         "Pickopf",
         "Schlumpfsoldat 4714",
         "Yoda0201",
@@ -1016,18 +1044,18 @@
   "event_signups": {
     "scope": "next_event",
     "source": "data/event_signups_next.csv",
-    "raw_rows": 31,
-    "rows_with_playername": 31,
-    "rows_with_canon": 31,
-    "file_rows_total": 31,
-    "file_rows_with_playername": 31,
-    "file_rows_with_canon": 31,
-    "total_entries": 31,
-    "applied_entries": 31,
+    "raw_rows": 32,
+    "rows_with_playername": 32,
+    "rows_with_canon": 32,
+    "file_rows_total": 32,
+    "file_rows_with_playername": 32,
+    "file_rows_with_canon": 32,
+    "total_entries": 32,
+    "applied_entries": 32,
     "ignored_entries": 0,
-    "hard_commitments": 31,
-    "hard_commit_rows_total": 31,
-    "hard_commitments_applied": 27,
+    "hard_commitments": 32,
+    "hard_commit_rows_total": 32,
+    "hard_commitments_applied": 28,
     "hard_commitments_invalid": 4,
     "hard_commitments_overbooked": 0,
     "extra_entries_total": 1,
@@ -1035,8 +1063,8 @@
       "A": 0,
       "B": 1
     },
-    "forced_total": 27,
-    "forced_in_roster": 27,
+    "forced_total": 28,
+    "forced_in_roster": 28,
     "forced_out_of_roster": 0
   },
   "forced_signups": [
@@ -1113,6 +1141,16 @@
     {
       "player": "Maggyispass",
       "canon": "maggyispass",
+      "group": "A",
+      "role": "Start",
+      "source": "manual",
+      "note": "",
+      "commitment": "hard",
+      "overbooked": false
+    },
+    {
+      "player": "Mahaja",
+      "canon": "mahaja",
       "group": "A",
       "role": "Start",
       "source": "manual",
@@ -1281,8 +1319,8 @@
       "overbooked": false
     },
     {
-      "player": "Mahaja",
-      "canon": "mahaja",
+      "player": "Maik1234567890",
+      "canon": "maik1234567890",
       "group": "B",
       "role": "Start",
       "source": "manual",
@@ -1291,8 +1329,8 @@
       "overbooked": false
     },
     {
-      "player": "Maik1234567890",
-      "canon": "maik1234567890",
+      "player": "Michael 3840",
+      "canon": "michael 3840",
       "group": "B",
       "role": "Start",
       "source": "manual",
@@ -2010,7 +2048,7 @@
       "group": "A",
       "role": "Start",
       "noshow_overall": 0.23076923076923073,
-      "noshow_rolling": 0.18764712091240354,
+      "noshow_rolling": 0.18764712091240365,
       "attend_prob": 0.92,
       "last_seen": "2025-11-21",
       "last_noshow_date": "2025-10-03",
@@ -2316,7 +2354,7 @@
       "group": "A",
       "role": "Start",
       "noshow_overall": 0.3076923076923077,
-      "noshow_rolling": 0.2628224263650125,
+      "noshow_rolling": 0.2628224263650124,
       "attend_prob": 0.92,
       "last_seen": "2025-11-21",
       "last_noshow_date": "2025-10-17",
@@ -2355,41 +2393,48 @@
       "has_event_signup": true
     },
     {
-      "display": "Michael 3840",
-      "canon": "michael 3840",
+      "display": "Mahaja",
+      "canon": "mahaja",
       "group": "A",
       "role": "Start",
-      "noshow_overall": 0.5,
-      "noshow_rolling": 0.47166112285995476,
-      "attend_prob": 0.39720634695858464,
+      "noshow_overall": 0.09090909090909094,
+      "noshow_rolling": 0.06616593913832836,
+      "attend_prob": 0.92,
       "last_seen": "2025-11-21",
-      "last_noshow_date": "2025-11-14",
-      "events_seen": 6,
-      "noshow_count": 3,
-      "risk_penalty": 0.029828361502597756,
-      "selection_stage": "A-start-main",
+      "last_noshow_date": "2025-09-05",
+      "events_seen": 11,
+      "noshow_count": 1,
+      "risk_penalty": 0.021611335210321436,
+      "selection_stage": "forced",
       "is_absent_next_event": false,
       "callup": {
-        "recommended": true,
-        "reasons": [
-          {
-            "code": "high_overall",
-            "label": "High No-Show overall 50.0%"
-          }
-        ]
+        "recommended": false,
+        "reasons": []
       },
-      "callup_recommended": true,
-      "callup_reason_codes": [
-        "high_overall"
-      ],
-      "callup_reason": "high_overall",
-      "next_event_status": "open",
+      "callup_recommended": false,
+      "callup_reason_codes": [],
+      "callup_reason": null,
+      "forced_signup": {
+        "commitment": "hard",
+        "source": "manual",
+        "note": "",
+        "overbooked": false
+      },
+      "has_forced_signup": true,
+      "next_event_status": "hard_commitment",
       "eb": {
         "p0": 0.6824132288470439,
         "n0": 4.0,
-        "p_hat": 0.5729652915388176,
-        "sigma": 0.14914180751298878
-      }
+        "p_hat": 0.24864352769254505,
+        "sigma": 0.10805667605160718
+      },
+      "event_signup": {
+        "group": "A",
+        "role": "Start",
+        "source": "manual",
+        "note": ""
+      },
+      "has_event_signup": true
     },
     {
       "display": "PAvluWKA",
@@ -2492,7 +2537,7 @@
       "group": "A",
       "role": "Start",
       "noshow_overall": 0.07692307692307687,
-      "noshow_rolling": 0.055466706088325934,
+      "noshow_rolling": 0.05546670608832571,
       "attend_prob": 0.92,
       "last_seen": "2025-11-21",
       "last_noshow_date": "2025-08-28",
@@ -2668,7 +2713,7 @@
       "group": "A",
       "role": "Start",
       "noshow_overall": 0.11111111111111116,
-      "noshow_rolling": 0.13856931117274462,
+      "noshow_rolling": 0.13856931117274474,
       "attend_prob": 0.92,
       "last_seen": "2025-11-14",
       "last_noshow_date": "2025-11-21",
@@ -2756,7 +2801,7 @@
       "group": "A",
       "role": "Start",
       "noshow_overall": 0.15384615384615385,
-      "noshow_rolling": 0.12481422538139131,
+      "noshow_rolling": 0.12481422538139142,
       "attend_prob": 0.92,
       "last_seen": "2025-11-21",
       "last_noshow_date": "2025-09-26",
@@ -2800,7 +2845,7 @@
       "group": "A",
       "role": "Start",
       "noshow_overall": 0.25,
-      "noshow_rolling": 0.1846602364815806,
+      "noshow_rolling": 0.1846602364815807,
       "attend_prob": 0.5005362722460588,
       "last_seen": "2025-11-14",
       "last_noshow_date": "2025-08-28",
@@ -3018,7 +3063,7 @@
       "group": "B",
       "role": "Start",
       "noshow_overall": 0.75,
-      "noshow_rolling": 0.7192510194369194,
+      "noshow_rolling": 0.7192510194369195,
       "attend_prob": 0.92,
       "last_seen": "2025-11-28",
       "last_noshow_date": "2025-11-21",
@@ -3074,7 +3119,7 @@
       "group": "B",
       "role": "Start",
       "noshow_overall": 0.16666666666666663,
-      "noshow_rolling": 0.1530697754911109,
+      "noshow_rolling": 0.153069775491111,
       "attend_prob": 0.92,
       "last_seen": "2025-11-28",
       "last_noshow_date": "2025-10-31",
@@ -3155,56 +3200,12 @@
       }
     },
     {
-      "display": "Mahaja",
-      "canon": "mahaja",
-      "group": "B",
-      "role": "Start",
-      "noshow_overall": 0.09090909090909094,
-      "noshow_rolling": 0.06616593913832836,
-      "attend_prob": 0.92,
-      "last_seen": "2025-11-21",
-      "last_noshow_date": "2025-09-05",
-      "events_seen": 11,
-      "noshow_count": 1,
-      "risk_penalty": 0.021611335210321436,
-      "selection_stage": "forced",
-      "is_absent_next_event": false,
-      "callup": {
-        "recommended": false,
-        "reasons": []
-      },
-      "callup_recommended": false,
-      "callup_reason_codes": [],
-      "callup_reason": null,
-      "forced_signup": {
-        "commitment": "hard",
-        "source": "manual",
-        "note": "",
-        "overbooked": false
-      },
-      "has_forced_signup": true,
-      "next_event_status": "hard_commitment",
-      "eb": {
-        "p0": 0.6824132288470439,
-        "n0": 4.0,
-        "p_hat": 0.24864352769254505,
-        "sigma": 0.10805667605160718
-      },
-      "event_signup": {
-        "group": "B",
-        "role": "Start",
-        "source": "manual",
-        "note": ""
-      },
-      "has_event_signup": true
-    },
-    {
       "display": "Maik1234567890",
       "canon": "maik1234567890",
       "group": "B",
       "role": "Start",
       "noshow_overall": 0.0714285714285714,
-      "noshow_rolling": 0.05301880398132475,
+      "noshow_rolling": 0.05301880398132486,
       "attend_prob": 0.92,
       "last_seen": "2025-11-28",
       "last_noshow_date": "2025-09-05",
@@ -3233,6 +3234,57 @@
         "n0": 4.0,
         "p_hat": 0.20720293974378753,
         "sigma": 0.09298270396757721
+      },
+      "event_signup": {
+        "group": "B",
+        "role": "Start",
+        "source": "manual",
+        "note": ""
+      },
+      "has_event_signup": true
+    },
+    {
+      "display": "Michael 3840",
+      "canon": "michael 3840",
+      "group": "B",
+      "role": "Start",
+      "noshow_overall": 0.5,
+      "noshow_rolling": 0.47166112285995476,
+      "attend_prob": 0.92,
+      "last_seen": "2025-11-21",
+      "last_noshow_date": "2025-11-14",
+      "events_seen": 6,
+      "noshow_count": 3,
+      "risk_penalty": 0.029828361502597756,
+      "selection_stage": "forced",
+      "is_absent_next_event": false,
+      "callup": {
+        "recommended": true,
+        "reasons": [
+          {
+            "code": "high_overall",
+            "label": "High No-Show overall 50.0%"
+          }
+        ]
+      },
+      "callup_recommended": true,
+      "callup_reason_codes": [
+        "high_overall"
+      ],
+      "callup_reason": "high_overall",
+      "forced_signup": {
+        "commitment": "hard",
+        "source": "manual",
+        "note": "",
+        "overbooked": false
+      },
+      "has_forced_signup": true,
+      "next_event_status": "hard_commitment",
+      "eb": {
+        "p0": 0.6824132288470439,
+        "n0": 4.0,
+        "p_hat": 0.5729652915388176,
+        "sigma": 0.14914180751298878
       },
       "event_signup": {
         "group": "B",
@@ -4766,9 +4818,9 @@
     "schema": 2,
     "expected_by_team": {
       "A": {
-        "starters": 16.285864205595512,
+        "starters": 16.808657858636927,
         "subs": 0.0,
-        "total": 16.285864205595512
+        "total": 16.808657858636927
       },
       "B": {
         "starters": 10.892483088561832,
@@ -4786,7 +4838,7 @@
         "Ersatz": 10
       }
     },
-    "pool_total_expected": 36.295055117956956,
+    "pool_total_expected": 36.817848770998374,
     "targets": {
       "A": {
         "low": 24.0,
@@ -4803,7 +4855,7 @@
     },
     "target_fraction": 0.8,
     "target_diff": {
-      "A": -7.714135794404488,
+      "A": -7.191342141363073,
       "B": -13.107516911438168
     },
     "slots_by_team": {
@@ -4847,15 +4899,15 @@
       "issues": []
     },
     "threshold": 0.6,
-    "reliable_pool": 27,
+    "reliable_pool": 28,
     "teams": {
       "A": {
         "starters": {
           "total": 20,
-          "at_threshold": 16,
-          "below_threshold": 4,
+          "at_threshold": 17,
+          "below_threshold": 3,
           "fallback": 0,
-          "forced": 16
+          "forced": 17
         },
         "bench": {
           "total": 0,
@@ -4868,24 +4920,24 @@
           "Ersatz": 10
         },
         "expected_attendance": {
-          "starters": 16.285864205595512,
+          "starters": 16.808657858636927,
           "subs": 0.0,
-          "total": 16.285864205595512
+          "total": 16.808657858636927
         },
         "attendance_target": 24,
-        "attendance_diff": -7.714135794404488,
+        "attendance_diff": -7.191342141363073,
         "slots": {
           "starters_total": 20,
           "bench_total": 10,
           "max_slots": 30
         },
         "risk_level": "moderate",
-        "risk_text": "4 Starter unter Schwelle 60% (Team A wird immer aufgefüllt)",
-        "summary": "Starter: 20 (≥ Schwelle: 16, unter Schwelle: 4); Erwartete Anwesenheit Starter: 16.3; Ersatz-Slots frei: 10; Risiken: 4 Starter unter Schwelle 60% (Team A wird immer aufgefüllt)",
+        "risk_text": "3 Starter unter Schwelle 60% (Team A wird immer aufgefüllt)",
+        "summary": "Starter: 20 (≥ Schwelle: 17, unter Schwelle: 3); Erwartete Anwesenheit Starter: 16.8; Ersatz-Slots frei: 10; Risiken: 3 Starter unter Schwelle 60% (Team A wird immer aufgefüllt)",
         "stage_counts": {
           "start": {
-            "forced": 16,
-            "A-start-main": 4
+            "forced": 17,
+            "A-start-main": 3
           },
           "bench": {}
         }
@@ -4933,7 +4985,7 @@
       }
     },
     "recommendation": {
-      "text": "Team A: 20 Starter, erwartete Anwesenheit 16.3 | Team B: 14 Starter, Fallback 3, erwartete Anwesenheit 10.9"
+      "text": "Team A: 20 Starter, erwartete Anwesenheit 16.8 | Team B: 14 Starter, Fallback 3, erwartete Anwesenheit 10.9"
     }
   },
   "callup_suggestions": {
@@ -4958,13 +5010,13 @@
           "Ersatz": 0
         },
         "expected_attendance": {
-          "starters": 16.285864205595512,
+          "starters": 16.808657858636927,
           "subs": 0.0,
-          "total": 16.285864205595512
+          "total": 16.808657858636927
         },
-        "expected_gap": 7.714135794404488,
-        "expected_gap_players": 18,
-        "suggested_callups": 18
+        "expected_gap": 7.191342141363073,
+        "expected_gap_players": 16,
+        "suggested_callups": 16
       },
       "B": {
         "missing": {
@@ -4992,7 +5044,7 @@
     "teams": {
       "A": {
         "suggestions": [],
-        "target_count": 18
+        "target_count": 16
       },
       "B": {
         "suggestions": [],
@@ -5023,9 +5075,9 @@
           "from": "",
           "to": ""
         },
-        "attend_prob": 0.486525401595017,
+        "attend_prob": 0.4865254015950169,
         "noshow_overall": 0.5,
-        "noshow_rolling": 0.513474598404983,
+        "noshow_rolling": 0.5134745984049831,
         "events_seen": 2,
         "noshow_count": 1,
         "flags": {
@@ -5193,7 +5245,7 @@
         },
         "attend_prob": 0.92,
         "noshow_overall": 0.23076923076923073,
-        "noshow_rolling": 0.18764712091240354,
+        "noshow_rolling": 0.18764712091240365,
         "events_seen": 13,
         "noshow_count": 3,
         "flags": {
@@ -5481,7 +5533,7 @@
         },
         "attend_prob": 0.92,
         "noshow_overall": 0.75,
-        "noshow_rolling": 0.7192510194369194,
+        "noshow_rolling": 0.7192510194369195,
         "events_seen": 4,
         "noshow_count": 3,
         "flags": {
@@ -5793,7 +5845,7 @@
         },
         "attend_prob": 0.92,
         "noshow_overall": 0.16666666666666663,
-        "noshow_rolling": 0.1530697754911109,
+        "noshow_rolling": 0.153069775491111,
         "events_seen": 6,
         "noshow_count": 1,
         "flags": {
@@ -5839,9 +5891,9 @@
           "from": "2025-12-01",
           "to": "2025-12-06"
         },
-        "attend_prob": 0.16976256539278822,
+        "attend_prob": 0.1697625653927881,
         "noshow_overall": 0.8571428571428572,
-        "noshow_rolling": 0.8302374346072118,
+        "noshow_rolling": 0.8302374346072119,
         "events_seen": 7,
         "noshow_count": 6,
         "flags": {
@@ -6009,7 +6061,7 @@
         },
         "attend_prob": 0.22479260322522407,
         "noshow_overall": 0.8,
-        "noshow_rolling": 0.7778760309172221,
+        "noshow_rolling": 0.777876030917222,
         "events_seen": 5,
         "noshow_count": 4,
         "flags": {
@@ -6127,9 +6179,9 @@
           "from": "",
           "to": ""
         },
-        "attend_prob": 0.8586653073665058,
+        "attend_prob": 0.8586653073665059,
         "noshow_overall": 0.18181818181818177,
-        "noshow_rolling": 0.14133469263349419,
+        "noshow_rolling": 0.14133469263349407,
         "events_seen": 11,
         "noshow_count": 2,
         "flags": {
@@ -6393,7 +6445,7 @@
         },
         "attend_prob": 0.92,
         "noshow_overall": 0.3076923076923077,
-        "noshow_rolling": 0.2628224263650125,
+        "noshow_rolling": 0.2628224263650124,
         "events_seen": 13,
         "noshow_count": 4,
         "flags": {
@@ -6406,7 +6458,7 @@
         "display": "Mahaja",
         "canon": "mahaja",
         "in_alliance": 1,
-        "roster_status": "B-Start",
+        "roster_status": "A-Start",
         "event_status": "hard_commitment",
         "is_absent_next_event": false,
         "absence": {
@@ -6441,7 +6493,7 @@
         },
         "attend_prob": 0.92,
         "noshow_overall": 0.0714285714285714,
-        "noshow_rolling": 0.05301880398132475,
+        "noshow_rolling": 0.05301880398132486,
         "events_seen": 14,
         "noshow_count": 1,
         "flags": {
@@ -6526,8 +6578,8 @@
         "display": "Michael 3840",
         "canon": "michael 3840",
         "in_alliance": 1,
-        "roster_status": "A-Start",
-        "event_status": "open",
+        "roster_status": "B-Start",
+        "event_status": "hard_commitment",
         "is_absent_next_event": false,
         "absence": {
           "reason": "",
@@ -6535,7 +6587,7 @@
           "from": "",
           "to": ""
         },
-        "attend_prob": 0.39720634695858464,
+        "attend_prob": 0.92,
         "noshow_overall": 0.5,
         "noshow_rolling": 0.47166112285995476,
         "events_seen": 6,
@@ -6544,7 +6596,7 @@
           "no_data": false,
           "low_n": false
         },
-        "contact_recommendation": "maybe"
+        "contact_recommendation": "yes"
       },
       {
         "display": "Mokari2111x",
@@ -6607,9 +6659,9 @@
           "from": "2025-11-26",
           "to": "2026-03-31"
         },
-        "attend_prob": 0.45346148880275006,
+        "attend_prob": 0.45346148880274995,
         "noshow_overall": 0.5,
-        "noshow_rolling": 0.5465385111972499,
+        "noshow_rolling": 0.54653851119725,
         "events_seen": 12,
         "noshow_count": 6,
         "flags": {
@@ -6897,7 +6949,7 @@
         },
         "attend_prob": 0.92,
         "noshow_overall": 0.07692307692307687,
-        "noshow_rolling": 0.055466706088325934,
+        "noshow_rolling": 0.05546670608832571,
         "events_seen": 13,
         "noshow_count": 1,
         "flags": {
@@ -7209,7 +7261,7 @@
         },
         "attend_prob": 0.92,
         "noshow_overall": 0.11111111111111116,
-        "noshow_rolling": 0.13856931117274462,
+        "noshow_rolling": 0.13856931117274474,
         "events_seen": 9,
         "noshow_count": 1,
         "flags": {
@@ -7303,9 +7355,9 @@
           "from": "2025-12-03",
           "to": "2025-12-06"
         },
-        "attend_prob": 0.672917169760109,
+        "attend_prob": 0.6729171697601091,
         "noshow_overall": 0.33333333333333337,
-        "noshow_rolling": 0.32708283023989104,
+        "noshow_rolling": 0.32708283023989093,
         "events_seen": 9,
         "noshow_count": 3,
         "flags": {
@@ -7473,7 +7525,7 @@
         },
         "attend_prob": 0.92,
         "noshow_overall": 0.15384615384615385,
-        "noshow_rolling": 0.12481422538139131,
+        "noshow_rolling": 0.12481422538139142,
         "events_seen": 13,
         "noshow_count": 2,
         "flags": {
@@ -7497,7 +7549,7 @@
         },
         "attend_prob": 0.5005362722460588,
         "noshow_overall": 0.25,
-        "noshow_rolling": 0.1846602364815806,
+        "noshow_rolling": 0.1846602364815807,
         "events_seen": 4,
         "noshow_count": 1,
         "flags": {
@@ -7687,7 +7739,7 @@
       "canonical_name": "colombo123",
       "selection_stage": "A-start-main",
       "first_stage": "A-start-main",
-      "rank_in_stage": 4,
+      "rank_in_stage": 3,
       "selected": true,
       "cutoff_reason": "selected",
       "tie_break_key": "score>primary>secondary>events_seen>name",
@@ -8315,18 +8367,18 @@
     },
     {
       "canonical_name": "michael 3840",
-      "selection_stage": "A-start-main",
-      "first_stage": "A-start-main",
-      "rank_in_stage": 3,
+      "selection_stage": "forced",
+      "first_stage": "forced",
+      "rank_in_stage": null,
       "selected": true,
-      "cutoff_reason": "selected",
+      "cutoff_reason": "forced assignment",
       "tie_break_key": "score>primary>secondary>events_seen>name",
-      "score_for_stage": 0.3673779854559869,
-      "attend_prob": 0.39720634695858464,
-      "no_show_eb": 0.5729652915388176,
+      "score_for_stage": null,
+      "attend_prob": null,
+      "no_show_eb": null,
       "is_low_n": false,
-      "events_seen": 6,
-      "stage_history": "A-start-main:selected"
+      "events_seen": 0,
+      "stage_history": "forced:forced assignment"
     },
     {
       "canonical_name": "moda33",
