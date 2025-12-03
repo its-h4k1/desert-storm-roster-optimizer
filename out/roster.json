@@ -1,5 +1,5 @@
 {
-  "generated_at": "2025-12-03T21:09:56.202147+01:00",
+  "generated_at": "2025-12-03T21:13:50.446553+01:00",
   "schema": {
     "version": 4,
     "csv": [
@@ -49,31 +49,31 @@
   "signup_pool": {
     "source": "data/event_signups_next.csv",
     "stats": {
-      "file_rows_total": 30,
-      "file_entries_total": 30,
-      "raw_rows": 30,
-      "rows_with_playername": 30,
-      "rows_with_canon": 30,
-      "file_rows_with_playername": 30,
-      "file_rows_with_canon": 30,
-      "total_entries": 30,
-      "processed_entries_total": 30,
-      "applied_entries": 30,
+      "file_rows_total": 31,
+      "file_entries_total": 31,
+      "raw_rows": 31,
+      "rows_with_playername": 31,
+      "rows_with_canon": 31,
+      "file_rows_with_playername": 31,
+      "file_rows_with_canon": 31,
+      "total_entries": 31,
+      "processed_entries_total": 31,
+      "applied_entries": 31,
       "ignored_entries": 0,
-      "hard_commit_rows_total": 30,
-      "hard_commit_total": 30,
-      "hard_commit_applied": 26,
+      "hard_commit_rows_total": 31,
+      "hard_commit_total": 31,
+      "hard_commit_applied": 27,
       "hard_commit_invalid": 4,
       "hard_commit_overbooked": 0,
       "hard_commit_missing_from_roster": 0,
-      "hard_commitments_total": 30,
-      "hard_commitments_applied": 26,
+      "hard_commitments_total": 31,
+      "hard_commitments_applied": 27,
       "hard_commitments_invalid": 4,
       "hard_commitments_overbooked": 0,
       "hard_commitments_missing_from_roster": 0,
-      "in_roster_hard_commitments": 26,
-      "forced_total": 26,
-      "forced_in_roster": 26,
+      "in_roster_hard_commitments": 27,
+      "forced_total": 27,
+      "forced_in_roster": 27,
       "forced_out_of_roster": 0,
       "extra_entries_total": 1,
       "extra_entries_by_group": {
@@ -84,6 +84,24 @@
     "file_entries": [
       {
         "row_index": 2,
+        "player": "Aegolas",
+        "canon": "aegolas",
+        "group_pref": "A",
+        "role_pref": "Start",
+        "commitment": "hard",
+        "source": "manual",
+        "note": "",
+        "in_alliance": true,
+        "in_player_pool": true,
+        "is_absent_next_event": false,
+        "pref_group_in_pool": null,
+        "status": "forced",
+        "resolved_group": "A",
+        "resolved_role": "Start",
+        "overbooked": false
+      },
+      {
+        "row_index": 3,
         "player": "BobbydyBob",
         "canon": "bobbydybob",
         "group_pref": "A",
@@ -101,7 +119,7 @@
         "overbooked": false
       },
       {
-        "row_index": 3,
+        "row_index": 4,
         "player": "Damien 44",
         "canon": "damien 44",
         "group_pref": "A",
@@ -119,7 +137,7 @@
         "overbooked": false
       },
       {
-        "row_index": 4,
+        "row_index": 5,
         "player": "Elevn765",
         "canon": "elevn765",
         "group_pref": "A",
@@ -137,7 +155,7 @@
         "overbooked": false
       },
       {
-        "row_index": 5,
+        "row_index": 6,
         "player": "itsH4K1",
         "canon": "itsh4k1",
         "group_pref": "A",
@@ -155,7 +173,7 @@
         "overbooked": false
       },
       {
-        "row_index": 6,
+        "row_index": 7,
         "player": "Jimmy die Robbe",
         "canon": "jimmy die robbe",
         "group_pref": "A",
@@ -173,7 +191,7 @@
         "overbooked": false
       },
       {
-        "row_index": 7,
+        "row_index": 8,
         "player": "KUBI01",
         "canon": "kubi01",
         "group_pref": "A",
@@ -191,7 +209,7 @@
         "overbooked": false
       },
       {
-        "row_index": 8,
+        "row_index": 9,
         "player": "LittelJoe",
         "canon": "litteljoe",
         "group_pref": "A",
@@ -209,7 +227,7 @@
         "overbooked": false
       },
       {
-        "row_index": 9,
+        "row_index": 10,
         "player": "Maggyispass",
         "canon": "maggyispass",
         "group_pref": "A",
@@ -227,7 +245,7 @@
         "overbooked": false
       },
       {
-        "row_index": 10,
+        "row_index": 11,
         "player": "Mahaja",
         "canon": "mahaja",
         "group_pref": "A",
@@ -245,7 +263,7 @@
         "overbooked": false
       },
       {
-        "row_index": 11,
+        "row_index": 12,
         "player": "Marikopopo",
         "canon": "marikopopo",
         "group_pref": "A",
@@ -260,7 +278,7 @@
         "reason": "absent"
       },
       {
-        "row_index": 12,
+        "row_index": 13,
         "player": "PAvluWKA",
         "canon": "pavluwka",
         "group_pref": "A",
@@ -278,7 +296,7 @@
         "overbooked": false
       },
       {
-        "row_index": 13,
+        "row_index": 14,
         "player": "Re3Slim3",
         "canon": "re3slim3",
         "group_pref": "A",
@@ -296,7 +314,7 @@
         "overbooked": false
       },
       {
-        "row_index": 14,
+        "row_index": 15,
         "player": "rompa ru",
         "canon": "rompa ru",
         "group_pref": "A",
@@ -314,7 +332,7 @@
         "overbooked": false
       },
       {
-        "row_index": 15,
+        "row_index": 16,
         "player": "Schalmei3",
         "canon": "schalmei3",
         "group_pref": "A",
@@ -332,7 +350,7 @@
         "overbooked": false
       },
       {
-        "row_index": 16,
+        "row_index": 17,
         "player": "TheFisch",
         "canon": "thefisch",
         "group_pref": "A",
@@ -350,7 +368,7 @@
         "overbooked": false
       },
       {
-        "row_index": 17,
+        "row_index": 18,
         "player": "Tobinho25",
         "canon": "tobinho25",
         "group_pref": "A",
@@ -368,7 +386,7 @@
         "overbooked": false
       },
       {
-        "row_index": 18,
+        "row_index": 19,
         "player": "ZANGE",
         "canon": "zange",
         "group_pref": "A",
@@ -386,7 +404,7 @@
         "overbooked": false
       },
       {
-        "row_index": 19,
+        "row_index": 20,
         "player": "Zombie 666 80 420",
         "canon": "zombie 666 80 420",
         "group_pref": "A",
@@ -404,7 +422,7 @@
         "overbooked": false
       },
       {
-        "row_index": 20,
+        "row_index": 21,
         "player": "abu47",
         "canon": "abu47",
         "group_pref": "B",
@@ -422,7 +440,7 @@
         "overbooked": false
       },
       {
-        "row_index": 21,
+        "row_index": 22,
         "player": "Alstermaus",
         "canon": "alstermaus",
         "group_pref": "B",
@@ -440,7 +458,7 @@
         "overbooked": false
       },
       {
-        "row_index": 22,
+        "row_index": 23,
         "player": "b1e90ff",
         "canon": "b1e90ff",
         "group_pref": "B",
@@ -458,7 +476,7 @@
         "overbooked": false
       },
       {
-        "row_index": 23,
+        "row_index": 24,
         "player": "Cupra290",
         "canon": "cupra290",
         "group_pref": "B",
@@ -476,7 +494,7 @@
         "overbooked": false
       },
       {
-        "row_index": 24,
+        "row_index": 25,
         "player": "Dany Bossss",
         "canon": "dany bossss",
         "group_pref": "B",
@@ -494,7 +512,7 @@
         "overbooked": false
       },
       {
-        "row_index": 25,
+        "row_index": 26,
         "player": "Darkface 46",
         "canon": "darkface 46",
         "group_pref": "B",
@@ -512,7 +530,7 @@
         "overbooked": false
       },
       {
-        "row_index": 26,
+        "row_index": 27,
         "player": "Fenworld",
         "canon": "fenworld",
         "group_pref": "B",
@@ -530,7 +548,7 @@
         "overbooked": false
       },
       {
-        "row_index": 27,
+        "row_index": 28,
         "player": "Globi3000",
         "canon": "globi3000",
         "group_pref": "B",
@@ -545,7 +563,7 @@
         "reason": "absent"
       },
       {
-        "row_index": 28,
+        "row_index": 29,
         "player": "Kurdun Laneti",
         "canon": "kurdun laneti",
         "group_pref": "B",
@@ -560,7 +578,7 @@
         "reason": "absent"
       },
       {
-        "row_index": 29,
+        "row_index": 30,
         "player": "maik",
         "canon": "maik",
         "group_pref": "B",
@@ -575,7 +593,7 @@
         "reason": "not_in_alliance"
       },
       {
-        "row_index": 30,
+        "row_index": 31,
         "player": "Maik1234567890",
         "canon": "maik1234567890",
         "group_pref": "B",
@@ -593,7 +611,7 @@
         "overbooked": false
       },
       {
-        "row_index": 31,
+        "row_index": 32,
         "player": "Pickopf",
         "canon": "pickopf",
         "group_pref": "B",
@@ -612,6 +630,16 @@
       }
     ],
     "forced_signups": [
+      {
+        "player": "Aegolas",
+        "canon": "aegolas",
+        "group": "A",
+        "role": "Start",
+        "source": "manual",
+        "note": "",
+        "commitment": "hard",
+        "overbooked": false
+      },
       {
         "player": "BobbydyBob",
         "canon": "bobbydybob",
@@ -896,31 +924,31 @@
       }
     ],
     "overbooked_forced_signups": [],
-    "file_rows_total": 30,
-    "file_entries_total": 30,
-    "raw_rows": 30,
-    "rows_with_playername": 30,
-    "rows_with_canon": 30,
-    "file_rows_with_playername": 30,
-    "file_rows_with_canon": 30,
-    "total_entries": 30,
-    "processed_entries_total": 30,
-    "applied_entries": 30,
+    "file_rows_total": 31,
+    "file_entries_total": 31,
+    "raw_rows": 31,
+    "rows_with_playername": 31,
+    "rows_with_canon": 31,
+    "file_rows_with_playername": 31,
+    "file_rows_with_canon": 31,
+    "total_entries": 31,
+    "processed_entries_total": 31,
+    "applied_entries": 31,
     "ignored_entries": 0,
-    "hard_commit_rows_total": 30,
-    "hard_commit_total": 30,
-    "hard_commit_applied": 26,
+    "hard_commit_rows_total": 31,
+    "hard_commit_total": 31,
+    "hard_commit_applied": 27,
     "hard_commit_invalid": 4,
     "hard_commit_overbooked": 0,
     "hard_commit_missing_from_roster": 0,
-    "hard_commitments_total": 30,
-    "hard_commitments_applied": 26,
+    "hard_commitments_total": 31,
+    "hard_commitments_applied": 27,
     "hard_commitments_invalid": 4,
     "hard_commitments_overbooked": 0,
     "hard_commitments_missing_from_roster": 0,
-    "in_roster_hard_commitments": 26,
-    "forced_total": 26,
-    "forced_in_roster": 26,
+    "in_roster_hard_commitments": 27,
+    "forced_total": 27,
+    "forced_in_roster": 27,
     "forced_out_of_roster": 0,
     "extra_entries_total": 1,
     "extra_entries_by_group": {
@@ -931,7 +959,7 @@
   "groups": {
     "A": {
       "Start": [
-        "BjörnBärchi",
+        "Aegolas",
         "BobbydyBob",
         "Damien 44",
         "Elevn765",
@@ -958,6 +986,7 @@
     "B": {
       "Start": [
         "Alstermaus",
+        "BjörnBärchi",
         "Colombo123",
         "Cupra290",
         "Dany Bossss",
@@ -966,7 +995,6 @@
         "Maik1234567890",
         "Michael 3840",
         "Pickopf",
-        "Schlumpfsoldat 4714",
         "abu47",
         "b1e90ff"
       ],
@@ -986,18 +1014,18 @@
   "event_signups": {
     "scope": "next_event",
     "source": "data/event_signups_next.csv",
-    "raw_rows": 30,
-    "rows_with_playername": 30,
-    "rows_with_canon": 30,
-    "file_rows_total": 30,
-    "file_rows_with_playername": 30,
-    "file_rows_with_canon": 30,
-    "total_entries": 30,
-    "applied_entries": 30,
+    "raw_rows": 31,
+    "rows_with_playername": 31,
+    "rows_with_canon": 31,
+    "file_rows_total": 31,
+    "file_rows_with_playername": 31,
+    "file_rows_with_canon": 31,
+    "total_entries": 31,
+    "applied_entries": 31,
     "ignored_entries": 0,
-    "hard_commitments": 30,
-    "hard_commit_rows_total": 30,
-    "hard_commitments_applied": 26,
+    "hard_commitments": 31,
+    "hard_commit_rows_total": 31,
+    "hard_commitments_applied": 27,
     "hard_commitments_invalid": 4,
     "hard_commitments_overbooked": 0,
     "extra_entries_total": 1,
@@ -1005,11 +1033,21 @@
       "A": 0,
       "B": 1
     },
-    "forced_total": 26,
-    "forced_in_roster": 26,
+    "forced_total": 27,
+    "forced_in_roster": 27,
     "forced_out_of_roster": 0
   },
   "forced_signups": [
+    {
+      "player": "Aegolas",
+      "canon": "aegolas",
+      "group": "A",
+      "role": "Start",
+      "source": "manual",
+      "note": "",
+      "commitment": "hard",
+      "overbooked": false
+    },
     {
       "player": "BobbydyBob",
       "canon": "bobbydybob",
@@ -1928,41 +1966,60 @@
   ],
   "players": [
     {
-      "display": "BjörnBärchi",
-      "canon": "björnbärchi",
+      "display": "Aegolas",
+      "canon": "aegolas",
       "group": "A",
       "role": "Start",
-      "noshow_overall": 0.5,
-      "noshow_rolling": 0.4945591144956769,
-      "attend_prob": 0.3984484722441381,
-      "last_seen": "2025-11-28",
-      "last_noshow_date": "2025-11-21",
-      "events_seen": 6,
-      "noshow_count": 3,
-      "risk_penalty": 0.02983941093133807,
-      "selection_stage": "A-start-main",
+      "noshow_overall": 0.7272727272727273,
+      "noshow_rolling": 0.7525167261836563,
+      "attend_prob": 0.92,
+      "last_seen": "2025-10-24",
+      "last_noshow_date": "2025-11-14",
+      "events_seen": 11,
+      "noshow_count": 8,
+      "risk_penalty": 0.02258321190344436,
+      "selection_stage": "forced",
       "is_absent_next_event": false,
       "callup": {
         "recommended": true,
         "reasons": [
           {
             "code": "high_overall",
-            "label": "High No-Show overall 50.0%"
+            "label": "High No-Show overall 72.7%"
+          },
+          {
+            "code": "high_rolling",
+            "label": "High No-Show rolling 75.3%"
           }
         ]
       },
       "callup_recommended": true,
       "callup_reason_codes": [
-        "high_overall"
+        "high_overall",
+        "high_rolling"
       ],
       "callup_reason": "high_overall",
-      "next_event_status": "open",
+      "forced_signup": {
+        "commitment": "hard",
+        "source": "manual",
+        "note": "",
+        "overbooked": false
+      },
+      "has_forced_signup": true,
+      "next_event_status": "hard_commitment",
       "eb": {
         "p0": 0.6792802920613098,
         "n0": 4.0,
-        "p_hat": 0.5717121168245238,
-        "sigma": 0.14919705465669034
-      }
+        "p_hat": 0.7144747445496826,
+        "sigma": 0.11291605951722179
+      },
+      "event_signup": {
+        "group": "A",
+        "role": "Start",
+        "source": "manual",
+        "note": ""
+      },
+      "has_event_signup": true
     },
     {
       "display": "BobbydyBob",
@@ -2278,7 +2335,7 @@
       "group": "A",
       "role": "Start",
       "noshow_overall": 0.09090909090909094,
-      "noshow_rolling": 0.06616593913832836,
+      "noshow_rolling": 0.06616593913832824,
       "attend_prob": 0.92,
       "last_seen": "2025-11-21",
       "last_noshow_date": "2025-09-05",
@@ -2417,7 +2474,7 @@
       "group": "A",
       "role": "Start",
       "noshow_overall": 0.07692307692307687,
-      "noshow_rolling": 0.05546670608832582,
+      "noshow_rolling": 0.055466706088325934,
       "attend_prob": 0.92,
       "last_seen": "2025-11-21",
       "last_noshow_date": "2025-08-28",
@@ -2593,7 +2650,7 @@
       "group": "A",
       "role": "Start",
       "noshow_overall": 0.11111111111111116,
-      "noshow_rolling": 0.13856931117274462,
+      "noshow_rolling": 0.1385693111727445,
       "attend_prob": 0.92,
       "last_seen": "2025-11-14",
       "last_noshow_date": "2025-11-21",
@@ -2755,7 +2812,7 @@
       "group": "A",
       "role": "Start",
       "noshow_overall": 0.25,
-      "noshow_rolling": 0.1846602364815807,
+      "noshow_rolling": 0.1846602364815806,
       "attend_prob": 0.5021099797355134,
       "last_seen": "2025-11-14",
       "last_noshow_date": "2025-08-28",
@@ -2785,7 +2842,7 @@
       "group": "B",
       "role": "Start",
       "noshow_overall": 0.33333333333333337,
-      "noshow_rolling": 0.3249769166843288,
+      "noshow_rolling": 0.3249769166843287,
       "attend_prob": 0.92,
       "last_seen": "2025-11-28",
       "last_noshow_date": "2025-11-21",
@@ -2822,6 +2879,43 @@
         "note": ""
       },
       "has_event_signup": true
+    },
+    {
+      "display": "BjörnBärchi",
+      "canon": "björnbärchi",
+      "group": "B",
+      "role": "Start",
+      "noshow_overall": 0.5,
+      "noshow_rolling": 0.4945591144956769,
+      "attend_prob": 0.3984484722441381,
+      "last_seen": "2025-11-28",
+      "last_noshow_date": "2025-11-21",
+      "events_seen": 6,
+      "noshow_count": 3,
+      "risk_penalty": 0.02983941093133807,
+      "selection_stage": "B-start-fallback",
+      "is_absent_next_event": false,
+      "callup": {
+        "recommended": true,
+        "reasons": [
+          {
+            "code": "high_overall",
+            "label": "High No-Show overall 50.0%"
+          }
+        ]
+      },
+      "callup_recommended": true,
+      "callup_reason_codes": [
+        "high_overall"
+      ],
+      "callup_reason": "high_overall",
+      "next_event_status": "open",
+      "eb": {
+        "p0": 0.6792802920613098,
+        "n0": 4.0,
+        "p_hat": 0.5717121168245238,
+        "sigma": 0.14919705465669034
+      }
     },
     {
       "display": "Colombo123",
@@ -2959,7 +3053,7 @@
       "group": "B",
       "role": "Start",
       "noshow_overall": 0.75,
-      "noshow_rolling": 0.7192510194369195,
+      "noshow_rolling": 0.7192510194369194,
       "attend_prob": 0.92,
       "last_seen": "2025-11-28",
       "last_noshow_date": "2025-11-21",
@@ -3059,7 +3153,7 @@
       "group": "B",
       "role": "Start",
       "noshow_overall": 0.0714285714285714,
-      "noshow_rolling": 0.05301880398132486,
+      "noshow_rolling": 0.05301880398132475,
       "attend_prob": 0.92,
       "last_seen": "2025-11-28",
       "last_noshow_date": "2025-09-05",
@@ -3186,48 +3280,6 @@
       "has_event_signup": true
     },
     {
-      "display": "Schlumpfsoldat 4714",
-      "canon": "schlumpfsoldat 4714",
-      "group": "B",
-      "role": "Start",
-      "noshow_overall": 0.7142857142857143,
-      "noshow_rolling": 0.6765074466079587,
-      "attend_prob": 0.2720254183505491,
-      "last_seen": "2025-11-14",
-      "last_noshow_date": "2025-11-21",
-      "events_seen": 7,
-      "noshow_count": 5,
-      "risk_penalty": 0.02641811180897461,
-      "selection_stage": "B-start-fallback",
-      "is_absent_next_event": false,
-      "callup": {
-        "recommended": true,
-        "reasons": [
-          {
-            "code": "high_overall",
-            "label": "High No-Show overall 71.4%"
-          },
-          {
-            "code": "high_rolling",
-            "label": "High No-Show rolling 67.7%"
-          }
-        ]
-      },
-      "callup_recommended": true,
-      "callup_reason_codes": [
-        "high_overall",
-        "high_rolling"
-      ],
-      "callup_reason": "high_overall",
-      "next_event_status": "open",
-      "eb": {
-        "p0": 0.6792802920613098,
-        "n0": 4.0,
-        "p_hat": 0.7015564698404763,
-        "sigma": 0.13209055904487305
-      }
-    },
-    {
       "display": "abu47",
       "canon": "abu47",
       "group": "B",
@@ -3284,7 +3336,7 @@
       "group": "B",
       "role": "Start",
       "noshow_overall": 0.33333333333333337,
-      "noshow_rolling": 0.3040069608188277,
+      "noshow_rolling": 0.30400696081882783,
       "attend_prob": 0.92,
       "last_seen": "2025-11-21",
       "last_noshow_date": "2025-10-31",
@@ -3493,8 +3545,8 @@
     "recommended_total": 8,
     "reasons": {
       "high_overall": 6,
-      "low_n": 2,
-      "high_rolling": 3
+      "high_rolling": 3,
+      "low_n": 2
     },
     "rules": {
       "min_events": 3,
@@ -4504,14 +4556,14 @@
     "schema": 2,
     "expected_by_team": {
       "A": {
-        "starters": 17.074248335702347,
+        "starters": 17.59579986345821,
         "subs": 0.0,
-        "total": 17.074248335702347
+        "total": 17.59579986345821
       },
       "B": {
-        "starters": 9.222499308945238,
+        "starters": 9.348922362838826,
         "subs": 0.0,
-        "total": 9.222499308945238
+        "total": 9.348922362838826
       }
     },
     "missing_slots": {
@@ -4524,7 +4576,7 @@
         "Ersatz": 10
       }
     },
-    "pool_total_expected": 36.50751635633798,
+    "pool_total_expected": 37.1645743127911,
     "targets": {
       "A": {
         "low": 24.0,
@@ -4541,8 +4593,8 @@
     },
     "target_fraction": 0.8,
     "target_diff": {
-      "A": -6.925751664297653,
-      "B": -14.777500691054762
+      "A": -6.404200136541789,
+      "B": -14.651077637161174
     },
     "slots_by_team": {
       "A": {
@@ -4585,15 +4637,15 @@
       "issues": []
     },
     "threshold": 0.6,
-    "reliable_pool": 26,
+    "reliable_pool": 27,
     "teams": {
       "A": {
         "starters": {
           "total": 20,
-          "at_threshold": 17,
-          "below_threshold": 3,
+          "at_threshold": 18,
+          "below_threshold": 2,
           "fallback": 0,
-          "forced": 17
+          "forced": 18
         },
         "bench": {
           "total": 0,
@@ -4606,24 +4658,24 @@
           "Ersatz": 10
         },
         "expected_attendance": {
-          "starters": 17.074248335702347,
+          "starters": 17.59579986345821,
           "subs": 0.0,
-          "total": 17.074248335702347
+          "total": 17.59579986345821
         },
         "attendance_target": 24,
-        "attendance_diff": -6.925751664297653,
+        "attendance_diff": -6.404200136541789,
         "slots": {
           "starters_total": 20,
           "bench_total": 10,
           "max_slots": 30
         },
         "risk_level": "moderate",
-        "risk_text": "3 Starter unter Schwelle 60% (Team A wird immer aufgefüllt)",
-        "summary": "Starter: 20 (≥ Schwelle: 17, unter Schwelle: 3); Erwartete Anwesenheit Starter: 17.1; Ersatz-Slots frei: 10; Risiken: 3 Starter unter Schwelle 60% (Team A wird immer aufgefüllt)",
+        "risk_text": "2 Starter unter Schwelle 60% (Team A wird immer aufgefüllt)",
+        "summary": "Starter: 20 (≥ Schwelle: 18, unter Schwelle: 2); Erwartete Anwesenheit Starter: 17.6; Ersatz-Slots frei: 10; Risiken: 2 Starter unter Schwelle 60% (Team A wird immer aufgefüllt)",
         "stage_counts": {
           "start": {
-            "forced": 17,
-            "A-start-main": 3
+            "forced": 18,
+            "A-start-main": 2
           },
           "bench": {}
         }
@@ -4647,12 +4699,12 @@
           "Ersatz": 10
         },
         "expected_attendance": {
-          "starters": 9.222499308945238,
+          "starters": 9.348922362838826,
           "subs": 0.0,
-          "total": 9.222499308945238
+          "total": 9.348922362838826
         },
         "attendance_target": 24,
-        "attendance_diff": -14.777500691054762,
+        "attendance_diff": -14.651077637161174,
         "slots": {
           "starters_total": 20,
           "bench_total": 10,
@@ -4660,7 +4712,7 @@
         },
         "risk_level": "high",
         "risk_text": "8 Starter-Slots bewusst frei – keine weiteren Spieler ≥ 60%; 3 Starter für Team B aus Fallback < Schwelle; 3 Starter unter Schwelle 60% (Team A wird immer aufgefüllt)",
-        "summary": "Starter: 12 (≥ Schwelle: 9, unter Schwelle: 3); Erwartete Anwesenheit Starter: 9.2; Fallback-Starter (< Schwelle): 3; Ersatz-Slots frei: 10; Risiken: 8 Starter-Slots bewusst frei – keine weiteren Spieler ≥ 60%; 3 Starter für Team B aus Fallback < Schwelle; 3 Starter unter Schwelle 60% (Team A wird immer aufgefüllt)",
+        "summary": "Starter: 12 (≥ Schwelle: 9, unter Schwelle: 3); Erwartete Anwesenheit Starter: 9.3; Fallback-Starter (< Schwelle): 3; Ersatz-Slots frei: 10; Risiken: 8 Starter-Slots bewusst frei – keine weiteren Spieler ≥ 60%; 3 Starter für Team B aus Fallback < Schwelle; 3 Starter unter Schwelle 60% (Team A wird immer aufgefüllt)",
         "stage_counts": {
           "start": {
             "forced": 9,
@@ -4671,7 +4723,7 @@
       }
     },
     "recommendation": {
-      "text": "Team A: 20 Starter, erwartete Anwesenheit 17.1 | Team B: 12 Starter, Fallback 3, erwartete Anwesenheit 9.2"
+      "text": "Team A: 20 Starter, erwartete Anwesenheit 17.6 | Team B: 12 Starter, Fallback 3, erwartete Anwesenheit 9.3"
     }
   },
   "callup_suggestions": {
@@ -4696,13 +4748,13 @@
           "Ersatz": 0
         },
         "expected_attendance": {
-          "starters": 17.074248335702347,
+          "starters": 17.59579986345821,
           "subs": 0.0,
-          "total": 17.074248335702347
+          "total": 17.59579986345821
         },
-        "expected_gap": 6.925751664297653,
-        "expected_gap_players": 16,
-        "suggested_callups": 16
+        "expected_gap": 6.404200136541789,
+        "expected_gap_players": 15,
+        "suggested_callups": 15
       },
       "B": {
         "missing": {
@@ -4718,11 +4770,11 @@
           "Ersatz": 0
         },
         "expected_attendance": {
-          "starters": 9.222499308945238,
+          "starters": 9.348922362838826,
           "subs": 0.0,
-          "total": 9.222499308945238
+          "total": 9.348922362838826
         },
-        "expected_gap": 14.777500691054762,
+        "expected_gap": 14.651077637161174,
         "expected_gap_players": 33,
         "suggested_callups": 33
       }
@@ -4730,7 +4782,7 @@
     "teams": {
       "A": {
         "suggestions": [],
-        "target_count": 16
+        "target_count": 15
       },
       "B": {
         "suggestions": [],
@@ -4776,8 +4828,8 @@
         "display": "Aegolas",
         "canon": "aegolas",
         "in_alliance": 1,
-        "roster_status": "-",
-        "event_status": "open",
+        "roster_status": "A-Start",
+        "event_status": "hard_commitment",
         "is_absent_next_event": false,
         "absence": {
           "reason": "",
@@ -4785,7 +4837,7 @@
           "from": "",
           "to": ""
         },
-        "attend_prob": 0.262942043546873,
+        "attend_prob": 0.92,
         "noshow_overall": 0.7272727272727273,
         "noshow_rolling": 0.7525167261836563,
         "events_seen": 11,
@@ -4794,7 +4846,7 @@
           "no_data": false,
           "low_n": false
         },
-        "contact_recommendation": "maybe"
+        "contact_recommendation": "yes"
       },
       {
         "display": "Alonzo Mosley",
@@ -4835,7 +4887,7 @@
         },
         "attend_prob": 0.92,
         "noshow_overall": 0.33333333333333337,
-        "noshow_rolling": 0.3249769166843288,
+        "noshow_rolling": 0.3249769166843287,
         "events_seen": 6,
         "noshow_count": 2,
         "flags": {
@@ -4896,7 +4948,7 @@
         "display": "BjörnBärchi",
         "canon": "björnbärchi",
         "in_alliance": 1,
-        "roster_status": "A-Start",
+        "roster_status": "B-Start",
         "event_status": "open",
         "is_absent_next_event": false,
         "absence": {
@@ -5219,7 +5271,7 @@
         },
         "attend_prob": 0.92,
         "noshow_overall": 0.75,
-        "noshow_rolling": 0.7192510194369195,
+        "noshow_rolling": 0.7192510194369194,
         "events_seen": 4,
         "noshow_count": 3,
         "flags": {
@@ -5339,7 +5391,7 @@
         },
         "attend_prob": 0.22930611206899967,
         "noshow_overall": 0.7777777777777778,
-        "noshow_rolling": 0.7777098742382704,
+        "noshow_rolling": 0.7777098742382705,
         "events_seen": 9,
         "noshow_count": 7,
         "flags": {
@@ -5577,9 +5629,9 @@
           "from": "2025-12-01",
           "to": "2025-12-06"
         },
-        "attend_prob": 0.16976256539278822,
+        "attend_prob": 0.1697625653927881,
         "noshow_overall": 0.8571428571428572,
-        "noshow_rolling": 0.8302374346072118,
+        "noshow_rolling": 0.8302374346072119,
         "events_seen": 7,
         "noshow_count": 6,
         "flags": {
@@ -5865,9 +5917,9 @@
           "from": "",
           "to": ""
         },
-        "attend_prob": 0.8586653073665058,
+        "attend_prob": 0.8586653073665059,
         "noshow_overall": 0.18181818181818177,
-        "noshow_rolling": 0.14133469263349419,
+        "noshow_rolling": 0.14133469263349407,
         "events_seen": 11,
         "noshow_count": 2,
         "flags": {
@@ -5913,9 +5965,9 @@
           "from": "",
           "to": ""
         },
-        "attend_prob": 0.6633513480504165,
+        "attend_prob": 0.6633513480504164,
         "noshow_overall": 0.33333333333333337,
-        "noshow_rolling": 0.3366486519495835,
+        "noshow_rolling": 0.3366486519495836,
         "events_seen": 9,
         "noshow_count": 3,
         "flags": {
@@ -6155,7 +6207,7 @@
         },
         "attend_prob": 0.92,
         "noshow_overall": 0.09090909090909094,
-        "noshow_rolling": 0.06616593913832836,
+        "noshow_rolling": 0.06616593913832824,
         "events_seen": 11,
         "noshow_count": 1,
         "flags": {
@@ -6179,7 +6231,7 @@
         },
         "attend_prob": 0.92,
         "noshow_overall": 0.0714285714285714,
-        "noshow_rolling": 0.05301880398132486,
+        "noshow_rolling": 0.05301880398132475,
         "events_seen": 14,
         "noshow_count": 1,
         "flags": {
@@ -6345,9 +6397,9 @@
           "from": "2025-11-26",
           "to": "2026-03-31"
         },
-        "attend_prob": 0.45346148880275017,
+        "attend_prob": 0.45346148880274995,
         "noshow_overall": 0.5,
-        "noshow_rolling": 0.5465385111972498,
+        "noshow_rolling": 0.54653851119725,
         "events_seen": 12,
         "noshow_count": 6,
         "flags": {
@@ -6635,7 +6687,7 @@
         },
         "attend_prob": 0.92,
         "noshow_overall": 0.07692307692307687,
-        "noshow_rolling": 0.05546670608832582,
+        "noshow_rolling": 0.055466706088325934,
         "events_seen": 13,
         "noshow_count": 1,
         "flags": {
@@ -6648,7 +6700,7 @@
         "display": "Schlumpfsoldat 4714",
         "canon": "schlumpfsoldat 4714",
         "in_alliance": 1,
-        "roster_status": "B-Start",
+        "roster_status": "-",
         "event_status": "open",
         "is_absent_next_event": false,
         "absence": {
@@ -6947,7 +6999,7 @@
         },
         "attend_prob": 0.92,
         "noshow_overall": 0.11111111111111116,
-        "noshow_rolling": 0.13856931117274462,
+        "noshow_rolling": 0.1385693111727445,
         "events_seen": 9,
         "noshow_count": 1,
         "flags": {
@@ -6995,7 +7047,7 @@
         },
         "attend_prob": 0.92,
         "noshow_overall": 0.33333333333333337,
-        "noshow_rolling": 0.3040069608188277,
+        "noshow_rolling": 0.30400696081882783,
         "events_seen": 3,
         "noshow_count": 1,
         "flags": {
@@ -7235,7 +7287,7 @@
         },
         "attend_prob": 0.5021099797355134,
         "noshow_overall": 0.25,
-        "noshow_rolling": 0.1846602364815807,
+        "noshow_rolling": 0.1846602364815806,
         "events_seen": 4,
         "noshow_count": 1,
         "flags": {
@@ -7288,18 +7340,18 @@
     },
     {
       "canonical_name": "aegolas",
-      "selection_stage": "B-bench",
-      "first_stage": "A-start-main",
-      "rank_in_stage": 1,
-      "selected": false,
-      "cutoff_reason": "threshold gate",
+      "selection_stage": "forced",
+      "first_stage": "forced",
+      "rank_in_stage": null,
+      "selected": true,
+      "cutoff_reason": "forced assignment",
       "tie_break_key": "score>primary>secondary>events_seen>name",
-      "score_for_stage": 0.24035883164342864,
-      "attend_prob": 0.262942043546873,
-      "no_show_eb": 0.7144747445496826,
+      "score_for_stage": null,
+      "attend_prob": null,
+      "no_show_eb": null,
       "is_low_n": false,
-      "events_seen": 11,
-      "stage_history": "A-start-main:no slots left; B-start-main:threshold gate; B-start-main:threshold gate; B-start-fallback:MIN_B_STARTERS reached; A-bench:threshold gate; A-bench:threshold gate; B-bench:threshold gate; B-bench:threshold gate"
+      "events_seen": 0,
+      "stage_history": "forced:forced assignment"
     },
     {
       "canonical_name": "alstermaus",
@@ -7363,9 +7415,9 @@
     },
     {
       "canonical_name": "björnbärchi",
-      "selection_stage": "A-start-main",
+      "selection_stage": "B-start-fallback",
       "first_stage": "A-start-main",
-      "rank_in_stage": 3,
+      "rank_in_stage": 1,
       "selected": true,
       "cutoff_reason": "selected",
       "tie_break_key": "score>primary>secondary>events_seen>name",
@@ -7374,7 +7426,7 @@
       "no_show_eb": 0.5717121168245238,
       "is_low_n": false,
       "events_seen": 6,
-      "stage_history": "A-start-main:selected"
+      "stage_history": "A-start-main:no slots left; B-start-main:threshold gate; B-start-main:threshold gate; B-start-fallback:selected"
     },
     {
       "canonical_name": "bobbydybob",
@@ -7440,7 +7492,7 @@
       "canonical_name": "colombo123",
       "selection_stage": "B-start-fallback",
       "first_stage": "A-start-main",
-      "rank_in_stage": 2,
+      "rank_in_stage": 3,
       "selected": true,
       "cutoff_reason": "selected",
       "tie_break_key": "score>primary>secondary>events_seen>name",
@@ -8085,7 +8137,7 @@
       "canonical_name": "michael 3840",
       "selection_stage": "B-start-fallback",
       "first_stage": "A-start-main",
-      "rank_in_stage": 1,
+      "rank_in_stage": 2,
       "selected": true,
       "cutoff_reason": "selected",
       "tie_break_key": "score>primary>secondary>events_seen>name",
@@ -8323,18 +8375,18 @@
     },
     {
       "canonical_name": "schlumpfsoldat 4714",
-      "selection_stage": "B-start-fallback",
+      "selection_stage": "B-bench",
       "first_stage": "A-start-main",
-      "rank_in_stage": 3,
-      "selected": true,
-      "cutoff_reason": "selected",
+      "rank_in_stage": 1,
+      "selected": false,
+      "cutoff_reason": "threshold gate",
       "tie_break_key": "score>primary>secondary>events_seen>name",
       "score_for_stage": 0.2456073065415745,
       "attend_prob": 0.2720254183505491,
       "no_show_eb": 0.7015564698404763,
       "is_low_n": false,
       "events_seen": 7,
-      "stage_history": "A-start-main:no slots left; B-start-main:threshold gate; B-start-main:threshold gate; B-start-fallback:selected"
+      "stage_history": "A-start-main:no slots left; B-start-main:threshold gate; B-start-main:threshold gate; B-start-fallback:MIN_B_STARTERS reached; A-bench:threshold gate; A-bench:threshold gate; B-bench:threshold gate; B-bench:threshold gate"
     },
     {
       "canonical_name": "slepy83",
