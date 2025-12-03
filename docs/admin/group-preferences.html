@@ -345,9 +345,17 @@
               <label>Branch
                 <input id="branchInput" type="text" value="main" spellcheck="false">
               </label>
-              <label>Admin-Key
-                <input id="adminKey" type="password" placeholder="r4-admin" autocomplete="off">
-              </label>
+              <div style="display:grid; gap:0.35rem; min-width:220px;">
+                <label style="margin:0; color:var(--text-muted); font-size:0.85rem;">Admin-Key</label>
+                <div id="adminKeyStatus" class="pill info">Lädt Admin-Status…</div>
+                <div id="adminKeyFallbackRow" style="display:none;">
+                  <div class="inline-input" style="margin-top:0.1rem;">
+                    <input id="adminKeyFallback" type="password" placeholder="Optional – wird zentral gespeichert" autocomplete="off">
+                    <button id="adminKeyFallbackBtn" type="button">Admin-Key übernehmen</button>
+                  </div>
+                  <small class="hint" style="color:var(--text-muted);">Nur nutzen, falls der zentrale Login noch nicht gesetzt wurde.</small>
+                </div>
+              </div>
               <button id="reloadBtn" class="ghost">Neu laden</button>
               <button id="saveBtn">Speichern</button>
             </div>
@@ -418,7 +426,10 @@
         root: document.querySelector(".admin-groupprefs"),
         workerUrl: document.getElementById("workerUrl"),
         branch: document.getElementById("branchInput"),
-        adminKey: document.getElementById("adminKey"),
+        adminKeyFallback: document.getElementById("adminKeyFallback"),
+        adminKeyStatus: document.getElementById("adminKeyStatus"),
+        adminKeyFallbackRow: document.getElementById("adminKeyFallbackRow"),
+        adminKeyFallbackBtn: document.getElementById("adminKeyFallbackBtn"),
         reloadBtn: document.getElementById("reloadBtn"),
         saveBtn: document.getElementById("saveBtn"),
         searchInput: document.getElementById("searchInput"),
@@ -452,7 +463,7 @@
         { value: "soft-A", label: "Bevorzugt A" },
         { value: "soft-B", label: "Bevorzugt B" },
       ];
-      const getAdminKey = () => (elements.adminKey.value || "").trim() || dsroShared.getAdminKey();
+      const getAdminKey = () => dsroShared.getAdminKey();
 
       function uiPrefToModel(value) {
         switch ((value || "none").toString()) {
@@ -790,7 +801,6 @@
             const parsed = JSON.parse(saved);
             if (parsed.workerUrl) elements.workerUrl.value = parsed.workerUrl;
             if (parsed.branch) elements.branch.value = parsed.branch;
-            if (parsed.adminKey) elements.adminKey.value = parsed.adminKey;
             return;
           } catch (err) { console.warn("Settings konnten nicht gelesen werden", err); }
         }
@@ -801,20 +811,37 @@
             if (parsed.workerUrl) elements.workerUrl.value = parsed.workerUrl;
             if (parsed.customBranch) { elements.branch.value = parsed.customBranch; }
             else if (parsed.branchSelect) { elements.branch.value = parsed.branchSelect; }
-            if (parsed.adminKey) elements.adminKey.value = parsed.adminKey;
           } catch (err) { console.warn("Shared settings konnten nicht gelesen werden", err); }
         }
-        dsroShared.saveAdminKey(elements.adminKey.value);
       }
 
       function persistSettings() {
         const values = {
           workerUrl: elements.workerUrl.value,
           branch: elements.branch.value,
-          adminKey: elements.adminKey.value,
         };
         localStorage.setItem(SETTINGS_KEY, JSON.stringify(values));
-        dsroShared.saveAdminKey(values.adminKey);
+      }
+
+      function updateAdminKeyStatus() {
+        const adminKey = getAdminKey();
+        const hasKey = Boolean(adminKey);
+        if (elements.adminKeyStatus) {
+          elements.adminKeyStatus.textContent = hasKey
+            ? "Admin-Key ist gesetzt (zentral verwaltet)."
+            : "Kein Admin-Key gesetzt – bitte über die Admin-Startseite einloggen.";
+          elements.adminKeyStatus.className = hasKey ? "pill info" : "pill";
+        }
+        if (elements.adminKeyFallbackRow) {
+          elements.adminKeyFallbackRow.style.display = hasKey ? "none" : "block";
+        }
+      }
+
+      function applyFallbackAdminKey() {
+        const value = (elements.adminKeyFallback?.value || "").trim();
+        dsroShared.saveAdminKey(value);
+        updateAdminKeyStatus();
+        setStatus(value ? "Admin-Key übernommen (Fallback)." : "Admin-Key entfernt.", value ? "ok" : "warn");
       }
 
       function initEvents() {
@@ -827,13 +854,16 @@
         }
         elements.workerUrl.addEventListener("change", persistSettings);
         elements.branch.addEventListener("change", persistSettings);
-        elements.adminKey.addEventListener("change", persistSettings);
+        if (elements.adminKeyFallbackBtn) {
+          elements.adminKeyFallbackBtn.addEventListener("click", applyFallbackAdminKey);
+        }
       }
 
-      dsroShared.applyAdminKeyInput(elements.adminKey, { onChange: persistSettings });
+      dsroShared.applyAdminKeyInput(elements.adminKeyFallback, { syncOnInput: false, onChange: updateAdminKeyStatus });
       restoreSettings();
       initEvents();
       applyDensityMode(!elements.compactToggle || elements.compactToggle.checked !== false);
+      updateAdminKeyStatus();
       reloadData();
     })();
   </script>
