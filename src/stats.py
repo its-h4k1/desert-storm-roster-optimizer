@@ -77,6 +77,7 @@ def _prep(
     *,
     alias_map: Optional[Dict[str, str]] = None,
     half_life_days: float = 90.0,
+    reference_dt: Optional[datetime] = None,
 ) -> pd.DataFrame:
     """
     Grundaufbereitung:
@@ -103,10 +104,11 @@ def _prep(
     # Teilnahme als 0/1 int
     df["Teilgenommen"] = pd.to_numeric(df["Teilgenommen"], errors="coerce").fillna(0).astype(int).clip(0, 1)
 
-    # Event-Datum & Gewicht
+    # Event-Datum & Gewicht (rolling = exponentiell geglättet gegenüber reference_dt/now)
+    now_dt = reference_dt or datetime.now(timezone.utc)
     df["EventDate"] = df["EventID"].map(parse_event_date)
     df["w"] = df["EventDate"].map(
-        lambda d: exp_decay_weight(d, half_life_days=half_life_days)
+        lambda d: exp_decay_weight(d, now_dt=now_dt, half_life_days=half_life_days)
     )
 
     # Group (A/B) aus EventID – optional nützlich für spätere Auswertungen
@@ -116,6 +118,21 @@ def _prep(
     df["role_start"] = df["RoleAtRegistration"].isin(ROLES_START)
     df["role_sub"] = df["RoleAtRegistration"].isin(ROLES_SUB)
     df["assigned"] = df["role_start"] | df["role_sub"]
+
+    # Events ohne jeglichen Show-Eintrag (häufig Platzhalter/abgesagte Runs)
+    # verzerren die Historie massiv, weil jede Zeile als No-Show gewertet würde.
+    # Wir werfen daher EventIDs aus dem Datensatz, deren Start/Sub-Zeilen
+    # ausschließlich Teilgenommen==0 enthalten.
+    assigned_rows = df[df["assigned"]]
+    if not assigned_rows.empty:
+        event_attendance = assigned_rows.groupby("EventID")["Teilgenommen"].agg(
+            ["sum", "size"]
+        )
+        missing_events = event_attendance[
+            (event_attendance["sum"] <= 0) & (event_attendance["size"] >= 3)
+        ].index
+        if len(missing_events) > 0:
+            df = df[~df["EventID"].isin(missing_events)].copy()
 
     return df
 
@@ -185,6 +202,7 @@ def compute_role_probs(
     *,
     alias_map: Optional[Dict[str, str]] = None,
     half_life_days: float = 90.0,
+    reference_dt: Optional[datetime] = None,
 ) -> pd.DataFrame:
     """
     Liefert p_start/p_sub für den Roster-Builder auf Basis der Historie.
@@ -197,7 +215,12 @@ def compute_role_probs(
       sub_assignments,   sub_shows,   sub_noshow,   sub_show_rate,   sub_noshow_rate,
       sub_w_assignments, sub_w_shows, sub_w_show_rate, sub_w_noshow_rate, sub_last_event
     """
-    df = _prep(events, alias_map=alias_map, half_life_days=half_life_days)
+    df = _prep(
+        events,
+        alias_map=alias_map,
+        half_life_days=half_life_days,
+        reference_dt=reference_dt,
+    )
 
     start_stats = _agg_rates(df, "role_start").add_prefix("start_")
     sub_stats = _agg_rates(df, "role_sub").add_prefix("sub_")
@@ -260,6 +283,7 @@ def compute_player_history(
     *,
     alias_map: Optional[Dict[str, str]] = None,
     half_life_days: float = 90.0,
+    reference_dt: Optional[datetime] = None,
 ) -> pd.DataFrame:
     """
     Rollenübergreifende Metriken pro Spieler:
@@ -268,7 +292,12 @@ def compute_player_history(
       w_show_rate / w_noshow_rate (gewichtet)
       last_event
     """
-    df = _prep(events, alias_map=alias_map, half_life_days=half_life_days)
+    df = _prep(
+        events,
+        alias_map=alias_map,
+        half_life_days=half_life_days,
+        reference_dt=reference_dt,
+    )
     dfa = df[df["assigned"]].copy()
 
     if dfa.empty:
