@@ -21,6 +21,30 @@
     .panel textarea {
       min-height: 240px;
     }
+
+    .admin-key-banner {
+      background: #f8fafc;
+      border: 1px solid var(--border);
+      border-radius: 0.85rem;
+      padding: 0.75rem 0.9rem;
+      display: grid;
+      gap: 0.5rem;
+      min-width: 240px;
+    }
+
+    .admin-key-status {
+      font-size: 0.9rem;
+      color: #1f2937;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .admin-key-status.ok { color: #0f7b43; }
+    .admin-key-status.warn { color: #991b1b; }
+
+    .admin-key-fallback { display: grid; gap: 0.4rem; align-items: start; }
+    .admin-key-fallback small { color: #6b7280; line-height: 1.4; }
   </style>
 </head>
 <body>
@@ -58,6 +82,14 @@
           <a class="btn ghost" href="../index.html">Zur Roster-Ansicht</a>
         </div>
       </header>
+
+      <div class="admin-key-banner" id="adminKeyBanner">
+        <div id="adminKeyStatus" class="admin-key-status">Admin-Key wird geprüft…</div>
+        <div id="adminKeyFallback" class="admin-key-fallback hidden">
+          <small>Kein Admin-Key gefunden? Du kannst ihn über den Login-Button setzen oder hier nachtragen.</small>
+          <button id="btnAdminKeyFallback" class="btn ghost" type="button" style="width:max-content;">Admin-Key übernehmen</button>
+        </div>
+      </div>
 
       <main class="admin-content">
         <section class="admin-section">
@@ -260,23 +292,40 @@ itsH4K1,2025-11-14,2025-11-30,Ferien,1
     const authEmail = $('#authEmail');
     const btnLogin = $('#btnLogin');
     const btnLogout = $('#btnLogout');
+    const adminKeyStatus = $('#adminKeyStatus');
+    const adminKeyFallback = $('#adminKeyFallback');
+    const btnAdminKeyFallback = $('#btnAdminKeyFallback');
 
     function currentAdminKey() { return dsroShared.getAdminKey(); }
 
-    function updateAuthUI() {
-      const key = currentAdminKey();
-      if (key) { authEmail.textContent = 'Admin'; show(btnLogin,false); show(btnLogout,true); }
-      else { authEmail.textContent = ''; show(btnLogin,true); show(btnLogout,false); }
+    function updateAdminKeyStatus() {
+      const hasKey = !!currentAdminKey();
+      if (authEmail) authEmail.textContent = hasKey ? 'Admin' : '';
+      if (btnLogin) { show(btnLogin, !hasKey); btnLogin.disabled = hasKey; }
+      if (btnLogout) { show(btnLogout, hasKey); btnLogout.disabled = !hasKey; }
+      if (adminKeyStatus) {
+        adminKeyStatus.textContent = hasKey
+          ? 'Admin-Key gesetzt (zentral gespeichert).'
+          : 'Kein Admin-Key gesetzt – bitte Admin-Key eintragen.';
+        adminKeyStatus.className = 'admin-key-status ' + (hasKey ? 'ok' : 'warn');
+      }
+      if (adminKeyFallback) adminKeyFallback.classList.toggle('hidden', hasKey);
     }
-    updateAuthUI();
+    updateAdminKeyStatus();
 
-    btnLogin.addEventListener('click', () => {
+    function promptForAdminKey() {
       const k = prompt('Admin-Key eingeben (z. B. r4-admin)');
-      if (k) { dsroShared.saveAdminKey(k.trim()); updateAuthUI(); }
-    });
+      if (k !== null) {
+        dsroShared.saveAdminKey(k.trim());
+      }
+      updateAdminKeyStatus();
+    }
+
+    btnLogin.addEventListener('click', promptForAdminKey);
     btnLogout.addEventListener('click', () => {
-      dsroShared.saveAdminKey(''); updateAuthUI();
+      dsroShared.saveAdminKey(''); updateAdminKeyStatus();
     });
+    btnAdminKeyFallback?.addEventListener('click', promptForAdminKey);
 
     async function authedFetch(url, options = {}) {
       const adminKey = currentAdminKey();
