@@ -1,5 +1,5 @@
 {
-  "generated_at": "2025-12-03T18:49:54.730106+01:00",
+  "generated_at": "2025-12-03T20:30:09.145091+01:00",
   "schema": {
     "version": 4,
     "csv": [
@@ -49,31 +49,31 @@
   "signup_pool": {
     "source": "data/event_signups_next.csv",
     "stats": {
-      "file_rows_total": 29,
-      "file_entries_total": 29,
-      "raw_rows": 29,
-      "rows_with_playername": 29,
-      "rows_with_canon": 29,
-      "file_rows_with_playername": 29,
-      "file_rows_with_canon": 29,
-      "total_entries": 29,
-      "processed_entries_total": 29,
-      "applied_entries": 29,
+      "file_rows_total": 30,
+      "file_entries_total": 30,
+      "raw_rows": 30,
+      "rows_with_playername": 30,
+      "rows_with_canon": 30,
+      "file_rows_with_playername": 30,
+      "file_rows_with_canon": 30,
+      "total_entries": 30,
+      "processed_entries_total": 30,
+      "applied_entries": 30,
       "ignored_entries": 0,
-      "hard_commit_rows_total": 29,
-      "hard_commit_total": 29,
-      "hard_commit_applied": 25,
+      "hard_commit_rows_total": 30,
+      "hard_commit_total": 30,
+      "hard_commit_applied": 26,
       "hard_commit_invalid": 4,
       "hard_commit_overbooked": 0,
       "hard_commit_missing_from_roster": 0,
-      "hard_commitments_total": 29,
-      "hard_commitments_applied": 25,
+      "hard_commitments_total": 30,
+      "hard_commitments_applied": 26,
       "hard_commitments_invalid": 4,
       "hard_commitments_overbooked": 0,
       "hard_commitments_missing_from_roster": 0,
-      "in_roster_hard_commitments": 25,
-      "forced_total": 25,
-      "forced_in_roster": 25,
+      "in_roster_hard_commitments": 26,
+      "forced_total": 26,
+      "forced_in_roster": 26,
       "forced_out_of_roster": 0,
       "extra_entries_total": 1,
       "extra_entries_by_group": {
@@ -477,6 +477,24 @@
       },
       {
         "row_index": 24,
+        "player": "Dany Bossss",
+        "canon": "dany bossss",
+        "group_pref": "B",
+        "role_pref": "Start",
+        "commitment": "hard",
+        "source": "manual",
+        "note": "",
+        "in_alliance": true,
+        "in_player_pool": true,
+        "is_absent_next_event": false,
+        "pref_group_in_pool": null,
+        "status": "forced",
+        "resolved_group": "B",
+        "resolved_role": "Start",
+        "overbooked": false
+      },
+      {
+        "row_index": 25,
         "player": "Darkface 46",
         "canon": "darkface 46",
         "group_pref": "B",
@@ -494,7 +512,7 @@
         "overbooked": false
       },
       {
-        "row_index": 25,
+        "row_index": 26,
         "player": "Fenworld",
         "canon": "fenworld",
         "group_pref": "B",
@@ -512,7 +530,7 @@
         "overbooked": false
       },
       {
-        "row_index": 26,
+        "row_index": 27,
         "player": "Globi3000",
         "canon": "globi3000",
         "group_pref": "B",
@@ -527,7 +545,7 @@
         "reason": "absent"
       },
       {
-        "row_index": 27,
+        "row_index": 28,
         "player": "Kurdun Laneti",
         "canon": "kurdun laneti",
         "group_pref": "B",
@@ -542,7 +560,7 @@
         "reason": "absent"
       },
       {
-        "row_index": 28,
+        "row_index": 29,
         "player": "maik",
         "canon": "maik",
         "group_pref": "B",
@@ -557,7 +575,7 @@
         "reason": "not_in_alliance"
       },
       {
-        "row_index": 29,
+        "row_index": 30,
         "player": "Maik1234567890",
         "canon": "maik1234567890",
         "group_pref": "B",
@@ -575,7 +593,7 @@
         "overbooked": false
       },
       {
-        "row_index": 30,
+        "row_index": 31,
         "player": "Pickopf",
         "canon": "pickopf",
         "group_pref": "B",
@@ -805,6 +823,16 @@
         "overbooked": false
       },
       {
+        "player": "Dany Bossss",
+        "canon": "dany bossss",
+        "group": "B",
+        "role": "Start",
+        "source": "manual",
+        "note": "",
+        "commitment": "hard",
+        "overbooked": false
+      },
+      {
         "player": "Darkface 46",
         "canon": "darkface 46",
         "group": "B",
@@ -868,31 +896,31 @@
       }
     ],
     "overbooked_forced_signups": [],
-    "file_rows_total": 29,
-    "file_entries_total": 29,
-    "raw_rows": 29,
-    "rows_with_playername": 29,
-    "rows_with_canon": 29,
-    "file_rows_with_playername": 29,
-    "file_rows_with_canon": 29,
-    "total_entries": 29,
-    "processed_entries_total": 29,
-    "applied_entries": 29,
+    "file_rows_total": 30,
+    "file_entries_total": 30,
+    "raw_rows": 30,
+    "rows_with_playername": 30,
+    "rows_with_canon": 30,
+    "file_rows_with_playername": 30,
+    "file_rows_with_canon": 30,
+    "total_entries": 30,
+    "processed_entries_total": 30,
+    "applied_entries": 30,
     "ignored_entries": 0,
-    "hard_commit_rows_total": 29,
-    "hard_commit_total": 29,
-    "hard_commit_applied": 25,
+    "hard_commit_rows_total": 30,
+    "hard_commit_total": 30,
+    "hard_commit_applied": 26,
     "hard_commit_invalid": 4,
     "hard_commit_overbooked": 0,
     "hard_commit_missing_from_roster": 0,
-    "hard_commitments_total": 29,
-    "hard_commitments_applied": 25,
+    "hard_commitments_total": 30,
+    "hard_commitments_applied": 26,
     "hard_commitments_invalid": 4,
     "hard_commitments_overbooked": 0,
     "hard_commitments_missing_from_roster": 0,
-    "in_roster_hard_commitments": 25,
-    "forced_total": 25,
-    "forced_in_roster": 25,
+    "in_roster_hard_commitments": 26,
+    "forced_total": 26,
+    "forced_in_roster": 26,
     "forced_out_of_roster": 0,
     "extra_entries_total": 1,
     "extra_entries_by_group": {
@@ -903,9 +931,9 @@
   "groups": {
     "A": {
       "Start": [
+        "BjörnBärchi",
         "BobbydyBob",
         "Damien 44",
-        "Dany Bossss",
         "Elevn765",
         "Jimmy die Robbe",
         "KUBI01",
@@ -930,13 +958,14 @@
     "B": {
       "Start": [
         "Alstermaus",
-        "BjörnBärchi",
         "Cupra290",
+        "Dany Bossss",
         "Darkface 46",
         "Evil Activities",
         "Fenworld",
         "Maik1234567890",
         "Michael 3840",
+        "Moscha",
         "Pickopf",
         "abu47",
         "b1e90ff"
@@ -957,18 +986,18 @@
   "event_signups": {
     "scope": "next_event",
     "source": "data/event_signups_next.csv",
-    "raw_rows": 29,
-    "rows_with_playername": 29,
-    "rows_with_canon": 29,
-    "file_rows_total": 29,
-    "file_rows_with_playername": 29,
-    "file_rows_with_canon": 29,
-    "total_entries": 29,
-    "applied_entries": 29,
+    "raw_rows": 30,
+    "rows_with_playername": 30,
+    "rows_with_canon": 30,
+    "file_rows_total": 30,
+    "file_rows_with_playername": 30,
+    "file_rows_with_canon": 30,
+    "total_entries": 30,
+    "applied_entries": 30,
     "ignored_entries": 0,
-    "hard_commitments": 29,
-    "hard_commit_rows_total": 29,
-    "hard_commitments_applied": 25,
+    "hard_commitments": 30,
+    "hard_commit_rows_total": 30,
+    "hard_commitments_applied": 26,
     "hard_commitments_invalid": 4,
     "hard_commitments_overbooked": 0,
     "extra_entries_total": 1,
@@ -976,8 +1005,8 @@
       "A": 0,
       "B": 1
     },
-    "forced_total": 25,
-    "forced_in_roster": 25,
+    "forced_total": 26,
+    "forced_in_roster": 26,
     "forced_out_of_roster": 0
   },
   "forced_signups": [
@@ -1184,6 +1213,16 @@
     {
       "player": "Cupra290",
       "canon": "cupra290",
+      "group": "B",
+      "role": "Start",
+      "source": "manual",
+      "note": "",
+      "commitment": "hard",
+      "overbooked": false
+    },
+    {
+      "player": "Dany Bossss",
+      "canon": "dany bossss",
       "group": "B",
       "role": "Start",
       "source": "manual",
@@ -1889,6 +1928,43 @@
   ],
   "players": [
     {
+      "display": "BjörnBärchi",
+      "canon": "björnbärchi",
+      "group": "A",
+      "role": "Start",
+      "noshow_overall": 0.5,
+      "noshow_rolling": 0.4945591144956768,
+      "attend_prob": 0.40016900682365764,
+      "last_seen": "2025-11-28",
+      "last_noshow_date": "2025-11-21",
+      "events_seen": 6,
+      "noshow_count": 3,
+      "risk_penalty": 0.029854390576357217,
+      "selection_stage": "A-start-main",
+      "is_absent_next_event": false,
+      "callup": {
+        "recommended": true,
+        "reasons": [
+          {
+            "code": "high_overall",
+            "label": "High No-Show overall 50.0%"
+          }
+        ]
+      },
+      "callup_recommended": true,
+      "callup_reason_codes": [
+        "high_overall"
+      ],
+      "callup_reason": "high_overall",
+      "next_event_status": "open",
+      "eb": {
+        "p0": 0.6749415064999628,
+        "n0": 4.0,
+        "p_hat": 0.5699766025999852,
+        "sigma": 0.14927195288178607
+      }
+    },
+    {
       "display": "BobbydyBob",
       "canon": "bobbydybob",
       "group": "A",
@@ -1975,36 +2051,6 @@
         "note": ""
       },
       "has_event_signup": true
-    },
-    {
-      "display": "Dany Bossss",
-      "canon": "dany bossss",
-      "group": "A",
-      "role": "Start",
-      "noshow_overall": 0.33333333333333337,
-      "noshow_rolling": 0.32356661520493424,
-      "attend_prob": 0.4999266687581803,
-      "last_seen": "2025-11-28",
-      "last_noshow_date": "2025-11-14",
-      "events_seen": 6,
-      "noshow_count": 2,
-      "risk_penalty": 0.0300967286418345,
-      "selection_stage": "A-start-main",
-      "is_absent_next_event": false,
-      "callup": {
-        "recommended": false,
-        "reasons": []
-      },
-      "callup_recommended": false,
-      "callup_reason_codes": [],
-      "callup_reason": null,
-      "next_event_status": "open",
-      "eb": {
-        "p0": 0.6749415064999628,
-        "n0": 4.0,
-        "p_hat": 0.46997660259998514,
-        "sigma": 0.15048364320917249
-      }
     },
     {
       "display": "Elevn765",
@@ -2232,7 +2278,7 @@
       "group": "A",
       "role": "Start",
       "noshow_overall": 0.09090909090909094,
-      "noshow_rolling": 0.06616593913832836,
+      "noshow_rolling": 0.06616593913832824,
       "attend_prob": 0.92,
       "last_seen": "2025-11-21",
       "last_noshow_date": "2025-09-05",
@@ -2415,7 +2461,7 @@
       "group": "A",
       "role": "Start",
       "noshow_overall": 0.19999999999999996,
-      "noshow_rolling": 0.14649024041323122,
+      "noshow_rolling": 0.1464902404132311,
       "attend_prob": 0.92,
       "last_seen": "2025-11-21",
       "last_noshow_date": "2025-08-28",
@@ -2547,7 +2593,7 @@
       "group": "A",
       "role": "Start",
       "noshow_overall": 0.11111111111111116,
-      "noshow_rolling": 0.13856931117274474,
+      "noshow_rolling": 0.13856931117274462,
       "attend_prob": 0.92,
       "last_seen": "2025-11-14",
       "last_noshow_date": "2025-11-21",
@@ -2709,7 +2755,7 @@
       "group": "A",
       "role": "Start",
       "noshow_overall": 0.25,
-      "noshow_rolling": 0.1846602364815806,
+      "noshow_rolling": 0.18466023648158048,
       "attend_prob": 0.5042899423290055,
       "last_seen": "2025-11-14",
       "last_noshow_date": "2025-08-28",
@@ -2778,43 +2824,6 @@
       "has_event_signup": true
     },
     {
-      "display": "BjörnBärchi",
-      "canon": "björnbärchi",
-      "group": "B",
-      "role": "Start",
-      "noshow_overall": 0.5,
-      "noshow_rolling": 0.4945591144956769,
-      "attend_prob": 0.40016900682365764,
-      "last_seen": "2025-11-28",
-      "last_noshow_date": "2025-11-21",
-      "events_seen": 6,
-      "noshow_count": 3,
-      "risk_penalty": 0.029854390576357217,
-      "selection_stage": "B-start-fallback",
-      "is_absent_next_event": false,
-      "callup": {
-        "recommended": true,
-        "reasons": [
-          {
-            "code": "high_overall",
-            "label": "High No-Show overall 50.0%"
-          }
-        ]
-      },
-      "callup_recommended": true,
-      "callup_reason_codes": [
-        "high_overall"
-      ],
-      "callup_reason": "high_overall",
-      "next_event_status": "open",
-      "eb": {
-        "p0": 0.6749415064999628,
-        "n0": 4.0,
-        "p_hat": 0.5699766025999852,
-        "sigma": 0.14927195288178607
-      }
-    },
-    {
       "display": "Cupra290",
       "canon": "cupra290",
       "group": "B",
@@ -2849,6 +2858,50 @@
         "n0": 4.0,
         "p_hat": 0.19284043042856078,
         "sigma": 0.10186690624558047
+      },
+      "event_signup": {
+        "group": "B",
+        "role": "Start",
+        "source": "manual",
+        "note": ""
+      },
+      "has_event_signup": true
+    },
+    {
+      "display": "Dany Bossss",
+      "canon": "dany bossss",
+      "group": "B",
+      "role": "Start",
+      "noshow_overall": 0.33333333333333337,
+      "noshow_rolling": 0.32356661520493424,
+      "attend_prob": 0.92,
+      "last_seen": "2025-11-28",
+      "last_noshow_date": "2025-11-14",
+      "events_seen": 6,
+      "noshow_count": 2,
+      "risk_penalty": 0.0300967286418345,
+      "selection_stage": "forced",
+      "is_absent_next_event": false,
+      "callup": {
+        "recommended": false,
+        "reasons": []
+      },
+      "callup_recommended": false,
+      "callup_reason_codes": [],
+      "callup_reason": null,
+      "forced_signup": {
+        "commitment": "hard",
+        "source": "manual",
+        "note": "",
+        "overbooked": false
+      },
+      "has_forced_signup": true,
+      "next_event_status": "hard_commitment",
+      "eb": {
+        "p0": 0.6749415064999628,
+        "n0": 4.0,
+        "p_hat": 0.46997660259998514,
+        "sigma": 0.15048364320917249
       },
       "event_signup": {
         "group": "B",
@@ -3079,6 +3132,43 @@
         "n0": 4.0,
         "p_hat": 0.5699766025999852,
         "sigma": 0.14927195288178607
+      }
+    },
+    {
+      "display": "Moscha",
+      "canon": "moscha",
+      "group": "B",
+      "role": "Start",
+      "noshow_overall": 0.5,
+      "noshow_rolling": 0.4462965064418225,
+      "attend_prob": 0.3466184770069832,
+      "last_seen": "2025-11-28",
+      "last_noshow_date": "2025-10-31",
+      "events_seen": 2,
+      "noshow_count": 1,
+      "risk_penalty": 0.03675385199304161,
+      "selection_stage": "B-start-fallback",
+      "is_absent_next_event": false,
+      "callup": {
+        "recommended": true,
+        "reasons": [
+          {
+            "code": "low_n",
+            "label": "Low-N (2 Events)"
+          }
+        ]
+      },
+      "callup_recommended": true,
+      "callup_reason_codes": [
+        "low_n"
+      ],
+      "callup_reason": "low_n",
+      "next_event_status": "open",
+      "eb": {
+        "p0": 0.6749415064999628,
+        "n0": 4.0,
+        "p_hat": 0.6166276709999752,
+        "sigma": 0.18376925996520804
       }
     },
     {
@@ -3371,10 +3461,10 @@
   ],
   "callup_stats": {
     "schema": 2,
-    "recommended_total": 7,
+    "recommended_total": 8,
     "reasons": {
-      "low_n": 2,
       "high_overall": 5,
+      "low_n": 3,
       "high_rolling": 2
     },
     "rules": {
@@ -4297,14 +4387,14 @@
     "schema": 2,
     "expected_by_team": {
       "A": {
-        "starters": 17.179250260911914,
+        "starters": 17.07949259897739,
         "subs": 0.0,
-        "total": 17.179250260911914
+        "total": 17.07949259897739
       },
       "B": {
-        "starters": 8.513879043809592,
+        "starters": 9.380328513992918,
         "subs": 0.0,
-        "total": 8.513879043809592
+        "total": 9.380328513992918
       }
     },
     "missing_slots": {
@@ -4313,11 +4403,11 @@
         "Ersatz": 10
       },
       "B": {
-        "Start": 9,
+        "Start": 8,
         "Ersatz": 10
       }
     },
-    "pool_total_expected": 36.938995786891674,
+    "pool_total_expected": 37.3590691181335,
     "targets": {
       "A": {
         "low": 24.0,
@@ -4334,8 +4424,8 @@
     },
     "target_fraction": 0.8,
     "target_diff": {
-      "A": -6.820749739088086,
-      "B": -15.486120956190408
+      "A": -6.920507401022611,
+      "B": -14.619671486007082
     },
     "slots_by_team": {
       "A": {
@@ -4378,7 +4468,7 @@
       "issues": []
     },
     "threshold": 0.6,
-    "reliable_pool": 25,
+    "reliable_pool": 26,
     "teams": {
       "A": {
         "starters": {
@@ -4399,12 +4489,12 @@
           "Ersatz": 10
         },
         "expected_attendance": {
-          "starters": 17.179250260911914,
+          "starters": 17.07949259897739,
           "subs": 0.0,
-          "total": 17.179250260911914
+          "total": 17.07949259897739
         },
         "attendance_target": 24,
-        "attendance_diff": -6.820749739088086,
+        "attendance_diff": -6.920507401022611,
         "slots": {
           "starters_total": 20,
           "bench_total": 10,
@@ -4412,7 +4502,7 @@
         },
         "risk_level": "moderate",
         "risk_text": "3 Starter unter Schwelle 60% (Team A wird immer aufgefüllt)",
-        "summary": "Starter: 20 (≥ Schwelle: 17, unter Schwelle: 3); Erwartete Anwesenheit Starter: 17.2; Ersatz-Slots frei: 10; Risiken: 3 Starter unter Schwelle 60% (Team A wird immer aufgefüllt)",
+        "summary": "Starter: 20 (≥ Schwelle: 17, unter Schwelle: 3); Erwartete Anwesenheit Starter: 17.1; Ersatz-Slots frei: 10; Risiken: 3 Starter unter Schwelle 60% (Team A wird immer aufgefüllt)",
         "stage_counts": {
           "start": {
             "forced": 17,
@@ -4423,11 +4513,11 @@
       },
       "B": {
         "starters": {
-          "total": 11,
-          "at_threshold": 8,
+          "total": 12,
+          "at_threshold": 9,
           "below_threshold": 3,
           "fallback": 3,
-          "forced": 8
+          "forced": 9
         },
         "bench": {
           "total": 0,
@@ -4436,27 +4526,27 @@
           "forced": 0
         },
         "missing_slots": {
-          "Start": 9,
+          "Start": 8,
           "Ersatz": 10
         },
         "expected_attendance": {
-          "starters": 8.513879043809592,
+          "starters": 9.380328513992918,
           "subs": 0.0,
-          "total": 8.513879043809592
+          "total": 9.380328513992918
         },
         "attendance_target": 24,
-        "attendance_diff": -15.486120956190408,
+        "attendance_diff": -14.619671486007082,
         "slots": {
           "starters_total": 20,
           "bench_total": 10,
           "max_slots": 30
         },
         "risk_level": "high",
-        "risk_text": "9 Starter-Slots bewusst frei – keine weiteren Spieler ≥ 60%; 3 Starter für Team B aus Fallback < Schwelle; 3 Starter unter Schwelle 60% (Team A wird immer aufgefüllt)",
-        "summary": "Starter: 11 (≥ Schwelle: 8, unter Schwelle: 3); Erwartete Anwesenheit Starter: 8.5; Fallback-Starter (< Schwelle): 3; Ersatz-Slots frei: 10; Risiken: 9 Starter-Slots bewusst frei – keine weiteren Spieler ≥ 60%; 3 Starter für Team B aus Fallback < Schwelle; 3 Starter unter Schwelle 60% (Team A wird immer aufgefüllt)",
+        "risk_text": "8 Starter-Slots bewusst frei – keine weiteren Spieler ≥ 60%; 3 Starter für Team B aus Fallback < Schwelle; 3 Starter unter Schwelle 60% (Team A wird immer aufgefüllt)",
+        "summary": "Starter: 12 (≥ Schwelle: 9, unter Schwelle: 3); Erwartete Anwesenheit Starter: 9.4; Fallback-Starter (< Schwelle): 3; Ersatz-Slots frei: 10; Risiken: 8 Starter-Slots bewusst frei – keine weiteren Spieler ≥ 60%; 3 Starter für Team B aus Fallback < Schwelle; 3 Starter unter Schwelle 60% (Team A wird immer aufgefüllt)",
         "stage_counts": {
           "start": {
-            "forced": 8,
+            "forced": 9,
             "B-start-fallback": 3
           },
           "bench": {}
@@ -4464,7 +4554,7 @@
       }
     },
     "recommendation": {
-      "text": "Team A: 20 Starter, erwartete Anwesenheit 17.2 | Team B: 11 Starter, Fallback 3, erwartete Anwesenheit 8.5"
+      "text": "Team A: 20 Starter, erwartete Anwesenheit 17.1 | Team B: 12 Starter, Fallback 3, erwartete Anwesenheit 9.4"
     }
   },
   "callup_suggestions": {
@@ -4489,17 +4579,17 @@
           "Ersatz": 0
         },
         "expected_attendance": {
-          "starters": 17.179250260911914,
+          "starters": 17.07949259897739,
           "subs": 0.0,
-          "total": 17.179250260911914
+          "total": 17.07949259897739
         },
-        "expected_gap": 6.820749739088086,
+        "expected_gap": 6.920507401022611,
         "expected_gap_players": 16,
         "suggested_callups": 16
       },
       "B": {
         "missing": {
-          "Start": 9,
+          "Start": 8,
           "Ersatz": 10
         },
         "target_slots": {
@@ -4507,17 +4597,17 @@
           "Ersatz": 10
         },
         "planned_slots": {
-          "Start": 11,
+          "Start": 12,
           "Ersatz": 0
         },
         "expected_attendance": {
-          "starters": 8.513879043809592,
+          "starters": 9.380328513992918,
           "subs": 0.0,
-          "total": 8.513879043809592
+          "total": 9.380328513992918
         },
-        "expected_gap": 15.486120956190408,
-        "expected_gap_players": 35,
-        "suggested_callups": 35
+        "expected_gap": 14.619671486007082,
+        "expected_gap_players": 33,
+        "suggested_callups": 33
       }
     },
     "teams": {
@@ -4527,7 +4617,7 @@
       },
       "B": {
         "suggestions": [],
-        "target_count": 35
+        "target_count": 33
       }
     }
   },
@@ -4554,9 +4644,9 @@
           "from": "",
           "to": ""
         },
-        "attend_prob": 0.486525401595017,
+        "attend_prob": 0.4865254015950169,
         "noshow_overall": 0.5,
-        "noshow_rolling": 0.513474598404983,
+        "noshow_rolling": 0.5134745984049831,
         "events_seen": 2,
         "noshow_count": 1,
         "flags": {
@@ -4602,9 +4692,9 @@
           "from": "2025-12-01",
           "to": "2025-12-06"
         },
-        "attend_prob": 0.7888643835487074,
+        "attend_prob": 0.7888643835487072,
         "noshow_overall": 0.25,
-        "noshow_rolling": 0.21113561645129264,
+        "noshow_rolling": 0.21113561645129275,
         "events_seen": 12,
         "noshow_count": 3,
         "flags": {
@@ -4689,7 +4779,7 @@
         "display": "BjörnBärchi",
         "canon": "björnbärchi",
         "in_alliance": 1,
-        "roster_status": "B-Start",
+        "roster_status": "A-Start",
         "event_status": "open",
         "is_absent_next_event": false,
         "absence": {
@@ -4700,7 +4790,7 @@
         },
         "attend_prob": 0.40016900682365764,
         "noshow_overall": 0.5,
-        "noshow_rolling": 0.4945591144956769,
+        "noshow_rolling": 0.4945591144956768,
         "events_seen": 6,
         "noshow_count": 3,
         "flags": {
@@ -4977,8 +5067,8 @@
         "display": "Dany Bossss",
         "canon": "dany bossss",
         "in_alliance": 1,
-        "roster_status": "A-Start",
-        "event_status": "open",
+        "roster_status": "B-Start",
+        "event_status": "hard_commitment",
         "is_absent_next_event": false,
         "absence": {
           "reason": "",
@@ -4986,7 +5076,7 @@
           "from": "",
           "to": ""
         },
-        "attend_prob": 0.4999266687581803,
+        "attend_prob": 0.92,
         "noshow_overall": 0.33333333333333337,
         "noshow_rolling": 0.32356661520493424,
         "events_seen": 6,
@@ -4995,7 +5085,7 @@
           "no_data": false,
           "low_n": false
         },
-        "contact_recommendation": "maybe"
+        "contact_recommendation": "yes"
       },
       {
         "display": "Darkface 46",
@@ -5948,7 +6038,7 @@
         },
         "attend_prob": 0.92,
         "noshow_overall": 0.09090909090909094,
-        "noshow_rolling": 0.06616593913832836,
+        "noshow_rolling": 0.06616593913832824,
         "events_seen": 11,
         "noshow_count": 1,
         "flags": {
@@ -6105,7 +6195,7 @@
         "display": "Moscha",
         "canon": "moscha",
         "in_alliance": 1,
-        "roster_status": "-",
+        "roster_status": "B-Start",
         "event_status": "open",
         "is_absent_next_event": false,
         "absence": {
@@ -6138,9 +6228,9 @@
           "from": "2025-11-26",
           "to": "2026-03-31"
         },
-        "attend_prob": 0.45346148880274995,
+        "attend_prob": 0.45346148880275006,
         "noshow_overall": 0.5,
-        "noshow_rolling": 0.54653851119725,
+        "noshow_rolling": 0.5465385111972499,
         "events_seen": 12,
         "noshow_count": 6,
         "flags": {
@@ -6522,9 +6612,9 @@
           "from": "2025-12-03",
           "to": "2026-03-03"
         },
-        "attend_prob": 0.5523370214431044,
+        "attend_prob": 0.5523370214431043,
         "noshow_overall": 0.4444444444444444,
-        "noshow_rolling": 0.44766297855689563,
+        "noshow_rolling": 0.44766297855689574,
         "events_seen": 9,
         "noshow_count": 4,
         "flags": {
@@ -6548,7 +6638,7 @@
         },
         "attend_prob": 0.92,
         "noshow_overall": 0.19999999999999996,
-        "noshow_rolling": 0.14649024041323122,
+        "noshow_rolling": 0.1464902404132311,
         "events_seen": 10,
         "noshow_count": 2,
         "flags": {
@@ -6740,7 +6830,7 @@
         },
         "attend_prob": 0.92,
         "noshow_overall": 0.11111111111111116,
-        "noshow_rolling": 0.13856931117274474,
+        "noshow_rolling": 0.13856931117274462,
         "events_seen": 9,
         "noshow_count": 1,
         "flags": {
@@ -7028,7 +7118,7 @@
         },
         "attend_prob": 0.5042899423290055,
         "noshow_overall": 0.25,
-        "noshow_rolling": 0.1846602364815806,
+        "noshow_rolling": 0.18466023648158048,
         "events_seen": 4,
         "noshow_count": 1,
         "flags": {
@@ -7083,7 +7173,7 @@
       "canonical_name": "aegolas",
       "selection_stage": "B-bench",
       "first_stage": "A-start-main",
-      "rank_in_stage": 4,
+      "rank_in_stage": 3,
       "selected": false,
       "cutoff_reason": "threshold gate",
       "tie_break_key": "score>primary>secondary>events_seen>name",
@@ -7113,7 +7203,7 @@
       "canonical_name": "amy0815",
       "selection_stage": "B-bench",
       "first_stage": "A-start-main",
-      "rank_in_stage": 34,
+      "rank_in_stage": 33,
       "selected": false,
       "cutoff_reason": "threshold gate",
       "tie_break_key": "score>primary>secondary>events_seen>name",
@@ -7143,7 +7233,7 @@
       "canonical_name": "baldurbabu",
       "selection_stage": "B-bench",
       "first_stage": "A-start-main",
-      "rank_in_stage": 51,
+      "rank_in_stage": 50,
       "selected": false,
       "cutoff_reason": "threshold gate",
       "tie_break_key": "score>primary>secondary>events_seen>name",
@@ -7156,9 +7246,9 @@
     },
     {
       "canonical_name": "björnbärchi",
-      "selection_stage": "B-start-fallback",
+      "selection_stage": "A-start-main",
       "first_stage": "A-start-main",
-      "rank_in_stage": 1,
+      "rank_in_stage": 3,
       "selected": true,
       "cutoff_reason": "selected",
       "tie_break_key": "score>primary>secondary>events_seen>name",
@@ -7167,7 +7257,7 @@
       "no_show_eb": 0.5699766025999852,
       "is_low_n": false,
       "events_seen": 6,
-      "stage_history": "A-start-main:no slots left; B-start-main:threshold gate; B-start-main:threshold gate; B-start-fallback:selected"
+      "stage_history": "A-start-main:selected"
     },
     {
       "canonical_name": "bobbydybob",
@@ -7188,7 +7278,7 @@
       "canonical_name": "caplap",
       "selection_stage": "B-bench",
       "first_stage": "A-start-main",
-      "rank_in_stage": 9,
+      "rank_in_stage": 8,
       "selected": false,
       "cutoff_reason": "threshold gate",
       "tie_break_key": "score>primary>secondary>events_seen>name",
@@ -7203,7 +7293,7 @@
       "canonical_name": "capsharky",
       "selection_stage": "B-bench",
       "first_stage": "A-start-main",
-      "rank_in_stage": 10,
+      "rank_in_stage": 9,
       "selected": false,
       "cutoff_reason": "threshold gate",
       "tie_break_key": "score>primary>secondary>events_seen>name",
@@ -7233,7 +7323,7 @@
       "canonical_name": "colombo123",
       "selection_stage": "B-bench",
       "first_stage": "A-start-main",
-      "rank_in_stage": 2,
+      "rank_in_stage": 1,
       "selected": false,
       "cutoff_reason": "threshold gate",
       "tie_break_key": "score>primary>secondary>events_seen>name",
@@ -7248,7 +7338,7 @@
       "canonical_name": "commanderpiwi",
       "selection_stage": "B-bench",
       "first_stage": "A-start-main",
-      "rank_in_stage": 35,
+      "rank_in_stage": 34,
       "selected": false,
       "cutoff_reason": "threshold gate",
       "tie_break_key": "score>primary>secondary>events_seen>name",
@@ -7263,7 +7353,7 @@
       "canonical_name": "crzdr79",
       "selection_stage": "B-bench",
       "first_stage": "A-start-main",
-      "rank_in_stage": 36,
+      "rank_in_stage": 35,
       "selected": false,
       "cutoff_reason": "threshold gate",
       "tie_break_key": "score>primary>secondary>events_seen>name",
@@ -7278,7 +7368,7 @@
       "canonical_name": "cs8888",
       "selection_stage": "B-bench",
       "first_stage": "A-start-main",
-      "rank_in_stage": 48,
+      "rank_in_stage": 47,
       "selected": false,
       "cutoff_reason": "threshold gate",
       "tie_break_key": "score>primary>secondary>events_seen>name",
@@ -7321,18 +7411,18 @@
     },
     {
       "canonical_name": "dany bossss",
-      "selection_stage": "A-start-main",
-      "first_stage": "A-start-main",
-      "rank_in_stage": 3,
+      "selection_stage": "forced",
+      "first_stage": "forced",
+      "rank_in_stage": null,
       "selected": true,
-      "cutoff_reason": "selected",
+      "cutoff_reason": "forced assignment",
       "tie_break_key": "score>primary>secondary>events_seen>name",
-      "score_for_stage": 0.4698299401163458,
-      "attend_prob": 0.4999266687581803,
-      "no_show_eb": 0.46997660259998514,
+      "score_for_stage": null,
+      "attend_prob": null,
+      "no_show_eb": null,
       "is_low_n": false,
-      "events_seen": 6,
-      "stage_history": "A-start-main:selected"
+      "events_seen": 0,
+      "stage_history": "forced:forced assignment"
     },
     {
       "canonical_name": "darkface 46",
@@ -7353,7 +7443,7 @@
       "canonical_name": "darkhold",
       "selection_stage": "B-bench",
       "first_stage": "A-start-main",
-      "rank_in_stage": 11,
+      "rank_in_stage": 10,
       "selected": false,
       "cutoff_reason": "threshold gate",
       "tie_break_key": "score>primary>secondary>events_seen>name",
@@ -7368,7 +7458,7 @@
       "canonical_name": "der mok",
       "selection_stage": "B-bench",
       "first_stage": "A-start-main",
-      "rank_in_stage": 12,
+      "rank_in_stage": 11,
       "selected": false,
       "cutoff_reason": "threshold gate",
       "tie_break_key": "score>primary>secondary>events_seen>name",
@@ -7383,7 +7473,7 @@
       "canonical_name": "derole83",
       "selection_stage": "B-bench",
       "first_stage": "A-start-main",
-      "rank_in_stage": 37,
+      "rank_in_stage": 36,
       "selected": false,
       "cutoff_reason": "threshold gate",
       "tie_break_key": "score>primary>secondary>events_seen>name",
@@ -7398,7 +7488,7 @@
       "canonical_name": "devastatorjmi",
       "selection_stage": "B-bench",
       "first_stage": "A-start-main",
-      "rank_in_stage": 7,
+      "rank_in_stage": 6,
       "selected": false,
       "cutoff_reason": "threshold gate",
       "tie_break_key": "score>primary>secondary>events_seen>name",
@@ -7413,7 +7503,7 @@
       "canonical_name": "dna16",
       "selection_stage": "B-bench",
       "first_stage": "A-start-main",
-      "rank_in_stage": 38,
+      "rank_in_stage": 37,
       "selected": false,
       "cutoff_reason": "threshold gate",
       "tie_break_key": "score>primary>secondary>events_seen>name",
@@ -7428,7 +7518,7 @@
       "canonical_name": "domdom15",
       "selection_stage": "B-bench",
       "first_stage": "A-start-main",
-      "rank_in_stage": 53,
+      "rank_in_stage": 52,
       "selected": false,
       "cutoff_reason": "threshold gate",
       "tie_break_key": "score>primary>secondary>events_seen>name",
@@ -7443,7 +7533,7 @@
       "canonical_name": "doodo12",
       "selection_stage": "B-bench",
       "first_stage": "A-start-main",
-      "rank_in_stage": 13,
+      "rank_in_stage": 12,
       "selected": false,
       "cutoff_reason": "threshold gate",
       "tie_break_key": "score>primary>secondary>events_seen>name",
@@ -7458,7 +7548,7 @@
       "canonical_name": "dragon0407",
       "selection_stage": "B-bench",
       "first_stage": "A-start-main",
-      "rank_in_stage": 14,
+      "rank_in_stage": 13,
       "selected": false,
       "cutoff_reason": "threshold gate",
       "tie_break_key": "score>primary>secondary>events_seen>name",
@@ -7488,7 +7578,7 @@
       "canonical_name": "estintore",
       "selection_stage": "B-bench",
       "first_stage": "A-start-main",
-      "rank_in_stage": 15,
+      "rank_in_stage": 14,
       "selected": false,
       "cutoff_reason": "threshold gate",
       "tie_break_key": "score>primary>secondary>events_seen>name",
@@ -7503,7 +7593,7 @@
       "canonical_name": "evil activities",
       "selection_stage": "B-start-fallback",
       "first_stage": "A-start-main",
-      "rank_in_stage": 3,
+      "rank_in_stage": 2,
       "selected": true,
       "cutoff_reason": "selected",
       "tie_break_key": "score>primary>secondary>events_seen>name",
@@ -7533,7 +7623,7 @@
       "canonical_name": "ginge4",
       "selection_stage": "B-bench",
       "first_stage": "A-start-main",
-      "rank_in_stage": 16,
+      "rank_in_stage": 15,
       "selected": false,
       "cutoff_reason": "threshold gate",
       "tie_break_key": "score>primary>secondary>events_seen>name",
@@ -7548,7 +7638,7 @@
       "canonical_name": "grizzly che",
       "selection_stage": "B-bench",
       "first_stage": "A-start-main",
-      "rank_in_stage": 39,
+      "rank_in_stage": 38,
       "selected": false,
       "cutoff_reason": "threshold gate",
       "tie_break_key": "score>primary>secondary>events_seen>name",
@@ -7563,7 +7653,7 @@
       "canonical_name": "hann1453",
       "selection_stage": "B-bench",
       "first_stage": "A-start-main",
-      "rank_in_stage": 40,
+      "rank_in_stage": 39,
       "selected": false,
       "cutoff_reason": "threshold gate",
       "tie_break_key": "score>primary>secondary>events_seen>name",
@@ -7578,7 +7668,7 @@
       "canonical_name": "hejoe",
       "selection_stage": "B-bench",
       "first_stage": "A-start-main",
-      "rank_in_stage": 17,
+      "rank_in_stage": 16,
       "selected": false,
       "cutoff_reason": "threshold gate",
       "tie_break_key": "score>primary>secondary>events_seen>name",
@@ -7608,7 +7698,7 @@
       "canonical_name": "jaymacmacjay",
       "selection_stage": "B-bench",
       "first_stage": "A-start-main",
-      "rank_in_stage": 18,
+      "rank_in_stage": 17,
       "selected": false,
       "cutoff_reason": "threshold gate",
       "tie_break_key": "score>primary>secondary>events_seen>name",
@@ -7638,7 +7728,7 @@
       "canonical_name": "jo ghurt",
       "selection_stage": "B-bench",
       "first_stage": "A-start-main",
-      "rank_in_stage": 33,
+      "rank_in_stage": 32,
       "selected": false,
       "cutoff_reason": "threshold gate",
       "tie_break_key": "score>primary>secondary>events_seen>name",
@@ -7653,7 +7743,7 @@
       "canonical_name": "john doe 0815",
       "selection_stage": "B-bench",
       "first_stage": "A-start-main",
-      "rank_in_stage": 8,
+      "rank_in_stage": 7,
       "selected": false,
       "cutoff_reason": "threshold gate",
       "tie_break_key": "score>primary>secondary>events_seen>name",
@@ -7668,7 +7758,7 @@
       "canonical_name": "joschy81",
       "selection_stage": "B-bench",
       "first_stage": "A-start-main",
-      "rank_in_stage": 19,
+      "rank_in_stage": 18,
       "selected": false,
       "cutoff_reason": "threshold gate",
       "tie_break_key": "score>primary>secondary>events_seen>name",
@@ -7683,7 +7773,7 @@
       "canonical_name": "kaiserslautern1900",
       "selection_stage": "B-bench",
       "first_stage": "A-start-main",
-      "rank_in_stage": 41,
+      "rank_in_stage": 40,
       "selected": false,
       "cutoff_reason": "threshold gate",
       "tie_break_key": "score>primary>secondary>events_seen>name",
@@ -7698,7 +7788,7 @@
       "canonical_name": "kamikaze82",
       "selection_stage": "B-bench",
       "first_stage": "A-start-main",
-      "rank_in_stage": 49,
+      "rank_in_stage": 48,
       "selected": false,
       "cutoff_reason": "threshold gate",
       "tie_break_key": "score>primary>secondary>events_seen>name",
@@ -7713,7 +7803,7 @@
       "canonical_name": "king21king",
       "selection_stage": "B-bench",
       "first_stage": "A-start-main",
-      "rank_in_stage": 20,
+      "rank_in_stage": 19,
       "selected": false,
       "cutoff_reason": "threshold gate",
       "tie_break_key": "score>primary>secondary>events_seen>name",
@@ -7728,7 +7818,7 @@
       "canonical_name": "kinkel27",
       "selection_stage": "B-bench",
       "first_stage": "A-start-main",
-      "rank_in_stage": 42,
+      "rank_in_stage": 41,
       "selected": false,
       "cutoff_reason": "threshold gate",
       "tie_break_key": "score>primary>secondary>events_seen>name",
@@ -7758,7 +7848,7 @@
       "canonical_name": "kurme",
       "selection_stage": "B-bench",
       "first_stage": "A-start-main",
-      "rank_in_stage": 43,
+      "rank_in_stage": 42,
       "selected": false,
       "cutoff_reason": "threshold gate",
       "tie_break_key": "score>primary>secondary>events_seen>name",
@@ -7773,7 +7863,7 @@
       "canonical_name": "larzde",
       "selection_stage": "B-bench",
       "first_stage": "A-start-main",
-      "rank_in_stage": 21,
+      "rank_in_stage": 20,
       "selected": false,
       "cutoff_reason": "threshold gate",
       "tie_break_key": "score>primary>secondary>events_seen>name",
@@ -7788,7 +7878,7 @@
       "canonical_name": "leraxo",
       "selection_stage": "B-bench",
       "first_stage": "A-start-main",
-      "rank_in_stage": 5,
+      "rank_in_stage": 4,
       "selected": false,
       "cutoff_reason": "threshold gate",
       "tie_break_key": "score>primary>secondary>events_seen>name",
@@ -7863,7 +7953,7 @@
       "canonical_name": "major fibonacci",
       "selection_stage": "B-bench",
       "first_stage": "A-start-main",
-      "rank_in_stage": 44,
+      "rank_in_stage": 43,
       "selected": false,
       "cutoff_reason": "threshold gate",
       "tie_break_key": "score>primary>secondary>events_seen>name",
@@ -7878,7 +7968,7 @@
       "canonical_name": "manu1206",
       "selection_stage": "B-bench",
       "first_stage": "A-start-main",
-      "rank_in_stage": 22,
+      "rank_in_stage": 21,
       "selected": false,
       "cutoff_reason": "threshold gate",
       "tie_break_key": "score>primary>secondary>events_seen>name",
@@ -7893,7 +7983,7 @@
       "canonical_name": "michael 3840",
       "selection_stage": "B-start-fallback",
       "first_stage": "A-start-main",
-      "rank_in_stage": 2,
+      "rank_in_stage": 1,
       "selected": true,
       "cutoff_reason": "selected",
       "tie_break_key": "score>primary>secondary>events_seen>name",
@@ -7908,7 +7998,7 @@
       "canonical_name": "moda33",
       "selection_stage": "B-bench",
       "first_stage": "A-start-main",
-      "rank_in_stage": 23,
+      "rank_in_stage": 22,
       "selected": false,
       "cutoff_reason": "threshold gate",
       "tie_break_key": "score>primary>secondary>events_seen>name",
@@ -7921,24 +8011,24 @@
     },
     {
       "canonical_name": "moscha",
-      "selection_stage": "B-bench",
+      "selection_stage": "B-start-fallback",
       "first_stage": "A-start-main",
-      "rank_in_stage": 1,
-      "selected": false,
-      "cutoff_reason": "threshold gate",
+      "rank_in_stage": 3,
+      "selected": true,
+      "cutoff_reason": "selected",
       "tie_break_key": "score>primary>secondary>events_seen>name",
       "score_for_stage": 0.30986462501394163,
       "attend_prob": 0.3466184770069832,
       "no_show_eb": 0.6166276709999752,
       "is_low_n": true,
       "events_seen": 2,
-      "stage_history": "A-start-main:no slots left; B-start-main:threshold gate; B-start-main:threshold gate; B-start-fallback:MIN_B_STARTERS reached; A-bench:threshold gate; A-bench:threshold gate; B-bench:threshold gate; B-bench:threshold gate"
+      "stage_history": "A-start-main:no slots left; B-start-main:threshold gate; B-start-main:threshold gate; B-start-fallback:selected"
     },
     {
       "canonical_name": "nikelas69",
       "selection_stage": "B-bench",
       "first_stage": "A-start-main",
-      "rank_in_stage": 45,
+      "rank_in_stage": 44,
       "selected": false,
       "cutoff_reason": "threshold gate",
       "tie_break_key": "score>primary>secondary>events_seen>name",
@@ -7953,7 +8043,7 @@
       "canonical_name": "nktobi",
       "selection_stage": "B-bench",
       "first_stage": "A-start-main",
-      "rank_in_stage": 46,
+      "rank_in_stage": 45,
       "selected": false,
       "cutoff_reason": "threshold gate",
       "tie_break_key": "score>primary>secondary>events_seen>name",
@@ -7968,7 +8058,7 @@
       "canonical_name": "ognastea",
       "selection_stage": "B-bench",
       "first_stage": "A-start-main",
-      "rank_in_stage": 50,
+      "rank_in_stage": 49,
       "selected": false,
       "cutoff_reason": "threshold gate",
       "tie_break_key": "score>primary>secondary>events_seen>name",
@@ -7983,7 +8073,7 @@
       "canonical_name": "olympusbimbus",
       "selection_stage": "B-bench",
       "first_stage": "A-start-main",
-      "rank_in_stage": 24,
+      "rank_in_stage": 23,
       "selected": false,
       "cutoff_reason": "threshold gate",
       "tie_break_key": "score>primary>secondary>events_seen>name",
@@ -8013,7 +8103,7 @@
       "canonical_name": "pick lussy",
       "selection_stage": "B-bench",
       "first_stage": "A-start-main",
-      "rank_in_stage": 25,
+      "rank_in_stage": 24,
       "selected": false,
       "cutoff_reason": "threshold gate",
       "tie_break_key": "score>primary>secondary>events_seen>name",
@@ -8043,7 +8133,7 @@
       "canonical_name": "pushingsky",
       "selection_stage": "B-bench",
       "first_stage": "A-start-main",
-      "rank_in_stage": 26,
+      "rank_in_stage": 25,
       "selected": false,
       "cutoff_reason": "threshold gate",
       "tie_break_key": "score>primary>secondary>events_seen>name",
@@ -8058,7 +8148,7 @@
       "canonical_name": "pustxblumx",
       "selection_stage": "B-bench",
       "first_stage": "A-start-main",
-      "rank_in_stage": 52,
+      "rank_in_stage": 51,
       "selected": false,
       "cutoff_reason": "threshold gate",
       "tie_break_key": "score>primary>secondary>events_seen>name",
@@ -8103,7 +8193,7 @@
       "canonical_name": "saribaron",
       "selection_stage": "B-bench",
       "first_stage": "A-start-main",
-      "rank_in_stage": 27,
+      "rank_in_stage": 26,
       "selected": false,
       "cutoff_reason": "threshold gate",
       "tie_break_key": "score>primary>secondary>events_seen>name",
@@ -8118,7 +8208,7 @@
       "canonical_name": "satauman",
       "selection_stage": "B-bench",
       "first_stage": "A-start-main",
-      "rank_in_stage": 28,
+      "rank_in_stage": 27,
       "selected": false,
       "cutoff_reason": "threshold gate",
       "tie_break_key": "score>primary>secondary>events_seen>name",
@@ -8148,7 +8238,7 @@
       "canonical_name": "schlumpfsoldat 4714",
       "selection_stage": "B-bench",
       "first_stage": "A-start-main",
-      "rank_in_stage": 3,
+      "rank_in_stage": 2,
       "selected": false,
       "cutoff_reason": "threshold gate",
       "tie_break_key": "score>primary>secondary>events_seen>name",
@@ -8163,7 +8253,7 @@
       "canonical_name": "slepy83",
       "selection_stage": "B-bench",
       "first_stage": "A-start-main",
-      "rank_in_stage": 29,
+      "rank_in_stage": 28,
       "selected": false,
       "cutoff_reason": "threshold gate",
       "tie_break_key": "score>primary>secondary>events_seen>name",
@@ -8208,7 +8298,7 @@
       "canonical_name": "toto 69",
       "selection_stage": "B-bench",
       "first_stage": "A-start-main",
-      "rank_in_stage": 54,
+      "rank_in_stage": 53,
       "selected": false,
       "cutoff_reason": "threshold gate",
       "tie_break_key": "score>primary>secondary>events_seen>name",
@@ -8223,7 +8313,7 @@
       "canonical_name": "wadson17",
       "selection_stage": "B-bench",
       "first_stage": "A-start-main",
-      "rank_in_stage": 30,
+      "rank_in_stage": 29,
       "selected": false,
       "cutoff_reason": "threshold gate",
       "tie_break_key": "score>primary>secondary>events_seen>name",
@@ -8238,7 +8328,7 @@
       "canonical_name": "wellsyone",
       "selection_stage": "B-bench",
       "first_stage": "A-start-main",
-      "rank_in_stage": 31,
+      "rank_in_stage": 30,
       "selected": false,
       "cutoff_reason": "threshold gate",
       "tie_break_key": "score>primary>secondary>events_seen>name",
@@ -8268,7 +8358,7 @@
       "canonical_name": "x scorpion x",
       "selection_stage": "B-bench",
       "first_stage": "A-start-main",
-      "rank_in_stage": 32,
+      "rank_in_stage": 31,
       "selected": false,
       "cutoff_reason": "threshold gate",
       "tie_break_key": "score>primary>secondary>events_seen>name",
@@ -8283,7 +8373,7 @@
       "canonical_name": "yoda0201",
       "selection_stage": "B-bench",
       "first_stage": "A-start-main",
-      "rank_in_stage": 6,
+      "rank_in_stage": 5,
       "selected": false,
       "cutoff_reason": "threshold gate",
       "tie_break_key": "score>primary>secondary>events_seen>name",
@@ -8298,7 +8388,7 @@
       "canonical_name": "yusam 83",
       "selection_stage": "B-bench",
       "first_stage": "A-start-main",
-      "rank_in_stage": 47,
+      "rank_in_stage": 46,
       "selected": false,
       "cutoff_reason": "threshold gate",
       "tie_break_key": "score>primary>secondary>events_seen>name",
