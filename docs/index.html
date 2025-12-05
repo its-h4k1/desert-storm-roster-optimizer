@@ -1106,8 +1106,20 @@
     }
 
     function promptParticipationEventIds() {
-      const eventIdA = prompt('EventID für Gruppe A (Start) eingeben (z. B. DS-2025-11-28-A, leer lassen zum Überspringen):');
-      const eventIdB = prompt('EventID für Gruppe B (Start) eingeben (z. B. DS-2025-11-28-B, leer lassen zum Überspringen):');
+      const defaultEventIdA = (dsroShared && typeof dsroShared.suggestDsEventIdForGroup === 'function')
+        ? (dsroShared.suggestDsEventIdForGroup({ groupLetter: 'A', payload: state.latestPayload }) || '')
+        : '';
+      const defaultEventIdB = (dsroShared && typeof dsroShared.suggestDsEventIdForGroup === 'function')
+        ? (dsroShared.suggestDsEventIdForGroup({ groupLetter: 'B', payload: state.latestPayload }) || '')
+        : '';
+      const eventIdA = prompt(
+        'EventID für Gruppe A (Start) eingeben (z. B. DS-2025-11-28-A, leer lassen zum Überspringen):',
+        defaultEventIdA
+      );
+      const eventIdB = prompt(
+        'EventID für Gruppe B (Start) eingeben (z. B. DS-2025-11-28-B, leer lassen zum Überspringen):',
+        defaultEventIdB
+      );
       return {
         A: eventIdA != null ? eventIdA.trim() : '',
         B: eventIdB != null ? eventIdB.trim() : '',

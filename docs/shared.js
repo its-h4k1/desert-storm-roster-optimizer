@@ -36,6 +36,95 @@
     return path.endsWith("/") ? path : path.replace(/[^/]*$/, "/");
   }
 
+  const DS_EVENT_ID_RE = /DS-(\d{4})-(\d{2})-(\d{2})-[AB]/gi;
+
+  function parseDsEventDate(ymd) {
+    if (!ymd || typeof ymd !== "string") return null;
+    const parts = ymd.split("-").map(part => Number.parseInt(part, 10));
+    if (parts.length !== 3 || parts.some(num => Number.isNaN(num))) return null;
+    const [year, month, day] = parts;
+    const date = new Date(Date.UTC(year, month - 1, day));
+    if (Number.isNaN(date.getTime())) return null;
+    return date;
+  }
+
+  function extractDsEventDatesFromPayload(payload) {
+    const dates = { ids: [], iso: [] };
+    const seen = new Set();
+
+    const addDate = (bucket, candidate) => {
+      const dt = candidate instanceof Date ? candidate : parseDsEventDate(candidate);
+      if (dt) bucket.push(dt);
+    };
+
+    const walk = (value) => {
+      if (!value) return;
+      if (typeof value === "string") {
+        const regex = new RegExp(DS_EVENT_ID_RE);
+        let match;
+        while ((match = regex.exec(value))) {
+          addDate(dates.ids, `${match[1]}-${match[2]}-${match[3]}`);
+        }
+        const isoPrefix = value.match(/^(\d{4}-\d{2}-\d{2})/);
+        if (isoPrefix && isoPrefix[1]) {
+          addDate(dates.iso, isoPrefix[1]);
+        }
+        return;
+      }
+      if (typeof value !== "object") return;
+      if (seen.has(value)) return;
+      seen.add(value);
+      if (Array.isArray(value)) {
+        value.forEach(walk);
+        return;
+      }
+      Object.values(value).forEach(walk);
+    };
+
+    walk(payload);
+    return dates;
+  }
+
+  function computeNextFriday(afterDate, { strict = true } = {}) {
+    const base = afterDate instanceof Date ? new Date(afterDate.getTime()) : new Date();
+    if (Number.isNaN(base.getTime())) return null;
+    base.setUTCHours(0, 0, 0, 0);
+    if (strict) {
+      base.setUTCDate(base.getUTCDate() + 1);
+    }
+    const day = base.getUTCDay();
+    const delta = (5 - day + 7) % 7;
+    base.setUTCDate(base.getUTCDate() + delta);
+    return base;
+  }
+
+  function formatDsEventId(date, groupLetter) {
+    if (!(date instanceof Date) || Number.isNaN(date.getTime())) return "";
+    const group = (groupLetter || "").toString().trim().toUpperCase();
+    if (!group || !/[AB]/.test(group)) return "";
+    const year = date.getUTCFullYear();
+    const month = String(date.getUTCMonth() + 1).padStart(2, "0");
+    const day = String(date.getUTCDate()).padStart(2, "0");
+    return `DS-${year}-${month}-${day}-${group}`;
+  }
+
+  function suggestDsEventIdForGroup({ groupLetter, payload, now = new Date() } = {}) {
+    try {
+      const { ids, iso } = extractDsEventDatesFromPayload(payload);
+      const pickLatest = (arr = []) => (arr.length
+        ? arr.reduce((max, current) => (max && max > current ? max : current), null)
+        : null);
+      const lastEventDate = pickLatest(ids) || null;
+      const referenceIso = pickLatest(iso);
+      const reference = lastEventDate || referenceIso || now;
+      const nextFriday = computeNextFriday(reference, { strict: true });
+      return formatDsEventId(nextFriday, groupLetter);
+    } catch (err) {
+      console.error("DS_EVENT_ID_SUGGEST_FAILED", err);
+      return "";
+    }
+  }
+
   function buildLatestJsonUrl({ branchOverride, cacheBuster, siteRoot } = {}) {
     const cache = typeof cacheBuster === "string" ? cacheBuster : `?v=${Date.now()}`;
     const base = siteRoot || computeSiteRoot(typeof location !== "undefined" ? (location.pathname || "/") : "/");
@@ -271,5 +360,9 @@
     applyAdminKeyInput,
     buildAdminHeaders,
     initAdminLayout,
+    extractDsEventDatesFromPayload,
+    computeNextFriday,
+    formatDsEventId,
+    suggestDsEventIdForGroup,
   };
 })(typeof window !== "undefined" ? window : globalThis);
