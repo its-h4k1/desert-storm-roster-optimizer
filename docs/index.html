@@ -196,6 +196,12 @@
       <button id="callup-export" class="btn" type="button" disabled title="Keine Callup-Kandidaten im aktuellen Roster">
         📥 Callup-Kandidaten als CSV exportieren
       </button>
+      <button id="participation-download" class="btn" type="button" disabled>
+        📥 Teilnahmelisten A/B herunterladen (CSV)
+      </button>
+      <button id="participation-clipboard" class="btn" type="button" disabled>
+        📋 Teilnahmelisten A/B in Zwischenablage kopieren
+      </button>
     </div>
     <p class="muted" id="sort-note" style="margin:0 0 10px"></p>
     <p class="muted legend team-legend">Legende: <span class="tag tag-nd" title="Keine Historie – events_seen = 0">No&nbsp;Data</span> keine Historie · <span class="tag tag-low" title="Wenig Historie – events_seen ∈ {1,2}">low&nbsp;n</span> wenig Historie · <span class="tag tag-fix">🔒 verbindlich</span> verbindliche Zusage (Commitment=hard) · <span class="tag tag-callup callup-badge">🔔 Callup</span> Spieler, für die eine Erinnerung empfohlen wird<br />Farben basieren auf Historie (rolling→overall), EB wird nur zur Sortierung verwendet.<br />No-Data = nie teilgenommen (grau). low-n ≤2 = gelb. 1 Fehltermin = nie rot.</p>
@@ -344,6 +350,7 @@
       allianceFilters: { contactYesOnly: true, hideRoster: true, hideAbsent: true, showFormer: false },
       latestPayload: null,
       playersArray: [],
+      rosterBuckets: {},
     };
     const rosterFilterState = state.rosterFilters;
     const rosterRoot = document.getElementById("roster-root");
@@ -363,6 +370,8 @@
     const callupSuggestionsContent = document.getElementById("callup-suggestions-content");
     const callupSuggestionsNote = document.getElementById("callup-suggestions-note");
     const callupExportBtn = document.getElementById("callup-export");
+    const participationDownloadBtn = document.getElementById("participation-download");
+    const participationClipboardBtn = document.getElementById("participation-clipboard");
     const allianceTable = document.getElementById("alliance-overview-table");
     const allianceSummary = document.getElementById("alliance-overview-summary");
     const allianceExportBtn = document.getElementById("alliance-export");
@@ -484,6 +493,47 @@
           return;
         }
         exportCallupCandidatesCsv(state.latestPayload, candidates);
+      });
+    }
+    if (participationDownloadBtn) {
+      participationDownloadBtn.addEventListener('click', () => {
+        if (!canUseParticipationExport()) {
+          alert('Roster noch nicht geladen – bitte später erneut versuchen.');
+          return;
+        }
+        const eventIds = promptParticipationEventIds();
+        const exports = buildParticipationExports(eventIds);
+        if (!exports.length) {
+          alert('Kein Export, da keine EventID eingegeben wurde.');
+          return;
+        }
+        exports.forEach(entry => downloadCsv(entry));
+      });
+    }
+    if (participationClipboardBtn) {
+      participationClipboardBtn.addEventListener('click', async () => {
+        if (!canUseParticipationExport()) {
+          alert('Roster noch nicht geladen – bitte später erneut versuchen.');
+          return;
+        }
+        const eventIds = promptParticipationEventIds();
+        const exports = buildParticipationExports(eventIds);
+        if (!exports.length) {
+          alert('Kein Export, da keine EventID eingegeben wurde.');
+          return;
+        }
+        if (!navigator.clipboard || typeof navigator.clipboard.writeText !== 'function') {
+          alert('Zwischenablage nicht verfügbar – bitte CSV-Download verwenden.');
+          return;
+        }
+        const combined = exports.map(entry => entry.csvText).join('\n\n');
+        try {
+          await navigator.clipboard.writeText(combined);
+          alert('Teilnahmelisten wurden in die Zwischenablage kopiert.');
+        } catch (err) {
+          console.error('Failed to copy participation CSV', err);
+          alert('Konnte die Teilnahmelisten nicht in die Zwischenablage kopieren. Bitte CSV-Download verwenden.');
+        }
       });
     }
     if (allianceFilterContact) {
@@ -1012,6 +1062,94 @@
       return `"${escaped}"`;
     }
 
+    function buildCsvText(rows) {
+      return rows.map(line => line.map(escapeCsvCell).join(',')).join('\n');
+    }
+
+    function sanitizeFilename(value, fallback = 'export.csv') {
+      const normalized = (value || '').toString().trim();
+      if (!normalized) return fallback;
+      const safe = normalized.replace(/[^a-zA-Z0-9._-]+/g, '-').replace(/-+/g, '-').replace(/^-+|-+$/g, '');
+      return safe || fallback;
+    }
+
+    function downloadCsv({ csvText, filename }) {
+      if (!csvText || !filename) return;
+      const blob = new Blob([csvText], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }
+
+    function canUseParticipationExport() {
+      const buckets = state.rosterBuckets || {};
+      const hasA = Array.isArray(buckets['A-Start']) && buckets['A-Start'].length > 0;
+      const hasB = Array.isArray(buckets['B-Start']) && buckets['B-Start'].length > 0;
+      return Boolean(state.latestPayload && (hasA || hasB));
+    }
+
+    function updateParticipationButtons() {
+      const enabled = canUseParticipationExport();
+      if (participationDownloadBtn) {
+        participationDownloadBtn.disabled = !enabled;
+        participationDownloadBtn.title = enabled ? '' : 'Roster noch nicht geladen';
+      }
+      if (participationClipboardBtn) {
+        participationClipboardBtn.disabled = !enabled;
+        participationClipboardBtn.title = enabled ? '' : 'Roster noch nicht geladen';
+      }
+    }
+
+    function promptParticipationEventIds() {
+      const eventIdA = prompt('EventID für Gruppe A (Start) eingeben (z. B. DS-2025-11-28-A, leer lassen zum Überspringen):');
+      const eventIdB = prompt('EventID für Gruppe B (Start) eingeben (z. B. DS-2025-11-28-B, leer lassen zum Überspringen):');
+      return {
+        A: eventIdA != null ? eventIdA.trim() : '',
+        B: eventIdB != null ? eventIdB.trim() : '',
+      };
+    }
+
+    function collectStartPlayers(groupKey) {
+      const bucket = (state.rosterBuckets && state.rosterBuckets[`${groupKey}-Start`]) || [];
+      if (!Array.isArray(bucket)) return [];
+      return bucket
+        .map(row => (row && row.PlayerName ? row.PlayerName : ''))
+        .map(name => name.trim())
+        .filter(Boolean);
+    }
+
+    function buildParticipationCsvForGroup(groupKey, eventId) {
+      if (!eventId) return null;
+      const players = collectStartPlayers(groupKey);
+      if (!players.length) {
+        alert(`Für Gruppe ${groupKey} existiert keine Startliste im aktuellen Roster.`);
+        return null;
+      }
+      const header = ['EventID', 'Slot', 'PlayerName', 'RoleAtRegistration'];
+      const rows = players.map((player, idx) => [eventId, idx + 1, player, 'Start']);
+      const csvText = buildCsvText([header, ...rows]);
+      const filename = `${sanitizeFilename(eventId, 'event')}-teilnahmeliste.csv`;
+      return { group: groupKey, csvText, filename };
+    }
+
+    function buildParticipationExports(eventIds = {}) {
+      const exports = [];
+      if (eventIds.A) {
+        const exportA = buildParticipationCsvForGroup('A', eventIds.A);
+        if (exportA) exports.push(exportA);
+      }
+      if (eventIds.B) {
+        const exportB = buildParticipationCsvForGroup('B', eventIds.B);
+        if (exportB) exports.push(exportB);
+      }
+      return exports;
+    }
+
     function buildCallupCsvFilename(payload) {
       const rawStamp = (payload && typeof payload.generated_at === 'string' && payload.generated_at.trim())
         ? payload.generated_at
@@ -1072,19 +1210,8 @@
         ];
       });
 
-      const csvLines = [header, ...rows]
-        .map(line => line.map(escapeCsvCell).join(','))
-        .join('\n');
-
-      const blob = new Blob([csvLines], { type: 'text/csv;charset=utf-8;' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = buildCallupCsvFilename(payload);
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
+      const csvLines = buildCsvText([header, ...rows]);
+      downloadCsv({ csvText: csvLines, filename: buildCallupCsvFilename(payload) });
     }
 
     function exportSuggestedCallupsCsv(payload, suggestions) {
@@ -1102,7 +1229,7 @@
         'Reason',
       ];
 
-      const csvLines = [header, ...rows.map(item => [
+      const csvRows = [header, ...rows.map(item => [
         item.display || item.canon || '',
         item.recommended_team || '',
         item.recommended_role || '',
@@ -1111,17 +1238,10 @@
         item.risk || '',
         item.next_event_status || '',
         item.reason || '',
-      ])].map(line => line.map(escapeCsvCell).join(',')).join('\n');
+      ])];
 
-      const blob = new Blob([csvLines], { type: 'text/csv;charset=utf-8;' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = buildCallupCsvFilename(payload).replace('callup_candidates', 'callup_suggestions');
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
+      const csvLines = buildCsvText(csvRows);
+      downloadCsv({ csvText: csvLines, filename: buildCallupCsvFilename(payload).replace('callup_candidates', 'callup_suggestions') });
       return true;
     }
 
@@ -1303,18 +1423,8 @@
         Number.isFinite(Number(p.events_seen)) ? Number(p.events_seen) : '',
         p.contact_recommendation || '',
       ]);
-      const csv = [header, ...rows]
-        .map(line => line.map(escapeCsvCell).join(','))
-        .join('\n');
-      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = buildAllianceCsvFilename(state.latestPayload);
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
+      const csv = buildCsvText([header, ...rows]);
+      downloadCsv({ csvText: csv, filename: buildAllianceCsvFilename(state.latestPayload) });
     }
 
     function parseInAllianceFlag(value) {
@@ -2499,6 +2609,9 @@
           return (a.PlayerName||"").localeCompare(b.PlayerName||"");
         });
       }
+
+      state.rosterBuckets = buckets;
+      updateParticipationButtons();
 
       for (const key of targets) {
         const tbody = document.querySelector(`#${key} tbody`);
