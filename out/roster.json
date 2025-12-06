@@ -1,5 +1,5 @@
 {
-  "generated_at": "2025-12-06T01:49:14.680629+01:00",
+  "generated_at": "2025-12-06T20:39:45.990575+01:00",
   "schema": {
     "version": 4,
     "csv": [
@@ -79,7 +79,10 @@
       "extra_entries_by_group": {
         "A": 0,
         "B": 1
-      }
+      },
+      "hard_signups_only": false,
+      "builder_candidates_total": 81,
+      "builder_filtered_out": 0
     },
     "file_entries": [
       {
@@ -1038,7 +1041,10 @@
     "extra_entries_by_group": {
       "A": 0,
       "B": 1
-    }
+    },
+    "hard_signups_only": false,
+    "builder_candidates_total": 81,
+    "builder_filtered_out": 0
   },
   "groups": {
     "A": {
@@ -1112,6 +1118,10 @@
     "ignored_entries": 0,
     "hard_commitments": 34,
     "hard_commit_rows_total": 34,
+    "hard_signups_only": false,
+    "hard_commitments_total": 34,
+    "builder_candidates_total": 81,
+    "builder_filtered_out": 0,
     "hard_commitments_applied": 30,
     "hard_commitments_invalid": 4,
     "hard_commitments_overbooked": 0,
@@ -2088,7 +2098,7 @@
       "group": "A",
       "role": "Start",
       "noshow_overall": 0.5,
-      "noshow_rolling": 0.4945591144956769,
+      "noshow_rolling": 0.4945591144956768,
       "attend_prob": 0.39720634695858464,
       "last_seen": "2025-11-28",
       "last_noshow_date": "2025-11-21",
@@ -2213,7 +2223,7 @@
       "group": "A",
       "role": "Start",
       "noshow_overall": 0.33333333333333337,
-      "noshow_rolling": 0.32356661520493435,
+      "noshow_rolling": 0.32356661520493424,
       "attend_prob": 0.92,
       "last_seen": "2025-11-28",
       "last_noshow_date": "2025-11-14",
@@ -2660,7 +2670,7 @@
       "group": "A",
       "role": "Start",
       "noshow_overall": 0.19999999999999996,
-      "noshow_rolling": 0.14649024041323122,
+      "noshow_rolling": 0.14649024041323133,
       "attend_prob": 0.92,
       "last_seen": "2025-11-21",
       "last_noshow_date": "2025-08-28",
@@ -2880,7 +2890,7 @@
       "group": "A",
       "role": "Start",
       "noshow_overall": 0.15384615384615385,
-      "noshow_rolling": 0.12481422538139142,
+      "noshow_rolling": 0.12481422538139131,
       "attend_prob": 0.92,
       "last_seen": "2025-11-21",
       "last_noshow_date": "2025-09-26",
@@ -3010,7 +3020,7 @@
       "group": "B",
       "role": "Start",
       "noshow_overall": 0.33333333333333337,
-      "noshow_rolling": 0.3249769166843288,
+      "noshow_rolling": 0.3249769166843287,
       "attend_prob": 0.92,
       "last_seen": "2025-11-28",
       "last_noshow_date": "2025-11-21",
@@ -3333,7 +3343,7 @@
       "group": "B",
       "role": "Start",
       "noshow_overall": 0.0714285714285714,
-      "noshow_rolling": 0.05301880398132486,
+      "noshow_rolling": 0.05301880398132475,
       "attend_prob": 0.92,
       "last_seen": "2025-11-28",
       "last_noshow_date": "2025-09-05",
@@ -3377,7 +3387,7 @@
       "group": "B",
       "role": "Start",
       "noshow_overall": 0.5,
-      "noshow_rolling": 0.47166112285995476,
+      "noshow_rolling": 0.47166112285995465,
       "attend_prob": 0.92,
       "last_seen": "2025-11-21",
       "last_noshow_date": "2025-11-14",
@@ -3484,7 +3494,7 @@
       "group": "B",
       "role": "Start",
       "noshow_overall": 0.5384615384615384,
-      "noshow_rolling": 0.4873974979198368,
+      "noshow_rolling": 0.487397497919837,
       "attend_prob": 0.92,
       "last_seen": "2025-11-28",
       "last_noshow_date": "2025-11-07",
@@ -3535,7 +3545,7 @@
       "group": "B",
       "role": "Start",
       "noshow_overall": 0.7142857142857143,
-      "noshow_rolling": 0.6765074466079586,
+      "noshow_rolling": 0.6765074466079587,
       "attend_prob": 0.27091523943228357,
       "last_seen": "2025-11-14",
       "last_noshow_date": "2025-11-21",
@@ -3628,7 +3638,7 @@
       "group": "B",
       "role": "Start",
       "noshow_overall": 0.33333333333333337,
-      "noshow_rolling": 0.3040069608188277,
+      "noshow_rolling": 0.30400696081882783,
       "attend_prob": 0.92,
       "last_seen": "2025-11-21",
       "last_noshow_date": "2025-10-31",
@@ -5265,9 +5275,9 @@
           "from": "2025-12-01",
           "to": "2025-12-06"
         },
-        "attend_prob": 0.7888643835487072,
+        "attend_prob": 0.7888643835487074,
         "noshow_overall": 0.25,
-        "noshow_rolling": 0.21113561645129275,
+        "noshow_rolling": 0.21113561645129264,
         "events_seen": 12,
         "noshow_count": 3,
         "flags": {
@@ -5291,7 +5301,7 @@
         },
         "attend_prob": 0.92,
         "noshow_overall": 0.33333333333333337,
-        "noshow_rolling": 0.3249769166843288,
+        "noshow_rolling": 0.3249769166843287,
         "events_seen": 6,
         "noshow_count": 2,
         "flags": {
@@ -5363,7 +5373,7 @@
         },
         "attend_prob": 0.39720634695858464,
         "noshow_overall": 0.5,
-        "noshow_rolling": 0.4945591144956769,
+        "noshow_rolling": 0.4945591144956768,
         "events_seen": 6,
         "noshow_count": 3,
         "flags": {
@@ -5651,7 +5661,7 @@
         },
         "attend_prob": 0.92,
         "noshow_overall": 0.33333333333333337,
-        "noshow_rolling": 0.32356661520493435,
+        "noshow_rolling": 0.32356661520493424,
         "events_seen": 6,
         "noshow_count": 2,
         "flags": {
@@ -5961,9 +5971,9 @@
           "from": "2025-12-03",
           "to": "2025-12-06"
         },
-        "attend_prob": 0.4565326950336991,
+        "attend_prob": 0.4565326950336992,
         "noshow_overall": 0.6,
-        "noshow_rolling": 0.5434673049663009,
+        "noshow_rolling": 0.5434673049663008,
         "events_seen": 10,
         "noshow_count": 6,
         "flags": {
@@ -6033,9 +6043,9 @@
           "from": "2025-12-01",
           "to": "2025-12-06"
         },
-        "attend_prob": 0.16976256539278822,
+        "attend_prob": 0.1697625653927881,
         "noshow_overall": 0.8571428571428572,
-        "noshow_rolling": 0.8302374346072118,
+        "noshow_rolling": 0.8302374346072119,
         "events_seen": 7,
         "noshow_count": 6,
         "flags": {
@@ -6369,9 +6379,9 @@
           "from": "",
           "to": ""
         },
-        "attend_prob": 0.6633513480504164,
+        "attend_prob": 0.6633513480504165,
         "noshow_overall": 0.33333333333333337,
-        "noshow_rolling": 0.3366486519495836,
+        "noshow_rolling": 0.3366486519495835,
         "events_seen": 9,
         "noshow_count": 3,
         "flags": {
@@ -6635,7 +6645,7 @@
         },
         "attend_prob": 0.92,
         "noshow_overall": 0.0714285714285714,
-        "noshow_rolling": 0.05301880398132486,
+        "noshow_rolling": 0.05301880398132475,
         "events_seen": 14,
         "noshow_count": 1,
         "flags": {
@@ -6731,7 +6741,7 @@
         },
         "attend_prob": 0.92,
         "noshow_overall": 0.5,
-        "noshow_rolling": 0.47166112285995476,
+        "noshow_rolling": 0.47166112285995465,
         "events_seen": 6,
         "noshow_count": 3,
         "flags": {
@@ -6801,9 +6811,9 @@
           "from": "2025-11-26",
           "to": "2026-03-31"
         },
-        "attend_prob": 0.45346148880274995,
+        "attend_prob": 0.45346148880275006,
         "noshow_overall": 0.5,
-        "noshow_rolling": 0.54653851119725,
+        "noshow_rolling": 0.5465385111972499,
         "events_seen": 12,
         "noshow_count": 6,
         "flags": {
@@ -6947,7 +6957,7 @@
         },
         "attend_prob": 0.92,
         "noshow_overall": 0.5384615384615384,
-        "noshow_rolling": 0.4873974979198368,
+        "noshow_rolling": 0.487397497919837,
         "events_seen": 13,
         "noshow_count": 7,
         "flags": {
@@ -7115,7 +7125,7 @@
         },
         "attend_prob": 0.27091523943228357,
         "noshow_overall": 0.7142857142857143,
-        "noshow_rolling": 0.6765074466079586,
+        "noshow_rolling": 0.6765074466079587,
         "events_seen": 7,
         "noshow_count": 5,
         "flags": {
@@ -7211,7 +7221,7 @@
         },
         "attend_prob": 0.92,
         "noshow_overall": 0.19999999999999996,
-        "noshow_rolling": 0.14649024041323122,
+        "noshow_rolling": 0.14649024041323133,
         "events_seen": 10,
         "noshow_count": 2,
         "flags": {
@@ -7451,7 +7461,7 @@
         },
         "attend_prob": 0.92,
         "noshow_overall": 0.33333333333333337,
-        "noshow_rolling": 0.3040069608188277,
+        "noshow_rolling": 0.30400696081882783,
         "events_seen": 3,
         "noshow_count": 1,
         "flags": {
@@ -7497,9 +7507,9 @@
           "from": "2025-12-03",
           "to": "2025-12-06"
         },
-        "attend_prob": 0.6729171697601091,
+        "attend_prob": 0.672917169760109,
         "noshow_overall": 0.33333333333333337,
-        "noshow_rolling": 0.32708283023989093,
+        "noshow_rolling": 0.32708283023989104,
         "events_seen": 9,
         "noshow_count": 3,
         "flags": {
@@ -7667,7 +7677,7 @@
         },
         "attend_prob": 0.92,
         "noshow_overall": 0.15384615384615385,
-        "noshow_rolling": 0.12481422538139142,
+        "noshow_rolling": 0.12481422538139131,
         "events_seen": 13,
         "noshow_count": 2,
         "flags": {
