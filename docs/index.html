@@ -2473,11 +2473,12 @@
         ? nextEventTextParts.join(" · ")
         : (buildTimestamp ? `Build ${buildTimestamp}` : "n/a");
 
-      const callupsOnlyMode = callupConfig.callups_only_mode;
-      const callupsModeLabel = (callupsOnlyMode === true)
-        ? "Nur Signup-/Callup-Pool (callups_only_mode=true)"
-        : (callupsOnlyMode === false)
-          ? "Alle aktiven Mitglieder (callups_only_mode=false)"
+      const hardSignupsOnly = payload?.signup_pool?.hard_signups_only
+        ?? payload?.signup_pool?.stats?.hard_signups_only;
+      const callupsModeLabel = (hardSignupsOnly === true)
+        ? "Nur harte Zusagen (Commitment=hard)"
+        : (hardSignupsOnly === false)
+          ? "Legacy: Allianz + Zusagen (Commitment ignoriert)"
           : "n/a";
 
       const callupMinAttendProb = toNumber(callupConfig.callup_min_attend_prob ?? callupRules.callup_min_attend_prob ?? payload?.attendance?.threshold);
@@ -2494,7 +2495,7 @@
 
       const items = [
         { label: "Nächstes Event", value: nextEventText || "n/a" },
-        { label: "Modus", value: callupsModeLabel },
+        { label: "Roster-Modus", value: callupsModeLabel },
         { label: "Attendance-Schwelle", value: formatProb(callupMinAttendProb) },
         { label: "B-Starter-Ziel", value: formatNum(minBStarters) },
         { label: "Attendance-Target", value: formatProb(attendanceTargetFraction) },

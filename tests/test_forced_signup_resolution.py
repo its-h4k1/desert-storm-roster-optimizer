@@ -1,7 +1,10 @@
 import json
 import re
+import shutil
 import subprocess
 from pathlib import Path
+
+import pytest
 
 
 def _extract_resolve_forced_signup() -> str:
@@ -16,6 +19,9 @@ def _extract_resolve_forced_signup() -> str:
 
 
 def test_forced_signup_fallback_to_canonical(tmp_path):
+    if shutil.which("node") is None:
+        pytest.skip("node executable not available in test environment")
+
     func_src = _extract_resolve_forced_signup()
 
     payload = {

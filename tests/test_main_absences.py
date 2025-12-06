@@ -4,7 +4,9 @@ import sys
 from pathlib import Path
 
 import pandas as pd
+import pytest
 
+from src import config as config_mod
 from src import main as main_mod
 
 
@@ -22,6 +24,12 @@ def _get_debug_file_entries(block: dict | None) -> list[dict]:
     if entries is None:
         entries = block.get("players")
     return entries or []
+
+
+@pytest.fixture(autouse=True)
+def _disable_hard_signups_only(monkeypatch):
+    monkeypatch.setenv("HARD_SIGNUPS_ONLY", "0")
+    monkeypatch.setattr(config_mod, "_CONFIG_CACHE", None)
 
 
 def test_main_excludes_absent_players(monkeypatch, tmp_path):

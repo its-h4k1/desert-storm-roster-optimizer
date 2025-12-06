@@ -40,10 +40,10 @@ Schätzungen berechnet und daraus deterministische Aufstellungen (A/B, Start/Ers
   `Commitment = none` bedeutet „keine Zusage/Overlay“.
 - `Source` dokumentiert den Kanal der Zusage (z. B. `ingame`, `dm`, `manual`,
   `callup-confirmed`) und kann in der Admin-UI bearbeitet werden.
-- Neuer Modus: `HARD_SIGNUPS_ONLY: true` in `roster.yml` (oder Env-Var
-  `HARD_SIGNUPS_ONLY=1`) lässt den Optimizer nur noch mit harten Zusagen
-  starten. Slots ohne Zusage bleiben leer; kein automatisches Auffüllen aus
-  Allianz-/Callup-Pool.
+- Standard-Modus: `HARD_SIGNUPS_ONLY: true` (Default in `roster.yml`, per Env-Var
+  `HARD_SIGNUPS_ONLY=1` überschreibbar) lässt den Optimizer nur noch mit harten
+  Zusagen starten. Slots ohne Zusage bleiben leer; kein automatisches Auffüllen
+  aus Allianz-/Callup-Pool.
 - Überbuchungen werden nicht heimlich verworfen: `overbooked_forced_signups` in
   `out/latest.json` dokumentiert, wenn mehr harte Zusagen existieren als Slots.
 - Einträge ohne `Commitment = hard` bleiben Overlays/Badges (`event_signup`) oder tauchen als
@@ -114,7 +114,9 @@ keinen Build-Schritt.
 - Rolling wird stärker gewichtet: Sowohl „high rolling“ als auch „rolling uptick“ können eine Empfehlung auslösen,
   auch wenn overall noch unterhalb der 40 %-Schwelle liegt. `callup_reason` codiert u. a. `high_rolling`,
   `rolling_uptick`, `high_overall` und `low_n`; `callup_stats.reasons` zählt diese Gründe.
-- In der Roster-UI steht ein Button „Callup-Kandidaten als CSV exportieren“ (neben dem Callup-Toggle):
+- Callup-Empfehlungen sind rein informativ und beeinflussen den Roster-Build nicht; die Aufstellung basiert auf
+  `event_signups_next.csv` (Commitment = hard).
+- In der Roster-UI steht ein Button „Callup-Kandidaten als CSV exportieren“:
   - Exportiert alle empfohlenen Spieler (laut `latest.json`) direkt aus dem geladenen Payload als CSV.
   - Spaltenreihenfolge: `PlayerName,Group,Role,EventsSeen,NoShowsTotal,NoShowOverall,NoShowRolling,CallupReason,LastSeenDate,LastNoShowDate`.
   - Nützlich, um Callup-Listen in anderen Tools weiterzugeben oder separat zu filtern.

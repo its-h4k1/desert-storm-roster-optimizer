@@ -136,6 +136,8 @@
               <div class="header-meta">
                 <div class="labelled-value" id="eventQuickMeta">nächstes Event · lädt …</div>
                 <span class="pill info" id="assignmentCount">–</span>
+                <span class="pill" id="hardCountA">A: –</span>
+                <span class="pill" id="hardCountB">B: –</span>
                 <div class="build-status-line">
                   <span id="rebuildStatusText">Build-Status lädt …</span>
                   <small class="hint" style="color:var(--text-muted);">Hinweis: Änderungen an event_signups_next.csv werden automatisch in den nächsten Roster-Build übernommen.</small>
@@ -396,6 +398,8 @@
         addBtn: document.getElementById('addBtn'),
         assignmentBody: document.getElementById('assignmentBody'),
         assignmentCount: document.getElementById('assignmentCount'),
+        hardCountA: document.getElementById('hardCountA'),
+        hardCountB: document.getElementById('hardCountB'),
         emptyState: document.getElementById('emptyState'),
         responseStatusInput: document.getElementById('responseStatusInput'),
         responsePlayerInput: document.getElementById('responsePlayerInput'),
@@ -852,6 +856,9 @@
         if (state.eventSignupsMeta?.event_id) parts.push(`Event ${state.eventSignupsMeta.event_id}`);
         if (state.rosterMeta) parts.push(`Build: ${state.rosterMeta}`);
         parts.push(`Pool: ${state.assignments.length}`);
+        if (typeof state.eventSignupsMeta?.hard_signups_only === 'boolean') {
+          parts.push(state.eventSignupsMeta.hard_signups_only ? 'Roster-Modus: nur harte Zusagen' : 'Roster-Modus: Legacy');
+        }
         parts.push(`Responses: ${state.responses.length}`);
         const text = parts.length ? parts.join(' · ') : 'nächstes Event';
         if (elements.eventQuickMeta) elements.eventQuickMeta.textContent = text;
@@ -1106,14 +1113,25 @@
       }
 
       function renderAssignments() {
-        const rows = state.assignments.filter(row => !state.filters.hardOnly || (row.Commitment || 'none') === 'hard');
+        const rows = state.assignments
+          .filter(row => !state.filters.hardOnly || (row.Commitment || 'none') === 'hard')
+          .slice()
+          .sort((a, b) => (a.PlayerName || '').localeCompare((b.PlayerName || ''), 'de', { sensitivity: 'base' }));
         const totalEntries = state.assignments.length;
         elements.assignmentBody.innerHTML = '';
         if (elements.hardOnlyToggle) elements.hardOnlyToggle.checked = Boolean(state.filters.hardOnly);
         elements.assignmentCount.textContent = state.filters.hardOnly
           ? `${rows.length} harte Zusagen (von ${totalEntries})`
           : `${rows.length} Einträge`;
-        elements.eventMeta.textContent = 'Alle Einträge beziehen sich auf das nächste Event (aktuelles Roster); Callup-Einträge sind blau markiert und nur zur Dokumentation.';
+        const hardCounts = { A: 0, B: 0 };
+        state.assignments.forEach(row => {
+          const g = (row.Group || '').toUpperCase();
+          const isHard = (row.Commitment || 'none') === 'hard';
+          if (isHard && (g === 'A' || g === 'B')) hardCounts[g] += 1;
+        });
+        if (elements.hardCountA) elements.hardCountA.textContent = `A: ${hardCounts.A} hard`;
+        if (elements.hardCountB) elements.hardCountB.textContent = `B: ${hardCounts.B} hard`;
+        elements.eventMeta.textContent = 'Alle Einträge beziehen sich auf das nächste Event (aktuelles Roster); Speichern schreibt nur die CSV-Dateien, Roster-Rebuild bleibt ein separater Schritt. Callup-Einträge sind blau markiert und nur zur Dokumentation.';
         elements.emptyState.style.display = rows.length ? 'none' : 'block';
         const responseByCanon = new Map();
         state.responses.forEach(r => {

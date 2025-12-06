@@ -8,7 +8,6 @@
 # - rolling_uptick_delta: Zusätzliche Differenz, die Rolling gegenüber Overall haben muss (in Prozentpunkten).
 # - callup_min_attend_prob: Mindestwahrscheinlichkeit für Attendance, um eine aktive Kontaktaufnahme zu empfehlen.
 # - min_b_starters: Mindestanzahl Starter für Team B (Fallback-Slots unter Schwelle erlaubt).
-# - callups_only_mode: Wenn true, baut der Roster nur aus Spielern im Signup-Pool für das nächste Event.
 version: 1
 min_events: 3
 low_n_max_events: 2
@@ -18,4 +17,3 @@ rolling_uptick_min: 0.25
 rolling_uptick_delta: 0.10
 callup_min_attend_prob: 0.60
 min_b_starters: 3
-callups_only_mode: false

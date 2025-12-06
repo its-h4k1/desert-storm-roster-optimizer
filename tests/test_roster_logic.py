@@ -1,13 +1,11 @@
 from __future__ import annotations
 
-from dataclasses import replace
 import os
 import sys
 from pathlib import Path
 
 import pandas as pd
 
-from src import callup_config as callup_cfg
 from src import config as config_mod
 from src import main as main_mod
 from src import utils as utils_mod
@@ -76,10 +74,6 @@ def _write_csv(path: Path, header: list[str], rows: list[list[str]]) -> None:
     )
 
 
-def _make_callup_config(**overrides):
-    return replace(callup_cfg.DEFAULT_CALLOUP_CONFIG, **overrides)
-
-
 def _fake_builder_capture(df: pd.DataFrame, captured: dict) -> pd.DataFrame:
     captured["builder_players"] = sorted(df["PlayerName"].tolist())
     return pd.DataFrame({
@@ -90,7 +84,71 @@ def _fake_builder_capture(df: pd.DataFrame, captured: dict) -> pd.DataFrame:
     })
 
 
-def test_callups_only_mode_allows_full_alliance_pool(monkeypatch, tmp_path):
+def test_hard_signups_only_default_skips_soft_pool(monkeypatch, tmp_path):
+    data_dir = tmp_path / "data"
+    data_dir.mkdir()
+
+    _write_csv(
+        data_dir / "events.csv",
+        ["EventID", "Slot", "PlayerName", "RoleAtRegistration", "Teilgenommen"],
+        [["DS-2030-01-01-A", 1, "SoftOnly", "Damage", 1]],
+    )
+    _write_csv(
+        data_dir / "alliance.csv",
+        ["PlayerName", "InAlliance"],
+        [["SoftOnly", 1]],
+    )
+    _write_csv(data_dir / "absences.csv", ["PlayerName", "From", "To", "InAlliance"], [])
+    _write_csv(
+        data_dir / "event_signups_next.csv",
+        ["PlayerName", "Group", "Role", "Commitment"],
+        [["SoftOnly", "A", "Start", "none"]],
+    )
+    _write_csv(data_dir / "event_responses_next.csv", ["PlayerName", "Status"], [])
+
+    captured: dict[str, list[str] | pd.DataFrame] = {}
+
+    def _fake_builder(df: pd.DataFrame, **_kwargs) -> pd.DataFrame:
+        captured["builder_players"] = sorted(df["PlayerName"].tolist())
+        return pd.DataFrame(
+            {
+                "PlayerName": df["PlayerName"],
+                "Group": ["A"] * len(df),
+                "Role": ["Start"] * len(df),
+                "_selection_stage": ["builder"] * len(df),
+            }
+        )
+
+    monkeypatch.setattr(main_mod, "build_deterministic_roster", _fake_builder)
+    monkeypatch.setattr(main_mod, "_write_outputs", lambda *_args, **_kwargs: None)
+    monkeypatch.setattr(config_mod, "_CONFIG_CACHE", None)
+    monkeypatch.delenv("HARD_SIGNUPS_ONLY", raising=False)
+
+    argv = [
+        "prog",
+        "--events",
+        "data/events.csv",
+        "--alliance",
+        "data/alliance.csv",
+        "--absences",
+        "data/absences.csv",
+        "--event-signups",
+        "data/event_signups_next.csv",
+        "--event-responses",
+        "data/event_responses_next.csv",
+        "--out",
+        "generated",
+    ]
+
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.setattr(sys, "argv", argv)
+
+    main_mod.main()
+
+    assert captured.get("builder_players") == []
+
+
+def test_hard_signups_only_can_be_disabled(monkeypatch, tmp_path):
     data_dir = tmp_path / "data"
     data_dir.mkdir()
 
@@ -116,7 +174,8 @@ def test_callups_only_mode_allows_full_alliance_pool(monkeypatch, tmp_path):
 
     monkeypatch.setattr(main_mod, "build_deterministic_roster", lambda df, **_: _fake_builder_capture(df, captured))
     monkeypatch.setattr(main_mod, "_write_outputs", lambda *_args, **_kwargs: None)
-    monkeypatch.setattr(main_mod, "load_callup_config", lambda *_: (_make_callup_config(callups_only_mode=False), {}))
+    monkeypatch.setattr(config_mod, "_CONFIG_CACHE", None)
+    monkeypatch.setenv("HARD_SIGNUPS_ONLY", "0")
 
     argv = [
         "prog",
@@ -140,58 +199,6 @@ def test_callups_only_mode_allows_full_alliance_pool(monkeypatch, tmp_path):
     main_mod.main()
 
     assert captured.get("builder_players") == ["freeagent", "signuphero"]
-
-
-def test_callups_only_mode_limits_pool_to_signups(monkeypatch, tmp_path):
-    data_dir = tmp_path / "data"
-    data_dir.mkdir()
-
-    _write_csv(
-        data_dir / "events.csv",
-        ["EventID", "Slot", "PlayerName", "RoleAtRegistration", "Teilgenommen"],
-        [["DS-2030-01-01-A", 1, "SignupHero", "Damage", 1]],
-    )
-    _write_csv(
-        data_dir / "alliance.csv",
-        ["PlayerName", "InAlliance"],
-        [["SignupHero", 1], ["FreeAgent", 1]],
-    )
-    _write_csv(data_dir / "absences.csv", ["PlayerName", "From", "To", "InAlliance"], [])
-    _write_csv(
-        data_dir / "event_signups_next.csv",
-        ["PlayerName", "Group", "Role", "Commitment"],
-        [["SignupHero", "A", "Start", "none"]],
-    )
-    _write_csv(data_dir / "event_responses_next.csv", ["PlayerName", "Status"], [])
-
-    captured: dict[str, list[str]] = {}
-
-    monkeypatch.setattr(main_mod, "build_deterministic_roster", lambda df, **_: _fake_builder_capture(df, captured))
-    monkeypatch.setattr(main_mod, "_write_outputs", lambda *_args, **_kwargs: None)
-    monkeypatch.setattr(main_mod, "load_callup_config", lambda *_: (_make_callup_config(callups_only_mode=True), {}))
-
-    argv = [
-        "prog",
-        "--events",
-        "data/events.csv",
-        "--alliance",
-        "data/alliance.csv",
-        "--absences",
-        "data/absences.csv",
-        "--event-signups",
-        "data/event_signups_next.csv",
-        "--event-responses",
-        "data/event_responses_next.csv",
-        "--out",
-        "generated",
-    ]
-
-    monkeypatch.chdir(tmp_path)
-    monkeypatch.setattr(sys, "argv", argv)
-
-    main_mod.main()
-
-    assert captured.get("builder_players") == ["signuphero"]
 
 
 def test_hard_signups_only_blocks_soft_entries(monkeypatch, tmp_path):
@@ -327,6 +334,8 @@ def test_absent_players_are_excluded_from_roster(monkeypatch, tmp_path):
 
     monkeypatch.setattr(main_mod, "build_deterministic_roster", _fake_builder)
     monkeypatch.setattr(main_mod, "_write_outputs", _capture_outputs)
+    monkeypatch.setenv("HARD_SIGNUPS_ONLY", "0")
+    monkeypatch.setattr(config_mod, "_CONFIG_CACHE", None)
 
     argv = [
         "prog",
