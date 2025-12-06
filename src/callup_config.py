@@ -27,7 +27,6 @@ class CallupConfig:
     rolling_uptick_delta: float
     callup_min_attend_prob: float
     min_b_starters: int
-    callups_only_mode: bool
 
     def to_snapshot(self) -> Dict[str, Any]:
         return asdict(self)
@@ -43,7 +42,6 @@ DEFAULT_CALLOUP_CONFIG = CallupConfig(
     rolling_uptick_delta=0.10,
     callup_min_attend_prob=0.60,
     min_b_starters=3,
-    callups_only_mode=False,
 )
 
 
@@ -63,18 +61,6 @@ def _coerce_float(value: Any, default: float) -> float:
         return float(value)
     except (TypeError, ValueError):
         return default
-
-
-def _coerce_bool(value: Any, default: bool) -> bool:
-    if isinstance(value, bool):
-        return value
-    if isinstance(value, str):
-        lowered = value.strip().lower()
-        if lowered in {"true", "1", "yes", "y", "on"}:
-            return True
-        if lowered in {"false", "0", "no", "n", "off"}:
-            return False
-    return default
 
 
 def _read_config_file(path: Path) -> Dict[str, Any] | None:
@@ -119,8 +105,6 @@ def load_callup_config(path: str | Path = "data/callup_config.yml") -> Tuple[Cal
                 val = _coerce_int(raw.get(field), values[field])
             elif field in {"min_b_starters"}:
                 val = max(_coerce_int(raw.get(field), values[field]), 0)
-            elif field in {"callups_only_mode"}:
-                val = _coerce_bool(raw.get(field), values[field])
             else:
                 val = _coerce_float(raw.get(field), values[field])
             if val == values[field]:

@@ -28,7 +28,7 @@ DEFAULTS: Dict[str, Any] = {
     "WINSORIZE": True,
     "PRIOR_FALLBACK": 0.18,
     "PRIOR_PAD": 0.02,
-    "HARD_SIGNUPS_ONLY": False,
+    "HARD_SIGNUPS_ONLY": True,
 }
 
 _CONFIG_CACHE: Config | None = None

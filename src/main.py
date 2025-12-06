@@ -244,10 +244,10 @@ def _load_event_signups(path: str, to_canon) -> tuple[pd.DataFrame, Dict[str, in
         df = pd.read_csv(path, dtype=str)
     except FileNotFoundError:
         print(f"[info] event signups: {path} fehlt – starte leer")
-        return pd.DataFrame(columns=cols), meta
+        return pd.DataFrame(columns=cols + ["RowNumber", "canon"]), meta
     except Exception as e:
         print(f"[warn] event signups: {path} nicht lesbar ({e}), starte leer")
-        return pd.DataFrame(columns=cols), meta
+        return pd.DataFrame(columns=cols + ["RowNumber", "canon"]), meta
 
     # Sämtliche Spaltennamen case-insensitive auf die erwarteten Header mappen.
     # Hintergrund: Admin-UI & Sheets können Header gelegentlich in lowercase
@@ -1284,16 +1284,8 @@ def main():
     for canon_val in seen_forced:
         next_event_status[canon_val] = "hard_commitment"
 
-    callup_canons = {
-        str(c)
-        for c in (entry.get("canon") for entry in signup_file_entries)
-        if c is not None and not pd.isna(c) and str(c).strip()
-    }
-
     # 6) Input für Builder (nur Rest-Slots)
     pool_for_builder = builder_pool[~builder_pool["canon"].isin(seen_forced)].copy()
-    if callup_config.callups_only_mode:
-        pool_for_builder = pool_for_builder[pool_for_builder["canon"].isin(callup_canons)].copy()
     # Team-Logik:
     #  - Team A Starter: immer voll besetzen (kein Attend-Filter)
     #  - Team B Starter: nur Spieler über der globalen Attend-Schwelle

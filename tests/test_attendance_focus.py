@@ -102,6 +102,10 @@ def test_attendance_prob_and_status_flow(monkeypatch, tmp_path):
     monkeypatch.setattr(main_mod, "_write_outputs", _capture_writer)
     monkeypatch.setattr(main_mod, "STARTERS_PER_GROUP", 2)
     monkeypatch.setattr(main_mod, "SUBS_PER_GROUP", 0)
+    monkeypatch.setenv("HARD_SIGNUPS_ONLY", "0")
+    from src import config as config_mod
+
+    monkeypatch.setattr(config_mod, "_CONFIG_CACHE", None)
 
     argv = [
         "prog",

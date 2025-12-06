@@ -3,13 +3,21 @@ import sys
 from pathlib import Path
 
 import pandas as pd
+import pytest
 
+from src import config as config_mod
 from src import main as main_mod
 
 
 def _write_csv(path: Path, header: list[str], rows: list[list[object]]) -> None:
     content = ",".join(header) + "\n" + "\n".join(",".join(map(str, row)) for row in rows)
     path.write_text(content, encoding="utf-8")
+
+
+@pytest.fixture(autouse=True)
+def _disable_hard_signups_only(monkeypatch):
+    monkeypatch.setenv("HARD_SIGNUPS_ONLY", "0")
+    monkeypatch.setattr(config_mod, "_CONFIG_CACHE", None)
 
 
 def test_decline_removes_player_from_pool(monkeypatch, tmp_path):
