@@ -67,6 +67,9 @@
     .tags { display:flex; gap:0.35rem; flex-wrap:wrap; }
     .tag { padding:0.25rem 0.55rem; border-radius:0.65rem; border:1px solid var(--border); background:var(--bg-alt); font-size:0.8rem; color:var(--text-muted); }
     .tag-hard { background:#fef2f2; border-color:#fecaca; color:#991b1b; font-weight:600; }
+    .tag-source-manual { background:#f3f4f6; border-color:#e5e7eb; color:#111827; font-weight:600; }
+    .tag-source-ingame { background:#dcfce7; border-color:#bbf7d0; color:#166534; font-weight:600; }
+    .tag-source-dm { background:#e0f2fe; border-color:#bfdbfe; color:#1d4ed8; font-weight:600; }
     .tag-callup { background:#eff6ff; border-color:#bfdbfe; color:#1d4ed8; font-weight:600; }
     .tag-decline { background:#fee2e2; border-color:#fecaca; color:#991b1b; font-weight:600; }
     .tag-noresp { background:#fff7ed; border-color:#fed7aa; color:#9a3412; font-weight:600; }
@@ -237,6 +240,10 @@
                       <h2 style="margin:0;">Zugeordnete Teilnehmer</h2>
                       <span id="eventMeta" class="hint" style="color:var(--text-muted);"></span>
                     </div>
+                    <label style="display:inline-flex; align-items:center; gap:0.35rem; font-weight:600;">
+                      <input type="checkbox" id="hardOnlyToggle" />
+                      <span>Nur harte Zusagen</span>
+                    </label>
                   </div>
                   <div class="table-wrapper">
                     <table>
@@ -410,6 +417,7 @@
         rosterPreview: document.getElementById('rosterPreview'),
         rosterMeta: document.getElementById('rosterMeta'),
         addPanel: document.getElementById('addPanel'),
+        hardOnlyToggle: document.getElementById('hardOnlyToggle'),
       };
 
       const SETTINGS_KEY = 'dsro-event-assignments-settings';
@@ -443,6 +451,7 @@
       const DEFAULT_HEADERS = ['PlayerName','Group','Role','Commitment','Source','Note'];
       const DEFAULT_RESPONSE_HEADERS = ['PlayerName','Status','Source','Note'];
       const ALLOWED_RESPONSE_STATUSES = ['decline','no_response'];
+      const SOURCE_OPTIONS = ['manual','ingame','dm','callup-confirmed'];
       const branchOverride = (new URL(location.href)).searchParams.get('branch');
       const cacheBuster = `?v=${Date.now()}`;
       const buildLatestJsonUrl = (window.dsroShared && typeof window.dsroShared.buildLatestJsonUrl === 'function')
@@ -518,6 +527,7 @@
         currentBranch: branchOverride || 'main',
         buildSyncStatus: null,
         playerNames: [],
+        filters: { hardOnly: false },
       };
 
       // Konzept-Notiz: Dauerhafte Gruppenpräferenzen (data/alliance.csv: PrefGroup/PrefMode/PrefBoost) steuern den Optimizer langfristig.
@@ -526,9 +536,20 @@
       function normalizeLineEndings(text) { return (text || '').replace(/\r\n/g, '\n').replace(/\r/g, '\n'); }
       function ensureTrailingNewline(text) { if (!text) return '\n'; return /\n$/.test(text) ? text : text + '\n'; }
       function formatSourceLabel(value) {
-        if (value === 'manual') return 'Manuell';
-        if (value === 'callup-confirmed') return 'Aus Callup';
-        return value || '–';
+        const val = (value || '').toString().trim();
+        if (val === 'manual') return 'Manuell';
+        if (val === 'ingame') return 'Ingame';
+        if (val === 'dm') return 'DM';
+        if (val === 'callup-confirmed') return 'Aus Callup';
+        return val || '–';
+      }
+      function sourceTagClass(value) {
+        const val = (value || '').toString().trim();
+        if (val === 'ingame') return 'tag-source-ingame';
+        if (val === 'dm') return 'tag-source-dm';
+        if (val === 'manual') return 'tag-source-manual';
+        if (val === 'callup-confirmed') return 'tag-callup';
+        return 'tag';
       }
       const FORCED_SOURCE_LABELS = { manual: 'Manuell', 'callup-confirmed': 'Callup' };
       function normalizeForcedSignup(raw) {
@@ -1085,9 +1106,13 @@
       }
 
       function renderAssignments() {
-        const rows = [...state.assignments];
+        const rows = state.assignments.filter(row => !state.filters.hardOnly || (row.Commitment || 'none') === 'hard');
+        const totalEntries = state.assignments.length;
         elements.assignmentBody.innerHTML = '';
-        elements.assignmentCount.textContent = `${rows.length} Einträge`;
+        if (elements.hardOnlyToggle) elements.hardOnlyToggle.checked = Boolean(state.filters.hardOnly);
+        elements.assignmentCount.textContent = state.filters.hardOnly
+          ? `${rows.length} harte Zusagen (von ${totalEntries})`
+          : `${rows.length} Einträge`;
         elements.eventMeta.textContent = 'Alle Einträge beziehen sich auf das nächste Event (aktuelles Roster); Callup-Einträge sind blau markiert und nur zur Dokumentation.';
         elements.emptyState.style.display = rows.length ? 'none' : 'block';
         const responseByCanon = new Map();
@@ -1153,6 +1178,7 @@
           const commitmentTd = document.createElement('td');
           const commitmentSel = document.createElement('select');
           const commitmentBadge = document.createElement('span');
+          const commitmentSourceBadge = document.createElement('span');
           commitmentBadge.className = 'tag';
           [['none','Nur Info'], ['hard','Verbindlich']].forEach(([value, label]) => {
             const opt = document.createElement('option');
@@ -1164,26 +1190,53 @@
             const c = row.Commitment || 'none';
             commitmentBadge.textContent = c === 'hard' ? 'verbindlich' : 'Info';
             commitmentBadge.className = c === 'hard' ? 'tag tag-hard' : 'tag';
+            commitmentSourceBadge.style.display = c === 'hard' ? 'inline-flex' : 'none';
           };
+          commitmentSourceBadge.className = 'tag';
           commitmentSel.disabled = fromCallup;
           commitmentSel.addEventListener('change', () => {
             row.Commitment = commitmentSel.value || 'none';
-            updateCommitmentBadge();
+            updateBadges();
             updateSaveButtonState();
           });
+          const updateBadges = () => {
+            updateCommitmentBadge();
+            updateSourceBadge();
+          };
           updateCommitmentBadge();
           commitmentTd.appendChild(commitmentSel);
           commitmentTd.appendChild(commitmentBadge);
+          commitmentTd.appendChild(commitmentSourceBadge);
           commitmentTd.style.display = 'flex';
           commitmentTd.style.flexDirection = 'column';
           commitmentTd.style.gap = '0.35rem';
           tr.appendChild(commitmentTd);
 
           const sourceTd = document.createElement('td');
-          const sourceText = document.createElement('span');
-          sourceText.textContent = formatSourceLabel(row.Source);
-          if (fromCallup) sourceText.className = 'tag tag-callup';
-          sourceTd.appendChild(sourceText);
+          const sourceSel = document.createElement('select');
+          const sourceBadge = document.createElement('span');
+          const sourceOptions = Array.from(new Set([...SOURCE_OPTIONS, row.Source || 'manual']));
+          sourceOptions.forEach(v => {
+            const opt = document.createElement('option');
+            opt.value = v; opt.textContent = formatSourceLabel(v);
+            if ((row.Source || 'manual') === v) opt.selected = true;
+            sourceSel.appendChild(opt);
+          });
+          sourceSel.addEventListener('change', () => {
+            row.Source = sourceSel.value || 'manual';
+            updateBadges();
+            updateSaveButtonState();
+          });
+          const updateSourceBadge = () => {
+            const srcVal = row.Source || 'manual';
+            sourceBadge.textContent = formatSourceLabel(srcVal);
+            sourceBadge.className = `tag ${sourceTagClass(srcVal)}`;
+            commitmentSourceBadge.textContent = formatSourceLabel(srcVal);
+            commitmentSourceBadge.className = `tag ${sourceTagClass(srcVal)}`;
+          };
+          updateSourceBadge();
+          sourceTd.appendChild(sourceSel);
+          sourceTd.appendChild(sourceBadge);
           if (fromCallup) {
             const note = document.createElement('div');
             note.className = 'callup-note';
@@ -1648,6 +1701,12 @@
         elements.playerInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); addAssignment(); } });
         if (elements.responsePlayerInput) {
           elements.responsePlayerInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); addResponse(); } });
+        }
+        if (elements.hardOnlyToggle) {
+          elements.hardOnlyToggle.addEventListener('change', () => {
+            state.filters.hardOnly = elements.hardOnlyToggle.checked;
+            renderAssignments();
+          });
         }
       }
 
