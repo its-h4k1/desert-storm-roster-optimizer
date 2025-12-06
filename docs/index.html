@@ -199,8 +199,11 @@
       <button id="participation-download" class="btn" type="button" disabled>
         📥 Teilnahmelisten A/B herunterladen (CSV)
       </button>
-      <button id="participation-clipboard" class="btn" type="button" disabled>
-        📋 Teilnahmelisten A/B in Zwischenablage kopieren
+      <button id="participation-clipboard-A" class="btn" type="button" disabled>
+        📋 Teilnahmeliste A (Start) in Zwischenablage
+      </button>
+      <button id="participation-clipboard-B" class="btn" type="button" disabled>
+        📋 Teilnahmeliste B (Start) in Zwischenablage
       </button>
     </div>
     <p class="muted" id="sort-note" style="margin:0 0 10px"></p>
@@ -371,7 +374,8 @@
     const callupSuggestionsNote = document.getElementById("callup-suggestions-note");
     const callupExportBtn = document.getElementById("callup-export");
     const participationDownloadBtn = document.getElementById("participation-download");
-    const participationClipboardBtn = document.getElementById("participation-clipboard");
+    const participationClipboardBtnA = document.getElementById("participation-clipboard-A");
+    const participationClipboardBtnB = document.getElementById("participation-clipboard-B");
     const allianceTable = document.getElementById("alliance-overview-table");
     const allianceSummary = document.getElementById("alliance-overview-summary");
     const allianceExportBtn = document.getElementById("alliance-export");
@@ -510,31 +514,11 @@
         exports.forEach(entry => downloadCsv(entry));
       });
     }
-    if (participationClipboardBtn) {
-      participationClipboardBtn.addEventListener('click', async () => {
-        if (!canUseParticipationExport()) {
-          alert('Roster noch nicht geladen – bitte später erneut versuchen.');
-          return;
-        }
-        const eventIds = promptParticipationEventIds();
-        const exports = buildParticipationExports(eventIds);
-        if (!exports.length) {
-          alert('Kein Export, da keine EventID eingegeben wurde.');
-          return;
-        }
-        if (!navigator.clipboard || typeof navigator.clipboard.writeText !== 'function') {
-          alert('Zwischenablage nicht verfügbar – bitte CSV-Download verwenden.');
-          return;
-        }
-        const combined = exports.map(entry => entry.csvText).join('\n\n');
-        try {
-          await navigator.clipboard.writeText(combined);
-          alert('Teilnahmelisten wurden in die Zwischenablage kopiert.');
-        } catch (err) {
-          console.error('Failed to copy participation CSV', err);
-          alert('Konnte die Teilnahmelisten nicht in die Zwischenablage kopieren. Bitte CSV-Download verwenden.');
-        }
-      });
+    if (participationClipboardBtnA) {
+      participationClipboardBtnA.addEventListener('click', () => copyParticipationGroupToClipboard('A'));
+    }
+    if (participationClipboardBtnB) {
+      participationClipboardBtnB.addEventListener('click', () => copyParticipationGroupToClipboard('B'));
     }
     if (allianceFilterContact) {
       state.allianceFilters.contactYesOnly = Boolean(allianceFilterContact.checked);
@@ -1066,6 +1050,11 @@
       return rows.map(line => line.map(escapeCsvCell).join(',')).join('\n');
     }
 
+    function buildSimpleCsv(headerFields, rows) {
+      const allRows = [headerFields, ...rows];
+      return `${allRows.map(line => line.join(',')).join('\n')}\n`;
+    }
+
     function sanitizeFilename(value, fallback = 'export.csv') {
       const normalized = (value || '').toString().trim();
       if (!normalized) return fallback;
@@ -1095,13 +1084,19 @@
 
     function updateParticipationButtons() {
       const enabled = canUseParticipationExport();
+      const hasA = hasStartList('A');
+      const hasB = hasStartList('B');
       if (participationDownloadBtn) {
-        participationDownloadBtn.disabled = !enabled;
+        participationDownloadBtn.disabled = !enabled || (!hasA && !hasB);
         participationDownloadBtn.title = enabled ? '' : 'Roster noch nicht geladen';
       }
-      if (participationClipboardBtn) {
-        participationClipboardBtn.disabled = !enabled;
-        participationClipboardBtn.title = enabled ? '' : 'Roster noch nicht geladen';
+      if (participationClipboardBtnA) {
+        participationClipboardBtnA.disabled = !enabled || !hasA;
+        participationClipboardBtnA.title = enabled ? '' : 'Roster noch nicht geladen';
+      }
+      if (participationClipboardBtnB) {
+        participationClipboardBtnB.disabled = !enabled || !hasB;
+        participationClipboardBtnB.title = enabled ? '' : 'Roster noch nicht geladen';
       }
     }
 
@@ -1126,6 +1121,17 @@
       };
     }
 
+    function promptParticipationEventIdForGroup(groupKey) {
+      const defaultEventId = (dsroShared && typeof dsroShared.suggestDsEventIdForGroup === 'function')
+        ? (dsroShared.suggestDsEventIdForGroup({ groupLetter: groupKey, payload: state.latestPayload }) || '')
+        : '';
+      const input = prompt(
+        `EventID für Gruppe ${groupKey} (Start) eingeben (z. B. DS-2025-11-28-${groupKey}, leer lassen zum Überspringen):`,
+        defaultEventId
+      );
+      return input != null ? input.trim() : '';
+    }
+
     function collectStartPlayers(groupKey) {
       const bucket = (state.rosterBuckets && state.rosterBuckets[`${groupKey}-Start`]) || [];
       if (!Array.isArray(bucket)) return [];
@@ -1133,6 +1139,10 @@
         .map(row => (row && row.PlayerName ? row.PlayerName : ''))
         .map(name => name.trim())
         .filter(Boolean);
+    }
+
+    function hasStartList(groupKey) {
+      return collectStartPlayers(groupKey).length > 0;
     }
 
     function buildParticipationCsvForGroup(groupKey, eventId) {
@@ -1144,7 +1154,7 @@
       }
       const header = ['EventID', 'Slot', 'PlayerName', 'RoleAtRegistration'];
       const rows = players.map((player, idx) => [eventId, idx + 1, player, 'Start']);
-      const csvText = buildCsvText([header, ...rows]);
+      const csvText = buildSimpleCsv(header, rows);
       const filename = `${sanitizeFilename(eventId, 'event')}-teilnahmeliste.csv`;
       return { group: groupKey, csvText, filename };
     }
@@ -1160,6 +1170,30 @@
         if (exportB) exports.push(exportB);
       }
       return exports;
+    }
+
+    function copyParticipationGroupToClipboard(groupKey) {
+      if (!canUseParticipationExport()) {
+        alert('Roster noch nicht geladen – bitte später erneut versuchen.');
+        return;
+      }
+      if (!navigator.clipboard || typeof navigator.clipboard.writeText !== 'function') {
+        alert('Zwischenablage nicht verfügbar – bitte CSV-Download verwenden.');
+        return;
+      }
+      const eventId = promptParticipationEventIdForGroup(groupKey);
+      if (!eventId) {
+        alert('Kein Export, da keine EventID eingegeben wurde.');
+        return;
+      }
+      const exportEntry = buildParticipationCsvForGroup(groupKey, eventId);
+      if (!exportEntry) return;
+      navigator.clipboard.writeText(exportEntry.csvText)
+        .then(() => alert(`Teilnahmeliste Gruppe ${groupKey} wurde in die Zwischenablage kopiert.`))
+        .catch(err => {
+          console.error('Failed to copy participation CSV', err);
+          alert('Konnte die Teilnahmeliste nicht in die Zwischenablage kopieren. Bitte CSV-Download verwenden.');
+        });
     }
 
     function buildCallupCsvFilename(payload) {
