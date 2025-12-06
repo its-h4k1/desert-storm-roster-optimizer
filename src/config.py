@@ -17,6 +17,7 @@ class Config:
     WINSORIZE: bool
     PRIOR_FALLBACK: float
     PRIOR_PAD: float
+    HARD_SIGNUPS_ONLY: bool
 
 
 DEFAULTS: Dict[str, Any] = {
@@ -27,6 +28,7 @@ DEFAULTS: Dict[str, Any] = {
     "WINSORIZE": True,
     "PRIOR_FALLBACK": 0.18,
     "PRIOR_PAD": 0.02,
+    "HARD_SIGNUPS_ONLY": False,
 }
 
 _CONFIG_CACHE: Config | None = None
@@ -118,6 +120,7 @@ def get_config() -> Config:
         WINSORIZE=bool(values["WINSORIZE"]),
         PRIOR_FALLBACK=float(values["PRIOR_FALLBACK"]),
         PRIOR_PAD=float(values["PRIOR_PAD"]),
+        HARD_SIGNUPS_ONLY=bool(values["HARD_SIGNUPS_ONLY"]),
     )
 
     _CONFIG_CACHE = cfg

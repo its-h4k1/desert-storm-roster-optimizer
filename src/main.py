@@ -223,15 +223,14 @@ def _load_absences(path: str) -> pd.DataFrame:
 def _load_event_signups(path: str, to_canon) -> tuple[pd.DataFrame, Dict[str, int]]:
     """Load the next-event signup pool (manual confirmations for the upcoming roster).
 
-    Analyse & Konzept (Stand heute):
-    - CSV-Spalten im Repo: PlayerName, Group, Role, Source, Note.
-      → liefern nur Overlay/Badges, keine "Verbindlichkeit".
-    - Erweiterung: neue Spalte ``Commitment`` (default ``none``) mit Werten
-      ``none`` | ``hard``.
-      * none  = reine Overlay-Zusage (Badge/extra_signups), beeinflusst den
-        Builder nicht.
-      * hard  = verbindliche Zusage: Spieler soll – sofern aktiv, in der
-        Allianz und nicht abwesend – vorab in den Roster gesetzt werden.
+    Semantik des CSV-Schemas ``PlayerName,Group,Role,Commitment,Source,Note``:
+    - ``Commitment = hard``  → explizite Zusage („Teilnahme erbitten“ im Spiel
+      oder direkte Rückmeldung). Diese Einträge bilden den kompletten Kandidaten-
+      pool im Modus ``hard_signups_only`` und erzeugen forced slots, sofern der
+      Spieler aktiv, in der Allianz und nicht abwesend ist.
+    - ``Commitment = none``  → reine Info/Overlay, beeinflusst den Roster nicht.
+    - ``Source`` dokumentiert den Kanal (z. B. ``ingame``, ``dm``, ``manual``),
+      hat aber keine Logik-Auswirkung.
     """
 
     cols = ["PlayerName", "Group", "Role", "Commitment", "Source", "Note"]
@@ -283,9 +282,7 @@ def _load_event_signups(path: str, to_canon) -> tuple[pd.DataFrame, Dict[str, in
     allowed_commitments = {"none", "hard"}
     df.loc[~df["Commitment"].isin(allowed_commitments), "Commitment"] = "none"
     meta["hard_commitments"] = int((df["Commitment"] == "hard").sum())
-    df["Source"] = (
-        df["Source"].fillna("manual_event_signup").astype(str).str.strip().replace("", "manual_event_signup")
-    )
+    df["Source"] = df["Source"].fillna("manual").astype(str).str.strip().replace("", "manual")
     df["Note"] = df["Note"].fillna("").astype(str)
     return df, meta
 
@@ -1056,6 +1053,30 @@ def main():
         nr_mask = pool["canon"].isin(noresp_canons)
         pool.loc[nr_mask, "attend_prob"] = (pool.loc[nr_mask, "attend_prob"] * nr_factor).clip(0.0, 1.0)
 
+    hard_signups_only = bool(getattr(cfg, "HARD_SIGNUPS_ONLY", False))
+    hard_signup_canons: set[str] = {
+        str(c).strip()
+        for c in event_signups_df.loc[event_signups_df["Commitment"] == "hard", "canon"].dropna().tolist()
+        if str(c).strip()
+    }
+    builder_pool = pool.copy()
+    builder_pool_stats: Dict[str, object] = {
+        "hard_signups_only": hard_signups_only,
+        "builder_candidates_total": int(len(builder_pool)),
+        "hard_commitments_total": int(len(hard_signup_canons)),
+        "filtered_out": 0,
+    }
+    if hard_signups_only:
+        before = len(builder_pool)
+        builder_pool = builder_pool[builder_pool["canon"].astype(str).isin(hard_signup_canons)].copy()
+        filtered_out = before - len(builder_pool)
+        builder_pool_stats["builder_candidates_total"] = int(len(builder_pool))
+        builder_pool_stats["filtered_out"] = int(filtered_out)
+        print(
+            "[info] hard_signups_only aktiv: "
+            f"{len(builder_pool)} Kandidaten (von {before}, filtered={filtered_out})"
+        )
+
     alias_suggestions = find_alias_suggestions(pool, events_df, alias_map)
     alias_out_path = Path("out") / "alias_suggestions.csv"
     if alias_suggestions:
@@ -1073,7 +1094,7 @@ def main():
         print("::notice:: Keine Alias-Hinweise gefunden (alle aktiven Spieler haben Historie).")
 
     # 5) Harte Zusagen → Forced-Slots vorbereiten
-    pool_idx = pool.set_index("canon")
+    pool_idx = builder_pool.set_index("canon")
     in_alliance_set = set(alliance_df.loc[alliance_df["InAlliance"] == 1, "canon"])
 
     forced_signups: List[Dict] = []
@@ -1126,7 +1147,7 @@ def main():
         group_pref = (getattr(row, "Group", "") or "").strip().upper()
         role_pref = (getattr(row, "Role", "") or "").strip().title()
         commitment = (getattr(row, "Commitment", "") or "none").strip().lower() or "none"
-        source = (getattr(row, "Source", "") or "manual_event_signup").strip()
+        source = (getattr(row, "Source", "") or "manual").strip()
         note = (getattr(row, "Note", "") or "").strip()
         canon_val = getattr(row, "canon", pd.NA)
         canon = None if pd.isna(canon_val) or not str(canon_val).strip() else str(canon_val)
@@ -1270,7 +1291,7 @@ def main():
     }
 
     # 6) Input für Builder (nur Rest-Slots)
-    pool_for_builder = pool[~pool["canon"].isin(seen_forced)].copy()
+    pool_for_builder = builder_pool[~builder_pool["canon"].isin(seen_forced)].copy()
     if callup_config.callups_only_mode:
         pool_for_builder = pool_for_builder[pool_for_builder["canon"].isin(callup_canons)].copy()
     # Team-Logik:
@@ -1764,6 +1785,10 @@ def main():
         "hard_commit_rows_total": int(
             event_signup_load_meta.get("hard_commitments", hard_signup_total)
         ),
+        "hard_signups_only": hard_signups_only,
+        "hard_commitments_total": int(len(hard_signup_canons)),
+        "builder_candidates_total": int(builder_pool_stats.get("builder_candidates_total", len(builder_pool))),
+        "builder_filtered_out": int(builder_pool_stats.get("filtered_out", 0)),
     }
 
     if absences_payload.get("players"):
@@ -1778,7 +1803,7 @@ def main():
             canon = getattr(row, "canon", pd.NA)
             group = (getattr(row, "Group", "") or "").strip().upper()
             role = (getattr(row, "Role", "") or "").strip().title()
-            source = (getattr(row, "Source", "") or "manual_event_signup").strip()
+            source = (getattr(row, "Source", "") or "manual").strip()
             note = (getattr(row, "Note", "") or "").strip()
 
             if canon in players_by_canon:
@@ -1863,6 +1888,9 @@ def main():
         "forced_out_of_roster": forced_out_of_roster,
         "extra_entries_total": signups_meta["extra_entries_total"],
         "extra_entries_by_group": signups_meta["extra_entries_by_group"],
+        "hard_signups_only": hard_signups_only,
+        "builder_candidates_total": int(builder_pool_stats.get("builder_candidates_total", len(builder_pool))),
+        "builder_filtered_out": int(builder_pool_stats.get("filtered_out", 0)),
     }
     signup_pool_payload = {
         "source": signups_meta["source"],

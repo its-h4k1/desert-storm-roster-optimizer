@@ -1,14 +1,16 @@
 from __future__ import annotations
 
 from dataclasses import replace
+import os
 import sys
 from pathlib import Path
 
 import pandas as pd
 
+from src import callup_config as callup_cfg
+from src import config as config_mod
 from src import main as main_mod
 from src import utils as utils_mod
-from src import callup_config as callup_cfg
 
 
 def test_b_starters_use_threshold_when_supply_is_high():
@@ -190,6 +192,96 @@ def test_callups_only_mode_limits_pool_to_signups(monkeypatch, tmp_path):
     main_mod.main()
 
     assert captured.get("builder_players") == ["signuphero"]
+
+
+def test_hard_signups_only_blocks_soft_entries(monkeypatch, tmp_path):
+    data_dir = tmp_path / "data"
+    data_dir.mkdir()
+
+    _write_csv(
+        data_dir / "events.csv",
+        ["EventID", "Slot", "PlayerName", "RoleAtRegistration", "Teilgenommen"],
+        [["DS-2031-02-01-A", 1, "HardHero", "Damage", 1], ["DS-2031-02-01-A", 2, "SoftHero", "Damage", 1]],
+    )
+    _write_csv(
+        data_dir / "alliance.csv",
+        ["PlayerName", "InAlliance"],
+        [["HardHero", 1], ["SoftHero", 1]],
+    )
+    _write_csv(data_dir / "absences.csv", ["PlayerName", "From", "To", "InAlliance"], [])
+    _write_csv(
+        data_dir / "event_signups_next.csv",
+        ["PlayerName", "Group", "Role", "Commitment", "Source"],
+        [["HardHero", "A", "Start", "hard", "ingame"], ["SoftHero", "B", "Start", "none", "manual"]],
+    )
+    _write_csv(data_dir / "event_responses_next.csv", ["PlayerName", "Status"], [])
+
+    captured: dict[str, object] = {}
+
+    def _fake_builder(df: pd.DataFrame, forced_assignments, **_kwargs) -> pd.DataFrame:
+        captured["builder_players"] = sorted(df["PlayerName"].tolist())
+        captured["forced_assignments"] = list(forced_assignments)
+        rows = [
+            {
+                "PlayerName": item["PlayerName"],
+                "Group": item["Group"],
+                "Role": item["Role"],
+                "_selection_stage": "forced",
+            }
+            for item in forced_assignments
+        ]
+        rows.extend(
+            {
+                "PlayerName": getattr(row, "PlayerName"),
+                "Group": getattr(row, "PrefGroup", "A") or "A",
+                "Role": "Start",
+                "_selection_stage": "builder",
+            }
+            for row in df.itertuples(index=False)
+        )
+        return pd.DataFrame(rows)
+
+    def _capture_writer(_out_dir, roster_df, json_payload):
+        captured["roster_df"] = roster_df
+        captured["payload"] = json_payload
+
+    monkeypatch.setattr(main_mod, "build_deterministic_roster", _fake_builder)
+    monkeypatch.setattr(main_mod, "_write_outputs", _capture_writer)
+    monkeypatch.setattr(config_mod, "_CONFIG_CACHE", None)
+    monkeypatch.setenv("HARD_SIGNUPS_ONLY", "1")
+
+    argv = [
+        "prog",
+        "--events",
+        "data/events.csv",
+        "--alliance",
+        "data/alliance.csv",
+        "--absences",
+        "data/absences.csv",
+        "--event-signups",
+        "data/event_signups_next.csv",
+        "--event-responses",
+        "data/event_responses_next.csv",
+        "--out",
+        "generated",
+    ]
+
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.setattr(sys, "argv", argv)
+
+    main_mod.main()
+
+    builder_players = captured.get("builder_players") or []
+    roster_df = captured.get("roster_df")
+    payload = captured.get("payload") or {}
+
+    assert builder_players == []  # forced signup hat den Pool leergeräumt
+    assert roster_df is not None
+    assert {str(name).lower() for name in roster_df["PlayerName"].tolist()} == {"hardhero"}
+
+    signup_pool = payload.get("signup_pool") or {}
+    assert signup_pool.get("hard_signups_only") is True
+    assert signup_pool.get("builder_filtered_out") >= 1
 
 
 def test_absent_players_are_excluded_from_roster(monkeypatch, tmp_path):

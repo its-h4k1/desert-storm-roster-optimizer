@@ -37,7 +37,13 @@ Schätzungen berechnet und daraus deterministische Aufstellungen (A/B, Start/Ers
   `PlayerName,Group,Role,Commitment,Source,Note` (Commitment default `none`).
 - `Commitment = hard` kennzeichnet verbindliche Zusagen: Spieler werden – sofern aktiv,
   in der Allianz und nicht abwesend – **vor** dem Optimizer in den Roster gesetzt.
-  Die restlichen Slots werden anschließend optimiert.
+  `Commitment = none` bedeutet „keine Zusage/Overlay“.
+- `Source` dokumentiert den Kanal der Zusage (z. B. `ingame`, `dm`, `manual`,
+  `callup-confirmed`) und kann in der Admin-UI bearbeitet werden.
+- Neuer Modus: `HARD_SIGNUPS_ONLY: true` in `roster.yml` (oder Env-Var
+  `HARD_SIGNUPS_ONLY=1`) lässt den Optimizer nur noch mit harten Zusagen
+  starten. Slots ohne Zusage bleiben leer; kein automatisches Auffüllen aus
+  Allianz-/Callup-Pool.
 - Überbuchungen werden nicht heimlich verworfen: `overbooked_forced_signups` in
   `out/latest.json` dokumentiert, wenn mehr harte Zusagen existieren als Slots.
 - Einträge ohne `Commitment = hard` bleiben Overlays/Badges (`event_signup`) oder tauchen als
