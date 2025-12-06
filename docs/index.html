@@ -139,6 +139,7 @@
       <a class="admin-link" href="admin/index.html">Admin &amp; Tools</a>
     </div>
   </div>
+  <p class="muted" style="margin:4px 0 14px;">Basis: <code>data/event_signups_next.csv</code>. Teams A/B zeigen ausschließlich Spieler mit <code>Commitment = hard</code>; alle weiteren Zusagen erscheinen unten als Reserve.</p>
   <div id="config-diag" class="diag config-diag">
     <div class="section-header" style="margin:0">
       <h2 style="margin:0">Konfig &amp; Diagnose</h2>
@@ -149,7 +150,7 @@
   <nav class="anchor-nav">
     <a href="#section-overview">Überblick</a>
     <a href="#section-teams">Teams A/B</a>
-    <a href="#section-alliance">Allianz &amp; Callup</a>
+    <a href="#section-alliance">Allianz &amp; Analysen</a>
     <a href="#section-diagnostics">Diagnose</a>
   </nav>
 
@@ -174,7 +175,7 @@
   <section id="section-teams" class="page-section">
     <div class="section-header">
       <h2>Teams A/B</h2>
-      <p class="muted">Roster-Aufstellung und Detailhistorie pro Spieler.</p>
+      <p class="muted">Roster-Aufstellung und Detailhistorie pro Spieler. Grundlage: harte Zusagen aus <code>event_signups_next.csv</code>.</p>
     </div>
     <div class="roster-controls">
       <label class="player-meta-toggle">
@@ -183,19 +184,8 @@
       </label>
       <label class="player-meta-toggle">
         <input type="checkbox" id="callup-toggle" checked />
-        Callup-Empfehlungen anzeigen
+        Callup-Erinnerungen anzeigen (Analyse)
       </label>
-      <label class="player-meta-toggle" title="Blendet Spieler ohne feste Zusage aus">
-        <input type="checkbox" id="commit-callup-toggle" />
-        Nur feste Zusagen anzeigen
-      </label>
-      <span id="commit-callup-filter-note" class="filter-note" style="display:none">Gefilterte Teams-Ansicht – es werden nur Spieler mit fester Zusage (🔒) in den Roster-Tabellen gezeigt.</span>
-      <div class="filter-note" id="commit-callup-filter-help">
-        Zeigt nur Spieler mit fester Zusage (🔒, Commitment=hard) in den Teams A/B. Callups ohne Fixplatz werden ausgeblendet. Kennzahlen bleiben unverändert.
-      </div>
-      <button id="callup-export" class="btn" type="button" disabled title="Keine Callup-Kandidaten im aktuellen Roster">
-        📥 Callup-Kandidaten als CSV exportieren
-      </button>
       <button id="participation-download" class="btn" type="button" disabled>
         📥 Teilnahmelisten A/B herunterladen (CSV)
       </button>
@@ -252,28 +242,26 @@
         </div>
       </div>
     </div>
+    <div class="team-card">
+      <h3>Zugesagt (hard), aber nicht im Roster</h3>
+      <p class="muted" id="hard-reserves-note">Lädt Zusagen …</p>
+      <div id="hard-reserves"></div>
+    </div>
   </section>
 
   <section id="section-alliance" class="page-section">
     <div class="section-header">
-      <h2>Allianz &amp; Callup</h2>
-      <p class="muted">Callup-Empfehlungen, Allianz-Tabelle und Event-Kontext.</p>
+      <h2>Allianz &amp; Analysen</h2>
+      <p class="muted">Erinnerungs-Analysen (Callups), Allianz-Tabelle und Event-Kontext.</p>
     </div>
     <p class="muted" id="callup-note" style="margin:0 0 12px; display:none"></p>
     <section id="callup-suggestions" class="diag" style="display:none">
-      <h2>Zusätzliche Kandidaten zum Auffüllen (nächstes Event)</h2>
+      <h2>Callup-Erinnerungen (Analyse)</h2>
       <p class="muted" id="callup-suggestions-note">Lädt Empfehlungen …</p>
       <div id="callup-suggestions-content"></div>
     </section>
 
-    <section id="extras">
-      <h2>Zusätzliche Zusagen (Pool nächstes Event)</h2>
-      <p class="muted" id="extra-note">Lädt Zusagen …</p>
-      <div id="extra-root" class="extra-grid"></div>
-      <p class="muted legend" id="signup-inline"></p>
-    </section>
-
-    <p class="muted legend legend-inline">Kurzlegende für Allianz &amp; Callup: <span class="tag tag-callup callup-badge">🔔 Callup</span> Erinnerung empfohlen · <span class="tag tag-fix">🔒 verbindlich</span> bindende Zusage · No-Show-Farben wie im Team-Block.</p>
+    <p class="muted legend legend-inline">Kurzlegende für Allianz &amp; Analyse: <span class="tag tag-callup callup-badge">🔔 Callup</span> Erinnerung empfohlen (kein Einfluss auf die Aufstellung) · <span class="tag tag-fix">🔒 verbindlich</span> bindende Zusage · No-Show-Farben wie im Team-Block.</p>
 
     <section id="alliance-overview" class="diag">
       <h2>Allianz-Übersicht (nächstes Desert Storm)</h2>
@@ -338,7 +326,6 @@
     const state = {
       showPlayerMeta: false,
       showCallups: true,
-      rosterFilters: { showFixedCommitmentsOnly: false },
       absences: { entries: [], active: [], error: null, loading: true },
       absenceDebug: null,
       absenceConflicts: [],
@@ -354,15 +341,15 @@
       latestPayload: null,
       playersArray: [],
       rosterBuckets: {},
+      hardSignupEntries: [],
+      hardSignupCanonSet: new Set(),
+      allianceByCanon: new Map(),
     };
-    const rosterFilterState = state.rosterFilters;
     const rosterRoot = document.getElementById("roster-root");
     const playerMetaToggle = document.getElementById("player-meta-toggle");
     const callupToggle = document.getElementById("callup-toggle");
-      const commitCallupToggle = document.getElementById("commit-callup-toggle");
-      const commitCallupFilterNote = document.getElementById("commit-callup-filter-note");
-      const callupNote = document.getElementById("callup-note");
-      const attendanceSummaryBox = document.getElementById("attendance-summary");
+    const callupNote = document.getElementById("callup-note");
+    const attendanceSummaryBox = document.getElementById("attendance-summary");
     const overviewMeta = document.getElementById("overview-meta");
     const overviewMetaNote = document.getElementById("overview-meta-note");
     const overviewMetaList = document.getElementById("overview-meta-list");
@@ -391,6 +378,8 @@
     const signupInline = document.getElementById("signup-inline");
     const diagnosticsToggle = document.getElementById("diagnostics-toggle");
     const diagnosticsContent = document.getElementById("diagnostics-content");
+    const hardReservesRoot = document.getElementById("hard-reserves");
+    const hardReservesNote = document.getElementById("hard-reserves-note");
 
     function safeRenderSection(sectionId, renderFn, fallbackTarget) {
       try {
@@ -444,18 +433,12 @@
       return fetchJsonWithErrors(LATEST_JSON_URL, { cache: "no-store" });
     }
 
-    // Zentrale Stelle für rosterbezogene Filter (leicht erweiterbar für weitere Flags)
-    function applyRosterFilters(filterState = rosterFilterState) {
+    // Zentrale Stelle für rosterbezogene Filter (aktuell nur Platzhalter für künftige Flags)
+    function applyRosterFilters() {
       const rows = document.querySelectorAll('#roster-root tr[data-player-row="true"]');
       rows.forEach(row => {
-        const hasFixedCommit = row.dataset.fixedCommit === "true";
-        const hideRow = Boolean(filterState.showFixedCommitmentsOnly && !hasFixedCommit);
-        row.classList.toggle('is-hidden', hideRow);
+        row.classList.remove('is-hidden');
       });
-
-      if (commitCallupFilterNote) {
-        commitCallupFilterNote.style.display = filterState.showFixedCommitmentsOnly ? "inline" : "none";
-      }
     }
 
     if (playerMetaToggle) {
@@ -478,14 +461,7 @@
         updateCallupNote(state.callupMeta);
       });
     }
-    if (commitCallupToggle) {
-      rosterFilterState.showFixedCommitmentsOnly = Boolean(commitCallupToggle.checked);
-      commitCallupToggle.addEventListener("change", (event) => {
-        rosterFilterState.showFixedCommitmentsOnly = Boolean(event.target.checked);
-        applyRosterFilters();
-      });
-      applyRosterFilters();
-    }
+    applyRosterFilters();
     if (callupExportBtn) {
       callupExportBtn.addEventListener("click", () => {
         const candidates = state.callupCandidates || [];
@@ -610,6 +586,65 @@
       }
       return "";
     };
+
+    function normalizeSignupEntries(payload) {
+      const entries = Array.isArray(payload?.signup_pool?.file_entries)
+        ? payload.signup_pool.file_entries
+        : [];
+      return entries.map(row => {
+        const name = pickFirstString(row?.player, row?.PlayerName);
+        const canon = canonicalNameJS(row?.canon || name);
+        const group = pickFirstString(row?.resolved_group, row?.group_pref, row?.group, row?.Group);
+        const role = pickFirstString(row?.resolved_role, row?.role_pref, row?.role, row?.Role);
+        const commitment = pickFirstString(row?.commitment, row?.Commitment).toLowerCase();
+        const note = pickFirstString(row?.note, row?.Note);
+        const source = pickFirstString(row?.source, row?.Source);
+        const status = pickFirstString(row?.status, row?.Status);
+        const isAbsent = Boolean(row?.is_absent_next_event);
+        return { name, canon, group, role, commitment, note, source, status, isAbsent };
+      });
+    }
+
+    function collectHardSignupCanonSet(entries = []) {
+      const set = new Set();
+      entries.forEach(entry => {
+        if (!entry || typeof entry !== 'object') return;
+        if ((entry.commitment || '').toLowerCase() !== 'hard') return;
+        const canon = canonicalNameJS(entry.canon || entry.name || '');
+        if (canon) set.add(canon);
+      });
+      return set;
+    }
+
+    function collectRosterCanonSet(buckets = {}) {
+      const set = new Set();
+      Object.values(buckets || {}).forEach(list => {
+        (list || []).forEach(row => {
+          const canon = canonicalNameJS(row?.PlayerName || '');
+          if (canon) set.add(canon);
+        });
+      });
+      return set;
+    }
+
+    function buildAllianceLookup(players = []) {
+      const map = new Map();
+      players.forEach(p => {
+        if (!p || typeof p !== 'object') return;
+        const canon = canonicalNameJS(p.canon || p.display || '');
+        if (canon) map.set(canon, p);
+      });
+      return map;
+    }
+
+    function lookupPlayerMeta(canon) {
+      if (!canon) return null;
+      if (state.playersByCanon && state.playersByCanon[canon]) return state.playersByCanon[canon];
+      if (state.allianceByCanon instanceof Map && state.allianceByCanon.has(canon)) {
+        return state.allianceByCanon.get(canon);
+      }
+      return null;
+    }
 
     const CALLUP_REASON_LABELS = {
       high_overall: "Hohe No-Show overall",
@@ -763,14 +798,15 @@
       const recommendedTotal = Number.isFinite(meta?.recommendedTotal) ? Number(meta.recommendedTotal) : null;
       const reasonCounts = meta?.reasonCounts || {};
       const configSnapshot = meta?.configSnapshot;
+      const prefix = 'Callup-Erinnerungen (Analyse): ';
 
       let text = '';
       if (!hasStats) {
-        text = 'Callup-Empfehlungen: nicht verfügbar (ältere schema-Version).';
+        text = `${prefix}nicht verfügbar (ältere schema-Version).`;
       } else if (recommendedTotal === 0) {
-        text = 'Callup-Empfehlungen: keine Spieler empfohlen.';
+        text = `${prefix}keine Spieler empfohlen.`;
       } else if (recommendedTotal != null && recommendedTotal > 0) {
-        text = `Callup-Empfehlungen: ${recommendedTotal} Spieler empfohlen.`;
+        text = `${prefix}${recommendedTotal} Spieler empfohlen.`;
       }
 
       const breakdownOrder = ['high_rolling', 'rolling_uptick', 'high_overall', 'recent_uptick', 'low_n'];
@@ -2031,6 +2067,68 @@
       });
     }
 
+    function formatReserveStats(meta) {
+      if (!meta || typeof meta !== 'object') return 'Keine Statistiken verfügbar';
+      const bits = [];
+      const power = meta.power ?? meta.Power ?? null;
+      if (power != null) bits.push(`Power ${power}`);
+      const attend = formatPercent(meta.attend_prob);
+      if (attend && attend !== '–') bits.push(`Attendance ${attend}`);
+      const nsOverall = formatPercent(meta.noshow_overall);
+      const nsRolling = formatPercent(meta.noshow_rolling);
+      if (nsOverall !== '–' || nsRolling !== '–') {
+        const nsParts = [nsOverall !== '–' ? nsOverall : null, nsRolling !== '–' ? `${nsRolling} rolling` : null].filter(Boolean);
+        if (nsParts.length) bits.push(`No-Show ${nsParts.join(' · ')}`);
+      }
+      const eventsSeen = Number.isFinite(Number(meta.events_seen)) ? Number(meta.events_seen) : null;
+      if (eventsSeen != null) bits.push(`${eventsSeen} Events`);
+      return bits.length ? bits.join(' · ') : 'Keine Statistiken verfügbar';
+    }
+
+    function renderHardReserves() {
+      if (!hardReservesRoot || !hardReservesNote) return;
+      const entries = Array.isArray(state.hardSignupEntries) ? state.hardSignupEntries : [];
+      const rosterCanonSet = collectRosterCanonSet(state.rosterBuckets);
+      const reserves = entries.filter(entry => {
+        if (!entry || (entry.commitment || '').toLowerCase() !== 'hard') return false;
+        const canon = canonicalNameJS(entry.canon || entry.name || '');
+        if (!canon) return true;
+        return !rosterCanonSet.has(canon);
+      });
+
+      const summaryParts = [];
+      summaryParts.push(`Zusage-Pool: ${entries.length || 0} Einträge in event_signups_next.csv`);
+      summaryParts.push('Roster-Modus: nur Commitment = hard');
+      hardReservesNote.textContent = summaryParts.join(' · ');
+
+      if (!reserves.length) {
+        hardReservesRoot.innerHTML = '<p class="muted">Alle harten Zusagen sind in den Roster-Gruppen A/B eingeplant.</p>';
+        return;
+      }
+
+      const rows = reserves.map((entry, idx) => {
+        const canon = canonicalNameJS(entry.canon || entry.name || '');
+        const meta = lookupPlayerMeta(canon);
+        const stats = formatReserveStats(meta);
+        const signupInfo = [entry.group ? `Gruppe ${entry.group}` : null, entry.role].filter(Boolean).join(' · ');
+        const noteParts = [entry.note ? `Notiz: ${entry.note}` : '', entry.source ? `Quelle: ${entry.source}` : ''].filter(Boolean);
+        const tags = [];
+        if (entry.isAbsent) tags.push('<span class="tag tag-abs-active">Abwesend nächstes Event</span>');
+        if (entry.status) tags.push(`<span class="tag tag-hard">${escapeHtml(entry.status)}</span>`);
+        return `<tr>
+          <td class="num">${String(idx + 1).padStart(2,'0')}</td>
+          <td><div class="player-name-row">${escapeHtml(entry.name || entry.canon || '')}</div><div class="player-meta-row">${signupInfo || 'Keine Gruppen-/Rolleninfo'}</div>${tags.join(' ')}</td>
+          <td>${stats}</td>
+          <td>${noteParts.join(' · ') || '–'}</td>
+        </tr>`;
+      }).join('');
+
+      hardReservesRoot.innerHTML = `<table>
+        <thead><tr><th>#</th><th>Spieler &amp; Signup</th><th>Power/Stats</th><th>Notes</th></tr></thead>
+        <tbody>${rows}</tbody>
+      </table>`;
+    }
+
     function renderForcedDiagnostics(diag, meta) {
       const container = document.getElementById('forced-diagnostics');
       if (!container) return;
@@ -2569,7 +2667,7 @@
       }
     }
 
-    function renderRosterBuckets({ rows, playersMap, playersArray, activeAbsenceSet, ebEnabled, schema, hasEventsSeen }) {
+    function renderRosterBuckets({ rows, playersMap, playersArray, activeAbsenceSet, ebEnabled, schema, hasEventsSeen, hardSignupCanonSet }) {
       const observedFromPlayers = playersArray
         .map(p => {
           if (!p || typeof p !== "object") return null;
@@ -2637,9 +2735,11 @@
 
       const targets = ["A-Start","A-Ersatz","B-Start","B-Ersatz"];
       const buckets = Object.fromEntries(targets.map(k => [k, []]));
+      const hardSet = hardSignupCanonSet instanceof Set ? hardSignupCanonSet : new Set();
       rows.forEach(r=>{
         const canonRow = canonicalNameJS(r.PlayerName || '');
         if (canonRow && activeAbsenceSet.has(canonRow)) return;
+        if (hardSet.size && canonRow && !hardSet.has(canonRow)) return;
         const key = `${r.Group}-${r.Role}`;
         if (buckets[key]) buckets[key].push(r);
       });
@@ -2810,6 +2910,9 @@
       const rows = toRows(payload);
       const playersArray = (!Array.isArray(payload) && Array.isArray(payload.players)) ? payload.players : [];
 
+      state.hardSignupEntries = normalizeSignupEntries(payload);
+      state.hardSignupCanonSet = collectHardSignupCanonSet(state.hardSignupEntries);
+
       state.callupMeta = extractCallupMeta(payload, playersArray, schema);
       state.latestPayload = payload;
       state.playersArray = playersArray;
@@ -2823,6 +2926,7 @@
       safeRenderSection("callup-suggestions", () => renderCallupSuggestions(state.callupSuggestions), callupSuggestionsContent);
 
       state.allianceOverview = normalizeAllianceOverview(payload?.alliance_next_event_overview);
+      state.allianceByCanon = buildAllianceLookup(state.allianceOverview.players);
       safeRenderSection("alliance-overview", () => renderAllianceOverview(), allianceTable);
 
       const playersMap = Object.fromEntries(
@@ -2910,7 +3014,10 @@
         ebEnabled,
         schema,
         hasEventsSeen,
+        hardSignupCanonSet: state.hardSignupCanonSet,
       }), rosterRoot);
+
+      safeRenderSection("hard-reserves", () => renderHardReserves(), hardReservesRoot);
 
       const signupMeta = (signupPoolBlock && typeof signupPoolBlock.stats === 'object')
         ? signupPoolBlock.stats
@@ -2929,7 +3036,6 @@
       safeRenderSection("forced-diagnostics", () => renderForcedDiagnostics(state.forcedDiagnostics, signupMeta), document.getElementById("forced-diagnostics"));
       safeRenderSection("callup-note", () => updateCallupNote(state.callupMeta), callupNote);
       safeRenderSection("callup-export", () => updateCallupExportButton(state.callupMeta, state.callupCandidates), callupExportBtn);
-      safeRenderSection("fixed-commit-filter", () => applyRosterFilters(), commitCallupToggle);
 
       const ts = new Date().toISOString().replace('T',' ').slice(0,19) + " UTC";
       const schemaVersion = (schema && schema.version != null) ? ` · schema v${schema.version}` : "";
