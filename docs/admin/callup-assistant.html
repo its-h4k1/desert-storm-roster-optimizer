@@ -134,12 +134,12 @@
         <a href="events.html">Events erfassen</a>
         <a href="players.html">Spieler &amp; Aliase</a>
         <a href="absences.html">Absenzen</a>
-        <a href="group-preferences.html">Gruppenpräferenzen</a>
-        <a href="event-assignments.html">Event-Zusagen</a>
-        <a href="attendance-config.html">Attendance-Config</a>
-        <a href="noshow-dashboard.html">No-Show Analyse</a>
-        <a href="callup-assistant.html" class="active">Callup-Assistent</a>
-      </nav>
+          <a href="group-preferences.html">Gruppenpräferenzen</a>
+          <a href="event-assignments.html">Event-Zusagen</a>
+          <a href="attendance-config.html">Attendance-Config</a>
+          <a href="noshow-dashboard.html">No-Show Analyse</a>
+          <a href="callup-assistant.html" class="active">Callup-Assistent (archiviert)</a>
+        </nav>
     </aside>
 
     <div class="admin-main">
@@ -184,7 +184,12 @@
             </div>
           </header>
 
-          <section class="panel callup-config" aria-labelledby="callup-config-heading">
+      <section class="panel" style="border-color:#f97316;">
+        <h2 style="margin:0 0 0.35rem;">Archiv-Hinweis</h2>
+        <p class="hint" style="margin:0;">Der Callup-Assistent wird nur noch für Reminder-Analysen genutzt. A/B-Roster basieren ausschließlich auf <code>data/event_signups_next.csv</code> mit <code>Commitment=hard</code>; Syncs in den Zusage-Pool sind deaktiviert.</p>
+      </section>
+
+      <section class="panel callup-config" aria-labelledby="callup-config-heading">
             <div class="controls" style="align-items:flex-start; gap:1rem;">
               <div style="flex:1; min-width:280px;">
                 <p class="hint" style="margin:0;">Änderungen wirken nach dem nächsten Roster-Build in <code>latest.json</code> und der Roster-Ansicht.</p>
@@ -234,10 +239,10 @@
                   <label style="flex-direction:row;align-items:center;gap:0.35rem;"> <input type="checkbox" id="showAllRoster"> <span>Alle Roster-Spieler anzeigen</span> </label>
                   <label style="flex-direction:row;align-items:center;gap:0.35rem;"> <input type="checkbox" id="showAbsent"> <span>Abwesende anzeigen</span> </label>
                 </div>
-                <label class="autosync-toggle">
-                  <strong><input type="checkbox" id="autoSyncSignups" checked> Zugesagte Spieler in Zusage-Pool übernehmen</strong>
-                  <small>"Zugesagt (Roster übernehmen)" erzeugt automatisch einen Eintrag in <code>data/event_signups_next.csv</code> (Commitment=hard, Quelle=Callup). Änderungen am Ergebnis spiegeln den Pool beim Speichern.</small>
-                </label>
+                  <label class="autosync-toggle">
+                    <strong><input type="checkbox" id="autoSyncSignups" disabled> Sync in Zusage-Pool deaktiviert</strong>
+                    <small>Roster nutzen nur bestätigte Zusagen aus <code>data/event_signups_next.csv</code>. Reminder-Ergebnisse dienen ausschließlich der Analyse und werden nicht mehr in den Zusage-Pool gespiegelt.</small>
+                  </label>
               </div>
               <p class="hint">Roster-Basis: optimierte Aufstellung aus <code>out/latest.json</code> (zuletzt gebaut). Event-ID steuert Absenz-Filter &amp; Speicherung in <code>data/callups.csv</code>.</p>
               <div class="card-grid">
@@ -365,8 +370,8 @@
       //   Ergebnisfelder: Reminder1Result/Reminder2Result je Callup-Schritt plus FinalStatus (manuelle Überschreibung).
       //   Der effektive Status wird aus diesen Feldern über deriveFinal()/resolveCallupDecision() abgeleitet.
       // - Eindeutiger Schlüssel für das Syncing ist EventID + PlayerName; Gruppe/Rolle entnehmen wir dem aktuellen Roster-Kontext.
-      // - Der Zusage-Pool (data/event_signups_next.csv) füllt PlayerName/Group/Role + Source + Commitment + Note; Source=callup-confirmed
-      //   markiert automatisch erzeugte Zusagen, Commitment=hard erzwingt Slots im nächsten Build.
+        // - Reminder-Resultate dienen nur der Analyse; das Zusage-File (data/event_signups_next.csv) wird unabhängig gepflegt
+        //   und bestimmt allein, wer mit Commitment=hard im nächsten Build landet.
 
       /**
        * Regel-Set für Empfehlungen:
@@ -426,7 +431,7 @@
         selectedEventId: '',
         loading: false,
         saving: false,
-        autoSyncSignups: true,
+          autoSyncSignups: false,
         expandedPlayer: null,
         callupConfig: { ...DEFAULT_CALLOUP_CONFIG },
         configMeta: { source: 'default', usedDefaults: true, warning: '' },
@@ -1537,10 +1542,10 @@
         return result;
       }
 
-      function persistSettings() {
-        const values = { workerUrl: elements.workerUrl.value, branch: elements.branch.value, eventId: elements.eventId.value, autoSyncSignups: elements.autoSyncSignups.checked };
-        localStorage.setItem(SETTINGS_KEY, JSON.stringify(values));
-      }
+        function persistSettings() {
+          const values = { workerUrl: elements.workerUrl.value, branch: elements.branch.value, eventId: elements.eventId.value };
+          localStorage.setItem(SETTINGS_KEY, JSON.stringify(values));
+        }
 
       function loadSettings() {
         const saved = localStorage.getItem(SETTINGS_KEY);
@@ -1548,14 +1553,15 @@
         try { return JSON.parse(saved); } catch (err) { return {}; }
       }
 
-      function restoreSettings() {
-        const saved = loadSettings();
-        if (saved.workerUrl) elements.workerUrl.value = saved.workerUrl;
-        if (saved.branch) elements.branch.value = saved.branch;
-        if (saved.autoSyncSignups !== undefined) elements.autoSyncSignups.checked = Boolean(saved.autoSyncSignups);
-        state.autoSyncSignups = elements.autoSyncSignups.checked;
-        if (saved.eventId) { elements.eventId.value = saved.eventId; state.selectedEventId = saved.eventId; }
-      }
+        function restoreSettings() {
+          const saved = loadSettings();
+          if (saved.workerUrl) elements.workerUrl.value = saved.workerUrl;
+          if (saved.branch) elements.branch.value = saved.branch;
+          elements.autoSyncSignups.checked = false;
+          elements.autoSyncSignups.disabled = true;
+          state.autoSyncSignups = false;
+          if (saved.eventId) { elements.eventId.value = saved.eventId; state.selectedEventId = saved.eventId; }
+        }
 
       function renderThresholds() {
         const cfg = getActiveConfig();
@@ -1583,7 +1589,7 @@
         elements.showAbsent.addEventListener('change', renderCandidates);
         elements.workerUrl.addEventListener('change', persistSettings);
         elements.branch.addEventListener('change', persistSettings);
-        elements.autoSyncSignups.addEventListener('change', () => { state.autoSyncSignups = elements.autoSyncSignups.checked; persistSettings(); });
+          elements.autoSyncSignups.addEventListener('change', () => { state.autoSyncSignups = false; elements.autoSyncSignups.checked = false; });
         elements.eventId.addEventListener('change', persistSettings);
         [elements.configMinEvents, elements.configLowN, elements.configHighOverall, elements.configHighRolling, elements.configRollingMin, elements.configRollingDelta]
           .forEach(el => el?.addEventListener('input', applyConfigDraftFromInputs));

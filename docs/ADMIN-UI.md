@@ -13,7 +13,7 @@
   - „Events erfassen“ (`events.html`)
   - „Spieler & Aliase“ (`players.html`)
   - „No-Show Analyse“ (`noshow-dashboard.html`)
-  - „Callup-Assistent“ (`callup-assistant.html`)
+  - (früher: „Callup-Assistent“, jetzt archiviert und nicht mehr verlinkt)
 - **Content** (`.admin-content`): rechter Bereich mit Seiten-spezifischem Inhalt. Panels nutzen `.admin-section` oder `.panel` sowie `card-grid` für Kennzahlen.
 
 ## 3. Design-Richtlinien
@@ -38,7 +38,7 @@
 | `docs/admin/players.html` | Pflege von Spielerstatus, Aliases und Abwesenheiten mit Detailpanelen und Modal-Editoren. | Verwaltet `data/alliance.csv`, `data/aliases.csv`, `data/absences.csv`.
 | `docs/admin/attendance-config.html` | Pflege der Attendance-Schwellen für Starter/Bank, Zielerwartungen und Commit/No-Response. | Liest `out/latest.json` oder `data/attendance_config.yml`, schreibt via Worker und stößt einen neuen Roster-Build an. |
 | `docs/admin/noshow-dashboard.html` | Analytisches Dashboard mit Filtern, Histogrammen und Rolling-vs-Overall KPIs. | Lädt `out/latest.json` (aktuellster Build).
-| `docs/admin/callup-assistant.html` | Empfiehlt Callups für den aktuellen Roster und trackt Rückmeldungen/Erinnerungen. | Liest `out/latest.json`, `data/alliance.csv`, `data/absences.csv`, `data/callups.csv`; speichert `data/callups.csv` via Worker.|
+| `docs/admin/callup-assistant.html` | Archiviertes Werkzeug für Reminder-Analysen; erzeugt keine verbindlichen Zusagen für A/B-Roster. | Liest `out/latest.json`, `data/alliance.csv`, `data/absences.csv`, `data/callups.csv`; Schreibpfad zu Zusagen sollte nicht genutzt werden.|
 
   > Wenn neue Admin- oder Analyse-Seiten entstehen, bitte hier kurz Zweck & Datenquellen ergänzen und in der README verlinken.
 
