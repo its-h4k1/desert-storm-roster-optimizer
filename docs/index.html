@@ -74,6 +74,12 @@
     .info-icon{display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;border:1px solid var(--line);border-radius:50%;font-size:11px;line-height:1;background:#fff;color:var(--muted);margin-left:6px;cursor:help}
     .legend{font-size:0.85em;margin:32px 0 0}
     .legend + .legend{margin-top:6px}
+    .legend-accordion{margin-top:10px;border:1px solid var(--line);border-radius:10px;padding:10px;background:#fff;box-shadow:0 4px 12px rgba(0,0,0,0.03)}
+    .legend-accordion summary{font-weight:600;cursor:pointer;outline:none}
+    .legend-accordion summary::-webkit-details-marker{display:none}
+    .legend-accordion summary::after{content:"▾";margin-left:6px;font-size:0.85em;color:var(--muted)}
+    .legend-accordion[open] summary::after{content:"▴"}
+    .legend-accordion .legend-body{margin:8px 0 0;font-size:0.9em;color:var(--muted);display:grid;gap:8px}
     .roster-controls{margin:12px 0 20px;display:flex;gap:12px;flex-wrap:wrap;align-items:center}
     .player-meta-toggle{font-size:0.9em;color:var(--fg);display:inline-flex;align-items:center;gap:8px;cursor:pointer;user-select:none}
     .player-meta-toggle input{width:16px;height:16px}
@@ -140,18 +146,11 @@
     </div>
   </div>
   <p class="muted" style="margin:4px 0 14px;">Basis: <code>data/event_signups_next.csv</code>. Teams A/B zeigen ausschließlich Spieler mit <code>Commitment = hard</code>; alle weiteren Zusagen erscheinen unten als Reserve.</p>
-  <div id="config-diag" class="diag config-diag">
-    <div class="section-header" style="margin:0">
-      <h2 style="margin:0">Konfig &amp; Diagnose</h2>
-      <p class="muted" id="config-diag-note" style="margin:0">Wird geladen …</p>
-    </div>
-    <div class="config-diag-grid" id="config-diag-grid" style="display:none"></div>
-  </div>
   <nav class="anchor-nav">
     <a href="#section-overview">Überblick</a>
     <a href="#section-teams">Teams A/B</a>
     <a href="#section-alliance">Allianz &amp; Analysen</a>
-    <a href="#section-diagnostics">Diagnose</a>
+    <a href="#section-diagnostics">Diagnose (optional)</a>
   </nav>
 
   <div id="init-error" class="init-error" style="display:none"></div>
@@ -197,9 +196,15 @@
       </button>
     </div>
     <p class="muted" id="sort-note" style="margin:0 0 10px"></p>
-      <p class="muted legend team-legend">Legende: <span class="tag tag-nd" title="Keine Historie – events_seen = 0">No&nbsp;Data</span> keine Historie · <span class="tag tag-low" title="Wenig Historie – events_seen ∈ {1,2}">low&nbsp;n</span> wenig Historie · <span class="tag tag-fix">🔒 verbindlich</span> verbindliche Zusage (Commitment=hard) · <span class="tag tag-callup callup-badge">🔔 Erinnerung</span> Analyse-Hinweis, wem eine Erinnerung empfohlen wird (kein Einfluss auf A/B-Roster)<br />Farben basieren auf Historie (rolling→overall), EB wird nur zur Sortierung verwendet.<br />No-Data = nie teilgenommen (grau). low-n ≤2 = gelb. 1 Fehltermin = nie rot.</p>
-    <!-- Kurzlegende für EB vs. Rolling (Tooltips ergänzt) -->
-    <p class="muted legend legend-inline">EB = geglättete, konservative No-Show-Risiko-Schätzung (strafe Declines/kein Feedback) · Rolling = reine Historie ohne Glättung (Shows/Events, reagiert schneller)</p>
+      <p class="muted legend team-legend">Farben = No-Show-Risiko aus der Historie. Details zur No-Show-Farblogik in der Legende.</p>
+      <details class="legend-accordion">
+        <summary>Legende &amp; Erklärungen anzeigen</summary>
+        <div class="legend-body">
+          <div>Tags: <span class="tag tag-nd" title="Keine Historie – events_seen = 0">No&nbsp;Data</span> keine Historie · <span class="tag tag-low" title="Wenig Historie – events_seen ∈ {1,2}">low&nbsp;n</span> wenig Historie · <span class="tag tag-fix">🔒 verbindlich</span> verbindliche Zusage (Commitment=hard) · <span class="tag tag-callup callup-badge">🔔 Erinnerung</span> Analyse-Hinweis (kein Einfluss auf A/B-Roster).</div>
+          <div>No-Show-Farben: basieren auf Historie (rolling → overall). No-Data = nie teilgenommen (grau). low-n ≤2 = gelb. Einzelner Fehltermin allein wird nicht rot markiert.</div>
+          <div>EB = geglättete, konservative No-Show-Schätzung (bestraft Declines/kein Feedback). Rolling = reine Historie ohne Glättung (Shows/Events), reagiert schneller.</div>
+        </div>
+      </details>
     <div id="roster-root" class="team-grid">
       <div class="team-card">
         <h3>Team A</h3>
@@ -222,8 +227,7 @@
       </div>
       <div class="team-card">
         <h3>Team B</h3>
-        <!-- Kurzinfo zur Fallback-Mechanik B (callup_min_attend_prob + min_b_starters) -->
-        <p class="muted" style="margin:2px 0 10px;">B wird zuerst mit Spielern über der Attendance-Schwelle (callup_min_attend_prob) gefüllt. Falls das weniger als das Minimum ergibt, werden fehlende Plätze mit Spielern unter der Schwelle aufgefüllt (Fallbacks).</p>
+        <p class="muted" style="margin:2px 0 10px;">Team B wird automatisch nach Verfügbarkeit und Historie gefüllt; fehlende Plätze werden passend ergänzt.</p>
         <div class="team-roles">
           <section id="B-Start">
             <h2>Gruppe B · Start</h2>
@@ -252,7 +256,7 @@
     <section id="section-alliance" class="page-section">
       <div class="section-header">
         <h2>Allianz &amp; Analysen</h2>
-        <p class="muted">Reminder-Hinweise &amp; Allianz-Analysen (rein informativ, kein Einfluss auf A/B-Roster).</p>
+        <p class="muted">Reminder-Hinweise und Allianz-Übersicht – rein informativ, ohne Einfluss auf die Aufstellung.</p>
       </div>
       <p class="muted" id="callup-note" style="margin:0 0 12px; display:none"></p>
       <section id="callup-suggestions" class="diag" style="display:none">
@@ -260,8 +264,7 @@
         <p class="muted" id="callup-suggestions-note">Lädt Empfehlungen …</p>
         <div id="callup-suggestions-content"></div>
       </section>
-
-      <p class="muted legend legend-inline">Kurzlegende für Allianz &amp; Analyse: <span class="tag tag-callup callup-badge">🔔 Erinnerung</span> Analyse-Hinweis (kein Einfluss auf die Aufstellung) · <span class="tag tag-fix">🔒 verbindlich</span> bindende Zusage · No-Show-Farben wie im Team-Block.</p>
+      <p class="muted legend legend-inline">Reminder-Badge <span class="tag tag-callup callup-badge">🔔</span> = Analyse-Hinweis. Farben wie im Team-Block; Details in der Legende.</p>
 
     <section id="alliance-overview" class="diag">
       <h2>Allianz-Übersicht (nächstes Desert Storm)</h2>
@@ -272,8 +275,8 @@
         <label class="player-meta-toggle"><input type="checkbox" id="alliance-filter-show-former" /> Ausgetretene anzeigen</label>
         <button class="btn" id="alliance-export" type="button">📤 Allianz-Tabelle als CSV</button>
       </div>
-      <p id="alliance-overview-summary" class="muted" style="margin:0 0 6px;">Wird geladen …</p>
-      <div id="alliance-overview-table" class="muted">Wird geladen …</div>
+      <p id="alliance-overview-summary" class="muted" style="margin:0 0 6px;">Übersicht wird geladen …</p>
+      <div id="alliance-overview-table"></div>
     </section>
 
     <section id="event-responses">
@@ -295,7 +298,14 @@
     </div>
     <div id="diagnostics-content" class="diagnostics-content">
       <div class="diag">
-        <p class="muted" style="margin:0">Signup-Pool-Diagnostik, erweiterte Absenzen und weitere technische Details.</p>
+        <p class="muted" style="margin:0">Nur für technische Analyse / Debugging: Signup-Pool-Diagnostik, erweiterte Absenzen und Konfig.</p>
+      </div>
+      <div id="config-diag" class="diag config-diag">
+        <div class="section-header" style="margin:0">
+          <h2 style="margin:0">Konfig &amp; Diagnose</h2>
+          <p class="muted" id="config-diag-note" style="margin:0">Wird geladen …</p>
+        </div>
+        <div class="config-diag-grid" id="config-diag-grid" style="display:none"></div>
       </div>
       <div id="forced-diagnostics" class="diag"></div>
       <section id="absence-diagnostics" class="diag" style="display:none"></section>
