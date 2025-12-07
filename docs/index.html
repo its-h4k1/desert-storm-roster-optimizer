@@ -31,6 +31,8 @@
     .anchor-nav{display:flex;flex-wrap:wrap;gap:10px;margin:12px 0 20px;font-size:0.95em}
     .anchor-nav a{padding:6px 10px;border:1px solid var(--line);border-radius:8px;text-decoration:none;color:var(--fg);background:#fff;box-shadow:0 4px 12px rgba(0,0,0,0.03)}
     .anchor-nav a:hover{border-color:#c8d5ec}
+    .anchor-nav a.nav-optional{opacity:0.75;border-style:dashed}
+    .anchor-nav a.nav-optional:hover{opacity:1}
     .page-section{margin:32px 0}
     .section-header{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap}
     .section-header p{margin:4px 0 0}
@@ -102,6 +104,7 @@
     .extra-card h3{margin:0 0 6px}
     .extra-list{list-style:none;padding:0;margin:0;display:grid;gap:6px}
     .extra-meta{color:var(--muted);font-size:0.85em}
+    .secondary-section{margin-top:28px;padding:18px;border:1px dashed var(--line);border-radius:14px;background:#fcfcfc}
     .diag{margin:10px 0 0;padding:10px;border-radius:10px;border:1px solid var(--line);background:#fff}
     .diag h4{margin:0 0 6px;font-size:1em}
     .diag ul{margin:0;padding-left:20px;color:#444}
@@ -149,8 +152,8 @@
   <nav class="anchor-nav">
     <a href="#section-overview">Überblick</a>
     <a href="#section-teams">Teams A/B</a>
-    <a href="#section-alliance">Allianz &amp; Analysen</a>
-    <a href="#section-diagnostics">Diagnose (optional)</a>
+    <a class="nav-optional" href="#section-alliance">Allianz &amp; Analysen</a>
+    <a class="nav-optional" href="#section-diagnostics">Diagnose (optional)</a>
   </nav>
 
   <div id="init-error" class="init-error" style="display:none"></div>
@@ -165,7 +168,7 @@
         <div id="attendance-summary" class="diag" style="display:none"></div>
         <div id="overview-meta" class="diag">
           <h3 style="margin:0 0 6px">Event-Metadaten</h3>
-          <p class="muted" id="overview-meta-note">Wird geladen …</p>
+          <p class="muted" id="overview-meta-note">Metadaten werden geladen …</p>
           <ul class="meta-list" id="overview-meta-list" style="display:none"></ul>
         </div>
       </div>
@@ -196,9 +199,9 @@
       </button>
     </div>
     <p class="muted" id="sort-note" style="margin:0 0 10px"></p>
-      <p class="muted legend team-legend">Farben = No-Show-Risiko aus der Historie. Details zur No-Show-Farblogik in der Legende.</p>
+      <p class="muted legend team-legend">Kurz: Farben = No-Show-Risiko aus der Historie. Ausführliche No-Show-Farblogik in der Legende (aufklappen).</p>
       <details class="legend-accordion">
-        <summary>Legende &amp; Erklärungen anzeigen</summary>
+        <summary>Legende zur No-Show-Logik (aufklappen)</summary>
         <div class="legend-body">
           <div>Tags: <span class="tag tag-nd" title="Keine Historie – events_seen = 0">No&nbsp;Data</span> keine Historie · <span class="tag tag-low" title="Wenig Historie – events_seen ∈ {1,2}">low&nbsp;n</span> wenig Historie · <span class="tag tag-fix">🔒 verbindlich</span> verbindliche Zusage (Commitment=hard) · <span class="tag tag-callup callup-badge">🔔 Erinnerung</span> Analyse-Hinweis (kein Einfluss auf A/B-Roster).</div>
           <div>No-Show-Farben: basieren auf Historie (rolling → overall). No-Data = nie teilgenommen (grau). low-n ≤2 = gelb. Einzelner Fehltermin allein wird nicht rot markiert.</div>
@@ -253,10 +256,10 @@
     </div>
   </section>
 
-    <section id="section-alliance" class="page-section">
+  <section id="section-alliance" class="page-section secondary-section">
       <div class="section-header">
-        <h2>Allianz &amp; Analysen</h2>
-        <p class="muted">Reminder-Hinweise und Allianz-Übersicht – rein informativ, ohne Einfluss auf die Aufstellung.</p>
+        <h2 style="margin:0">Allianz &amp; Analysen</h2>
+        <p class="muted">Optionaler Überblick: Reminder-Hinweise und Allianz-Status – rein informativ, ohne Einfluss auf die Aufstellung.</p>
       </div>
       <p class="muted" id="callup-note" style="margin:0 0 12px; display:none"></p>
       <section id="callup-suggestions" class="diag" style="display:none">
@@ -282,12 +285,12 @@
     <section id="event-responses">
       <h2>Event-Antworten (nächstes Event)</h2>
       <p style="margin:6px 0 10px;"><a class="admin-link" href="admin/event-assignments.html" target="_blank" rel="noopener">✏️ Antwort/Zusage im Admin erfassen…</a></p>
-      <div id="event-responses-content" class="muted">Wird geladen …</div>
+      <div id="event-responses-content" class="muted">Event-Antworten werden geladen …</div>
     </section>
 
     <section id="absences">
       <h2>Absenzen</h2>
-      <div id="absences-content" class="muted">Wird geladen …</div>
+      <div id="absences-content" class="muted">Absenzen werden geladen …</div>
     </section>
   </section>
 
@@ -303,7 +306,7 @@
       <div id="config-diag" class="diag config-diag">
         <div class="section-header" style="margin:0">
           <h2 style="margin:0">Konfig &amp; Diagnose</h2>
-          <p class="muted" id="config-diag-note" style="margin:0">Wird geladen …</p>
+          <p class="muted" id="config-diag-note" style="margin:0">Konfig-Details werden geladen …</p>
         </div>
         <div class="config-diag-grid" id="config-diag-grid" style="display:none"></div>
       </div>
@@ -1680,7 +1683,7 @@
       if (!absencesContainer) return;
       const { loading, error, active } = state.absences;
       if (loading) {
-        absencesContainer.textContent = "Wird geladen …";
+        absencesContainer.textContent = "Absenzen werden geladen …";
         return;
       }
       if (error) {
@@ -1719,7 +1722,7 @@
       if (!eventResponsesContainer) return;
       const data = state.eventResponses || {};
       if (data.loading) {
-        eventResponsesContainer.textContent = "Wird geladen …";
+        eventResponsesContainer.textContent = "Event-Antworten werden geladen …";
         return;
       }
       if (data.error) {
