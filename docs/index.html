@@ -156,7 +156,7 @@
 
   <div id="init-error" class="init-error" style="display:none"></div>
 
-  <!-- Abschnittsstruktur: Überblick (Status & Empfehlung), Teams A/B (Roster & Details), Allianz & Callup (Arbeitsbereich), Diagnose (Debug). -->
+  <!-- Abschnittsstruktur: Überblick (Status & Empfehlung), Teams A/B (Roster & Details), Allianz & Analyse (Reminder-Hinweise), Diagnose (Debug). -->
     <section id="section-overview" class="page-section">
       <div class="section-header">
         <h2>Event-Überblick</h2>
@@ -184,7 +184,7 @@
       </label>
       <label class="player-meta-toggle">
         <input type="checkbox" id="callup-toggle" checked />
-        Callup-Erinnerungen anzeigen (Analyse)
+        Reminder-Hinweise anzeigen (Analyse, kein Einfluss auf Aufstellung)
       </label>
       <button id="participation-download" class="btn" type="button" disabled>
         📥 Teilnahmelisten A/B herunterladen (CSV)
@@ -197,7 +197,7 @@
       </button>
     </div>
     <p class="muted" id="sort-note" style="margin:0 0 10px"></p>
-    <p class="muted legend team-legend">Legende: <span class="tag tag-nd" title="Keine Historie – events_seen = 0">No&nbsp;Data</span> keine Historie · <span class="tag tag-low" title="Wenig Historie – events_seen ∈ {1,2}">low&nbsp;n</span> wenig Historie · <span class="tag tag-fix">🔒 verbindlich</span> verbindliche Zusage (Commitment=hard) · <span class="tag tag-callup callup-badge">🔔 Callup</span> Spieler, für die eine Erinnerung empfohlen wird<br />Farben basieren auf Historie (rolling→overall), EB wird nur zur Sortierung verwendet.<br />No-Data = nie teilgenommen (grau). low-n ≤2 = gelb. 1 Fehltermin = nie rot.</p>
+      <p class="muted legend team-legend">Legende: <span class="tag tag-nd" title="Keine Historie – events_seen = 0">No&nbsp;Data</span> keine Historie · <span class="tag tag-low" title="Wenig Historie – events_seen ∈ {1,2}">low&nbsp;n</span> wenig Historie · <span class="tag tag-fix">🔒 verbindlich</span> verbindliche Zusage (Commitment=hard) · <span class="tag tag-callup callup-badge">🔔 Erinnerung</span> Analyse-Hinweis, wem eine Erinnerung empfohlen wird (kein Einfluss auf A/B-Roster)<br />Farben basieren auf Historie (rolling→overall), EB wird nur zur Sortierung verwendet.<br />No-Data = nie teilgenommen (grau). low-n ≤2 = gelb. 1 Fehltermin = nie rot.</p>
     <!-- Kurzlegende für EB vs. Rolling (Tooltips ergänzt) -->
     <p class="muted legend legend-inline">EB = geglättete, konservative No-Show-Risiko-Schätzung (strafe Declines/kein Feedback) · Rolling = reine Historie ohne Glättung (Shows/Events, reagiert schneller)</p>
     <div id="roster-root" class="team-grid">
@@ -249,19 +249,19 @@
     </div>
   </section>
 
-  <section id="section-alliance" class="page-section">
-    <div class="section-header">
-      <h2>Allianz &amp; Analysen</h2>
-      <p class="muted">Erinnerungs-Analysen (Callups), Allianz-Tabelle und Event-Kontext.</p>
-    </div>
-    <p class="muted" id="callup-note" style="margin:0 0 12px; display:none"></p>
-    <section id="callup-suggestions" class="diag" style="display:none">
-      <h2>Callup-Erinnerungen (Analyse)</h2>
-      <p class="muted" id="callup-suggestions-note">Lädt Empfehlungen …</p>
-      <div id="callup-suggestions-content"></div>
-    </section>
+    <section id="section-alliance" class="page-section">
+      <div class="section-header">
+        <h2>Allianz &amp; Analysen</h2>
+        <p class="muted">Reminder-Hinweise &amp; Allianz-Analysen (rein informativ, kein Einfluss auf A/B-Roster).</p>
+      </div>
+      <p class="muted" id="callup-note" style="margin:0 0 12px; display:none"></p>
+      <section id="callup-suggestions" class="diag" style="display:none">
+        <h2>Reminder-Empfehlungen (Analyse)</h2>
+        <p class="muted" id="callup-suggestions-note">Lädt Empfehlungen …</p>
+        <div id="callup-suggestions-content"></div>
+      </section>
 
-    <p class="muted legend legend-inline">Kurzlegende für Allianz &amp; Analyse: <span class="tag tag-callup callup-badge">🔔 Callup</span> Erinnerung empfohlen (kein Einfluss auf die Aufstellung) · <span class="tag tag-fix">🔒 verbindlich</span> bindende Zusage · No-Show-Farben wie im Team-Block.</p>
+      <p class="muted legend legend-inline">Kurzlegende für Allianz &amp; Analyse: <span class="tag tag-callup callup-badge">🔔 Erinnerung</span> Analyse-Hinweis (kein Einfluss auf die Aufstellung) · <span class="tag tag-fix">🔒 verbindlich</span> bindende Zusage · No-Show-Farben wie im Team-Block.</p>
 
     <section id="alliance-overview" class="diag">
       <h2>Allianz-Übersicht (nächstes Desert Storm)</h2>
