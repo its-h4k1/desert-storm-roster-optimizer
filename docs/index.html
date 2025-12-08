@@ -13,7 +13,7 @@
     p { margin:0 0 10px; }
     .muted { color:var(--muted); }
     .grid { display:grid; gap:16px; grid-template-columns:1fr; }
-    @media (min-width: 1024px) { .grid { grid-template-columns:repeat(3,1fr); } }
+    @media (min-width: 1024px) { .grid { grid-template-columns:repeat(2,1fr); } }
     .card { border:1px solid var(--line); border-radius:12px; padding:14px; background:var(--card); }
     .card h3 { margin:0 0 8px; }
     .list { list-style:none; padding:0; margin:0; display:grid; gap:8px; }
@@ -24,8 +24,6 @@
     .section { margin:26px 0; }
     .tag { display:inline-block; margin-left:8px; padding:2px 8px; border-radius:999px; font-size:0.72em; border:1px solid var(--line); background:#eef2ff; color:#1d4ed8; }
     .error { border:1px solid #fecdd3; background:#fff5f5; color:#7f1d1d; padding:12px; border-radius:10px; }
-    .subheading { font-weight:600; margin:6px 0; color:#111827; }
-    .team-split { display:grid; gap:12px; }
     .btn { display:inline-flex; align-items:center; gap:6px; padding:8px 14px; border-radius:10px; border:1px solid var(--line); background:#0f172a; color:white; text-decoration:none; font-weight:600; }
     .btn:hover { filter:brightness(0.95); }
   </style>
@@ -52,35 +50,32 @@
     <h2>Teams</h2>
     <div class="grid">
       <div class="card">
-        <h3>Team A</h3>
-        <div class="team-split">
-          <div>
-            <div class="subheading">Gruppe A · Start</div>
-            <ul id="team-a-start" class="list"></ul>
-          </div>
-          <div>
-            <div class="subheading">Gruppe A · Ersatz</div>
-            <ul id="team-a-subs" class="list"></ul>
-          </div>
-        </div>
+        <h3>Gruppe A · Start</h3>
+        <ul id="team-a-start" class="list"></ul>
       </div>
       <div class="card">
-        <h3>Team B</h3>
-        <div class="team-split">
-          <div>
-            <div class="subheading">Gruppe B · Start</div>
-            <ul id="team-b-start" class="list"></ul>
-          </div>
-          <div>
-            <div class="subheading">Gruppe B · Ersatz</div>
-            <ul id="team-b-subs" class="list"></ul>
-          </div>
+        <h3>Gruppe B · Start</h3>
+        <ul id="team-b-start" class="list"></ul>
+      </div>
+    </div>
+
+    <div class="section" style="margin-top:18px;">
+      <h3>Ersatzbänke</h3>
+      <div class="grid">
+        <div class="card">
+          <h4>Gruppe A · Ersatz</h4>
+          <ul id="team-a-subs" class="list"></ul>
+        </div>
+        <div class="card">
+          <h4>Gruppe B · Ersatz</h4>
+          <ul id="team-b-subs" class="list"></ul>
         </div>
       </div>
-      <div class="card">
-        <h3>Zugesagt (hard), aber nicht im Roster</h3>
-        <ul id="not-in-roster" class="list"></ul>
-      </div>
+    </div>
+
+    <div class="card" style="margin-top:18px;">
+      <h3>Zugesagt (hard), aber nicht im Roster</h3>
+      <ul id="not-in-roster" class="list"></ul>
     </div>
   </section>
 
