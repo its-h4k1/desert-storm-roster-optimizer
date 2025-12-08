@@ -71,16 +71,20 @@ def test_main_builds_simple_roster(monkeypatch, tmp_path):
     assert latest["event"]["date"] == "2024-12-01"
     assert latest["event"]["time"] == "20:00"
 
-    assert len(latest["team_a"]) == 1
-    assert len(latest["team_b"]) == 2
-    assert latest["reserves"] == []
+    assert len(latest["team_a"]["start"]) == 1
+    assert len(latest["team_a"]["subs"]) == 0
+    assert len(latest["team_b"]["start"]) == 0
+    assert len(latest["team_b"]["subs"]) == 2
+    assert latest["hard_signups_not_in_roster"] == []
 
-    alpha = latest["team_a"][0]
+    alpha = latest["team_a"]["start"][0]
     assert alpha["name"] == "Alpha"
     assert alpha["role"] == "Start"
 
     stats = latest["signup_stats"]
     assert stats["hard_signups"] == 3
-    assert stats["team_a"] == 1
-    assert stats["team_b"] == 2
-    assert stats["reserves"] == 0
+    assert stats["team_a_start"] == 1
+    assert stats["team_a_subs"] == 0
+    assert stats["team_b_start"] == 0
+    assert stats["team_b_subs"] == 2
+    assert stats["hard_signups_not_in_roster"] == 0

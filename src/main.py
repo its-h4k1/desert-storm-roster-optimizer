@@ -4,7 +4,7 @@
 This edition keeps the core flow intentionally small:
 1. Load hard commitments from ``data/event_signups_next.csv`` via
    :func:`src.core_signups.load_hard_signups_for_next_event`.
-2. Build deterministic Team A/B line-ups plus reserves with
+2. Build deterministic Team A/B line-ups with explicit start/sub splits via
    :func:`src.core_roster.build_rosters_from_hard_signups`.
 3. Emit a slim JSON payload that powers the matchday view.
 
@@ -78,9 +78,14 @@ def _build_payload(
     rosters: Dict[str, object],
     args: argparse.Namespace,
 ) -> Dict[str, object]:
-    team_a: List[RosterEntry] = rosters.get("team_a", [])  # type: ignore[assignment]
-    team_b: List[RosterEntry] = rosters.get("team_b", [])  # type: ignore[assignment]
-    reserves: List[RosterEntry] = rosters.get("reserves", [])  # type: ignore[assignment]
+    team_a: Dict[str, List[RosterEntry]] = rosters.get("team_a", {})  # type: ignore[assignment]
+    team_b: Dict[str, List[RosterEntry]] = rosters.get("team_b", {})  # type: ignore[assignment]
+    hard_signups_not_in_roster: List[RosterEntry] = rosters.get("hard_signups_not_in_roster", [])  # type: ignore[assignment]
+
+    team_a_start = team_a.get("start", [])
+    team_a_subs = team_a.get("subs", [])
+    team_b_start = team_b.get("start", [])
+    team_b_subs = team_b.get("subs", [])
 
     return {
         "event": {
@@ -90,14 +95,24 @@ def _build_payload(
             "generated_at": rosters.get("generated_at"),
             "source": Path(args.event_signups).as_posix(),
         },
-        "team_a": [_entry_to_dict(e) for e in team_a],
-        "team_b": [_entry_to_dict(e) for e in team_b],
-        "reserves": [_entry_to_dict(e) for e in reserves],
+        "team_a": {
+            "start": [_entry_to_dict(e) for e in team_a_start],
+            "subs": [_entry_to_dict(e) for e in team_a_subs],
+        },
+        "team_b": {
+            "start": [_entry_to_dict(e) for e in team_b_start],
+            "subs": [_entry_to_dict(e) for e in team_b_subs],
+        },
+        "hard_signups_not_in_roster": [
+            _entry_to_dict(e) for e in hard_signups_not_in_roster
+        ],
         "signup_stats": {
             "hard_signups": len(signups),
-            "team_a": len(team_a),
-            "team_b": len(team_b),
-            "reserves": len(reserves),
+            "team_a_start": len(team_a_start),
+            "team_a_subs": len(team_a_subs),
+            "team_b_start": len(team_b_start),
+            "team_b_subs": len(team_b_subs),
+            "hard_signups_not_in_roster": len(hard_signups_not_in_roster),
         },
         "analysis": {
             "note": "Callups/EB/No-Show analyses intentionally decoupled from roster build.",
@@ -128,7 +143,9 @@ def main() -> None:
     _write_outputs(Path(args.out), payload)
     print(
         f"[ok] roster built with {len(signups)} hard signups → "
-        f"A: {len(payload['team_a'])}, B: {len(payload['team_b'])}, reserves: {len(payload['reserves'])}"
+        f"A: {len(payload['team_a']['start'])} start / {len(payload['team_a']['subs'])} subs, "
+        f"B: {len(payload['team_b']['start'])} start / {len(payload['team_b']['subs'])} subs, "
+        f"not in roster: {len(payload['hard_signups_not_in_roster'])}"
     )
 
 

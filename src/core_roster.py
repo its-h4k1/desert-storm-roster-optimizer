@@ -1,8 +1,9 @@
 """Minimal deterministic roster builder for hard signups.
 
 The goal is to keep the roster-producing surface easy to read: we only consume
-the hard signup list and return a simple A/B roster plus reserves without any
-callup or EB-specific switches.
+the hard signup list and return a simple A/B roster with explicit start/sub
+splits. Any overflow is tracked separately so the matchday view can clearly
+show which hard signups are not part of the roster.
 """
 
 from __future__ import annotations
@@ -58,24 +59,24 @@ def _to_entry(signup: Signup) -> RosterEntry:
 def build_rosters_from_hard_signups(
     signups: List[Signup],
     config=None,
-) -> Dict[str, List[RosterEntry]]:
-    """Distribute hard signups into teams A/B and a reserve bench.
+) -> Dict[str, object]:
+    """Distribute hard signups into teams A/B with separate start/sub lists.
 
     The builder keeps the distribution simple and deterministic:
     - A signup with a group wish of ``B`` is placed in team B if capacity
       permits; all others default to team A first.
     - ``Role`` decides whether a player is counted as starter (``Start``) or
       substitute (``Ersatz``); if the requested slot is full the player is
-      pushed into the reserves list.
+      tracked in ``hard_signups_not_in_roster``.
     """
 
     cfg = config or get_config()
     _ = cfg  # currently unused but kept for signature stability
 
     capacities = {g: roles.copy() for g, roles in DEFAULT_CAPACITY.items()}
-    team_a: List[RosterEntry] = []
-    team_b: List[RosterEntry] = []
-    reserves: List[RosterEntry] = []
+    team_a: Dict[str, List[RosterEntry]] = {"start": [], "subs": []}
+    team_b: Dict[str, List[RosterEntry]] = {"start": [], "subs": []}
+    hard_signups_not_in_roster: List[RosterEntry] = []
 
     for signup in signups:
         entry = _to_entry(signup)
@@ -85,18 +86,19 @@ def build_rosters_from_hard_signups(
 
         if cap > 0:
             capacities[target_group][target_role] -= 1
+            slot = "start" if target_role == "Start" else "subs"
             if target_group == "A":
-                team_a.append(entry)
+                team_a[slot].append(entry)
             else:
-                team_b.append(entry)
+                team_b[slot].append(entry)
         else:
-            reserves.append(entry)
+            hard_signups_not_in_roster.append(entry)
 
     return {
         "generated_at": datetime.now(timezone.utc).isoformat(),
         "team_a": team_a,
         "team_b": team_b,
-        "reserves": reserves,
+        "hard_signups_not_in_roster": hard_signups_not_in_roster,
         "capacity": capacities,
     }
 
