@@ -18,7 +18,8 @@
     .card h3 { margin:0 0 8px; }
     .list { list-style:none; padding:0; margin:0; display:grid; gap:8px; }
     .pill { display:inline-flex; align-items:center; gap:6px; padding:2px 8px; border:1px solid var(--line); border-radius:999px; font-size:0.85em; background:#fff; }
-    .player { padding:10px; border:1px solid var(--line); border-radius:10px; background:#fff; }
+    .player { padding:10px; border:1px solid var(--line); border-radius:10px; background:#fff; display:grid; grid-template-columns:42px 1fr; gap:10px; align-items:center; }
+    .player-number { font-weight:700; color:var(--muted); text-align:center; }
     .player h4 { margin:0; font-size:1em; }
     .player .meta { margin:4px 0 0; font-size:0.9em; color:var(--muted); }
     .section { margin:26px 0; }
@@ -50,11 +51,11 @@
     <h2>Teams</h2>
     <div class="grid">
       <div class="card">
-        <h3>Gruppe A · Start</h3>
+        <h3 id="heading-team-a-start">Gruppe A · Start</h3>
         <ul id="team-a-start" class="list"></ul>
       </div>
       <div class="card">
-        <h3>Gruppe B · Start</h3>
+        <h3 id="heading-team-b-start">Gruppe B · Start</h3>
         <ul id="team-b-start" class="list"></ul>
       </div>
     </div>
@@ -63,18 +64,18 @@
       <h3>Ersatzbänke</h3>
       <div class="grid">
         <div class="card">
-          <h4>Gruppe A · Ersatz</h4>
+          <h4 id="heading-team-a-subs">Gruppe A · Ersatz</h4>
           <ul id="team-a-subs" class="list"></ul>
         </div>
         <div class="card">
-          <h4>Gruppe B · Ersatz</h4>
+          <h4 id="heading-team-b-subs">Gruppe B · Ersatz</h4>
           <ul id="team-b-subs" class="list"></ul>
         </div>
       </div>
     </div>
 
     <div class="card" style="margin-top:18px;">
-      <h3>Zugesagt (hard), aber nicht im Roster</h3>
+      <h3 id="heading-not-in-roster">Zugesagt (hard), aber nicht im Roster</h3>
       <ul id="not-in-roster" class="list"></ul>
     </div>
   </section>
@@ -82,11 +83,19 @@
   <script>
     const statusBox = document.getElementById('status');
     const eventMeta = document.getElementById('event-meta');
+    const summaryBox = document.createElement('div');
+    summaryBox.className = 'card';
+    summaryBox.style.marginTop = '12px';
     const teamAStartList = document.getElementById('team-a-start');
     const teamASubsList = document.getElementById('team-a-subs');
     const teamBStartList = document.getElementById('team-b-start');
     const teamBSubsList = document.getElementById('team-b-subs');
     const notInRosterList = document.getElementById('not-in-roster');
+    const headingTeamAStart = document.getElementById('heading-team-a-start');
+    const headingTeamASubs = document.getElementById('heading-team-a-subs');
+    const headingTeamBStart = document.getElementById('heading-team-b-start');
+    const headingTeamBSubs = document.getElementById('heading-team-b-subs');
+    const headingNotInRoster = document.getElementById('heading-not-in-roster');
 
     function showError(message) {
       statusBox.textContent = message;
@@ -101,6 +110,18 @@
       if (event.generated_at) parts.push(`<span class="pill">Build: ${event.generated_at}</span>`);
       parts.push(`<span class="pill">Quelle: ${event.source || 'event_signups_next.csv'}</span>`);
       eventMeta.innerHTML = `<div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center">${parts.join(' ')}</div>`;
+      if (!eventMeta.nextElementSibling || eventMeta.nextElementSibling !== summaryBox) {
+        eventMeta.insertAdjacentElement('afterend', summaryBox);
+      }
+    }
+
+    function formatHeading(element, label, count) {
+      element.textContent = `${label} (${count} Spieler)`;
+    }
+
+    function renderSummary(counts) {
+      const total = counts.teamAStart + counts.teamASubs + counts.teamBStart + counts.teamBSubs + counts.notInRoster;
+      summaryBox.innerHTML = `<strong>Harte Zusagen gesamt:</strong> ${total}<br />A: ${counts.teamAStart} Start + ${counts.teamASubs} Ersatz · B: ${counts.teamBStart} Start + ${counts.teamBSubs} Ersatz · nicht im Roster: ${counts.notInRoster}`;
     }
 
     function renderList(container, entries) {
@@ -109,11 +130,11 @@
         container.innerHTML = '<li class="muted">Keine Einträge</li>';
         return;
       }
-      entries.forEach((player) => {
+      entries.forEach((player, index) => {
         const li = document.createElement('li');
         li.className = 'player';
         const tags = (player.tags || []).map((t) => `<span class="tag">${t}</span>`).join('');
-        li.innerHTML = `<h4>${player.name}${tags}</h4><div class="meta">${player.role}${player.note ? ' · ' + player.note : ''}${player.source ? ' · Quelle: ' + player.source : ''}</div>`;
+        li.innerHTML = `<div class="player-number">${index + 1}</div><div><h4>${player.name}${tags}</h4><div class="meta">${player.role}${player.note ? ' · ' + player.note : ''}${player.source ? ' · Quelle: ' + player.source : ''}</div></div>`;
         container.appendChild(li);
       });
     }
@@ -124,6 +145,21 @@
         if (!res.ok) throw new Error('latest.json HTTP ' + res.status);
         const data = await res.json();
         renderEvent(data.event || {});
+        const counts = {
+          teamAStart: data.team_a?.start?.length || 0,
+          teamASubs: data.team_a?.subs?.length || 0,
+          teamBStart: data.team_b?.start?.length || 0,
+          teamBSubs: data.team_b?.subs?.length || 0,
+          notInRoster: data.hard_signups_not_in_roster?.length || 0,
+        };
+
+        formatHeading(headingTeamAStart, 'Gruppe A · Start', counts.teamAStart);
+        formatHeading(headingTeamASubs, 'Gruppe A · Ersatz', counts.teamASubs);
+        formatHeading(headingTeamBStart, 'Gruppe B · Start', counts.teamBStart);
+        formatHeading(headingTeamBSubs, 'Gruppe B · Ersatz', counts.teamBSubs);
+        formatHeading(headingNotInRoster, 'Zugesagt (hard), aber nicht im Roster', counts.notInRoster);
+        renderSummary(counts);
+
         renderList(teamAStartList, data.team_a?.start || []);
         renderList(teamASubsList, data.team_a?.subs || []);
         renderList(teamBStartList, data.team_b?.start || []);
