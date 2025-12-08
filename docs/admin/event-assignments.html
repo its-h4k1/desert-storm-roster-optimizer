@@ -82,12 +82,6 @@
     .status-warn { background:#fff7ed; color:#9a3412; }
     .status-ok { background:#dcfce7; color:#14532d; }
     .status-error { background:#fee2e2; color:#991b1b; }
-    .roster-preview { display:grid; grid-template-columns:repeat(auto-fit,minmax(260px,1fr)); gap:0.75rem; }
-    .roster-card { border:1px solid var(--border); border-radius:0.85rem; padding:0.85rem; background:var(--panel-muted); display:grid; gap:0.4rem; }
-    .roster-card h3 { margin:0; font-size:1rem; display:flex; align-items:center; justify-content:space-between; gap:0.5rem; }
-    .roster-list { list-style:none; padding:0; margin:0.35rem 0 0; display:grid; gap:0.25rem; }
-    .roster-badge { display:inline-flex; align-items:center; gap:0.35rem; padding:0.2rem 0.55rem; border-radius:999px; background:#eef2ff; color:#312e81; border:1px solid #c7d2fe; font-size:0.78rem; }
-    .extra-pill { background:#ecfeff; border:1px solid #a5f3fc; color:#0f172a; }
     .prefill-highlight { box-shadow:0 0 0 2px #bfdbfe; background:linear-gradient(90deg, rgba(239,246,255,0.6), rgba(255,255,255,0)); }
     @media (max-width: 960px) { .page-header { position:static; } label { width:100%; } input, select, textarea, button { width:100%; } button { justify-content:center; } table { min-width:800px; } .header-meta { width:100%; justify-content:flex-start; } .toolbar { flex-direction:column; align-items:flex-start; } }
   </style>
@@ -244,7 +238,6 @@
                           <th>Spieler</th>
                           <th>Gruppe</th>
                           <th>Rolle</th>
-                          <th>Roster-Kontext</th>
                           <th>Aktion</th>
                         </tr>
                       </thead>
@@ -297,19 +290,6 @@
                 <p class="hint" style="color:var(--text-muted);">Responses gelten fürs nächste Event und landen in <code>data/event_responses_next.csv</code>. Status "Keine Antwort setzen" entfernt vorhandene Einträge.</p>
               </section>
 
-              <details class="accordion" id="rosterPreviewPanel">
-                <summary>
-                  <div style="display:grid; gap:0.1rem;">
-                    <span>Optimierte Aufstellung (nächstes Event)</span>
-                    <small style="color:var(--text-muted);">Zeigt die aktuelle Aufstellung aus <code>latest.json</code>; wirkt nach nächstem Roster-Build.</small>
-                  </div>
-                  <span id="rosterMeta" class="hint" style="color:var(--text-muted);"></span>
-                </summary>
-                <div class="accordion-body">
-                  <div id="rosterPreview" class="roster-preview"></div>
-                </div>
-              </details>
-
               <details class="accordion">
                 <summary>Hintergrund &amp; Funktionsweise</summary>
                 <div class="accordion-body">
@@ -334,14 +314,6 @@
                       <ul>
                         <li><code>Commitment=hard</code> = verbindliche Zusage / Fixplatz im nächsten Roster-Build.</li>
                         <li>Event-Zusagen sind unabhängig von <code>PrefGroup</code>; Reset leert nur den Zusage-Pool.</li>
-                      </ul>
-                    </div>
-                    <div class="help-card">
-                      <strong>Sync aus Callup-Assistent</strong>
-                      <ul>
-                        <li><code>Source=callup-confirmed</code> kommt vom Callup-Assistenten („Zugesagt (Roster übernehmen)“).</li>
-                        <li>Beim Speichern werden diese Einträge dort automatisch aktualisiert.</li>
-                        <li>Meist keine Anpassung nötig; Quelle bleibt zur Dokumentation erhalten.</li>
                       </ul>
                     </div>
                   </div>
@@ -403,8 +375,6 @@
         contextMeta: document.getElementById('contextMeta'),
         eventQuickMeta: document.getElementById('eventQuickMeta'),
         resetBtn: document.getElementById('resetBtn'),
-        rosterPreview: document.getElementById('rosterPreview'),
-        rosterMeta: document.getElementById('rosterMeta'),
         addPanel: document.getElementById('addPanel'),
         hardOnlyToggle: document.getElementById('hardOnlyToggle'),
       };
@@ -511,6 +481,7 @@
         rosterIndex: new Map(),
         rosterGroups: {},
         rosterMeta: null,
+        eventInfo: null,
         eventSignupsMeta: null,
         eventSignupCommit: null,
         currentBranch: branchOverride || 'main',
@@ -622,6 +593,18 @@
         const cleaned = trimmed.replace(/[^\w\-\/]/g, '');
         return cleaned || 'main';
       }
+      function sanitizeIdentifier(value) {
+        return (value || '').toString().trim().replace(/[^\w\-]/g, '');
+      }
+      function buildArchivePath() {
+        const eventId = sanitizeIdentifier(state.eventSignupsMeta?.event_id || state.eventInfo?.id || '');
+        if (eventId) return `data/event_signups_${eventId}.csv`;
+        const rawDate = (state.eventInfo?.date || state.eventSignupsMeta?.event_date || '').toString().trim();
+        const dateMatch = rawDate.match(/\d{4}-\d{2}-\d{2}/);
+        if (dateMatch) return `data/event_signups_${dateMatch[0]}.csv`;
+        const today = new Date().toISOString().slice(0, 10);
+        return `data/event_signups_${today}.csv`;
+      }
       function buildRawDataUrl(relativePath, branchValue) {
         const cleanPath = (relativePath || '').replace(/^\//, '');
         const branch = safeBranchName(branchValue || 'main');
@@ -726,6 +709,7 @@
           state.rosterIndex = rosterIndex;
           state.rosterGroups = (data && data.groups) || {};
           state.rosterMeta = data?.generated_at || null;
+          state.eventInfo = data?.event || null;
           state.eventSignupsMeta = data?.event_signups || null;
           hydrateAssignmentsFromBuild(data);
           updateContextMeta();
@@ -736,6 +720,7 @@
           state.rosterIndex = new Map();
           state.rosterGroups = {};
           state.rosterMeta = null;
+          state.eventInfo = null;
           state.alliancePool = [];
           state.eventSignupsMeta = null;
           updateContextMeta();
@@ -835,23 +820,25 @@
         parts.push(`Responses gesetzt: ${state.responses.length}`);
         const rebuildHint = 'Hinweis: Änderungen an event_signups_next.csv landen automatisch nach dem nächsten Roster-Build in latest.json.';
         const text = parts.length ? `${parts.join(' · ')} · ${rebuildHint}` : rebuildHint;
-        if (elements.contextMeta) elements.contextMeta.textContent = text;
-        if (elements.rosterMeta) elements.rosterMeta.textContent = text;
+          if (elements.contextMeta) elements.contextMeta.textContent = text;
         updateQuickMeta();
       }
 
-      function updateQuickMeta() {
-        const parts = [];
-        if (state.eventSignupsMeta?.event_id) parts.push(`Event ${state.eventSignupsMeta.event_id}`);
-        if (state.rosterMeta) parts.push(`Build: ${state.rosterMeta}`);
-        parts.push(`Pool: ${state.assignments.length}`);
-        if (typeof state.eventSignupsMeta?.hard_signups_only === 'boolean') {
-          parts.push(state.eventSignupsMeta.hard_signups_only ? 'Roster-Modus: nur harte Zusagen' : 'Roster-Modus: Legacy');
+        function updateQuickMeta() {
+          const parts = [];
+          const eventId = state.eventSignupsMeta?.event_id || state.eventInfo?.id;
+          const eventDate = state.eventInfo?.date || state.eventSignupsMeta?.event_date;
+          if (eventId) parts.push(`Event ${eventId}`);
+          else if (eventDate) parts.push(`Event: ${eventDate}`);
+          if (state.rosterMeta) parts.push(`Build: ${state.rosterMeta}`);
+          parts.push(`Pool: ${state.assignments.length}`);
+          if (typeof state.eventSignupsMeta?.hard_signups_only === 'boolean') {
+            parts.push(state.eventSignupsMeta.hard_signups_only ? 'Roster-Modus: nur harte Zusagen' : 'Roster-Modus: Legacy');
+          }
+          parts.push(`Responses: ${state.responses.length}`);
+          const text = parts.length ? parts.join(' · ') : 'nächstes Event';
+          if (elements.eventQuickMeta) elements.eventQuickMeta.textContent = text;
         }
-        parts.push(`Responses: ${state.responses.length}`);
-        const text = parts.length ? parts.join(' · ') : 'nächstes Event';
-        if (elements.eventQuickMeta) elements.eventQuickMeta.textContent = text;
-      }
 
       function formatCommitShort(value) {
         if (!value) return '';
@@ -1200,19 +1187,8 @@
           roleTd.appendChild(roleSel);
           tr.appendChild(roleTd);
 
-          const ctxTd = document.createElement('td');
-          const tags = document.createElement('div');
-          tags.className = 'tags';
-          const inAlliance = state.alliancePool.some(p => (p.display || '') === row.PlayerName && Number(p.in_alliance) === 1);
-          const rosterEntry = state.rosterPlayers.find(p => p.name === row.PlayerName);
-          if (inAlliance) { const tag = document.createElement('span'); tag.className='tag'; tag.textContent='In Allianz'; tags.appendChild(tag); }
-          if (rosterEntry) { const tag = document.createElement('span'); tag.className='tag'; tag.textContent=`EB-Roster ${rosterEntry.group || ''} ${rosterEntry.role || ''}`.trim(); tags.appendChild(tag); }
-          if (!tags.children.length) { const tag = document.createElement('span'); tag.className='tag'; tag.textContent='kein Kontext'; tags.appendChild(tag); }
-          ctxTd.appendChild(tags);
-          tr.appendChild(ctxTd);
-
-          const actionTd = document.createElement('td');
-          const delBtn = document.createElement('button');
+            const actionTd = document.createElement('td');
+            const delBtn = document.createElement('button');
           delBtn.textContent = 'Löschen';
           delBtn.type = 'button';
           delBtn.addEventListener('click', () => {
@@ -1227,92 +1203,10 @@
           elements.assignmentBody.appendChild(tr);
         });
         elements.emptyState.style.display = rows.length ? 'none' : 'block';
-        renderRosterPreview();
         updateQuickMeta();
         refreshBuildSyncState();
       }
 
-      function renderRosterPreview() {
-        const container = elements.rosterPreview;
-        if (!container) return;
-        const groups = state.rosterGroups || {};
-        if (!Object.keys(groups).length) {
-          container.textContent = 'Keine Aufstellung geladen (latest.json nicht verfügbar).';
-          return;
-        }
-        const signupsByCanon = new Map();
-        state.assignments.forEach(a => {
-          const canon = canonicalNameJS(a.PlayerName || '');
-          if (!canon) return;
-          signupsByCanon.set(canon, a);
-        });
-        const rosterCanon = new Set(state.rosterPlayers.map(p => p.canon).filter(Boolean));
-        const forcedByCanon = new Map(state.rosterPlayers.filter(p => p.canon && p.forcedSignup).map(p => [p.canon, p.forcedSignup]));
-        const extraByGroup = { A: [], B: [] };
-        state.assignments.forEach(a => {
-          const g = (a.Group || '').toUpperCase();
-          const canon = canonicalNameJS(a.PlayerName || '');
-          if (!canon || (g !== 'A' && g !== 'B')) return;
-          if (!rosterCanon.has(canon)) extraByGroup[g].push(a);
-        });
-
-        const makeList = (entries, { highlight }) => {
-          const ul = document.createElement('ul');
-          ul.className = 'roster-list';
-          if (!entries.length) {
-            const li = document.createElement('li');
-            li.textContent = '–';
-            ul.appendChild(li);
-            return ul;
-          }
-          entries.forEach(entry => {
-            const li = document.createElement('li');
-            const canon = canonicalNameJS(entry || entry.PlayerName || '');
-            const signup = highlight && signupsByCanon.get(canon);
-            const forcedBadge = buildFixBadge(forcedByCanon.get(canon));
-            if (typeof entry === 'string') {
-              li.innerHTML = `${escapeHtml(entry)}${forcedBadge ? ` ${forcedBadge}` : ''}${signup ? ' <span class="roster-badge">Event-Zusage</span>' : ''}`;
-            } else {
-              const badge = `<span class="roster-badge extra-pill">Event-Zusage</span>`;
-              const details = [];
-              if (entry.Role) details.push(entry.Role);
-              const meta = details.length ? ` <span class="hint">(${escapeHtml(details.join(' · '))})</span>` : '';
-              li.innerHTML = `${escapeHtml(entry.PlayerName || '–')}${forcedBadge ? ` ${forcedBadge}` : ''} ${badge}${meta}`;
-            }
-            ul.appendChild(li);
-          });
-          return ul;
-        };
-
-        container.innerHTML = '';
-        ['A','B'].forEach(group => {
-          const card = document.createElement('div');
-          card.className = 'roster-card';
-          const header = document.createElement('h3');
-          header.textContent = `Gruppe ${group}`;
-          card.appendChild(header);
-
-          const startList = Array.isArray(groups[group]?.Start) ? groups[group].Start : [];
-          const ersatzList = Array.isArray(groups[group]?.Ersatz) ? groups[group].Ersatz : [];
-
-          const startLabel = document.createElement('div');
-          startLabel.textContent = 'Start';
-          card.appendChild(startLabel);
-          card.appendChild(makeList(startList, { highlight: true }));
-
-          const ersatzLabel = document.createElement('div');
-          ersatzLabel.textContent = 'Ersatz';
-          card.appendChild(ersatzLabel);
-          card.appendChild(makeList(ersatzList, { highlight: true }));
-
-          const extraLabel = document.createElement('div');
-          extraLabel.textContent = 'Zusätzliche Zusagen (außerhalb Optimizer)';
-          card.appendChild(extraLabel);
-          card.appendChild(makeList(extraByGroup[group] || [], { highlight: false }));
-
-          container.appendChild(card);
-        });
-      }
 
       function addAssignment() {
         const player = elements.playerInput.value.trim();
@@ -1528,9 +1422,8 @@
         }
       }
 
-      // Manual post-event action: clears the "next event" pool and response overrides
+      // Manual post-event action: archive current signups and clear the "next event" pool plus responses
       // so R4/R5 can start from an empty slate for the following roster build.
-      // Assumes we intentionally drop all commitments/answers (no archiving here).
       async function resetPool() {
         if (state.loading || state.saving) return;
         const workerUrl = elements.workerUrl.value.trim();
@@ -1542,10 +1435,11 @@
           updateAdminKeyStatus();
           return;
         }
+        const assignmentCount = state.assignments.length;
+        const hasAssignments = assignmentCount > 0;
         const confirmReset = window.confirm(
-          'Neues Event vorbereiten?\n\nDamit werden alle Zusagen/Antworten für das bisherige "nächste" Event gelöscht ' +
-          'und leere Dateien event_signups_next.csv & event_responses_next.csv geschrieben. ' +
-          'Das ist der manuelle Startpunkt nach einem gespielten Event.'
+          'Neues Event vorbereiten?\n\nVorhandene Zusagen werden zuerst archiviert und danach werden event_signups_next.csv & ' +
+          'event_responses_next.csv geleert. Das ist der manuelle Startpunkt nach einem gespielten Event.'
         );
         if (!confirmReset) return;
         const headers = state.headers.length ? state.headers : [...DEFAULT_HEADERS];
@@ -1553,8 +1447,19 @@
         const responseHeaders = state.responseHeaders.length ? state.responseHeaders : [...DEFAULT_RESPONSE_HEADERS];
         const emptyResponsesCsv = buildCsv(responseHeaders, []);
         setSaving(true);
-        setStatus('Leere event_signups_next.csv & event_responses_next.csv…', 'info');
+        setStatus(hasAssignments ? 'Archiviert Zusagen und leert den Pool…' : 'Leere event_signups_next.csv & event_responses_next.csv…', 'info');
         try {
+          let archivePath = null;
+          if (hasAssignments) {
+            archivePath = buildArchivePath();
+            const archiveContent = buildCurrentCsv();
+            await writeFile(workerUrl, adminKey, {
+              path: archivePath,
+              content: archiveContent,
+              branch,
+              message: 'admin: archive event_signups_next.csv via event assignments ui',
+            });
+          }
           await writeFile(workerUrl, adminKey, {
             path: 'data/event_signups_next.csv',
             content: emptyCsv,
@@ -1574,10 +1479,14 @@
           await refreshFileCommit(branch);
           renderAssignments();
           renderResponses();
-          setStatus('Zusage-Pool & Antworten geleert: neues Event kann befüllt werden.', 'ok');
+          if (hasAssignments && archivePath) {
+            setStatus(`${assignmentCount} Zusagen archiviert nach ${archivePath} und Pool für das nächste Event geleert.`, 'ok');
+          } else {
+            setStatus('Keine Zusagen zum Archivieren – Pool ist bereits leer. Antworten wurden zurückgesetzt.', 'info');
+          }
         } catch (err) {
           console.error(err);
-          setStatus(`Reset fehlgeschlagen: ${err.message}`, 'error');
+          setStatus(`Fehler: Archivieren oder Leeren nicht möglich (${err.message}).`, 'error');
         } finally {
           setSaving(false);
           updateSaveButtonState();
