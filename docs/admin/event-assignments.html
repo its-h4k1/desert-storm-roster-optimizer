@@ -1111,6 +1111,19 @@
         return blank;
       }
 
+      function removeAssignmentByCanon(playerCanon) {
+        if (!playerCanon) return false;
+        const before = state.assignments.length;
+        state.assignments = state.assignments.filter(row => canonicalNameJS(row.PlayerName || '') !== playerCanon);
+        const removed = state.assignments.length < before;
+        if (removed) {
+          renderAssignments();
+          updateSaveButtonState();
+          setStatus('Zusage entfernt.', 'info');
+        }
+        return removed;
+      }
+
       function renderAssignments() {
         const rows = state.assignments
           .filter(row => !state.filters.hardOnly || (row.Commitment || 'none') === 'hard')
@@ -1286,8 +1299,10 @@
           const delBtn = document.createElement('button');
           delBtn.textContent = 'Löschen';
           delBtn.addEventListener('click', () => {
-            const idxGlobal = state.assignments.indexOf(row);
-            if (idxGlobal >= 0) { state.assignments.splice(idxGlobal, 1); renderAssignments(); updateSaveButtonState(); }
+            const canon = canonicalNameJS(row.PlayerName || '');
+            if (!removeAssignmentByCanon(canon)) {
+              setStatus('Zusage konnte nicht gelöscht werden.', 'warn');
+            }
           });
           actionTd.appendChild(delBtn);
           tr.appendChild(actionTd);
