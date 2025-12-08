@@ -221,18 +221,9 @@
                         <option value="Ersatz">Ersatz</option>
                       </select>
                     </label>
-                    <label>Verbindlichkeit
-                      <select id="commitmentInput">
-                        <option value="none">Nur Info</option>
-                        <option value="hard">Verbindlich (Commitment=hard)</option>
-                      </select>
-                    </label>
-                    <label style="flex:1;min-width:200px;">Notiz (optional)
-                      <input type="text" id="noteInput" placeholder="z.B. Discord-Zusage">
-                    </label>
                     <button id="addBtn">Hinzufügen</button>
                   </div>
-                  <p class="add-help">Quelle wird automatisch gesetzt (z.B. manuell oder aus Callup) und dient nur zur Dokumentation.</p>
+                  <p class="add-help">Alle Zusagen hier gelten als verbindlich (<code>Commitment=hard</code>) und werden als manuell erfasst.</p>
                 </section>
 
                 <section class="panel">
@@ -253,9 +244,6 @@
                           <th>Spieler</th>
                           <th>Gruppe</th>
                           <th>Rolle</th>
-                          <th>Verbindlichkeit</th>
-                          <th>Quelle</th>
-                          <th>Notiz</th>
                           <th>Roster-Kontext</th>
                           <th>Aktion</th>
                         </tr>
@@ -264,7 +252,7 @@
                     </table>
                   </div>
                   <div id="emptyState" class="hint" style="color:var(--text-muted);display:none;">Noch keine Zusagen im Pool.</div>
-                  <p class="hint" style="color:var(--text-muted);">Quelle beeinflusst die Aufstellung nicht; sie zeigt nur an, ob ein Eintrag manuell oder aus dem Callup-Assistenten stammt.</p>
+                  <p class="hint" style="color:var(--text-muted);">Alle Zusagen in dieser Liste sind verbindlich und landen als <code>Commitment=hard</code> in <code>data/event_signups_next.csv</code>.</p>
                 </section>
               </div>
 
@@ -392,8 +380,6 @@
         playerOptions: document.getElementById('playerOptions'),
         groupInput: document.getElementById('groupInput'),
         roleInput: document.getElementById('roleInput'),
-        commitmentInput: document.getElementById('commitmentInput'),
-        noteInput: document.getElementById('noteInput'),
         addBtn: document.getElementById('addBtn'),
         assignmentBody: document.getElementById('assignmentBody'),
         assignmentCount: document.getElementById('assignmentCount'),
@@ -665,13 +651,17 @@
           const { headers, rows } = parseCsv(text);
           const mergedHeaders = headers.length ? Array.from(new Set([...headers, ...DEFAULT_HEADERS])) : [...DEFAULT_HEADERS];
           state.headers = mergedHeaders;
-          const baseRow = DEFAULT_HEADERS.reduce((acc, k) => ({ ...acc, [k]: k === 'Commitment' ? 'none' : '' }), {});
-          state.assignments = rows.map(r => ({
-            ...baseRow,
-            ...r,
-            Source: r.Source || r.source || 'manual',
-            Commitment: r.Commitment || r.commitment || baseRow.Commitment,
-          }));
+          const baseRow = DEFAULT_HEADERS.reduce((acc, k) => ({ ...acc, [k]: k === 'Commitment' ? 'hard' : '' }), {});
+          state.assignments = rows.map(r => {
+            const commitment = (r.Commitment || r.commitment || baseRow.Commitment || 'hard').toString().toLowerCase();
+            return {
+              ...baseRow,
+              ...r,
+              Source: r.Source || r.source || 'manual',
+              Commitment: commitment === 'hard' ? 'hard' : baseRow.Commitment,
+              Note: r.Note || r.note || '',
+            };
+          });
           state.originalCsv = buildCurrentCsv();
           await refreshFileCommit(branch);
         } catch (err) {
@@ -761,13 +751,13 @@
         const buildCommit = extractBuildCommit(data?.event_signups);
         const fileCommit = state.eventSignupCommit?.sha || null;
         if (buildCommit && fileCommit && buildCommit !== fileCommit) return;
-        const baseRow = DEFAULT_HEADERS.reduce((acc, k) => ({ ...acc, [k]: k === 'Commitment' ? 'none' : '' }), {});
+        const baseRow = DEFAULT_HEADERS.reduce((acc, k) => ({ ...acc, [k]: k === 'Commitment' ? 'hard' : '' }), {});
         state.assignments = fileEntries.map(entry => ({
           ...baseRow,
           PlayerName: entry.player || entry.PlayerName || '',
           Group: entry.group_pref || entry.Group || entry.group || '',
           Role: entry.role_pref || entry.Role || entry.role || '',
-          Commitment: entry.commitment || entry.Commitment || baseRow.Commitment,
+          Commitment: (entry.commitment || entry.Commitment || baseRow.Commitment || 'hard').toString().toLowerCase() === 'hard' ? 'hard' : baseRow.Commitment,
           Source: entry.source || entry.Source || 'manual',
           Note: entry.note || entry.Note || '',
         }));
@@ -1106,15 +1096,20 @@
       function ensureAssignment(playerName) {
         const existing = state.assignments.find(r => (r.PlayerName || '') === playerName);
         if (existing) return existing;
-        const blank = { PlayerName: playerName, Group:'', Role:'', Commitment:'none', Source:'manual', Note:'' };
+        const blank = { PlayerName: playerName, Group:'', Role:'', Commitment:'hard', Source:'manual', Note:'' };
         state.assignments.push(blank);
         return blank;
       }
 
-      function removeAssignmentByCanon(playerCanon) {
-        if (!playerCanon) return false;
+      function removeAssignmentByCanon(playerCanon, { entryRef = null } = {}) {
+        if (!playerCanon && !entryRef) return false;
         const before = state.assignments.length;
-        state.assignments = state.assignments.filter(row => canonicalNameJS(row.PlayerName || '') !== playerCanon);
+        state.assignments = state.assignments.filter(row => {
+          const canon = canonicalNameJS(row.PlayerName || '');
+          if (playerCanon && canon) return canon !== playerCanon;
+          if (entryRef) return row !== entryRef;
+          return true;
+        });
         const removed = state.assignments.length < before;
         if (removed) {
           renderAssignments();
@@ -1143,7 +1138,7 @@
         });
         if (elements.hardCountA) elements.hardCountA.textContent = `A: ${hardCounts.A} hard`;
         if (elements.hardCountB) elements.hardCountB.textContent = `B: ${hardCounts.B} hard`;
-        elements.eventMeta.textContent = 'Alle Einträge beziehen sich auf das nächste Event (aktuelles Roster); Speichern schreibt nur die CSV-Dateien, Roster-Rebuild bleibt ein separater Schritt. Callup-Einträge sind blau markiert und nur zur Dokumentation.';
+        elements.eventMeta.textContent = 'Alle Einträge beziehen sich auf das nächste Event (aktuelles Roster) und sind verbindlich (<code>Commitment=hard</code>); Speichern schreibt nur die CSV-Dateien, Roster-Rebuild bleibt ein separater Schritt. Callup-Einträge sind blau markiert und nur zur Dokumentation.';
         elements.emptyState.style.display = rows.length ? 'none' : 'block';
         const responseByCanon = new Map();
         state.responses.forEach(r => {
@@ -1205,85 +1200,6 @@
           roleTd.appendChild(roleSel);
           tr.appendChild(roleTd);
 
-          const commitmentTd = document.createElement('td');
-          const commitmentSel = document.createElement('select');
-          const commitmentBadge = document.createElement('span');
-          const commitmentSourceBadge = document.createElement('span');
-          commitmentBadge.className = 'tag';
-          [['none','Nur Info'], ['hard','Verbindlich']].forEach(([value, label]) => {
-            const opt = document.createElement('option');
-            opt.value = value; opt.textContent = label;
-            if ((row.Commitment || 'none') === value) opt.selected = true;
-            commitmentSel.appendChild(opt);
-          });
-          const updateCommitmentBadge = () => {
-            const c = row.Commitment || 'none';
-            commitmentBadge.textContent = c === 'hard' ? 'verbindlich' : 'Info';
-            commitmentBadge.className = c === 'hard' ? 'tag tag-hard' : 'tag';
-            commitmentSourceBadge.style.display = c === 'hard' ? 'inline-flex' : 'none';
-          };
-          commitmentSourceBadge.className = 'tag';
-          commitmentSel.disabled = fromCallup;
-          commitmentSel.addEventListener('change', () => {
-            row.Commitment = commitmentSel.value || 'none';
-            updateBadges();
-            updateSaveButtonState();
-          });
-          const updateBadges = () => {
-            updateCommitmentBadge();
-            updateSourceBadge();
-          };
-          updateCommitmentBadge();
-          commitmentTd.appendChild(commitmentSel);
-          commitmentTd.appendChild(commitmentBadge);
-          commitmentTd.appendChild(commitmentSourceBadge);
-          commitmentTd.style.display = 'flex';
-          commitmentTd.style.flexDirection = 'column';
-          commitmentTd.style.gap = '0.35rem';
-          tr.appendChild(commitmentTd);
-
-          const sourceTd = document.createElement('td');
-          const sourceSel = document.createElement('select');
-          const sourceBadge = document.createElement('span');
-          const sourceOptions = Array.from(new Set([...SOURCE_OPTIONS, row.Source || 'manual']));
-          sourceOptions.forEach(v => {
-            const opt = document.createElement('option');
-            opt.value = v; opt.textContent = formatSourceLabel(v);
-            if ((row.Source || 'manual') === v) opt.selected = true;
-            sourceSel.appendChild(opt);
-          });
-          sourceSel.addEventListener('change', () => {
-            row.Source = sourceSel.value || 'manual';
-            updateBadges();
-            updateSaveButtonState();
-          });
-          const updateSourceBadge = () => {
-            const srcVal = row.Source || 'manual';
-            sourceBadge.textContent = formatSourceLabel(srcVal);
-            sourceBadge.className = `tag ${sourceTagClass(srcVal)}`;
-            commitmentSourceBadge.textContent = formatSourceLabel(srcVal);
-            commitmentSourceBadge.className = `tag ${sourceTagClass(srcVal)}`;
-          };
-          updateSourceBadge();
-          sourceTd.appendChild(sourceSel);
-          sourceTd.appendChild(sourceBadge);
-          if (fromCallup) {
-            const note = document.createElement('div');
-            note.className = 'callup-note';
-            note.textContent = 'aus Callup-Assistent';
-            sourceTd.appendChild(note);
-          }
-          tr.appendChild(sourceTd);
-
-          const noteTd = document.createElement('td');
-          const noteInput = document.createElement('input');
-          noteInput.type = 'text';
-          noteInput.value = row.Note || '';
-          noteInput.placeholder = fromCallup ? 'Aus Callup; optional ergänzen' : 'z.B. Discord-Zusage';
-          noteInput.addEventListener('input', () => { row.Note = noteInput.value; updateSaveButtonState(); });
-          noteTd.appendChild(noteInput);
-          tr.appendChild(noteTd);
-
           const ctxTd = document.createElement('td');
           const tags = document.createElement('div');
           tags.className = 'tags';
@@ -1298,9 +1214,10 @@
           const actionTd = document.createElement('td');
           const delBtn = document.createElement('button');
           delBtn.textContent = 'Löschen';
+          delBtn.type = 'button';
           delBtn.addEventListener('click', () => {
             const canon = canonicalNameJS(row.PlayerName || '');
-            if (!removeAssignmentByCanon(canon)) {
+            if (!removeAssignmentByCanon(canon, { entryRef: row })) {
               setStatus('Zusage konnte nicht gelöscht werden.', 'warn');
             }
           });
@@ -1353,16 +1270,14 @@
             const canon = canonicalNameJS(entry || entry.PlayerName || '');
             const signup = highlight && signupsByCanon.get(canon);
             const forcedBadge = buildFixBadge(forcedByCanon.get(canon));
-            const note = signup && signup.Note ? ` <span class="hint">${escapeHtml(signup.Note)}</span>` : '';
             if (typeof entry === 'string') {
-              li.innerHTML = `${escapeHtml(entry)}${forcedBadge ? ` ${forcedBadge}` : ''}${signup ? ' <span class="roster-badge">Event-Zusage</span>' : ''}${note}`;
+              li.innerHTML = `${escapeHtml(entry)}${forcedBadge ? ` ${forcedBadge}` : ''}${signup ? ' <span class="roster-badge">Event-Zusage</span>' : ''}`;
             } else {
               const badge = `<span class="roster-badge extra-pill">Event-Zusage</span>`;
               const details = [];
               if (entry.Role) details.push(entry.Role);
-              if (entry.Source) details.push(formatSourceLabel(entry.Source));
               const meta = details.length ? ` <span class="hint">(${escapeHtml(details.join(' · '))})</span>` : '';
-              li.innerHTML = `${escapeHtml(entry.PlayerName || '–')}${forcedBadge ? ` ${forcedBadge}` : ''} ${badge}${meta}${entry.Note ? ` <span class="hint">${escapeHtml(entry.Note)}</span>` : ''}`;
+              li.innerHTML = `${escapeHtml(entry.PlayerName || '–')}${forcedBadge ? ` ${forcedBadge}` : ''} ${badge}${meta}`;
             }
             ul.appendChild(li);
           });
@@ -1405,9 +1320,9 @@
         const entry = ensureAssignment(player);
         entry.Group = elements.groupInput.value;
         entry.Role = elements.roleInput.value;
-        entry.Commitment = elements.commitmentInput.value || 'none';
-        if (!entry.Source) entry.Source = 'manual';
-        entry.Note = elements.noteInput.value;
+        entry.Commitment = 'hard';
+        entry.Source = 'manual';
+        entry.Note = '';
         renderAssignments();
         updateSaveButtonState();
         setStatus('Eintrag hinzugefügt/aktualisiert.', 'info');
@@ -1571,7 +1486,11 @@
         const adminKey = getAdminKey();
         const branch = elements.branch.value.trim() || 'main';
         if (!workerUrl) { setStatus('Worker-URL fehlt.', 'error'); return; }
-        if (!adminKey) { setStatus('Kein Admin-Key gesetzt – bitte über die Admin-Startseite einloggen.', 'error'); return; }
+        if (!adminKey) {
+          setStatus('Kein Admin-Key gesetzt – bitte über die Admin-Startseite einloggen.', 'error');
+          updateAdminKeyStatus();
+          return;
+        }
         const content = buildCurrentCsv();
         const responsesContent = buildResponseCsv();
         setSaving(true);
@@ -1618,7 +1537,11 @@
         const adminKey = getAdminKey();
         const branch = elements.branch.value.trim() || 'main';
         if (!workerUrl) { setStatus('Worker-URL fehlt.', 'error'); return; }
-        if (!adminKey) { setStatus('Kein Admin-Key gesetzt – bitte über die Admin-Startseite einloggen.', 'error'); return; }
+        if (!adminKey) {
+          setStatus('Kein Admin-Key gesetzt – bitte über die Admin-Startseite einloggen.', 'error');
+          updateAdminKeyStatus();
+          return;
+        }
         const confirmReset = window.confirm(
           'Neues Event vorbereiten?\n\nDamit werden alle Zusagen/Antworten für das bisherige "nächste" Event gelöscht ' +
           'und leere Dateien event_signups_next.csv & event_responses_next.csv geschrieben. ' +
