@@ -12,9 +12,8 @@ on:
   workflow_dispatch: {}
 
 permissions:
-  contents: write
+  contents: write  # Verhindert Push-Konflikte / parallele Runs auf demselben Branch
 
-# Verhindert Push-Konflikte / parallele Runs auf demselben Branch
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
@@ -60,14 +59,11 @@ jobs:
 
       - name: Build roster
         shell: bash
-        run: >
-          set -euo pipefail;
-          python -u -m src.main
-          --events "data/*.csv"
-          --alliance data/alliance.csv
-          --aliases data/aliases.csv
-          --absences data/absences.csv
-          --out out
+        run: |
+          set -euo pipefail
+          python -u -m src.main \
+            --event-signups data/event_signups_next.csv \
+            --out out
 
       - name: Commit generated files
         if: github.ref == 'refs/heads/main'
@@ -87,7 +83,6 @@ jobs:
             # mehrere Admin-Runs oder parallele Merges).
             git fetch origin main
             git rebase origin/main
-
             # Falls main in der Zwischenzeit erneut vorgerückt ist, versuchen wir es
             # bis zu drei Mal: rebase auf den neuen Stand und erneut pushen.
             for attempt in 1 2 3; do
