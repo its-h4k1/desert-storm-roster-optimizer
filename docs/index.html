@@ -7,13 +7,15 @@
   <style>
     :root { --fg:#1b1b1b; --muted:#6b7280; --line:#e5e7eb; --bg:#fff; --card:#f8fafc; }
     body { font-family:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif; margin:24px; color:var(--fg); background:var(--bg); }
+    .page-header { display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap; margin-bottom:8px; }
     h1 { margin:0 0 6px; }
     h2 { margin:0 0 8px; }
     p { margin:0 0 10px; }
     .muted { color:var(--muted); }
     .grid { display:grid; gap:16px; grid-template-columns:1fr; }
-    @media (min-width: 960px) { .grid { grid-template-columns:repeat(3,1fr); } }
+    @media (min-width: 1024px) { .grid { grid-template-columns:repeat(3,1fr); } }
     .card { border:1px solid var(--line); border-radius:12px; padding:14px; background:var(--card); }
+    .card h3 { margin:0 0 8px; }
     .list { list-style:none; padding:0; margin:0; display:grid; gap:8px; }
     .pill { display:inline-flex; align-items:center; gap:6px; padding:2px 8px; border:1px solid var(--line); border-radius:999px; font-size:0.85em; background:#fff; }
     .player { padding:10px; border:1px solid var(--line); border-radius:10px; background:#fff; }
@@ -22,11 +24,20 @@
     .section { margin:26px 0; }
     .tag { display:inline-block; margin-left:8px; padding:2px 8px; border-radius:999px; font-size:0.72em; border:1px solid var(--line); background:#eef2ff; color:#1d4ed8; }
     .error { border:1px solid #fecdd3; background:#fff5f5; color:#7f1d1d; padding:12px; border-radius:10px; }
+    .subheading { font-weight:600; margin:6px 0; color:#111827; }
+    .team-split { display:grid; gap:12px; }
+    .btn { display:inline-flex; align-items:center; gap:6px; padding:8px 14px; border-radius:10px; border:1px solid var(--line); background:#0f172a; color:white; text-decoration:none; font-weight:600; }
+    .btn:hover { filter:brightness(0.95); }
   </style>
 </head>
 <body>
-  <h1>Desert Storm – Matchday Roster</h1>
-  <p class="muted">Basis: harte Zusagen aus <code>data/event_signups_next.csv</code>. Teams A/B folgen direkt den Wünschen der Spieler, Überhänge landen als Reserven.</p>
+  <div class="page-header">
+    <div>
+      <h1>Desert Storm – Matchday Roster</h1>
+      <p class="muted">Basis: harte Zusagen aus <code>data/event_signups_next.csv</code>. Teams A/B folgen direkt den Wünschen der Spieler, Überhänge landen getrennt pro Team.</p>
+    </div>
+    <a class="btn" href="admin/index.html">Admin &amp; Tools</a>
+  </div>
 
   <div id="status" class="error" style="display:none"></div>
 
@@ -42,15 +53,33 @@
     <div class="grid">
       <div class="card">
         <h3>Team A</h3>
-        <ul id="team-a" class="list"></ul>
+        <div class="team-split">
+          <div>
+            <div class="subheading">Gruppe A · Start</div>
+            <ul id="team-a-start" class="list"></ul>
+          </div>
+          <div>
+            <div class="subheading">Gruppe A · Ersatz</div>
+            <ul id="team-a-subs" class="list"></ul>
+          </div>
+        </div>
       </div>
       <div class="card">
         <h3>Team B</h3>
-        <ul id="team-b" class="list"></ul>
+        <div class="team-split">
+          <div>
+            <div class="subheading">Gruppe B · Start</div>
+            <ul id="team-b-start" class="list"></ul>
+          </div>
+          <div>
+            <div class="subheading">Gruppe B · Ersatz</div>
+            <ul id="team-b-subs" class="list"></ul>
+          </div>
+        </div>
       </div>
       <div class="card">
-        <h3>Reserven</h3>
-        <ul id="reserves" class="list"></ul>
+        <h3>Zugesagt (hard), aber nicht im Roster</h3>
+        <ul id="not-in-roster" class="list"></ul>
       </div>
     </div>
   </section>
@@ -64,9 +93,11 @@
   <script>
     const statusBox = document.getElementById('status');
     const eventMeta = document.getElementById('event-meta');
-    const teamAList = document.getElementById('team-a');
-    const teamBList = document.getElementById('team-b');
-    const reservesList = document.getElementById('reserves');
+    const teamAStartList = document.getElementById('team-a-start');
+    const teamASubsList = document.getElementById('team-a-subs');
+    const teamBStartList = document.getElementById('team-b-start');
+    const teamBSubsList = document.getElementById('team-b-subs');
+    const notInRosterList = document.getElementById('not-in-roster');
     const analysisSection = document.getElementById('analysis');
     const analysisBlock = document.getElementById('analysis-block');
 
@@ -106,9 +137,11 @@
         if (!res.ok) throw new Error('latest.json HTTP ' + res.status);
         const data = await res.json();
         renderEvent(data.event || {});
-        renderList(teamAList, data.team_a || []);
-        renderList(teamBList, data.team_b || []);
-        renderList(reservesList, data.reserves || []);
+        renderList(teamAStartList, data.team_a?.start || []);
+        renderList(teamASubsList, data.team_a?.subs || []);
+        renderList(teamBStartList, data.team_b?.start || []);
+        renderList(teamBSubsList, data.team_b?.subs || []);
+        renderList(notInRosterList, data.hard_signups_not_in_roster || []);
 
         if (data.analysis) {
           analysisSection.style.display = 'block';
