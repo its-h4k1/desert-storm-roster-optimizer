@@ -16,12 +16,21 @@ from __future__ import annotations
 
 import argparse
 import json
+from datetime import timezone
 from pathlib import Path
 from typing import Dict, List
 
 from src.config import get_config
 from src.core_roster import RosterEntry, build_rosters_from_hard_signups
 from src.core_signups import Signup, load_hard_signups_for_next_event
+from src.effective_signups import (
+    EffectiveSignupState,
+    PlayerSignupState,
+    compute_event_datetime_local,
+    determine_effective_signup_states,
+    signup_deadline_for_event,
+)
+from src.event_responses import EventResponse, load_event_responses_for_next_event
 
 
 # --------------------------
@@ -75,8 +84,14 @@ def _entry_to_dict(entry: RosterEntry) -> Dict[str, object]:
 def _build_payload(
     *,
     signups: List[Signup],
+    eligible_signups: List[Signup],
+    responses: List[EventResponse],
+    signup_states: Dict[str, PlayerSignupState],
     rosters: Dict[str, object],
     args: argparse.Namespace,
+    event_datetime_local,
+    signup_deadline_local,
+    config,
 ) -> Dict[str, object]:
     team_a: Dict[str, List[RosterEntry]] = rosters.get("team_a", {})  # type: ignore[assignment]
     team_b: Dict[str, List[RosterEntry]] = rosters.get("team_b", {})  # type: ignore[assignment]
@@ -87,6 +102,23 @@ def _build_payload(
     team_b_start = team_b.get("start", [])
     team_b_subs = team_b.get("subs", [])
 
+    name_by_canon: Dict[str, str] = {}
+    for s in signups:
+        name_by_canon[s.canon] = s.name
+    for resp in responses:
+        name_by_canon.setdefault(resp.canon, resp.name)
+
+    signup_states_export: Dict[str, object] = {}
+    for canon, state in signup_states.items():
+        entry = {"state": state.state.value}
+        if state.last_response and state.last_response.response_time:
+            entry["last_response_time"] = (
+                state.last_response.response_time.astimezone(timezone.utc).isoformat()
+            )
+        entry["canon"] = canon
+        entry["name"] = name_by_canon.get(canon, canon)
+        signup_states_export[name_by_canon.get(canon, canon)] = entry
+
     return {
         "event": {
             "id": args.event_id,
@@ -94,6 +126,8 @@ def _build_payload(
             "time": args.event_time,
             "generated_at": rosters.get("generated_at"),
             "source": Path(args.event_signups).as_posix(),
+            "event_datetime_local": event_datetime_local.isoformat(),
+            "signup_deadline_local": signup_deadline_local.isoformat(),
         },
         "team_a": {
             "start": [_entry_to_dict(e) for e in team_a_start],
@@ -108,6 +142,8 @@ def _build_payload(
         ],
         "signup_stats": {
             "hard_signups": len(signups),
+            "hard_signups_eligible": len(eligible_signups),
+            "responses": len(responses),
             "team_a_start": len(team_a_start),
             "team_a_subs": len(team_a_subs),
             "team_b_start": len(team_b_start),
@@ -116,6 +152,13 @@ def _build_payload(
         },
         "analysis": {
             "note": "Callups/EB/No-Show analyses intentionally decoupled from roster build.",
+        },
+        "signup_states": signup_states_export,
+        "event_signups": {
+            "hard_signups_only": config.HARD_SIGNUPS_ONLY,
+            "hard_signups": len(signups),
+            "hard_signups_eligible": len(eligible_signups),
+            "responses": len(responses),
         },
     }
 
@@ -138,11 +181,34 @@ def main() -> None:
     args = _parse_args()
     cfg = get_config()
     signups = load_hard_signups_for_next_event(args.event_signups)
-    rosters = build_rosters_from_hard_signups(signups, cfg)
-    payload = _build_payload(signups=signups, rosters=rosters, args=args)
+    responses = load_event_responses_for_next_event()
+    event_dt_local = compute_event_datetime_local(args.event_date, args.event_time)
+    signup_states = determine_effective_signup_states(
+        signups=signups,
+        responses=responses,
+        event_datetime_local=event_dt_local,
+    )
+    eligible_signups = [
+        s
+        for s in signups
+        if signup_states.get(s.canon, PlayerSignupState(state=EffectiveSignupState.NONE)).state
+        == EffectiveSignupState.HARD_ACTIVE
+    ]
+    rosters = build_rosters_from_hard_signups(eligible_signups, cfg)
+    payload = _build_payload(
+        signups=signups,
+        eligible_signups=eligible_signups,
+        responses=responses,
+        signup_states=signup_states,
+        rosters=rosters,
+        args=args,
+        event_datetime_local=event_dt_local,
+        signup_deadline_local=signup_deadline_for_event(event_dt_local),
+        config=cfg,
+    )
     _write_outputs(Path(args.out), payload)
     print(
-        f"[ok] roster built with {len(signups)} hard signups → "
+        f"[ok] roster built with {len(eligible_signups)} eligible hard signups (total {len(signups)}) → "
         f"A: {len(payload['team_a']['start'])} start / {len(payload['team_a']['subs'])} subs, "
         f"B: {len(payload['team_b']['start'])} start / {len(payload['team_b']['subs'])} subs, "
         f"not in roster: {len(payload['hard_signups_not_in_roster'])}"

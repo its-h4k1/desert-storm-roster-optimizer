@@ -259,7 +259,7 @@
                     <label>Antwort-Status setzen
                       <select id="responseStatusInput">
                         <option value="">Keine Antwort setzen</option>
-                        <option value="decline">Absage</option>
+                        <option value="cancelled">Absage</option>
                         <option value="no_response">Keine Rückmeldung</option>
                       </select>
                     </label>
@@ -287,7 +287,7 @@
                   </table>
                 </div>
                 <div id="responseEmptyState" class="hint" style="color:var(--text-muted);display:none;">Keine Event-Antworten gesetzt.</div>
-                <p class="hint" style="color:var(--text-muted);">Responses gelten fürs nächste Event und landen in <code>data/event_responses_next.csv</code>. Status "Keine Antwort setzen" entfernt vorhandene Einträge.</p>
+                <p class="hint" style="color:var(--text-muted);">Responses gelten fürs nächste Event und landen in <code>data/event_responses_next.csv</code>. Spieler mit Status <strong>Absage</strong> werden für das kommende Event nicht im Roster berücksichtigt. Absagen nach Donnerstag 03:00 (Server-Reset, Zeitzone Schweiz/Zürich) gelten als späte Absagen und werden später stärker gewichtet (aktuell nur Datenerfassung, Status "Keine Antwort setzen" entfernt vorhandene Einträge).</p>
               </section>
 
               <details class="accordion">
@@ -408,8 +408,8 @@
       const playerPrefillCanon = canonicalNameJS(playerPrefillRaw);
       // Commitment existierte bereits als CSV-Spalte, wurde in dieser UI jedoch ignoriert; jetzt wird sie mitgelesen und mitgeschrieben.
       const DEFAULT_HEADERS = ['PlayerName','Group','Role','Commitment','Source','Note'];
-      const DEFAULT_RESPONSE_HEADERS = ['PlayerName','Status','Source','Note'];
-      const ALLOWED_RESPONSE_STATUSES = ['decline','no_response'];
+      const DEFAULT_RESPONSE_HEADERS = ['PlayerName','Status','ResponseTime','Source','Note'];
+      const ALLOWED_RESPONSE_STATUSES = ['cancelled','no_response'];
       const SOURCE_OPTIONS = ['manual','ingame','dm','callup-confirmed'];
       const branchOverride = (new URL(location.href)).searchParams.get('branch');
       const cacheBuster = `?v=${Date.now()}`;
@@ -549,12 +549,12 @@
       }
       function normalizeResponseStatus(value) {
         const norm = (value || '').toString().trim().toLowerCase();
-        if (['decline','declined','absage','cancel','cancelled','canceled','no'].includes(norm)) return 'decline';
+        if (['decline','declined','absage','cancel','cancelled','canceled','no'].includes(norm)) return 'cancelled';
         if (['no_response','none','unanswered','missing','unknown'].includes(norm)) return 'no_response';
         return '';
       }
       function formatResponseLabel(status) {
-        if (status === 'decline') return 'Absage';
+        if (status === 'cancelled') return 'Absage';
         if (status === 'no_response') return 'Keine Rückmeldung';
         return '–';
       }
@@ -1149,8 +1149,8 @@
             const badge = document.createElement('div');
             badge.className = 'tags';
             const tag = document.createElement('span');
-            tag.className = response.Status === 'decline' ? 'tag tag-decline' : 'tag tag-noresp';
-            tag.textContent = response.Status === 'decline' ? 'Absage' : 'Keine Rückmeldung';
+            tag.className = response.Status === 'cancelled' ? 'tag tag-decline' : 'tag tag-noresp';
+            tag.textContent = response.Status === 'cancelled' ? 'Absage' : 'Keine Rückmeldung';
             badge.appendChild(tag);
             if (response.Note) {
               const note = document.createElement('span');
@@ -1244,7 +1244,7 @@
 
           const statusTd = document.createElement('td');
           const statusSel = document.createElement('select');
-          [['','Keine Antwort setzen'], ['decline','Absage'], ['no_response','Keine Rückmeldung']].forEach(([value, label]) => {
+          [['','Keine Antwort setzen'], ['cancelled','Absage'], ['no_response','Keine Rückmeldung']].forEach(([value, label]) => {
             const opt = document.createElement('option');
             opt.value = value; opt.textContent = label;
             if ((row.Status || '') === value) opt.selected = true;
@@ -1252,7 +1252,7 @@
           });
           const badge = document.createElement('div');
           const updateBadge = () => {
-            badge.className = 'tag ' + (row.Status === 'decline' ? 'tag-decline' : 'tag-noresp');
+            badge.className = 'tag ' + (row.Status === 'cancelled' ? 'tag-decline' : 'tag-noresp');
             badge.textContent = formatResponseLabel(row.Status);
           };
           statusSel.addEventListener('change', () => {
@@ -1267,6 +1267,7 @@
               return;
             }
             row.Status = newStatus;
+            row.ResponseTime = new Date().toISOString();
             updateBadge();
             renderAssignments();
             updateSaveButtonState();
@@ -1338,10 +1339,11 @@
           return;
         }
 
+        const nowIso = new Date().toISOString();
         if (idxExisting >= 0) {
-          state.responses[idxExisting] = { ...state.responses[idxExisting], PlayerName: player, Status: status, Note: note, Source: state.responses[idxExisting].Source || 'manual' };
+          state.responses[idxExisting] = { ...state.responses[idxExisting], PlayerName: player, Status: status, ResponseTime: nowIso, Note: note, Source: state.responses[idxExisting].Source || 'manual' };
         } else {
-          state.responses.push({ PlayerName: player, Status: status, Source: 'manual', Note: note });
+          state.responses.push({ PlayerName: player, Status: status, ResponseTime: nowIso, Source: 'manual', Note: note });
         }
 
         elements.responsePlayerInput.value = '';
