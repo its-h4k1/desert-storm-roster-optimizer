@@ -79,12 +79,6 @@
     </div>
   </section>
 
-  <section id="analysis" class="section" style="display:none">
-    <h2>Analyse &amp; Diagnose</h2>
-    <p class="muted">Callup-/No-Show-Auswertungen sind getrennt vom Kern-Roster.</p>
-    <pre id="analysis-block" style="white-space:pre-wrap;background:#0f172a;color:#e2e8f0;padding:12px;border-radius:10px;overflow:auto"></pre>
-  </section>
-
   <script>
     const statusBox = document.getElementById('status');
     const eventMeta = document.getElementById('event-meta');
@@ -93,8 +87,6 @@
     const teamBStartList = document.getElementById('team-b-start');
     const teamBSubsList = document.getElementById('team-b-subs');
     const notInRosterList = document.getElementById('not-in-roster');
-    const analysisSection = document.getElementById('analysis');
-    const analysisBlock = document.getElementById('analysis-block');
 
     function showError(message) {
       statusBox.textContent = message;
@@ -137,11 +129,6 @@
         renderList(teamBStartList, data.team_b?.start || []);
         renderList(teamBSubsList, data.team_b?.subs || []);
         renderList(notInRosterList, data.hard_signups_not_in_roster || []);
-
-        if (data.analysis) {
-          analysisSection.style.display = 'block';
-          analysisBlock.textContent = JSON.stringify(data.analysis, null, 2);
-        }
       } catch (err) {
         console.error(err);
         showError('latest.json konnte nicht geladen werden – bitte Build prüfen.');
