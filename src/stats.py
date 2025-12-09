@@ -17,7 +17,7 @@ Erwartetes Events-Schema (mindestens):
 from __future__ import annotations
 from typing import Dict, Optional, List
 
-from datetime import datetime, timezone
+from datetime import date, datetime, timezone
 import re
 import math
 
@@ -25,6 +25,7 @@ import pandas as pd
 
 # Paket-Import (aus utils.py)
 from src.utils import parse_event_date, exp_decay_weight, canonical_name
+from src.attendance_config import RELIABILITY_START_DATE
 
 ROLES_START = {"Start"}
 ROLES_SUB = {"Ersatz"}
@@ -78,6 +79,7 @@ def _prep(
     alias_map: Optional[Dict[str, str]] = None,
     half_life_days: float = 90.0,
     reference_dt: Optional[datetime] = None,
+    reliability_start_date: date | None = RELIABILITY_START_DATE,
 ) -> pd.DataFrame:
     """
     Grundaufbereitung:
@@ -106,7 +108,11 @@ def _prep(
 
     # Event-Datum & Gewicht (rolling = exponentiell geglättet gegenüber reference_dt/now)
     now_dt = reference_dt or datetime.now(timezone.utc)
-    df["EventDate"] = df["EventID"].map(parse_event_date)
+    df["EventDate"] = pd.to_datetime(
+        df["EventID"].map(parse_event_date), utc=True, errors="coerce"
+    )
+    if reliability_start_date is not None:
+        df = df[df["EventDate"].dt.date >= reliability_start_date].copy()
     df["w"] = df["EventDate"].map(
         lambda d: exp_decay_weight(d, now_dt=now_dt, half_life_days=half_life_days)
     )
@@ -203,6 +209,7 @@ def compute_role_probs(
     alias_map: Optional[Dict[str, str]] = None,
     half_life_days: float = 90.0,
     reference_dt: Optional[datetime] = None,
+    reliability_start_date: date | None = RELIABILITY_START_DATE,
 ) -> pd.DataFrame:
     """
     Liefert p_start/p_sub für den Roster-Builder auf Basis der Historie.
@@ -220,6 +227,7 @@ def compute_role_probs(
         alias_map=alias_map,
         half_life_days=half_life_days,
         reference_dt=reference_dt,
+        reliability_start_date=reliability_start_date,
     )
 
     start_stats = _agg_rates(df, "role_start").add_prefix("start_")
@@ -284,6 +292,7 @@ def compute_player_history(
     alias_map: Optional[Dict[str, str]] = None,
     half_life_days: float = 90.0,
     reference_dt: Optional[datetime] = None,
+    reliability_start_date: date | None = RELIABILITY_START_DATE,
 ) -> pd.DataFrame:
     """
     Rollenübergreifende Metriken pro Spieler:
@@ -297,6 +306,7 @@ def compute_player_history(
         alias_map=alias_map,
         half_life_days=half_life_days,
         reference_dt=reference_dt,
+        reliability_start_date=reliability_start_date,
     )
     dfa = df[df["assigned"]].copy()
 
