@@ -1,1 +1,314 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Brasilien Zeitzone Rechner</title>
+    <style>
+        :root {
+            --color-primary: #2A9D8F;
+            --color-secondary: #E63946;
+            --color-bg: #F5F5F5;
+            --color-surface: #FFFFFF;
+            --color-text: #1D3557;
+            --color-text-light: #555;
+        }
 
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, var(--color-primary) 0%, #1D3557 100%);
+            margin: 0;
+            padding: 20px;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .container {
+            background: var(--color-surface);
+            border-radius: 16px;
+            padding: 40px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            max-width: 600px;
+            width: 100%;
+        }
+
+        h1 {
+            color: var(--color-text);
+            text-align: center;
+            margin: 0 0 10px 0;
+            font-size: 28px;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: var(--color-text-light);
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+
+        .time-input-section {
+            margin-bottom: 40px;
+        }
+
+        .label {
+            display: block;
+            font-weight: 600;
+            color: var(--color-text);
+            margin-bottom: 12px;
+            font-size: 14px;
+        }
+
+        .input-group {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+        }
+
+        input[type="time"],
+        input[type="number"] {
+            padding: 12px 16px;
+            border: 2px solid #E0E0E0;
+            border-radius: 8px;
+            font-size: 16px;
+            font-family: 'Courier New', monospace;
+            transition: border-color 0.3s;
+        }
+
+        input[type="time"]:focus,
+        input[type="number"]:focus {
+            outline: none;
+            border-color: var(--color-primary);
+            box-shadow: 0 0 0 3px rgba(42, 157, 143, 0.1);
+        }
+
+        input[type="time"] {
+            flex: 1;
+            min-width: 150px;
+        }
+
+        .time-display {
+            background: var(--color-primary);
+            color: white;
+            padding: 12px 16px;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            font-size: 16px;
+            font-weight: 600;
+        }
+
+        .zones-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 16px;
+        }
+
+        .zone-card {
+            background: linear-gradient(135deg, #F8F9FA 0%, #FFFFFF 100%);
+            border: 2px solid #E0E0E0;
+            border-radius: 12px;
+            padding: 20px;
+            transition: all 0.3s;
+        }
+
+        .zone-card:hover {
+            border-color: var(--color-primary);
+            box-shadow: 0 8px 24px rgba(42, 157, 143, 0.15);
+        }
+
+        .zone-card.switzerland {
+            border-color: var(--color-secondary);
+            background: linear-gradient(135deg, #FFE5E5 0%, #FFF5F5 100%);
+        }
+
+        .zone-card.switzerland:hover {
+            box-shadow: 0 8px 24px rgba(230, 57, 70, 0.15);
+        }
+
+        .zone-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        .zone-name {
+            font-weight: 700;
+            color: var(--color-text);
+            font-size: 16px;
+        }
+
+        .zone-offset {
+            background: var(--color-primary);
+            color: white;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .zone-card.switzerland .zone-offset {
+            background: var(--color-secondary);
+        }
+
+        .zone-time {
+            font-size: 32px;
+            font-weight: 700;
+            color: var(--color-primary);
+            font-family: 'Courier New', monospace;
+            margin-bottom: 10px;
+        }
+
+        .zone-card.switzerland .zone-time {
+            color: var(--color-secondary);
+        }
+
+        .zone-cities {
+            font-size: 13px;
+            color: var(--color-text-light);
+            line-height: 1.5;
+        }
+
+        .info-box {
+            background: #E8F4F8;
+            border-left: 4px solid var(--color-primary);
+            padding: 12px 16px;
+            border-radius: 4px;
+            font-size: 13px;
+            color: var(--color-text);
+            margin-top: 30px;
+        }
+
+        @media (max-width: 600px) {
+            .container {
+                padding: 24px;
+            }
+
+            h1 {
+                font-size: 24px;
+            }
+
+            .input-group {
+                flex-direction: column;
+            }
+
+            .zone-time {
+                font-size: 24px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🌍 Brasilien Zeitzone Rechner</h1>
+        <p class="subtitle">Stelle deine Zeit ein und sehe alle Brasilien-Zeitzonen</p>
+
+        <div class="time-input-section">
+            <label class="label">Schweizer Zeit (CET)</label>
+            <div class="input-group">
+                <input type="time" id="timeInput" value="14:30">
+                <div class="time-display" id="displayTime">14:30</div>
+            </div>
+        </div>
+
+        <div class="zones-grid">
+            <div class="zone-card switzerland">
+                <div class="zone-header">
+                    <span class="zone-name">🇨🇭 Schweiz</span>
+                    <span class="zone-offset">UTC+1</span>
+                </div>
+                <div class="zone-time" id="swissTime">14:30</div>
+                <div class="zone-cities">Zürich, Bern, Basel</div>
+            </div>
+
+            <div class="zone-card">
+                <div class="zone-header">
+                    <span class="zone-name">🇧🇷 Brasilien - Hauptzone</span>
+                    <span class="zone-offset">UTC−3</span>
+                </div>
+                <div class="zone-time" id="brazilMain">10:30</div>
+                <div class="zone-cities">Rio de Janeiro, São Paulo, Brasília</div>
+            </div>
+
+            <div class="zone-card">
+                <div class="zone-header">
+                    <span class="zone-name">🇧🇷 Brasilien - Zentrale Zone</span>
+                    <span class="zone-offset">UTC−4</span>
+                </div>
+                <div class="zone-time" id="brazilCentral">09:30</div>
+                <div class="zone-cities">Amazonas (Zentrum), Mato Grosso, Goiás</div>
+            </div>
+
+            <div class="zone-card">
+                <div class="zone-header">
+                    <span class="zone-name">🇧🇷 Brasilien - Westliche Zone</span>
+                    <span class="zone-offset">UTC−5</span>
+                </div>
+                <div class="zone-time" id="brazilWest">08:30</div>
+                <div class="zone-cities">Acre, Rio Branco, westlicher Amazonas</div>
+            </div>
+        </div>
+
+        <div class="info-box">
+            <strong>💡 Hinweis:</strong> Die Zeitunterschiede zwischen den Zonen beträgt jeweils eine Stunde. Von der Schweiz bis zur westlichsten Zone Brasiliens sind es 6 Stunden Unterschied!
+        </div>
+    </div>
+
+    <script>
+        const timeInput = document.getElementById('timeInput');
+        const displayTime = document.getElementById('displayTime');
+        const swissTime = document.getElementById('swissTime');
+        const brazilMain = document.getElementById('brazilMain');
+        const brazilCentral = document.getElementById('brazilCentral');
+        const brazilWest = document.getElementById('brazilWest');
+
+        function calculateTimes() {
+            const timeValue = timeInput.value;
+            if (!timeValue) return;
+
+            const [hours, minutes] = timeValue.split(':').map(Number);
+
+            // Display input time
+            displayTime.textContent = timeValue;
+            swissTime.textContent = timeValue;
+
+            // Calculate Brazil times (subtract hours from Swiss time)
+            // UTC+1 (Swiss) to UTC-3 (Main Brazil) = -4 hours difference
+            // UTC+1 (Swiss) to UTC-4 (Central Brazil) = -5 hours difference
+            // UTC+1 (Swiss) to UTC-5 (West Brazil) = -6 hours difference
+
+            const mainHours = (hours - 4 + 24) % 24;
+            const centralHours = (hours - 5 + 24) % 24;
+            const westHours = (hours - 6 + 24) % 24;
+
+            brazilMain.textContent = formatTime(mainHours, minutes);
+            brazilCentral.textContent = formatTime(centralHours, minutes);
+            brazilWest.textContent = formatTime(westHours, minutes);
+        }
+
+        function formatTime(hours, minutes) {
+            return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
+        }
+
+        // Event listener for time input
+        timeInput.addEventListener('change', calculateTimes);
+        timeInput.addEventListener('input', calculateTimes);
+
+        // Initialize on page load with current Swiss time
+        function initializeWithCurrentTime() {
+            const now = new Date();
+            const hours = String(now.getHours()).padStart(2, '0');
+            const minutes = String(now.getMinutes()).padStart(2, '0');
+            timeInput.value = `${hours}:${minutes}`;
+            calculateTimes();
+        }
+
+        initializeWithCurrentTime();
+    </script>
+</body>
+</html>
