@@ -422,8 +422,16 @@
             }
             return `${base}out/latest.json${buster}`;
           };
+      const buildRosterJsonUrl = ({ branchOverride: bOverride, cacheBuster: buster, siteRoot }) => {
+        const base = siteRoot || computeSiteRoot(location.pathname || '/');
+        if (bOverride) {
+          return `https://raw.githubusercontent.com/its-h4k1/desert-storm-roster-optimizer/${bOverride}/out/roster.json${buster}`;
+        }
+        return `${base}out/roster.json${buster}`;
+      };
       const SITE_ROOT = computeSiteRoot(location.pathname || '/');
       const LATEST_JSON_URL = buildLatestJsonUrl({ branchOverride, cacheBuster, siteRoot: SITE_ROOT });
+      const ROSTER_JSON_URL = buildRosterJsonUrl({ branchOverride, cacheBuster, siteRoot: SITE_ROOT });
       const REPO_OWNER = 'its-h4k1';
       const REPO_NAME = 'desert-storm-roster-optimizer';
       // Admin Event Assignments uses the same latest.json source as the main roster UI: docs/out/latest.json via GitHub Pages (raw URL only when ?branch=<name> is set).
@@ -487,6 +495,7 @@
         currentBranch: branchOverride || 'main',
         buildSyncStatus: null,
         playerNames: [],
+        signupPoolEntries: [],
         filters: { hardOnly: false },
       };
 
@@ -688,44 +697,63 @@
         }
       }
       async function loadRoster() {
-        const rosterPath = LATEST_JSON_URL;
+        let latestData = null;
+        let rosterData = null;
         try {
-          const response = await fetch(rosterPath, { cache:'no-store' });
-          if (!response.ok) throw new Error(`${rosterPath}: HTTP ${response.status}`);
-          const data = await response.json();
-          const players = Array.isArray(data?.players) ? data.players : [];
-          state.alliancePool = Array.isArray(data?.alliance_pool) ? data.alliance_pool : [];
-          const rosterIndex = new Map();
-          state.rosterPlayers = players
-            .map(p => ({
-              name: p.display || p.canon || '',
-              group: p.group || '',
-              role: p.role || '',
-              canon: canonicalNameJS(p.canon || p.display || ''),
-              forcedSignup: normalizeForcedSignup(p.forced_signup || (p.has_forced_signup ? { commitment:'hard', source:p.event_signup?.source } : null)),
-            }))
-            .filter(p => p.name);
-          state.rosterPlayers.forEach(p => { if (p.canon) rosterIndex.set(p.canon, p); });
-          state.rosterIndex = rosterIndex;
-          state.rosterGroups = (data && data.groups) || {};
-          state.rosterMeta = data?.generated_at || null;
-          state.eventInfo = data?.event || null;
-          state.eventSignupsMeta = data?.event_signups || null;
-          hydrateAssignmentsFromBuild(data);
-          updateContextMeta();
-          refreshBuildSyncState();
+          const response = await fetch(LATEST_JSON_URL, { cache:'no-store' });
+          if (!response.ok) throw new Error(`${LATEST_JSON_URL}: HTTP ${response.status}`);
+          latestData = await response.json();
         } catch (err) {
           console.warn('latest.json nicht verfügbar', err);
-          state.rosterPlayers = [];
-          state.rosterIndex = new Map();
-          state.rosterGroups = {};
-          state.rosterMeta = null;
-          state.eventInfo = null;
-          state.alliancePool = [];
-          state.eventSignupsMeta = null;
-          updateContextMeta();
-          refreshBuildSyncState();
         }
+
+        try {
+          const response = await fetch(ROSTER_JSON_URL, { cache:'no-store' });
+          if (response.ok) {
+            rosterData = await response.json();
+          }
+        } catch (err) {
+          console.warn('roster.json (Fallback) nicht verfügbar', err);
+        }
+
+        const metaSource = latestData || rosterData || {};
+        const playersSource = Array.isArray(latestData?.players)
+          ? latestData.players
+          : Array.isArray(rosterData?.players)
+            ? rosterData.players
+            : [];
+        const allianceSource = Array.isArray(latestData?.alliance_pool)
+          ? latestData.alliance_pool
+          : Array.isArray(rosterData?.alliance_pool)
+            ? rosterData.alliance_pool
+            : [];
+        const signupPoolEntries = Array.isArray(latestData?.signup_pool?.file_entries)
+          ? latestData.signup_pool.file_entries
+          : Array.isArray(rosterData?.signup_pool?.file_entries)
+            ? rosterData.signup_pool.file_entries
+            : [];
+
+        state.alliancePool = allianceSource;
+        state.signupPoolEntries = signupPoolEntries;
+        const rosterIndex = new Map();
+        state.rosterPlayers = playersSource
+          .map(p => ({
+            name: p.display || p.canon || '',
+            group: p.group || '',
+            role: p.role || '',
+            canon: canonicalNameJS(p.canon || p.display || ''),
+            forcedSignup: normalizeForcedSignup(p.forced_signup || (p.has_forced_signup ? { commitment:'hard', source:p.event_signup?.source } : null)),
+          }))
+          .filter(p => p.name);
+        state.rosterPlayers.forEach(p => { if (p.canon) rosterIndex.set(p.canon, p); });
+        state.rosterIndex = rosterIndex;
+        state.rosterGroups = (metaSource && metaSource.groups) || {};
+        state.rosterMeta = metaSource?.generated_at || null;
+        state.eventInfo = metaSource?.event || null;
+        state.eventSignupsMeta = metaSource?.event_signups || null;
+        hydrateAssignmentsFromBuild(metaSource);
+        updateContextMeta();
+        refreshBuildSyncState();
       }
 
       function hydrateAssignmentsFromBuild(data) {
@@ -928,9 +956,16 @@
 
       function populatePlayers() {
         const set = new Set();
-        state.alliancePool.forEach(n => set.add(n.display || n.canon || ''));
-        state.rosterPlayers.forEach(p => set.add(p.name));
-        state.responses.forEach(r => set.add(r.PlayerName || ''));
+        const addName = (name) => {
+          const trimmed = (name || '').toString().trim();
+          if (trimmed) set.add(trimmed);
+        };
+
+        state.alliancePool.forEach(n => addName(n.display || n.canon || ''));
+        state.rosterPlayers.forEach(p => addName(p.name));
+        state.responses.forEach(r => addName(r.PlayerName || ''));
+        state.assignments.forEach(r => addName(r.PlayerName || ''));
+        state.signupPoolEntries.forEach(entry => addName(entry.PlayerName || entry.player_name || entry.player || ''));
         state.playerNames = Array.from(set).sort((a,b) => a.localeCompare(b, 'de', { sensitivity:'base' }));
         elements.playerOptions.innerHTML = '';
         state.playerNames.forEach(name => {
@@ -1061,7 +1096,7 @@
       const autocompleteControllers = [];
       function initAutocompletes() {
         const getNames = () => state.playerNames;
-        const opts = { maxItems: 8 };
+        const opts = { maxItems: 20 };
         if (elements.playerInput) autocompleteControllers.push(attachPlayerAutocomplete(elements.playerInput, getNames, opts));
         if (elements.responsePlayerInput) autocompleteControllers.push(attachPlayerAutocomplete(elements.responsePlayerInput, getNames, opts));
       }
