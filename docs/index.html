@@ -27,6 +27,7 @@
     .error { border:1px solid #fecdd3; background:#fff5f5; color:#7f1d1d; padding:12px; border-radius:10px; }
     .btn { display:inline-flex; align-items:center; gap:6px; padding:8px 14px; border-radius:10px; border:1px solid var(--line); background:#0f172a; color:white; text-decoration:none; font-weight:600; }
     .btn:hover { filter:brightness(0.95); }
+    .btn:disabled { opacity:0.55; cursor:not-allowed; filter:none; }
   </style>
 </head>
 <body>
@@ -49,6 +50,15 @@
 
   <section id="teams" class="section">
     <h2>Teams</h2>
+    <div class="card" style="margin-bottom:14px;">
+      <h3>Teilnahmelisten (Export fürs Ingame-Event)</h3>
+      <p class="muted">Exportiert die Startaufstellungen als CSV (EventID, Slot, PlayerName, RoleAtRegistration).</p>
+      <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;">
+        <button id="export-team-a-start" class="btn" type="button" disabled title="Aktiviert sich, sobald die Startliste von Gruppe A geladen ist.">Teilnahmeliste A (Start) in Zwischenablage</button>
+        <button id="export-team-b-start" class="btn" type="button" disabled title="Aktiviert sich, sobald die Startliste von Gruppe B geladen ist.">Teilnahmeliste B (Start) in Zwischenablage</button>
+      </div>
+    </div>
+
     <div class="grid">
       <div class="card">
         <h3 id="heading-team-a-start">Gruppe A · Start</h3>
@@ -80,6 +90,7 @@
     </div>
   </section>
 
+  <script src="shared.js"></script>
   <script>
     const statusBox = document.getElementById('status');
     const eventMeta = document.getElementById('event-meta');
@@ -96,6 +107,12 @@
     const headingTeamBStart = document.getElementById('heading-team-b-start');
     const headingTeamBSubs = document.getElementById('heading-team-b-subs');
     const headingNotInRoster = document.getElementById('heading-not-in-roster');
+    const exportTeamAStartButton = document.getElementById('export-team-a-start');
+    const exportTeamBStartButton = document.getElementById('export-team-b-start');
+
+    const state = {
+      latestPayload: null,
+    };
 
     function showError(message) {
       statusBox.textContent = message;
@@ -139,11 +156,97 @@
       });
     }
 
+    function formatCsvValue(value) {
+      if (value === null || value === undefined) return '';
+      const str = value.toString();
+      if (str.includes('"') || str.includes(',') || str.includes('\n')) {
+        return `"${str.replace(/"/g, '""')}"`;
+      }
+      return str;
+    }
+
+    function buildSimpleCsv(header, rows) {
+      const lines = [];
+      lines.push(header.join(','));
+      rows.forEach((row) => {
+        const cols = row.map((value) => formatCsvValue(value === undefined || value === null ? '' : value));
+        lines.push(cols.join(','));
+      });
+      return lines.join('\n');
+    }
+
+    function hasStartList(groupKey) {
+      const teamKey = groupKey === 'A' ? 'team_a' : 'team_b';
+      const list = state.latestPayload?.[teamKey]?.start;
+      return Array.isArray(list) && list.length > 0;
+    }
+
+    function getStartList(groupKey) {
+      const teamKey = groupKey === 'A' ? 'team_a' : 'team_b';
+      return state.latestPayload?.[teamKey]?.start || [];
+    }
+
+    function updateParticipationExportButtons() {
+      const hasAStart = hasStartList('A');
+      const hasBStart = hasStartList('B');
+      exportTeamAStartButton.disabled = !hasAStart;
+      exportTeamBStartButton.disabled = !hasBStart;
+      exportTeamAStartButton.title = hasAStart
+        ? 'Startliste A ist geladen. Klick kopiert die Teilnahmeliste (Starter) als CSV in die Zwischenablage.'
+        : 'Aktiviert sich, sobald die Startliste von Gruppe A geladen ist.';
+      exportTeamBStartButton.title = hasBStart
+        ? 'Startliste B ist geladen. Klick kopiert die Teilnahmeliste (Starter) als CSV in die Zwischenablage.'
+        : 'Aktiviert sich, sobald die Startliste von Gruppe B geladen ist.';
+    }
+
+    function promptParticipationEventIdForGroup(groupKey) {
+      const suggestFn = window.dsroShared?.suggestDsEventIdForGroup;
+      const suggestion = suggestFn ? suggestFn({ groupLetter: groupKey, payload: state.latestPayload }) : '';
+      const input = prompt(`EventID für Gruppe ${groupKey} (z. B. DS-2025-12-12-${groupKey})`, suggestion || '');
+      if (input === null) return '';
+      return input.trim();
+    }
+
+    function exportParticipationCsvForGroup(groupKey) {
+      if (!hasStartList(groupKey)) {
+        alert(`Keine Startliste für Gruppe ${groupKey} vorhanden.`);
+        return;
+      }
+
+      const eventId = promptParticipationEventIdForGroup(groupKey);
+      if (!eventId) {
+        alert(`Export für Gruppe ${groupKey} abgebrochen – keine EventID angegeben.`);
+        return;
+      }
+
+      // Exportiert die Startaufstellung als DS-Event-Teilnahmeliste im Format EventID, Slot, PlayerName, RoleAtRegistration.
+      const startList = getStartList(groupKey);
+      const header = ['EventID', 'Slot', 'PlayerName', 'RoleAtRegistration'];
+      const rows = startList.map((player, index) => [eventId, index + 1, player.name || '', 'Start']);
+      const csv = buildSimpleCsv(header, rows);
+
+      if (navigator.clipboard && typeof navigator.clipboard.writeText === 'function') {
+        navigator.clipboard
+          .writeText(csv)
+          .then(() => alert(`Teilnahmeliste ${groupKey} (Start) wurde in die Zwischenablage kopiert.`))
+          .catch((err) => {
+            console.error(err);
+            alert('Kopieren der Teilnahmeliste in die Zwischenablage ist fehlgeschlagen.');
+          });
+      } else {
+        alert('Die Clipboard-API ist in diesem Browser nicht verfügbar.');
+      }
+    }
+
+    exportTeamAStartButton.addEventListener('click', () => exportParticipationCsvForGroup('A'));
+    exportTeamBStartButton.addEventListener('click', () => exportParticipationCsvForGroup('B'));
+
     async function loadLatest() {
       try {
         const res = await fetch('out/latest.json?v=' + Date.now());
         if (!res.ok) throw new Error('latest.json HTTP ' + res.status);
         const data = await res.json();
+        state.latestPayload = data;
         renderEvent(data.event || {});
         const counts = {
           teamAStart: data.team_a?.start?.length || 0,
@@ -165,9 +268,12 @@
         renderList(teamBStartList, data.team_b?.start || []);
         renderList(teamBSubsList, data.team_b?.subs || []);
         renderList(notInRosterList, data.hard_signups_not_in_roster || []);
+        updateParticipationExportButtons();
       } catch (err) {
         console.error(err);
         showError('latest.json konnte nicht geladen werden – bitte Build prüfen.');
+        state.latestPayload = null;
+        updateParticipationExportButtons();
       }
     }
 
