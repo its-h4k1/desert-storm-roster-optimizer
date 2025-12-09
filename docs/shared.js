@@ -110,6 +110,22 @@
 
   function suggestDsEventIdForGroup({ groupLetter, payload, now = new Date() } = {}) {
     try {
+      const eventDateLocal = payload?.event?.event_datetime_local;
+      if (eventDateLocal) {
+        const dt = new Date(eventDateLocal);
+        if (!Number.isNaN(dt.getTime())) {
+          const parts = new Intl.DateTimeFormat("en-CA", {
+            timeZone: "Europe/Zurich",
+            year: "numeric",
+            month: "2-digit",
+            day: "2-digit",
+          }).format(dt);
+          const parsed = parseDsEventDate(parts);
+          const suggestion = formatDsEventId(parsed, groupLetter);
+          if (suggestion) return suggestion;
+        }
+      }
+
       const { ids, iso } = extractDsEventDatesFromPayload(payload);
       const pickLatest = (arr = []) => (arr.length
         ? arr.reduce((max, current) => (max && max > current ? max : current), null)
