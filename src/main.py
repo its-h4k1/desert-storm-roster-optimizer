@@ -31,6 +31,7 @@ from src.effective_signups import (
     signup_deadline_for_event,
 )
 from src.event_responses import EventResponse, load_event_responses_for_next_event
+from src.utils import canonical_name
 
 
 # --------------------------
@@ -101,6 +102,27 @@ def _build_payload(
     team_a_subs = team_a.get("subs", [])
     team_b_start = team_b.get("start", [])
     team_b_subs = team_b.get("subs", [])
+
+    rostered_canons = {
+        canonical_name(entry.name)
+        for entry in [
+            *team_a_start,
+            *team_a_subs,
+            *team_b_start,
+            *team_b_subs,
+        ]
+    }
+    hard_active_canons = {
+        canon
+        for canon, state in signup_states.items()
+        if state.state == EffectiveSignupState.HARD_ACTIVE
+    }
+    hard_signups_not_in_roster = [
+        entry
+        for entry in hard_signups_not_in_roster
+        if canonical_name(entry.name) in hard_active_canons
+        and canonical_name(entry.name) not in rostered_canons
+    ]
 
     name_by_canon: Dict[str, str] = {}
     for s in signups:

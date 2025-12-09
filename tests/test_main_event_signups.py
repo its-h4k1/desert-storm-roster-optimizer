@@ -150,3 +150,61 @@ def test_responses_remove_cancelled_players(monkeypatch, tmp_path):
     assert "last_response_time" in alpha_state
 
     assert latest["signup_stats"]["hard_signups_eligible"] == 1
+
+
+def test_cancelled_players_never_in_roster(monkeypatch, tmp_path):
+    data_dir = tmp_path / "data"
+    data_dir.mkdir()
+
+    _write_csv(
+        data_dir / "event_signups_next.csv",
+        ["PlayerName", "Group", "Role", "Commitment", "Source", "Note"],
+        [
+            ["PlayerActive", "A", "Start", "hard", "manual", ""],
+            ["PlayerCancelled", "B", "Ersatz", "hard", "manual", ""],
+        ],
+    )
+
+    response_time = datetime(2024, 12, 5, 10, 0, tzinfo=timezone.utc).isoformat()
+    _write_csv(
+        data_dir / "event_responses_next.csv",
+        ["PlayerName", "Status", "ResponseTime", "Source", "Note"],
+        [
+            ["PlayerCancelled", "cancelled", response_time, "manual", ""],
+        ],
+    )
+
+    argv = [
+        "prog",
+        "--event-signups",
+        "data/event_signups_next.csv",
+        "--out",
+        "out",
+        "--event-id",
+        "DS-TEST",
+        "--event-date",
+        "2024-12-06",
+        "--event-time",
+        "21:00",
+    ]
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.setattr(sys, "argv", argv)
+
+    main_mod.main()
+
+    latest = json.loads((tmp_path / "out/latest.json").read_text(encoding="utf-8"))
+
+    states = latest.get("signup_states", {})
+    cancelled_state = states.get("PlayerCancelled")
+    assert cancelled_state
+    assert cancelled_state["state"] in {"cancelled_early", "cancelled_late"}
+
+    team_a = latest["team_a"]
+    team_b = latest["team_b"]
+    for team in (team_a, team_b):
+        assert all(p["name"] != "PlayerCancelled" for p in team.get("start", []))
+        assert all(p["name"] != "PlayerCancelled" for p in team.get("subs", []))
+
+    assert all(
+        p["name"] != "PlayerCancelled" for p in latest["hard_signups_not_in_roster"]
+    )
