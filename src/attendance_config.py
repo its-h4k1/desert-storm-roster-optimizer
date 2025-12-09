@@ -8,6 +8,7 @@ onto the defaults documented below.
 from __future__ import annotations
 
 from dataclasses import dataclass
+from datetime import date, datetime
 from pathlib import Path
 from typing import Any, Dict, Tuple
 
@@ -79,6 +80,24 @@ DEFAULT_ATTENDANCE_CONFIG = AttendanceConfig(
 )
 
 
+def _coerce_date(value: Any) -> date | None:
+    if value is None:
+        return None
+    if isinstance(value, date) and not isinstance(value, datetime):
+        return value
+    if isinstance(value, datetime):
+        return value.date()
+    if isinstance(value, str):
+        s = value.strip()
+        if not s:
+            return None
+        try:
+            return date.fromisoformat(s)
+        except ValueError:
+            return None
+    return None
+
+
 def _coerce_float(value: Any, default: float) -> float:
     if isinstance(value, bool) or value is None:
         return float(default)
@@ -97,6 +116,32 @@ def _read_yaml(path: Path) -> Dict[str, Any] | None:
     except Exception:
         return None
     return data if isinstance(data, dict) else None
+
+
+def load_reliability_start_date(
+    path: str | Path = "data/attendance_config.yml",
+) -> Tuple[date | None, Dict[str, Any]]:
+    cfg_path = Path(path)
+    meta: Dict[str, Any] = {
+        "path": str(cfg_path),
+        "loaded_from_file": False,
+        "issues": [],
+        "defaults_applied": False,
+    }
+
+    raw = _read_yaml(cfg_path)
+    if raw is None:
+        meta["issues"].append("attendance_config not found; reliability start unset")
+        return None, meta
+
+    meta["loaded_from_file"] = True
+    attendance_block = raw.get("attendance", raw) or {}
+    value = raw.get("reliability_start_date", attendance_block.get("reliability_start_date"))
+    start_date = _coerce_date(value)
+    if value is not None and start_date is None:
+        meta["issues"].append("invalid reliability_start_date; using None")
+        meta["defaults_applied"] = True
+    return start_date, meta
 
 
 def load_attendance_config(
@@ -170,9 +215,15 @@ def load_attendance_config(
     return config, meta
 
 
+RELIABILITY_START_DATE, RELIABILITY_CONFIG_META = load_reliability_start_date()
+
+
 __all__ = [
     "AttendanceBand",
     "AttendanceConfig",
     "DEFAULT_ATTENDANCE_CONFIG",
     "load_attendance_config",
+    "load_reliability_start_date",
+    "RELIABILITY_START_DATE",
+    "RELIABILITY_CONFIG_META",
 ]

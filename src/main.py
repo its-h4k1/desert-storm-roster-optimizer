@@ -21,6 +21,7 @@ from pathlib import Path
 from typing import Dict, List
 
 from src.config import get_config
+from src.attendance_config import RELIABILITY_START_DATE
 from src.core_roster import RosterEntry, build_rosters_from_hard_signups
 from src.core_signups import Signup, load_hard_signups_for_next_event
 from src.effective_signups import (
@@ -181,6 +182,13 @@ def _build_payload(
             "hard_signups": len(signups),
             "hard_signups_eligible": len(eligible_signups),
             "responses": len(responses),
+        },
+        "reliability_config": {
+            "reliability_start_date": (
+                RELIABILITY_START_DATE.isoformat()
+                if RELIABILITY_START_DATE is not None
+                else None
+            )
         },
     }
 
