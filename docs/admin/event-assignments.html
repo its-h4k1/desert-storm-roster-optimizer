@@ -717,6 +717,10 @@
         }
 
         const metaSource = latestData || rosterData || {};
+        const sharedPayload = latestData || rosterData || null;
+        if (window.dsroShared?.hydrateReliabilityFromPayload) {
+          window.dsroShared.hydrateReliabilityFromPayload(sharedPayload);
+        }
         const playersSource = Array.isArray(latestData?.players)
           ? latestData.players
           : Array.isArray(rosterData?.players)
