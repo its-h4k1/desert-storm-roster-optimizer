@@ -660,61 +660,93 @@
   };
 
   function buildAllKnownPlayersForAdmin(latestPayload) {
-    const namesSet = new Set();
+    const namesByCanon = new Map();
 
     const addName = (raw) => {
       const aliasKey = canonicalNameJS(raw || "");
-      const canonical = aliasKey && shared.aliasMap ? shared.aliasMap.get(aliasKey) || aliasKey : aliasKey;
-      const normalized = normalizePlayerName(canonical || raw || "");
-      if (normalized) namesSet.add(normalized);
+      if (!aliasKey) return;
+      const canonical = shared.aliasMap ? shared.aliasMap.get(aliasKey) || aliasKey : aliasKey;
+      const normalized = normalizePlayerName(raw || "") || canonical;
+      if (!namesByCanon.has(canonical)) {
+        namesByCanon.set(canonical, normalized);
+      }
+    };
+
+    const addFromObjectKeys = (obj) => {
+      if (!obj || typeof obj !== "object") return;
+      Object.keys(obj).forEach(addName);
+    };
+
+    const addFromArray = (arr, pickers = []) => {
+      if (!Array.isArray(arr)) return;
+      arr.forEach((item) => {
+        if (typeof item === "string") {
+          addName(item);
+          return;
+        }
+        pickers.forEach((fn) => {
+          if (typeof fn !== "function") return;
+          const candidate = fn(item);
+          if (candidate) addName(candidate);
+        });
+      });
     };
 
     if (latestPayload && typeof latestPayload === "object") {
-      if (latestPayload.reliability && latestPayload.reliability.players) {
-        Object.keys(latestPayload.reliability.players).forEach(addName);
-      }
+      addFromObjectKeys(latestPayload.reliability?.players);
+      addFromObjectKeys(latestPayload.analysis?.reliability?.players);
+      addFromObjectKeys(latestPayload.player_reliability);
 
-      if (latestPayload.alliance && Array.isArray(latestPayload.alliance.players)) {
-        latestPayload.alliance.players.forEach((p) => {
-          const rawName = typeof p === "string" ? p : p?.name || p?.playerName || "";
-          addName(rawName);
-        });
-      }
+      addFromArray(latestPayload.alliance?.players, [
+        (p) => p?.name,
+        (p) => p?.playerName,
+      ]);
 
-      if (Array.isArray(latestPayload.alliance_pool)) {
-        latestPayload.alliance_pool.forEach((p) => {
-          addName(p?.display || p?.canon || "");
-        });
-      }
+      addFromArray(latestPayload.alliance_pool, [
+        (p) => p?.display,
+        (p) => p?.canon,
+      ]);
 
-      if (Array.isArray(latestPayload.players)) {
-        latestPayload.players.forEach((p) => addName(p?.display || p?.canon || p?.name || ""));
-      }
+      addFromArray(latestPayload.players, [
+        (p) => p?.display,
+        (p) => p?.canon,
+        (p) => p?.name,
+      ]);
 
-      if (latestPayload.signups && Array.isArray(latestPayload.signups)) {
-        latestPayload.signups.forEach((s) => addName(s?.playerName || s?.name || ""));
-      }
+      addFromArray(latestPayload.signups, [
+        (s) => s?.playerName,
+        (s) => s?.name,
+      ]);
 
-      if (Array.isArray(latestPayload?.signup_pool?.file_entries)) {
-        latestPayload.signup_pool.file_entries.forEach((entry) => {
-          addName(entry?.PlayerName || entry?.player || entry?.player_name || "");
-        });
-      }
+      addFromArray(latestPayload?.signup_pool?.file_entries, [
+        (entry) => entry?.PlayerName,
+        (entry) => entry?.player,
+        (entry) => entry?.player_name,
+      ]);
 
-      if (Array.isArray(latestPayload?.event_signups?.file_entries)) {
-        latestPayload.event_signups.file_entries.forEach((entry) => {
-          addName(entry?.player || entry?.PlayerName || "");
-        });
-      }
+      addFromArray(latestPayload?.event_signups?.file_entries, [
+        (entry) => entry?.player,
+        (entry) => entry?.PlayerName,
+      ]);
+
+      addFromArray(latestPayload?.event_responses?.file_entries, [
+        (entry) => entry?.player,
+        (entry) => entry?.PlayerName,
+        (entry) => entry?.player_name,
+      ]);
+
+      addFromArray(latestPayload?.event_signups?.removed_from_pool, [(entry) => entry?.player || entry]);
+      addFromArray(latestPayload?.event_responses?.removed_from_pool, [(entry) => entry?.player || entry]);
     }
 
-    shared.allKnownPlayersForAdmin = Array.from(namesSet).sort((a, b) => a.localeCompare(b, "de", { sensitivity: "base" }));
+    shared.allKnownPlayersForAdmin = Array.from(namesByCanon.values())
+      .sort((a, b) => a.localeCompare(b, "de", { sensitivity: "base" }));
     return shared.allKnownPlayersForAdmin;
   }
 
   function buildPlayerAutocompleteIndexForAdmin() {
     const names = shared.allKnownPlayersForAdmin || [];
-    const index = names.map((name) => ({ name, lc: name.toLowerCase() }));
+    const index = names.map((name) => ({ name, lc: name.toLowerCase(), canon: canonicalNameJS(name) }));
     shared.playerNameIndexForAdmin = index;
     return index;
   }
@@ -724,10 +756,11 @@
     const term = (query || "").trim();
     if (!term) return [];
     const lcTerm = term.toLowerCase();
+    const canonTerm = canonicalNameJS(term);
     const limit = Number(maxResults) || 0;
     const results = [];
     for (const entry of index) {
-      if (entry.lc.includes(lcTerm)) {
+      if (entry.lc.includes(lcTerm) || (canonTerm && entry.canon.includes(canonTerm))) {
         results.push(entry.name);
         if (limit && results.length >= limit) break;
       }
