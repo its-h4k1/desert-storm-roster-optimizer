@@ -659,7 +659,7 @@
     return map;
   };
 
-  shared.buildAllKnownPlayersForAdmin = function (latestPayload) {
+  function buildAllKnownPlayersForAdmin(latestPayload) {
     const namesSet = new Set();
 
     const addName = (raw) => {
@@ -710,16 +710,16 @@
 
     shared.allKnownPlayersForAdmin = Array.from(namesSet).sort((a, b) => a.localeCompare(b, "de", { sensitivity: "base" }));
     return shared.allKnownPlayersForAdmin;
-  };
+  }
 
-  shared.buildPlayerAutocompleteIndexForAdmin = function () {
+  function buildPlayerAutocompleteIndexForAdmin() {
     const names = shared.allKnownPlayersForAdmin || [];
     const index = names.map((name) => ({ name, lc: name.toLowerCase() }));
     shared.playerNameIndexForAdmin = index;
     return index;
-  };
+  }
 
-  shared.queryPlayerNamesForAdmin = function (query, maxResults) {
+  function queryPlayerNamesForAdmin(query, maxResults) {
     const index = shared.playerNameIndexForAdmin || [];
     const term = (query || "").trim();
     if (!term) return [];
@@ -733,12 +733,12 @@
       }
     }
     return results;
-  };
+  }
 
   // Helper für Admin-Seiten: baut Alias-Map, Spielerlisten und den Autocomplete-Index
   // auf Basis eines Payload-Snapshots plus optionaler zusätzlicher Namensquellen.
   // Gibt die finale Namensliste zurück.
-  shared.refreshAdminPlayerIndex = function ({ payload, additionalNames = [] } = {}) {
+  function refreshAdminPlayerIndex({ payload, additionalNames = [] } = {}) {
     const sourcePayload = payload || shared.latestPayload || null;
     if (shared.prepareAliasMapFromPayload) {
       shared.prepareAliasMapFromPayload(sourcePayload);
@@ -757,19 +757,26 @@
       shared.buildPlayerAutocompleteIndexForAdmin();
     }
     return shared.allKnownPlayersForAdmin;
-  };
+  }
 
-  shared.debugPrintAdminAutocompleteState = function () {
+  function debugPrintAdminAutocompleteState() {
     console.log("[dsroShared] allKnownPlayersForAdmin:", shared.allKnownPlayersForAdmin);
     console.log(
       "[dsroShared] playerNameIndexForAdmin size:",
       shared.playerNameIndexForAdmin ? shared.playerNameIndexForAdmin.length : 0,
     );
-  };
+  }
 
-  shared.debugTestAdminQuery = function (term) {
+  function debugTestAdminQuery(term) {
     console.log("[dsroShared] admin testQuery:", term, "=>", shared.queryPlayerNamesForAdmin(term, 10));
-  };
+  }
+
+  shared.buildAllKnownPlayersForAdmin = buildAllKnownPlayersForAdmin;
+  shared.buildPlayerAutocompleteIndexForAdmin = buildPlayerAutocompleteIndexForAdmin;
+  shared.queryPlayerNamesForAdmin = queryPlayerNamesForAdmin;
+  shared.refreshAdminPlayerIndex = refreshAdminPlayerIndex;
+  shared.debugPrintAdminAutocompleteState = debugPrintAdminAutocompleteState;
+  shared.debugTestAdminQuery = debugTestAdminQuery;
 
   Object.assign(shared, {
     canonicalNameJS,
