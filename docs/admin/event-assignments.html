@@ -348,6 +348,12 @@
   <script src="https://unpkg.com/papaparse@5.4.1/papaparse.min.js"></script>
   <script>
     (function(){
+      if (!window.dsroShared) {
+        console.error('dsroShared is not available on admin/event-assignments; ensure shared.js is loaded first.');
+        return;
+      }
+
+      const dsroShared = window.dsroShared;
       const elements = {
         workerUrl: document.getElementById('workerUrl'),
         branch: document.getElementById('branchInput'),

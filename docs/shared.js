@@ -1,5 +1,6 @@
 (function(global){
-  const shared = global.dsroShared || {};
+  global.dsroShared = global.dsroShared || {};
+  const shared = global.dsroShared;
   const ZERO_WIDTH_RE = /[\u200b\u200c\u200d\u200e\u200f\u2060\ufeff]/g;
   const HOMO_TRANSLATE = {
     "А":"A","В":"B","Е":"E","К":"K","М":"M","Н":"H","О":"O",
@@ -672,7 +673,7 @@
     computeNextFriday,
     formatDsEventId,
     suggestDsEventIdForGroup,
-    prepareAliasMapFromPayload,
+    prepareAliasMapFromPayload: shared.prepareAliasMapFromPayload,
     buildAllKnownPlayersForAdmin,
     buildPlayerAutocompleteIndexForAdmin,
     queryPlayerNamesForAdmin,
