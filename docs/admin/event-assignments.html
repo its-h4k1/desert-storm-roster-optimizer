@@ -1681,29 +1681,42 @@
         }
       }
 
-      function updateAdminKeyStatus() {
-        const adminKey = getAdminKey();
-        const hasKey = !!adminKey;
+      function renderAdminKeyState({ message, tone = 'info', showAlert = false } = {}) {
         if (elements.adminKeyStatus) {
-          elements.adminKeyStatus.textContent = hasKey
-            ? 'Admin-Key ist gesetzt (zentral verwaltet).'
-            : 'Kein Admin-Key gesetzt – bitte über die Admin-Startseite einloggen.';
-          elements.adminKeyStatus.className = hasKey ? 'pill info' : 'pill';
+          elements.adminKeyStatus.textContent = message || '';
+          elements.adminKeyStatus.className = 'pill ' + (tone === 'success' ? 'info' : tone);
         }
         if (elements.adminKeyAlert) {
-          elements.adminKeyAlert.style.display = hasKey ? 'none' : 'grid';
+          elements.adminKeyAlert.style.display = showAlert ? 'grid' : 'none';
+          if (showAlert && message) elements.adminKeyAlert.textContent = message;
         }
         if (elements.adminKeyFallbackRow) {
-          elements.adminKeyFallbackRow.style.display = hasKey ? 'none' : 'block';
+          elements.adminKeyFallbackRow.style.display = showAlert ? 'block' : 'none';
         }
       }
 
-        function applyFallbackAdminKey() {
-          if (!elements.adminKeyFallback) return;
-          const value = (elements.adminKeyFallback.value || '').trim();
-          if (shared?.saveAdminKey) shared.saveAdminKey(value);
-          updateAdminKeyStatus();
+      function applyFallbackAdminKey(value) {
+        const next = value != null ? value : (elements.adminKeyFallback?.value || '').trim();
+        if (!next) {
+          renderAdminKeyState({ message: 'Bitte Admin-Key eingeben.', tone: 'warn', showAlert: true });
+          return false;
         }
+        try {
+          if (shared?.saveAdminKey) shared.saveAdminKey(next);
+          renderAdminKeyState({ message: 'Admin-Key gespeichert, prüfe…', tone: 'info', showAlert: false });
+          return true;
+        } catch (err) {
+          console.error('admin-key: error while saving', err);
+          renderAdminKeyState({ message: 'Admin-Key konnte nicht gespeichert werden.', tone: 'error', showAlert: true });
+          return false;
+        }
+      }
+
+      function startAdminFlow() {
+        restoreSettings();
+        initAutocompletes();
+        reloadData();
+      }
 
       function initEvents() {
         elements.reloadBtn.addEventListener('click', reloadData);
@@ -1716,7 +1729,6 @@
         }
         if (elements.addResponseBtn) elements.addResponseBtn.addEventListener('click', addResponse);
         if (elements.resetBtn) elements.resetBtn.addEventListener('click', resetPool);
-        if (elements.adminKeyFallbackBtn) elements.adminKeyFallbackBtn.addEventListener('click', applyFallbackAdminKey);
         ['workerUrl','branch'].forEach(key => elements[key].addEventListener('change', persistSettings));
         elements.playerInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); addAssignment(); } });
         if (elements.responsePlayerInput) {
@@ -1733,12 +1745,19 @@
         }
       }
 
-        applyAdminKeyInput(elements.adminKeyFallback, { syncOnInput: false });
-        restoreSettings();
-        updateAdminKeyStatus();
-        initEvents();
-      initAutocompletes();
-      reloadData();
+      shared.initAdminKeyGate({
+        statusEl: elements.adminKeyStatus,
+        fallbackInput: elements.adminKeyFallback,
+        fallbackRow: elements.adminKeyFallbackRow,
+        fallbackButton: elements.adminKeyFallbackBtn,
+        alertEl: elements.adminKeyAlert,
+        renderStatus: renderAdminKeyState,
+        onValid: () => {
+          console.debug('admin-key: success (event-assignments) – start init');
+          initEvents();
+          startAdminFlow();
+        },
+      });
     })();
   </script>
   <script src="admin.js"></script>

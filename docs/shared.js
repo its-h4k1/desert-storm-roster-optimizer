@@ -256,6 +256,102 @@
     };
   }
 
+  // Standardisierter Admin-Key-Gatekeeper für Admin-Seiten.
+  // Erwartet DOM-Elemente (Status, Fallback-Eingabe/-Button, Hinweisbanner)
+  // und ruft onValid exakt einmal auf, sobald ein (beliebiger) Key vorliegt.
+  // Bei Fehlern wird ein sichtbarer Status gesetzt und es wird nie in einem
+  // "prüfen…"-State hängen geblieben.
+  function initAdminKeyGate({
+    statusEl,
+    fallbackInput,
+    fallbackRow,
+    fallbackButton,
+    alertEl,
+    onValid,
+    renderStatus,
+  } = {}) {
+    let initialized = false;
+
+    const render = ({ message, tone = "info", showAlert = false }) => {
+      if (typeof renderStatus === "function") {
+        renderStatus({ message, tone, showAlert });
+      } else if (statusEl) {
+        statusEl.textContent = message || "";
+        const base = statusEl.className || "";
+        const cls = tone === "error" ? "warn" : tone === "success" ? "info" : tone;
+        statusEl.className = `${base}`.split(" ").filter(Boolean).filter(c => !/^pill$/.test(c)).join(" ");
+        statusEl.classList.add("pill");
+        if (cls) statusEl.classList.add(cls);
+      }
+      if (alertEl) {
+        alertEl.style.display = showAlert ? "grid" : "none";
+      }
+      if (fallbackRow) {
+        fallbackRow.style.display = showAlert ? "block" : "none";
+      }
+    };
+
+    const showFallback = () => {
+      if (fallbackRow) fallbackRow.style.display = "block";
+      if (alertEl) alertEl.style.display = "grid";
+    };
+
+    const handleError = (err) => {
+      console.error("admin-key: error", err);
+      render({ message: "Admin-Key konnte nicht geprüft werden.", tone: "error", showAlert: true });
+    };
+
+    const check = () => {
+      console.debug("admin-key: start check");
+      render({ message: "Admin-Key wird geprüft…", tone: "info", showAlert: false });
+      let key = "";
+      try {
+        key = getAdminKey();
+      } catch (err) {
+        handleError(err);
+        return;
+      }
+      if (key) {
+        console.debug("admin-key: success");
+        render({ message: "Admin-Key ist gesetzt (zentral verwaltet).", tone: "success", showAlert: false });
+        if (!initialized && typeof onValid === "function") {
+          initialized = true;
+          try { onValid(key); } catch (err) { handleError(err); }
+        }
+      } else {
+        console.debug("admin-key: missing");
+        render({
+          message: "Kein Admin-Key gesetzt – bitte über die Admin-Startseite einloggen.",
+          tone: "warn",
+          showAlert: true,
+        });
+        showFallback();
+      }
+    };
+
+    const applyFallback = () => {
+      if (!fallbackInput) return;
+      const value = (fallbackInput.value || "").trim();
+      if (!value) {
+        render({ message: "Bitte Admin-Key eingeben.", tone: "warn", showAlert: true });
+        return;
+      }
+      try {
+        saveAdminKey(value);
+        render({ message: "Admin-Key gespeichert, prüfe…", tone: "info", showAlert: false });
+        check();
+      } catch (err) {
+        handleError(err);
+      }
+    };
+
+    applyAdminKeyInput(fallbackInput, { syncOnInput: false });
+    if (fallbackButton) fallbackButton.addEventListener("click", applyFallback);
+    check();
+
+    return { refresh: check, applyFallback };
+  }
+
   // Baut einen Header-Satz mit X-Admin-Key (falls vorhanden). Sollte von allen
   // Admin-Seiten für Worker-/API-Calls verwendet werden.
   function buildAdminHeaders({ adminKey, headers } = {}) {
@@ -691,6 +787,7 @@
     getAdminKey,
     saveAdminKey,
     applyAdminKeyInput,
+    initAdminKeyGate,
     buildAdminHeaders,
     initAdminLayout,
     extractDsEventDatesFromPayload,
