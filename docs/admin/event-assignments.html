@@ -774,6 +774,7 @@
       async function loadRoster() {
         let latestData = null;
         let rosterData = null;
+        let rosterMissing = false;
         try {
           const response = await fetch(LATEST_JSON_URL, { cache:'no-store' });
           if (!response.ok) throw new Error(`${LATEST_JSON_URL}: HTTP ${response.status}`);
@@ -784,7 +785,10 @@
 
         try {
           const response = await fetch(ROSTER_JSON_URL, { cache:'no-store' });
-          if (response.ok) {
+          if (response.status === 404) {
+            rosterMissing = true;
+            console.info('roster.json fehlt (404) – starte ohne Roster weiter.');
+          } else if (response.ok) {
             rosterData = await response.json();
           }
         } catch (err) {
@@ -792,7 +796,10 @@
         }
 
           const metaSource = latestData || rosterData || {};
-          const sharedPayload = latestData || rosterData || null;
+          const sharedPayload = latestData || rosterData || {};
+          if (!latestData && rosterMissing) {
+            console.info('Kein roster.json gefunden; nutze ggf. latest.json als einzige Quelle.');
+          }
           if (shared?.hydrateReliabilityFromPayload) {
             shared.hydrateReliabilityFromPayload(sharedPayload);
           }
