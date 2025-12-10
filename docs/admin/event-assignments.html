@@ -558,6 +558,7 @@
         eventInfo: null,
         eventSignupsMeta: null,
         eventSignupCommit: null,
+        latestPayload: null,
         currentBranch: branchOverride || 'main',
         buildSyncStatus: null,
         playerNames: [],
@@ -786,6 +787,16 @@
         const sharedPayload = latestData || rosterData || null;
         if (window.dsroShared?.hydrateReliabilityFromPayload) {
           window.dsroShared.hydrateReliabilityFromPayload(sharedPayload);
+        }
+        state.latestPayload = sharedPayload;
+        if (window.dsroShared?.prepareAliasMapFromPayload) {
+          window.dsroShared.prepareAliasMapFromPayload(sharedPayload);
+        }
+        if (window.dsroShared?.buildAllKnownPlayersForAdmin) {
+          window.dsroShared.buildAllKnownPlayersForAdmin(sharedPayload);
+        }
+        if (window.dsroShared?.buildPlayerAutocompleteIndexForAdmin) {
+          window.dsroShared.buildPlayerAutocompleteIndexForAdmin();
         }
         const playersSource = Array.isArray(latestData?.players)
           ? latestData.players
@@ -1024,11 +1035,15 @@
         }
       }
 
+      // Autocomplete: zentrale Namensquelle (Shared + Seitendaten)
       function populatePlayers() {
-        const set = new Set();
+        const base = Array.isArray(dsroShared.allKnownPlayersForAdmin)
+          ? dsroShared.allKnownPlayersForAdmin
+          : [];
+        const set = new Set(base);
         const addName = (name) => {
-          const trimmed = (name || '').toString().trim();
-          if (trimmed) set.add(trimmed);
+          const normalized = (dsroShared.normalizePlayerName || ((val) => (val || '').toString().trim()))(name || '');
+          if (normalized) set.add(normalized);
         };
 
         state.alliancePool.forEach(n => addName(n.display || n.canon || ''));
@@ -1037,6 +1052,13 @@
         state.assignments.forEach(r => addName(r.PlayerName || ''));
         state.signupPoolEntries.forEach(entry => addName(entry.PlayerName || entry.player_name || entry.player || ''));
         state.playerNames = Array.from(set).sort((a,b) => a.localeCompare(b, 'de', { sensitivity:'base' }));
+        if (Array.isArray(state.playerNames)) {
+          // Autocomplete: Index aktualisieren
+          dsroShared.allKnownPlayersForAdmin = state.playerNames;
+          if (typeof dsroShared.buildPlayerAutocompleteIndexForAdmin === 'function') {
+            dsroShared.buildPlayerAutocompleteIndexForAdmin();
+          }
+        }
         elements.playerOptions.innerHTML = '';
         state.playerNames.forEach(name => {
           const opt = document.createElement('option');
@@ -1049,6 +1071,7 @@
       function attachPlayerAutocomplete(inputEl, getNamesFn, opts={}) {
         if (!inputEl) return null;
         const maxItems = Number(opts.maxItems) || 8;
+        const queryFn = typeof opts.queryFn === 'function' ? opts.queryFn : null;
         const parent = inputEl.parentElement;
         if (parent && !parent.classList.contains('autocomplete-wrapper')) {
           parent.classList.add('autocomplete-wrapper');
@@ -1102,17 +1125,24 @@
 
         const updateList = () => {
           const query = inputEl.value || '';
-          const canonQuery = canonicalNameJS(query);
-          if (!canonQuery) { closeMenu(); return; }
-          const names = (typeof getNamesFn === 'function' ? getNamesFn() : []) || [];
-          const filtered = names
-            .map(name => ({ name, canon: canonicalNameJS(name) }))
-            .filter(entry => {
-              if (!entry.canon) return false;
-              return entry.canon.startsWith(canonQuery) || entry.canon.includes(canonQuery);
-            })
-            .slice(0, maxItems)
-            .map(entry => entry.name);
+          const trimmed = query.trim();
+          if (!trimmed) { closeMenu(); return; }
+          let filtered = [];
+          if (queryFn) {
+            filtered = queryFn(trimmed, maxItems) || [];
+          } else {
+            const canonQuery = canonicalNameJS(query);
+            if (!canonQuery) { closeMenu(); return; }
+            const names = (typeof getNamesFn === 'function' ? getNamesFn() : []) || [];
+            filtered = names
+              .map(name => ({ name, canon: canonicalNameJS(name) }))
+              .filter(entry => {
+                if (!entry.canon) return false;
+                return entry.canon.startsWith(canonQuery) || entry.canon.includes(canonQuery);
+              })
+              .slice(0, maxItems)
+              .map(entry => entry.name);
+          }
           items = filtered;
           activeIndex = filtered.length ? 0 : -1;
           renderList(filtered);
@@ -1163,10 +1193,21 @@
         return { refresh: updateList, close: closeMenu };
       }
 
+      // Autocomplete: Event-Handler & Dropdown-Controller
       const autocompleteControllers = [];
       function initAutocompletes() {
         const getNames = () => state.playerNames;
-        const opts = { maxItems: 20 };
+        const opts = {
+          maxItems: 20,
+          queryFn: (term, max) => {
+            if (typeof dsroShared.queryPlayerNamesForAdmin === 'function') {
+              return dsroShared.queryPlayerNamesForAdmin(term, max);
+            }
+            const names = getNames() || [];
+            const lc = (term || '').toLowerCase();
+            return names.filter(n => (n || '').toLowerCase().includes(lc)).slice(0, max || 20);
+          },
+        };
         if (elements.playerInput) autocompleteControllers.push(attachPlayerAutocomplete(elements.playerInput, getNames, opts));
         if (elements.responsePlayerInput) autocompleteControllers.push(attachPlayerAutocomplete(elements.responsePlayerInput, getNames, opts));
       }

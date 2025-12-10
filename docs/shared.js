@@ -21,6 +21,14 @@
     return s;
   }
 
+  function normalizePlayerName(rawName) {
+    if (typeof rawName !== "string") return "";
+    let name = rawName.trim();
+    name = name.replace(ZERO_WIDTH_RE, "");
+    name = name.replace(/\s+/g, " ");
+    return name;
+  }
+
   function escapeHtml(value) {
     return value == null ? "" : String(value)
       .replace(/&/g, "&amp;")
@@ -462,6 +470,7 @@
 
   shared.playerReliability = shared.playerReliability || {};
   shared.latestPayload = shared.latestPayload || null;
+  shared.aliasMap = shared.aliasMap || new Map();
   shared.reliabilityStartDate = shared.reliabilityStartDate || null;
   shared.REL_MIN_EVENTS_FOR_BUCKET =
     shared.REL_MIN_EVENTS_FOR_BUCKET == null ? 3 : shared.REL_MIN_EVENTS_FOR_BUCKET;
@@ -536,8 +545,114 @@
     };
   };
 
+  shared.prepareAliasMapFromPayload = function (payload) {
+    const map = new Map();
+    if (payload && typeof payload === "object") {
+      const candidateSources = [payload.alias_map, payload.player_aliases, payload.player_alias_map, payload.aliases];
+      candidateSources.forEach((src) => {
+        if (!src || typeof src !== "object") return;
+        Object.entries(src).forEach(([alias, canonical]) => {
+          const aliasKey = canonicalNameJS(alias || "");
+          const canonValue = canonicalNameJS(canonical || alias || "");
+          if (aliasKey) map.set(aliasKey, canonValue || aliasKey);
+        });
+      });
+    }
+    shared.aliasMap = map;
+    return map;
+  };
+
+  shared.buildAllKnownPlayersForAdmin = function (latestPayload) {
+    const namesSet = new Set();
+
+    const addName = (raw) => {
+      const aliasKey = canonicalNameJS(raw || "");
+      const canonical = aliasKey && shared.aliasMap ? shared.aliasMap.get(aliasKey) || aliasKey : aliasKey;
+      const normalized = normalizePlayerName(canonical || raw || "");
+      if (normalized) namesSet.add(normalized);
+    };
+
+    if (latestPayload && typeof latestPayload === "object") {
+      if (latestPayload.reliability && latestPayload.reliability.players) {
+        Object.keys(latestPayload.reliability.players).forEach(addName);
+      }
+
+      if (latestPayload.alliance && Array.isArray(latestPayload.alliance.players)) {
+        latestPayload.alliance.players.forEach((p) => {
+          const rawName = typeof p === "string" ? p : p?.name || p?.playerName || "";
+          addName(rawName);
+        });
+      }
+
+      if (Array.isArray(latestPayload.alliance_pool)) {
+        latestPayload.alliance_pool.forEach((p) => {
+          addName(p?.display || p?.canon || "");
+        });
+      }
+
+      if (Array.isArray(latestPayload.players)) {
+        latestPayload.players.forEach((p) => addName(p?.display || p?.canon || p?.name || ""));
+      }
+
+      if (latestPayload.signups && Array.isArray(latestPayload.signups)) {
+        latestPayload.signups.forEach((s) => addName(s?.playerName || s?.name || ""));
+      }
+
+      if (Array.isArray(latestPayload?.signup_pool?.file_entries)) {
+        latestPayload.signup_pool.file_entries.forEach((entry) => {
+          addName(entry?.PlayerName || entry?.player || entry?.player_name || "");
+        });
+      }
+
+      if (Array.isArray(latestPayload?.event_signups?.file_entries)) {
+        latestPayload.event_signups.file_entries.forEach((entry) => {
+          addName(entry?.player || entry?.PlayerName || "");
+        });
+      }
+    }
+
+    shared.allKnownPlayersForAdmin = Array.from(namesSet).sort((a, b) => a.localeCompare(b, "de", { sensitivity: "base" }));
+    return shared.allKnownPlayersForAdmin;
+  };
+
+  shared.buildPlayerAutocompleteIndexForAdmin = function () {
+    const names = shared.allKnownPlayersForAdmin || [];
+    const index = names.map((name) => ({ name, lc: name.toLowerCase() }));
+    shared.playerNameIndexForAdmin = index;
+    return index;
+  };
+
+  shared.queryPlayerNamesForAdmin = function (query, maxResults) {
+    const index = shared.playerNameIndexForAdmin || [];
+    const term = (query || "").trim();
+    if (!term) return [];
+    const lcTerm = term.toLowerCase();
+    const limit = Number(maxResults) || 0;
+    const results = [];
+    for (const entry of index) {
+      if (entry.lc.includes(lcTerm)) {
+        results.push(entry.name);
+        if (limit && results.length >= limit) break;
+      }
+    }
+    return results;
+  };
+
+  shared.debugPrintAdminAutocompleteState = function () {
+    console.log("[dsroShared] allKnownPlayersForAdmin:", shared.allKnownPlayersForAdmin);
+    console.log(
+      "[dsroShared] playerNameIndexForAdmin size:",
+      shared.playerNameIndexForAdmin ? shared.playerNameIndexForAdmin.length : 0,
+    );
+  };
+
+  shared.debugTestAdminQuery = function (term) {
+    console.log("[dsroShared] admin testQuery:", term, "=>", shared.queryPlayerNamesForAdmin(term, 10));
+  };
+
   Object.assign(shared, {
     canonicalNameJS,
+    normalizePlayerName,
     escapeHtml,
     computeSiteRoot,
     buildLatestJsonUrl,
@@ -557,9 +672,18 @@
     computeNextFriday,
     formatDsEventId,
     suggestDsEventIdForGroup,
+    prepareAliasMapFromPayload,
+    buildAllKnownPlayersForAdmin,
+    buildPlayerAutocompleteIndexForAdmin,
+    queryPlayerNamesForAdmin,
+    debugPrintAdminAutocompleteState,
+    debugTestAdminQuery,
     hydrateReliabilityFromPayload,
     playerReliability: shared.playerReliability,
     latestPayload: shared.latestPayload,
+    allKnownPlayersForAdmin: shared.allKnownPlayersForAdmin,
+    playerNameIndexForAdmin: shared.playerNameIndexForAdmin,
+    aliasMap: shared.aliasMap,
     reliabilityStartDate: shared.reliabilityStartDate,
     REL_MIN_EVENTS_FOR_BUCKET: shared.REL_MIN_EVENTS_FOR_BUCKET,
     REL_NO_SHOW_GREEN_MAX: shared.REL_NO_SHOW_GREEN_MAX,
