@@ -20,6 +20,8 @@ from datetime import timezone
 from pathlib import Path
 from typing import Dict, List
 
+import pandas as pd
+
 from src.config import get_config
 from src.attendance_config import RELIABILITY_START_DATE
 from src.core_roster import RosterEntry, build_rosters_from_hard_signups
@@ -32,6 +34,7 @@ from src.effective_signups import (
     signup_deadline_for_event,
 )
 from src.event_responses import EventResponse, load_event_responses_for_next_event
+from src.stats import PlayerReliability, compute_player_reliability
 from src.utils import canonical_name
 
 
@@ -83,6 +86,56 @@ def _entry_to_dict(entry: RosterEntry) -> Dict[str, object]:
     }
 
 
+def _load_event_history() -> pd.DataFrame:
+    """Load historical DS event attendance CSVs for reliability stats."""
+
+    if pd is None:
+        return pd.DataFrame(
+            columns=["EventID", "PlayerName", "RoleAtRegistration", "Teilgenommen"]
+        )
+
+    base = Path("data")
+    pattern = "DS-*-*-*.csv"
+    keep = []
+    for path in base.glob(pattern):
+        name = path.name
+        if not name or not name.upper().startswith("DS-"):
+            continue
+        if len(name.split("-")) < 4:
+            continue
+        try:
+            df = pd.read_csv(path)
+        except Exception:
+            continue
+
+        if "EventID" not in df.columns:
+            df["EventID"] = path.stem
+        if "PlayerName" not in df.columns or "RoleAtRegistration" not in df.columns:
+            continue
+        if "Teilgenommen" not in df.columns:
+            df["Teilgenommen"] = 0
+        cols = [
+            "EventID",
+            "PlayerName",
+            "RoleAtRegistration",
+            "Teilgenommen",
+        ]
+        effective_col = None
+        for cand in ["effective_signup_state", "EffectiveSignupState", "effective_state"]:
+            if cand in df.columns:
+                effective_col = cand
+                break
+        if effective_col:
+            cols.append(effective_col)
+        keep.append(df[cols].copy())
+
+    if not keep:
+        return pd.DataFrame(
+            columns=["EventID", "PlayerName", "RoleAtRegistration", "Teilgenommen"]
+        )
+    return pd.concat(keep, ignore_index=True)
+
+
 def _build_payload(
     *,
     signups: List[Signup],
@@ -94,6 +147,7 @@ def _build_payload(
     event_datetime_local,
     signup_deadline_local,
     config,
+    reliability_players: Dict[str, PlayerReliability] | None = None,
 ) -> Dict[str, object]:
     team_a: Dict[str, List[RosterEntry]] = rosters.get("team_a", {})  # type: ignore[assignment]
     team_b: Dict[str, List[RosterEntry]] = rosters.get("team_b", {})  # type: ignore[assignment]
@@ -190,6 +244,25 @@ def _build_payload(
                 else None
             )
         },
+        "reliability": {
+            "players": {
+                name: {
+                    "events": stats.events,
+                    "attendance": stats.attendance,
+                    "no_shows": stats.no_shows,
+                    "early_cancels": stats.early_cancels,
+                    "late_cancels": stats.late_cancels,
+                }
+                for name, stats in (reliability_players or {}).items()
+            },
+            "meta": {
+                "reliability_start_date": (
+                    RELIABILITY_START_DATE.isoformat()
+                    if RELIABILITY_START_DATE is not None
+                    else None
+                )
+            },
+        },
     }
 
 
@@ -213,6 +286,10 @@ def main() -> None:
     signups = load_hard_signups_for_next_event(args.event_signups)
     responses = load_event_responses_for_next_event()
     event_dt_local = compute_event_datetime_local(args.event_date, args.event_time)
+    event_history = _load_event_history()
+    reliability_players = compute_player_reliability(
+        event_history, reliability_start_date=RELIABILITY_START_DATE
+    )
     signup_states = determine_effective_signup_states(
         signups=signups,
         responses=responses,
@@ -235,6 +312,7 @@ def main() -> None:
         event_datetime_local=event_dt_local,
         signup_deadline_local=signup_deadline_for_event(event_dt_local),
         config=cfg,
+        reliability_players=reliability_players,
     )
     _write_outputs(Path(args.out), payload)
     print(

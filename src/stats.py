@@ -15,7 +15,8 @@ Erwartetes Events-Schema (mindestens):
 """
 
 from __future__ import annotations
-from typing import Dict, Optional, List
+from dataclasses import dataclass
+from typing import Dict, Optional, List, Mapping
 
 from datetime import date, datetime, timezone
 import re
@@ -26,6 +27,7 @@ import pandas as pd
 # Paket-Import (aus utils.py)
 from src.utils import parse_event_date, exp_decay_weight, canonical_name
 from src.attendance_config import RELIABILITY_START_DATE
+from src.effective_signups import EffectiveSignupState
 
 ROLES_START = {"Start"}
 ROLES_SUB = {"Ersatz"}
@@ -141,6 +143,15 @@ def _prep(
             df = df[~df["EventID"].isin(missing_events)].copy()
 
     return df
+
+
+@dataclass(frozen=True)
+class PlayerReliability:
+    events: int
+    attendance: int
+    no_shows: int
+    early_cancels: int
+    late_cancels: int
 
 
 def _agg_rates(df: pd.DataFrame, role_mask_col: str) -> pd.DataFrame:
@@ -392,6 +403,91 @@ def compute_player_history(
     ).reset_index(drop=True)
 
 
+def _extract_effective_state(row: Mapping[str, object]) -> EffectiveSignupState | None:
+    for key in ["effective_signup_state", "EffectiveSignupState", "effective_state"]:
+        value = row.get(key)
+        if value is None or value == "":
+            continue
+        try:
+            return EffectiveSignupState(str(value))
+        except ValueError:
+            return None
+    return None
+
+
+def compute_player_reliability(
+    events: pd.DataFrame,
+    *,
+    alias_map: Optional[Dict[str, str]] = None,
+    half_life_days: float = 90.0,
+    reference_dt: Optional[datetime] = None,
+    reliability_start_date: date | None = RELIABILITY_START_DATE,
+) -> Dict[str, PlayerReliability]:
+    """
+    Berechnet Zuverlässigkeits-Kennzahlen pro Spieler (ab reliability_start_date).
+
+    Events werden über ``_prep`` vorverarbeitet (Alias/Canon, Rollen-Filter).
+    Ereignisse mit dem EffectiveSignupState ``none`` werden ignoriert, alle
+    anderen fließen in den events-Zähler ein.
+    """
+
+    df = _prep(
+        events,
+        alias_map=alias_map,
+        half_life_days=half_life_days,
+        reference_dt=reference_dt,
+        reliability_start_date=reliability_start_date,
+    )
+
+    dfa = df[df["assigned"]].copy()
+    if dfa.empty:
+        return {}
+
+    stats: Dict[str, PlayerReliability] = {}
+
+    for row in dfa.itertuples(index=False):
+        player = getattr(row, "PlayerName")
+        state = _extract_effective_state(row._asdict())
+        # Determine effective signup state; default to HARD_ACTIVE when assigned
+        if state is None:
+            state = EffectiveSignupState.HARD_ACTIVE
+        if state == EffectiveSignupState.NONE:
+            continue
+
+        current = stats.get(
+            player,
+            PlayerReliability(
+                events=0, attendance=0, no_shows=0, early_cancels=0, late_cancels=0
+            ),
+        )
+
+        events_count = current.events + 1
+        attendance = current.attendance
+        no_shows = current.no_shows
+        early_cancels = current.early_cancels
+        late_cancels = current.late_cancels
+
+        if state == EffectiveSignupState.CANCELLED_EARLY:
+            early_cancels += 1
+        elif state == EffectiveSignupState.CANCELLED_LATE:
+            late_cancels += 1
+        else:
+            attended = int(getattr(row, "Teilgenommen", 0))
+            attendance += attended
+            if attended == 0:
+                no_shows += 1
+
+        stats[player] = PlayerReliability(
+            events=events_count,
+            attendance=attendance,
+            no_shows=no_shows,
+            early_cancels=early_cancels,
+            late_cancels=late_cancels,
+        )
+
+    return stats
+
+
 def _quantile(sorted_vals: List[float], q: float) -> float:
     if not sorted_vals:
         return 0.0
@@ -478,6 +574,8 @@ def eb_score(p_hat: float, sigma: float, lam: float) -> float:
 __all__ = [
     "compute_role_probs",
     "compute_player_history",
+    "compute_player_reliability",
+    "PlayerReliability",
     "prepare_alias_map",
     "compute_team_prior",
     "eb_rate",

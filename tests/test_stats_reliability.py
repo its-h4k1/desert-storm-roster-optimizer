@@ -1,8 +1,16 @@
 from datetime import date, datetime, timezone
 
+from datetime import date, datetime, timezone
+
 import pandas as pd
 
-from src.stats import compute_player_history, compute_role_probs
+from src.effective_signups import EffectiveSignupState
+from src.stats import (
+    PlayerReliability,
+    compute_player_history,
+    compute_player_reliability,
+    compute_role_probs,
+)
 
 
 def _sample_events() -> pd.DataFrame:
@@ -63,3 +71,57 @@ def test_reliability_start_date_filters_role_probabilities():
     row_all = role_probs_all.iloc[0]
     assert row_all["start_assignments"] == 2
     assert row_all["start_noshow"] == 2
+
+
+def test_compute_player_reliability_counts_cancels_and_shows():
+    cutoff = date(2025, 11, 28)
+    events = pd.DataFrame(
+        [
+            {
+                "EventID": "DS-2025-11-21-A",
+                "PlayerName": "Player A",
+                "RoleAtRegistration": "Start",
+                "Teilgenommen": 0,
+                "EffectiveSignupState": EffectiveSignupState.HARD_ACTIVE.value,
+            },
+            {
+                "EventID": "DS-2025-11-28-A",
+                "PlayerName": "Player A",
+                "RoleAtRegistration": "Start",
+                "Teilgenommen": 1,
+                "EffectiveSignupState": EffectiveSignupState.HARD_ACTIVE.value,
+            },
+            {
+                "EventID": "DS-2025-12-05-A",
+                "PlayerName": "Player A",
+                "RoleAtRegistration": "Start",
+                "Teilgenommen": 0,
+                "EffectiveSignupState": EffectiveSignupState.CANCELLED_LATE.value,
+            },
+            {
+                "EventID": "DS-2025-11-28-A",
+                "PlayerName": "Player B",
+                "RoleAtRegistration": "Start",
+                "Teilgenommen": 0,
+                "EffectiveSignupState": EffectiveSignupState.HARD_ACTIVE.value,
+            },
+            {
+                "EventID": "DS-2025-12-05-A",
+                "PlayerName": "Player B",
+                "RoleAtRegistration": "Start",
+                "Teilgenommen": 0,
+                "EffectiveSignupState": EffectiveSignupState.CANCELLED_EARLY.value,
+            },
+        ]
+    )
+
+    reliability = compute_player_reliability(
+        events, reliability_start_date=cutoff, reference_dt=datetime(2025, 12, 10, tzinfo=timezone.utc)
+    )
+
+    assert reliability["player a"] == PlayerReliability(
+        events=2, attendance=1, no_shows=0, early_cancels=0, late_cancels=1
+    )
+    assert reliability["player b"] == PlayerReliability(
+        events=2, attendance=0, no_shows=1, early_cancels=1, late_cancels=0
+    )
