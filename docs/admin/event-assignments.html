@@ -352,8 +352,7 @@
         console.error('dsroShared is not available on admin/event-assignments; ensure shared.js is loaded first.');
         return;
       }
-
-      const dsroShared = window.dsroShared;
+      const shared = window.dsroShared;
       const elements = {
         workerUrl: document.getElementById('workerUrl'),
         branch: document.getElementById('branchInput'),
@@ -398,23 +397,26 @@
       };
 
       const SETTINGS_KEY = 'dsro-event-assignments-settings';
-      const getAdminKey = () => dsroShared.getAdminKey();
-      const canonicalNameJS = (window.dsroShared && typeof window.dsroShared.canonicalNameJS === 'function')
-        ? window.dsroShared.canonicalNameJS
+      const getAdminKey = () => (shared && typeof shared.getAdminKey === 'function') ? shared.getAdminKey() : '';
+      const applyAdminKeyInput = (shared && typeof shared.applyAdminKeyInput === 'function')
+        ? shared.applyAdminKeyInput
+        : () => (() => {});
+      const canonicalNameJS = (shared && typeof shared.canonicalNameJS === 'function')
+        ? shared.canonicalNameJS
         : (value => {
             if (value == null) return '';
             return String(value).toLowerCase().trim().replace(/\s+/g, ' ');
           });
-      const escapeHtml = (window.dsroShared && typeof window.dsroShared.escapeHtml === 'function')
-        ? window.dsroShared.escapeHtml
+      const escapeHtml = (shared && typeof shared.escapeHtml === 'function')
+        ? shared.escapeHtml
         : (value => value == null ? '' : String(value)
             .replace(/&/g, '&amp;')
             .replace(/</g, '&lt;')
             .replace(/>/g, '&gt;')
             .replace(/"/g, '&quot;')
             .replace(/'/g, '&#39;'));
-      const computeSiteRoot = (window.dsroShared && typeof window.dsroShared.computeSiteRoot === 'function')
-        ? window.dsroShared.computeSiteRoot
+      const computeSiteRoot = (shared && typeof shared.computeSiteRoot === 'function')
+        ? shared.computeSiteRoot
         : (pathname => {
             const path = pathname || '/';
             const adminIdx = path.indexOf('/admin/');
@@ -423,14 +425,14 @@
           });
       const getPlayerReliability = (name) => {
         if (!name) return null;
-        if (!window.dsroShared || typeof window.dsroShared.getPlayerReliability !== 'function') return null;
-        return window.dsroShared.getPlayerReliability(name);
+        if (!shared || typeof shared.getPlayerReliability !== 'function') return null;
+        return shared.getPlayerReliability(name);
       };
       function buildReliabilityBadge(stats) {
-        if (!window.dsroShared || typeof window.dsroShared.computeReliabilityBucket !== 'function') {
+        if (!shared || typeof shared.computeReliabilityBucket !== 'function') {
           return '<span class="reliability-badge reliability-neu" title="Keine Zuverlässigkeitsdaten verfügbar.">● –</span>';
         }
-        const bucketInfo = window.dsroShared.computeReliabilityBucket(stats);
+        const bucketInfo = shared.computeReliabilityBucket(stats);
         const bucket = bucketInfo?.bucket || 'neu';
         const label = bucketInfo?.label || 'neu';
         const tooltip = bucketInfo?.tooltip || 'Keine Zuverlässigkeitsdaten verfügbar.';
@@ -453,20 +455,20 @@
           return;
         }
 
-        if (!window.dsroShared || typeof window.dsroShared.getPlayerReliability !== 'function' || typeof window.dsroShared.computeReliabilityBucket !== 'function') {
+        if (!shared || typeof shared.getPlayerReliability !== 'function' || typeof shared.computeReliabilityBucket !== 'function') {
           container.textContent = 'Keine Zuverlässigkeitsdaten verfügbar.';
           container.title = '';
           return;
         }
 
-        const stats = dsroShared.getPlayerReliability(name);
+        const stats = shared.getPlayerReliability(name);
         if (!stats) {
           container.textContent = 'Keine Zuverlässigkeitsdaten seit reliability_start_date.';
           container.title = '';
           return;
         }
 
-        const bucketInfo = dsroShared.computeReliabilityBucket(stats);
+        const bucketInfo = shared.computeReliabilityBucket(stats);
         const badgeClass = 'reliability-badge reliability-' + bucketInfo.bucket;
         container.innerHTML = `
           <span class="${badgeClass}" title="${escapeHtml(bucketInfo.tooltip || '')}">● ${escapeHtml(bucketInfo.label || '')}</span>
@@ -485,8 +487,8 @@
       const SOURCE_OPTIONS = ['manual','ingame','dm','callup-confirmed'];
       const branchOverride = (new URL(location.href)).searchParams.get('branch');
       const cacheBuster = `?v=${Date.now()}`;
-      const buildLatestJsonUrl = (window.dsroShared && typeof window.dsroShared.buildLatestJsonUrl === 'function')
-        ? window.dsroShared.buildLatestJsonUrl
+        const buildLatestJsonUrl = (shared && typeof shared.buildLatestJsonUrl === 'function')
+          ? shared.buildLatestJsonUrl
         : ({ branchOverride: bOverride, cacheBuster: buster, siteRoot }) => {
             const base = siteRoot || computeSiteRoot(location.pathname || '/');
             if (bOverride) {
@@ -789,21 +791,19 @@
           console.warn('roster.json (Fallback) nicht verfügbar', err);
         }
 
-        const metaSource = latestData || rosterData || {};
-        const sharedPayload = latestData || rosterData || null;
-        if (window.dsroShared?.hydrateReliabilityFromPayload) {
-          window.dsroShared.hydrateReliabilityFromPayload(sharedPayload);
-        }
-        state.latestPayload = sharedPayload;
-        if (window.dsroShared?.prepareAliasMapFromPayload) {
-          window.dsroShared.prepareAliasMapFromPayload(sharedPayload);
-        }
-        if (window.dsroShared?.buildAllKnownPlayersForAdmin) {
-          window.dsroShared.buildAllKnownPlayersForAdmin(sharedPayload);
-        }
-        if (window.dsroShared?.buildPlayerAutocompleteIndexForAdmin) {
-          window.dsroShared.buildPlayerAutocompleteIndexForAdmin();
-        }
+          const metaSource = latestData || rosterData || {};
+          const sharedPayload = latestData || rosterData || null;
+          if (shared?.hydrateReliabilityFromPayload) {
+            shared.hydrateReliabilityFromPayload(sharedPayload);
+          }
+          state.latestPayload = sharedPayload;
+          if (shared?.refreshAdminPlayerIndex) {
+            shared.refreshAdminPlayerIndex({ payload: sharedPayload });
+          } else {
+            if (shared?.prepareAliasMapFromPayload) shared.prepareAliasMapFromPayload(sharedPayload);
+            if (shared?.buildAllKnownPlayersForAdmin) shared.buildAllKnownPlayersForAdmin(sharedPayload);
+            if (shared?.buildPlayerAutocompleteIndexForAdmin) shared.buildPlayerAutocompleteIndexForAdmin();
+          }
         const playersSource = Array.isArray(latestData?.players)
           ? latestData.players
           : Array.isArray(rosterData?.players)
@@ -1043,28 +1043,19 @@
 
       // Autocomplete: zentrale Namensquelle (Shared + Seitendaten)
       function populatePlayers() {
-        const base = Array.isArray(dsroShared.allKnownPlayersForAdmin)
-          ? dsroShared.allKnownPlayersForAdmin
-          : [];
-        const set = new Set(base);
-        const addName = (name) => {
-          const normalized = (dsroShared.normalizePlayerName || ((val) => (val || '').toString().trim()))(name || '');
-          if (normalized) set.add(normalized);
-        };
+        const additionalNames = [];
+        state.alliancePool.forEach(n => additionalNames.push(n.display || n.canon || ''));
+        state.rosterPlayers.forEach(p => additionalNames.push(p.name));
+        state.responses.forEach(r => additionalNames.push(r.PlayerName || ''));
+        state.assignments.forEach(r => additionalNames.push(r.PlayerName || ''));
+        state.signupPoolEntries.forEach(entry => additionalNames.push(entry.PlayerName || entry.player_name || entry.player || ''));
 
-        state.alliancePool.forEach(n => addName(n.display || n.canon || ''));
-        state.rosterPlayers.forEach(p => addName(p.name));
-        state.responses.forEach(r => addName(r.PlayerName || ''));
-        state.assignments.forEach(r => addName(r.PlayerName || ''));
-        state.signupPoolEntries.forEach(entry => addName(entry.PlayerName || entry.player_name || entry.player || ''));
-        state.playerNames = Array.from(set).sort((a,b) => a.localeCompare(b, 'de', { sensitivity:'base' }));
-        if (Array.isArray(state.playerNames)) {
-          // Autocomplete: Index aktualisieren
-          dsroShared.allKnownPlayersForAdmin = state.playerNames;
-          if (typeof dsroShared.buildPlayerAutocompleteIndexForAdmin === 'function') {
-            dsroShared.buildPlayerAutocompleteIndexForAdmin();
-          }
-        }
+        const updated = shared?.refreshAdminPlayerIndex
+          ? shared.refreshAdminPlayerIndex({ payload: state.latestPayload, additionalNames })
+          : additionalNames;
+        state.playerNames = Array.isArray(updated)
+          ? updated.slice()
+          : Array.from(new Set(additionalNames)).sort((a,b) => a.localeCompare(b, 'de', { sensitivity:'base' }));
         elements.playerOptions.innerHTML = '';
         state.playerNames.forEach(name => {
           const opt = document.createElement('option');
@@ -1202,17 +1193,17 @@
       // Autocomplete: Event-Handler & Dropdown-Controller
       const autocompleteControllers = [];
       function initAutocompletes() {
-        const getNames = () => state.playerNames;
-        const opts = {
-          maxItems: 20,
-          queryFn: (term, max) => {
-            if (typeof dsroShared.queryPlayerNamesForAdmin === 'function') {
-              return dsroShared.queryPlayerNamesForAdmin(term, max);
-            }
-            const names = getNames() || [];
-            const lc = (term || '').toLowerCase();
-            return names.filter(n => (n || '').toLowerCase().includes(lc)).slice(0, max || 20);
-          },
+          const getNames = () => state.playerNames;
+          const opts = {
+            maxItems: 20,
+            queryFn: (term, max) => {
+              if (shared?.queryPlayerNamesForAdmin) {
+                return shared.queryPlayerNamesForAdmin(term, max);
+              }
+              const names = getNames() || [];
+              const lc = (term || '').toLowerCase();
+              return names.filter(n => (n || '').toLowerCase().includes(lc)).slice(0, max || 20);
+            },
         };
         if (elements.playerInput) autocompleteControllers.push(attachPlayerAutocomplete(elements.playerInput, getNames, opts));
         if (elements.responsePlayerInput) autocompleteControllers.push(attachPlayerAutocomplete(elements.responsePlayerInput, getNames, opts));
@@ -1651,13 +1642,13 @@
           setSaving(false);
           updateSaveButtonState();
         }
-      }
+        }
 
       async function writeFile(workerUrl, adminKey, payload) {
-        const headers = dsroShared.buildAdminHeaders({
+        const headers = shared?.buildAdminHeaders ? shared.buildAdminHeaders({
           adminKey,
           headers: { 'Content-Type': 'application/json' },
-        });
+        }) : { 'Content-Type': 'application/json', 'X-Admin-Key': adminKey };
         const response = await fetch(workerUrl, { method:'POST', headers, body: JSON.stringify(payload) });
         if (!response.ok) { const text = await response.text().catch(() => ''); throw new Error(text || `HTTP ${response.status}`); }
         const result = await response.json().catch(() => ({}));
@@ -1678,10 +1669,10 @@
             if (parsed.branch) elements.branch.value = parsed.branch;
           } catch (err) { console.warn('Settings konnten nicht gelesen werden', err); }
         } else {
-          const shared = localStorage.getItem('dsro-admin-settings');
-          if (shared) {
+          const sharedSettings = localStorage.getItem('dsro-admin-settings');
+          if (sharedSettings) {
             try {
-              const parsed = JSON.parse(shared);
+              const parsed = JSON.parse(sharedSettings);
               if (parsed.workerUrl) elements.workerUrl.value = parsed.workerUrl;
               if (parsed.customBranch) elements.branch.value = parsed.customBranch;
               if (parsed.branchSelect) elements.branch.value = parsed.branchSelect;
@@ -1707,12 +1698,12 @@
         }
       }
 
-      function applyFallbackAdminKey() {
-        if (!elements.adminKeyFallback) return;
-        const value = (elements.adminKeyFallback.value || '').trim();
-        dsroShared.saveAdminKey(value);
-        updateAdminKeyStatus();
-      }
+        function applyFallbackAdminKey() {
+          if (!elements.adminKeyFallback) return;
+          const value = (elements.adminKeyFallback.value || '').trim();
+          if (shared?.saveAdminKey) shared.saveAdminKey(value);
+          updateAdminKeyStatus();
+        }
 
       function initEvents() {
         elements.reloadBtn.addEventListener('click', reloadData);
@@ -1742,10 +1733,10 @@
         }
       }
 
-      dsroShared.applyAdminKeyInput(elements.adminKeyFallback, { syncOnInput: false });
-      restoreSettings();
-      updateAdminKeyStatus();
-      initEvents();
+        applyAdminKeyInput(elements.adminKeyFallback, { syncOnInput: false });
+        restoreSettings();
+        updateAdminKeyStatus();
+        initEvents();
       initAutocompletes();
       reloadData();
     })();
