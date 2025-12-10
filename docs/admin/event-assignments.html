@@ -795,22 +795,25 @@
           console.warn('roster.json (Fallback) nicht verfügbar', err);
         }
 
-          const metaSource = latestData || rosterData || {};
-          const sharedPayload = latestData || rosterData || {};
-          if (!latestData && rosterMissing) {
-            console.info('Kein roster.json gefunden; nutze ggf. latest.json als einzige Quelle.');
-          }
-          if (shared?.hydrateReliabilityFromPayload) {
-            shared.hydrateReliabilityFromPayload(sharedPayload);
-          }
-          state.latestPayload = sharedPayload;
-          if (shared?.refreshAdminPlayerIndex) {
-            shared.refreshAdminPlayerIndex({ payload: sharedPayload });
-          } else {
-            if (shared?.prepareAliasMapFromPayload) shared.prepareAliasMapFromPayload(sharedPayload);
-            if (shared?.buildAllKnownPlayersForAdmin) shared.buildAllKnownPlayersForAdmin(sharedPayload);
-            if (shared?.buildPlayerAutocompleteIndexForAdmin) shared.buildPlayerAutocompleteIndexForAdmin();
-          }
+        const metaSource = latestData || rosterData || {};
+        const sharedPayload = latestData || rosterData || {};
+        if (!latestData && rosterMissing) {
+          console.info('Kein roster.json gefunden; nutze ggf. latest.json als einzige Quelle.');
+        }
+        if (shared?.hydrateReliabilityFromPayload) {
+          shared.hydrateReliabilityFromPayload(sharedPayload);
+        }
+        if (shared) {
+          shared.latestPayload = sharedPayload;
+        }
+        state.latestPayload = sharedPayload;
+        if (shared?.refreshAdminPlayerIndex) {
+          shared.refreshAdminPlayerIndex({ payload: shared.latestPayload });
+        } else {
+          if (shared?.prepareAliasMapFromPayload) shared.prepareAliasMapFromPayload(sharedPayload);
+          if (shared?.buildAllKnownPlayersForAdmin) shared.buildAllKnownPlayersForAdmin(sharedPayload);
+          if (shared?.buildPlayerAutocompleteIndexForAdmin) shared.buildPlayerAutocompleteIndexForAdmin();
+        }
         const playersSource = Array.isArray(latestData?.players)
           ? latestData.players
           : Array.isArray(rosterData?.players)

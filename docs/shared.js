@@ -773,6 +773,9 @@
   // Gibt die finale Namensliste zurück.
   function refreshAdminPlayerIndex({ payload, additionalNames = [] } = {}) {
     const sourcePayload = payload || shared.latestPayload || null;
+    if (sourcePayload && sourcePayload !== shared.latestPayload) {
+      shared.latestPayload = sourcePayload;
+    }
     if (shared.prepareAliasMapFromPayload) {
       shared.prepareAliasMapFromPayload(sourcePayload);
     }
