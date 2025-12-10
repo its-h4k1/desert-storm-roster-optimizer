@@ -83,6 +83,13 @@
     .status-ok { background:#dcfce7; color:#14532d; }
     .status-error { background:#fee2e2; color:#991b1b; }
     .prefill-highlight { box-shadow:0 0 0 2px #bfdbfe; background:linear-gradient(90deg, rgba(239,246,255,0.6), rgba(255,255,255,0)); }
+    .reliability-preview { font-size:0.85rem; margin-top:0.25rem; }
+    .reliability-badge { display:inline-block; margin-right:0.25rem; }
+    .reliability-details { opacity:0.8; }
+    .reliability-hoch { color:#2e7d32; }
+    .reliability-mittel { color:#f9a825; }
+    .reliability-niedrig { color:#c62828; }
+    .reliability-neu { color:#757575; }
     @media (max-width: 960px) { .page-header { position:static; } label { width:100%; } input, select, textarea, button { width:100%; } button { justify-content:center; } table { min-width:800px; } .header-meta { width:100%; justify-content:flex-start; } .toolbar { flex-direction:column; align-items:flex-start; } }
   </style>
 </head>
@@ -200,6 +207,7 @@
                   <div class="controls" style="gap:0.65rem;">
                     <label style="min-width:220px;flex:1;">Spieler (Allianz oder Roster)
                       <input type="search" id="playerInput" list="playerOptions" placeholder="Name eingeben…" autocomplete="off">
+                      <div id="signup-player-reliability" class="reliability-preview muted-text"></div>
                     </label>
                     <label>Gruppe
                       <select id="groupInput">
@@ -238,6 +246,7 @@
                           <th>Spieler</th>
                           <th>Gruppe</th>
                           <th>Rolle</th>
+                          <th>Zuverlässigkeit</th>
                           <th>Aktion</th>
                         </tr>
                       </thead>
@@ -265,6 +274,7 @@
                     </label>
                     <label style="min-width:220px;">Spieler (Allianz oder Roster)
                       <input type="search" id="responsePlayerInput" list="playerOptions" placeholder="Name eingeben…" autocomplete="off">
+                      <div id="response-player-reliability" class="reliability-preview muted-text"></div>
                     </label>
                     <label style="flex:1;min-width:180px;">Notiz (optional)
                       <input type="text" id="responseNoteInput" placeholder="z.B. Absage via Discord">
@@ -358,8 +368,10 @@
         hardCountA: document.getElementById('hardCountA'),
         hardCountB: document.getElementById('hardCountB'),
         emptyState: document.getElementById('emptyState'),
+        signupPlayerReliability: document.getElementById('signup-player-reliability'),
         responseStatusInput: document.getElementById('responseStatusInput'),
         responsePlayerInput: document.getElementById('responsePlayerInput'),
+        responsePlayerReliability: document.getElementById('response-player-reliability'),
         responseNoteInput: document.getElementById('responseNoteInput'),
         addResponseBtn: document.getElementById('addResponseBtn'),
         responseBody: document.getElementById('responseBody'),
@@ -403,6 +415,60 @@
             if (adminIdx !== -1) return path.slice(0, adminIdx + 1);
             return path.endsWith('/') ? path : path.replace(/[^/]*$/, '/');
           });
+      const getPlayerReliability = (name) => {
+        if (!name) return null;
+        if (!window.dsroShared || typeof window.dsroShared.getPlayerReliability !== 'function') return null;
+        return window.dsroShared.getPlayerReliability(name);
+      };
+      function buildReliabilityBadge(stats) {
+        if (!window.dsroShared || typeof window.dsroShared.computeReliabilityBucket !== 'function') {
+          return '<span class="reliability-badge reliability-neu" title="Keine Zuverlässigkeitsdaten verfügbar.">● –</span>';
+        }
+        const bucketInfo = window.dsroShared.computeReliabilityBucket(stats);
+        const bucket = bucketInfo?.bucket || 'neu';
+        const label = bucketInfo?.label || 'neu';
+        const tooltip = bucketInfo?.tooltip || 'Keine Zuverlässigkeitsdaten verfügbar.';
+        const badgeClass = 'reliability-badge reliability-' + bucket;
+        return `<span class="${badgeClass}" title="${escapeHtml(tooltip)}">● ${escapeHtml(label)}</span>`;
+      }
+      function updatePlayerReliabilityPreview(rawName, mode) {
+        const container = mode === 'signup'
+          ? elements.signupPlayerReliability
+          : mode === 'response'
+            ? elements.responsePlayerReliability
+            : null;
+
+        if (!container) return;
+
+        const name = (rawName || '').trim();
+        if (!name) {
+          container.textContent = '';
+          container.title = '';
+          return;
+        }
+
+        if (!window.dsroShared || typeof window.dsroShared.getPlayerReliability !== 'function' || typeof window.dsroShared.computeReliabilityBucket !== 'function') {
+          container.textContent = 'Keine Zuverlässigkeitsdaten verfügbar.';
+          container.title = '';
+          return;
+        }
+
+        const stats = dsroShared.getPlayerReliability(name);
+        if (!stats) {
+          container.textContent = 'Keine Zuverlässigkeitsdaten seit reliability_start_date.';
+          container.title = '';
+          return;
+        }
+
+        const bucketInfo = dsroShared.computeReliabilityBucket(stats);
+        const badgeClass = 'reliability-badge reliability-' + bucketInfo.bucket;
+        container.innerHTML = `
+          <span class="${badgeClass}" title="${escapeHtml(bucketInfo.tooltip || '')}">● ${escapeHtml(bucketInfo.label || '')}</span>
+          <span class="reliability-details">
+            Events: ${stats.events ?? 0} · Attendance: ${stats.attendance ?? 0} · No-Shows: ${stats.noShows ?? 0} · Early: ${stats.earlyCancels ?? 0} · Late: ${stats.lateCancels ?? 0}
+          </span>
+        `;
+      }
       const url = new URL(location.href);
       const playerPrefillRaw = url.searchParams.get('player') || '';
       const playerPrefillCanon = canonicalNameJS(playerPrefillRaw);
@@ -1116,6 +1182,7 @@
         if (valueToUse) {
           elements.playerInput.value = valueToUse;
           if (elements.addPanel) elements.addPanel.classList.add('prefill-highlight');
+          updatePlayerReliabilityPreview(elements.playerInput.value, 'signup');
         }
       }
 
@@ -1225,6 +1292,11 @@
           roleSel.addEventListener('change', () => { row.Role = roleSel.value; updateSaveButtonState(); });
           roleTd.appendChild(roleSel);
           tr.appendChild(roleTd);
+
+          const reliabilityTd = document.createElement('td');
+          const reliabilityStats = getPlayerReliability(row.PlayerName);
+          reliabilityTd.innerHTML = buildReliabilityBadge(reliabilityStats);
+          tr.appendChild(reliabilityTd);
 
             const actionTd = document.createElement('td');
             const delBtn = document.createElement('button');
@@ -1599,12 +1671,20 @@
         elements.reloadBtn.addEventListener('click', reloadData);
         elements.saveBtn.addEventListener('click', saveChanges);
         elements.addBtn.addEventListener('click', addAssignment);
+        if (elements.playerInput) {
+          elements.playerInput.addEventListener('input', () => {
+            updatePlayerReliabilityPreview(elements.playerInput.value, 'signup');
+          });
+        }
         if (elements.addResponseBtn) elements.addResponseBtn.addEventListener('click', addResponse);
         if (elements.resetBtn) elements.resetBtn.addEventListener('click', resetPool);
         if (elements.adminKeyFallbackBtn) elements.adminKeyFallbackBtn.addEventListener('click', applyFallbackAdminKey);
         ['workerUrl','branch'].forEach(key => elements[key].addEventListener('change', persistSettings));
         elements.playerInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); addAssignment(); } });
         if (elements.responsePlayerInput) {
+          elements.responsePlayerInput.addEventListener('input', () => {
+            updatePlayerReliabilityPreview(elements.responsePlayerInput.value, 'response');
+          });
           elements.responsePlayerInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); addResponse(); } });
         }
         if (elements.hardOnlyToggle) {
