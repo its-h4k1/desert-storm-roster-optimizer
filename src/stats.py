@@ -79,6 +79,7 @@ def _prep(
     events: pd.DataFrame,
     *,
     alias_map: Optional[Dict[str, str]] = None,
+    prepared_alias_map: Optional[Dict[str, str]] = None,
     half_life_days: float = 90.0,
     reference_dt: Optional[datetime] = None,
     reliability_start_date: date | None = RELIABILITY_START_DATE,
@@ -98,7 +99,7 @@ def _prep(
             f"events benötigt Spalten {sorted(required)}, fehlen: {sorted(missing)}"
         )
 
-    am = prepare_alias_map(alias_map)
+    am = prepared_alias_map if prepared_alias_map is not None else prepare_alias_map(alias_map)
 
     df = events.copy()
 
@@ -431,9 +432,11 @@ def compute_player_reliability(
     anderen fließen in den events-Zähler ein.
     """
 
+    prepared_alias_map = prepare_alias_map(alias_map)
     df = _prep(
         events,
-        alias_map=alias_map,
+        alias_map=None,
+        prepared_alias_map=prepared_alias_map,
         half_life_days=half_life_days,
         reference_dt=reference_dt,
         reliability_start_date=reliability_start_date,
@@ -442,6 +445,14 @@ def compute_player_reliability(
     dfa = df[df["assigned"]].copy()
     if dfa.empty:
         return {}
+
+    relevant_event_ids = set(dfa["EventID"].unique())
+    seen_raw_names = set()
+    if not events.empty and "PlayerName" in events.columns:
+        seen_raw_names = {
+            str(name)
+            for name in events[events["EventID"].isin(relevant_event_ids)]["PlayerName"].dropna()
+        }
 
     stats: Dict[str, PlayerReliability] = {}
 
@@ -483,6 +494,27 @@ def compute_player_reliability(
             no_shows=no_shows,
             early_cancels=early_cancels,
             late_cancels=late_cancels,
+        )
+
+    normalized_from_raw = {
+        raw: _apply_alias_and_canon(raw, prepared_alias_map) for raw in seen_raw_names
+    }
+    seen_normalized_names = set(stats.keys())
+
+    ignored_raw = sorted({raw for raw, norm in normalized_from_raw.items() if not norm})
+    if ignored_raw:
+        print(
+            "[reliability] Ignored raw player names (after normalization empty/invalid): "
+            + ", ".join(ignored_raw)
+        )
+
+    missing_normalized = sorted(
+        {norm for norm in normalized_from_raw.values() if norm and norm not in seen_normalized_names}
+    )
+    if missing_normalized:
+        print(
+            "[reliability] Normalized player names missing from stats (filtered/role mismatch?): "
+            + ", ".join(missing_normalized)
         )
 
     return stats
