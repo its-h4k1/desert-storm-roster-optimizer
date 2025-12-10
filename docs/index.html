@@ -247,6 +247,9 @@
         if (!res.ok) throw new Error('latest.json HTTP ' + res.status);
         const data = await res.json();
         state.latestPayload = data;
+        if (window.dsroShared?.hydrateReliabilityFromPayload) {
+          window.dsroShared.hydrateReliabilityFromPayload(data);
+        }
         renderEvent(data.event || {});
         const counts = {
           teamAStart: data.team_a?.start?.length || 0,

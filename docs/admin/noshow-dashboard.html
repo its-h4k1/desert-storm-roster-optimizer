@@ -421,6 +421,9 @@
         .then(json => {
           state.players = Array.isArray(json.players) ? json.players : [];
           state.groups = json.groups || {};
+          if (window.dsroShared?.hydrateReliabilityFromPayload) {
+            window.dsroShared.hydrateReliabilityFromPayload(json);
+          }
           applyFilters();
         })
         .catch(err => {

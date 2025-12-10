@@ -1,4 +1,5 @@
 (function(global){
+  const shared = global.dsroShared || {};
   const ZERO_WIDTH_RE = /[\u200b\u200c\u200d\u200e\u200f\u2060\ufeff]/g;
   const HOMO_TRANSLATE = {
     "А":"A","В":"B","Е":"E","К":"K","М":"M","Н":"H","О":"O",
@@ -359,7 +360,183 @@
     };
   }
 
-  global.dsroShared = {
+  const RELIABILITY_WARN_ONCE = { missing: false };
+
+  function toNumberOrZero(value) {
+    const num = Number(value);
+    return Number.isFinite(num) ? num : 0;
+  }
+
+  function normalizeReliabilityEntry(rawStats) {
+    if (!rawStats || typeof rawStats !== "object") return null;
+    const normalized = {
+      events: toNumberOrZero(
+        rawStats.events
+        ?? rawStats.events_seen
+        ?? rawStats.assignments
+        ?? rawStats.event_count
+        ?? rawStats.total_events
+      ),
+      attendance: toNumberOrZero(
+        rawStats.attendance
+        ?? rawStats.shows
+        ?? rawStats.show_count
+        ?? rawStats.attended
+        ?? rawStats.attendance_count
+      ),
+      noShows: toNumberOrZero(
+        rawStats.noShows
+        ?? rawStats.no_shows
+        ?? rawStats.noshow
+        ?? rawStats.noshow_count
+        ?? rawStats.no_show_count
+        ?? rawStats.missed
+      ),
+      earlyCancels: toNumberOrZero(
+        rawStats.earlyCancels
+        ?? rawStats.early_cancels
+        ?? rawStats.cancel_early_count
+        ?? rawStats.early_cancel_count
+      ),
+      lateCancels: toNumberOrZero(
+        rawStats.lateCancels
+        ?? rawStats.late_cancels
+        ?? rawStats.cancel_late_count
+        ?? rawStats.late_cancel_count
+      ),
+    };
+    return normalized;
+  }
+
+  function buildReliabilityMap(payload) {
+    const result = {};
+    if (!payload || typeof payload !== "object") return result;
+
+    const candidateSources = [
+      payload.analysis?.reliability?.players,
+      payload.reliability?.players,
+      payload.players,
+      payload.player_reliability,
+    ];
+
+    let foundSource = null;
+    for (const src of candidateSources) {
+      if (src && (typeof src === "object" || Array.isArray(src))) {
+        foundSource = src;
+        break;
+      }
+    }
+
+    if (!foundSource) {
+      if (!RELIABILITY_WARN_ONCE.missing) {
+        console.warn("Keine Reliability-Daten in latest.json gefunden – playerReliability bleibt leer.");
+        RELIABILITY_WARN_ONCE.missing = true;
+      }
+      return result;
+    }
+
+    if (Array.isArray(foundSource)) {
+      foundSource.forEach((entry) => {
+        const name = entry?.display || entry?.name || entry?.canon || "";
+        const stats = normalizeReliabilityEntry(entry);
+        if (!name || !stats) return;
+        result[String(name)] = stats;
+      });
+    } else {
+      Object.entries(foundSource).forEach(([name, stats]) => {
+        const normalized = normalizeReliabilityEntry(stats);
+        if (!name || !normalized) return;
+        result[String(name)] = normalized;
+      });
+    }
+
+    return result;
+  }
+
+  function hydrateReliabilityFromPayload(payload) {
+    shared.latestPayload = payload || null;
+    shared.reliabilityStartDate = payload?.reliability_config?.reliability_start_date || null;
+    shared.playerReliability = buildReliabilityMap(payload);
+    return shared.playerReliability;
+  }
+
+  shared.playerReliability = shared.playerReliability || {};
+  shared.latestPayload = shared.latestPayload || null;
+  shared.reliabilityStartDate = shared.reliabilityStartDate || null;
+  shared.REL_MIN_EVENTS_FOR_BUCKET =
+    shared.REL_MIN_EVENTS_FOR_BUCKET == null ? 3 : shared.REL_MIN_EVENTS_FOR_BUCKET;
+  shared.REL_NO_SHOW_GREEN_MAX =
+    shared.REL_NO_SHOW_GREEN_MAX == null ? 0.15 : shared.REL_NO_SHOW_GREEN_MAX;
+  shared.REL_NO_SHOW_YELLOW_MAX =
+    shared.REL_NO_SHOW_YELLOW_MAX == null ? 0.35 : shared.REL_NO_SHOW_YELLOW_MAX;
+  shared.REL_LATE_CANCEL_GREEN_MAX =
+    shared.REL_LATE_CANCEL_GREEN_MAX == null ? 0.1 : shared.REL_LATE_CANCEL_GREEN_MAX;
+
+  shared.getPlayerReliability = function (name) {
+    if (!name) return null;
+    const trimmed = String(name).trim();
+    if (!trimmed) return null;
+    if (shared.playerReliability[trimmed]) {
+      return shared.playerReliability[trimmed];
+    }
+    const lower = trimmed.toLowerCase();
+    for (const key of Object.keys(shared.playerReliability)) {
+      if (key.toLowerCase() === lower) {
+        return shared.playerReliability[key];
+      }
+    }
+    return null;
+  };
+
+  shared.computeReliabilityBucket = function (stats) {
+    if (
+      !stats
+      || typeof stats.events !== "number"
+      || stats.events < shared.REL_MIN_EVENTS_FOR_BUCKET
+    ) {
+      return {
+        bucket: "neu",
+        label: "neu",
+        tooltip: "Noch zu wenig Daten seit reliability_start_date.",
+      };
+    }
+
+    const events = stats.events || 0;
+    const noShows = stats.noShows || 0;
+    const lateCancels = stats.lateCancels || 0;
+    const attendance = stats.attendance || 0;
+    const earlyCancels = stats.earlyCancels || 0;
+
+    const noShowRate = events > 0 ? noShows / events : 0;
+    const lateCancelRate = events > 0 ? lateCancels / events : 0;
+
+    if (
+      noShowRate <= shared.REL_NO_SHOW_GREEN_MAX
+      && lateCancelRate <= shared.REL_LATE_CANCEL_GREEN_MAX
+    ) {
+      return {
+        bucket: "hoch",
+        label: "hoch",
+        tooltip: `Events: ${events} · Attendance: ${attendance} · No-Shows: ${noShows} · Early: ${earlyCancels} · Late: ${lateCancels}`,
+      };
+    }
+
+    if (noShowRate <= shared.REL_NO_SHOW_YELLOW_MAX) {
+      return {
+        bucket: "mittel",
+        label: "mittel",
+        tooltip: `Events: ${events} · Attendance: ${attendance} · No-Shows: ${noShows} · Early: ${earlyCancels} · Late: ${lateCancels}`,
+      };
+    }
+
+    return {
+      bucket: "niedrig",
+      label: "niedrig",
+      tooltip: `Events: ${events} · Attendance: ${attendance} · No-Shows: ${noShows} · Early: ${earlyCancels} · Late: ${lateCancels}`,
+    };
+  };
+
+  Object.assign(shared, {
     canonicalNameJS,
     escapeHtml,
     computeSiteRoot,
@@ -380,5 +557,15 @@
     computeNextFriday,
     formatDsEventId,
     suggestDsEventIdForGroup,
-  };
+    hydrateReliabilityFromPayload,
+    playerReliability: shared.playerReliability,
+    latestPayload: shared.latestPayload,
+    reliabilityStartDate: shared.reliabilityStartDate,
+    REL_MIN_EVENTS_FOR_BUCKET: shared.REL_MIN_EVENTS_FOR_BUCKET,
+    REL_NO_SHOW_GREEN_MAX: shared.REL_NO_SHOW_GREEN_MAX,
+    REL_NO_SHOW_YELLOW_MAX: shared.REL_NO_SHOW_YELLOW_MAX,
+    REL_LATE_CANCEL_GREEN_MAX: shared.REL_LATE_CANCEL_GREEN_MAX,
+  });
+
+  global.dsroShared = shared;
 })(typeof window !== "undefined" ? window : globalThis);
