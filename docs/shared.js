@@ -639,6 +639,30 @@
     return results;
   };
 
+  // Helper für Admin-Seiten: baut Alias-Map, Spielerlisten und den Autocomplete-Index
+  // auf Basis eines Payload-Snapshots plus optionaler zusätzlicher Namensquellen.
+  // Gibt die finale Namensliste zurück.
+  shared.refreshAdminPlayerIndex = function ({ payload, additionalNames = [] } = {}) {
+    const sourcePayload = payload || shared.latestPayload || null;
+    if (shared.prepareAliasMapFromPayload) {
+      shared.prepareAliasMapFromPayload(sourcePayload);
+    }
+    const baseNames = shared.buildAllKnownPlayersForAdmin
+      ? shared.buildAllKnownPlayersForAdmin(sourcePayload)
+      : [];
+    const set = new Set(baseNames || []);
+    const addExtra = (raw) => {
+      const normalized = normalizePlayerName(raw || "");
+      if (normalized) set.add(normalized);
+    };
+    (additionalNames || []).forEach(addExtra);
+    shared.allKnownPlayersForAdmin = Array.from(set).sort((a, b) => a.localeCompare(b, "de", { sensitivity: "base" }));
+    if (shared.buildPlayerAutocompleteIndexForAdmin) {
+      shared.buildPlayerAutocompleteIndexForAdmin();
+    }
+    return shared.allKnownPlayersForAdmin;
+  };
+
   shared.debugPrintAdminAutocompleteState = function () {
     console.log("[dsroShared] allKnownPlayersForAdmin:", shared.allKnownPlayersForAdmin);
     console.log(
@@ -677,6 +701,7 @@
     buildAllKnownPlayersForAdmin,
     buildPlayerAutocompleteIndexForAdmin,
     queryPlayerNamesForAdmin,
+    refreshAdminPlayerIndex,
     debugPrintAdminAutocompleteState,
     debugTestAdminQuery,
     hydrateReliabilityFromPayload,
