@@ -1,7 +1,5 @@
 from datetime import date, datetime, timezone
 
-from datetime import date, datetime, timezone
-
 import pandas as pd
 
 from src.effective_signups import EffectiveSignupState
@@ -125,3 +123,93 @@ def test_compute_player_reliability_counts_cancels_and_shows():
     assert reliability["player b"] == PlayerReliability(
         events=2, attendance=0, no_shows=1, early_cancels=1, late_cancels=0
     )
+
+
+def test_reliability_normalizes_player_names_and_aggregates_variants():
+    cutoff = date(2024, 5, 1)
+    events = pd.DataFrame(
+        [
+            {
+                "EventID": "DS-2024-05-01-A",
+                "PlayerName": "Alstermaus",
+                "RoleAtRegistration": "Start",
+                "Teilgenommen": 1,
+            },
+            {
+                "EventID": "DS-2024-05-08-A",
+                "PlayerName": " Alstermaus ",
+                "RoleAtRegistration": "Start",
+                "Teilgenommen": 0,
+            },
+            {
+                "EventID": "DS-2024-05-15-A",
+                "PlayerName": "ALSTERMAUS",
+                "RoleAtRegistration": "Ersatz",
+                "Teilgenommen": 1,
+            },
+        ]
+    )
+
+    reliability = compute_player_reliability(
+        events, reliability_start_date=cutoff, reference_dt=datetime(2024, 6, 1, tzinfo=timezone.utc)
+    )
+
+    assert set(reliability.keys()) == {"alstermaus"}
+    assert reliability["alstermaus"] == PlayerReliability(
+        events=3, attendance=2, no_shows=1, early_cancels=0, late_cancels=0
+    )
+
+
+def test_reliability_excludes_players_before_start_date():
+    cutoff = date(2024, 5, 1)
+    events = pd.DataFrame(
+        [
+            {
+                "EventID": "DS-2024-04-15-A",
+                "PlayerName": "Old Timer",
+                "RoleAtRegistration": "Start",
+                "Teilgenommen": 1,
+            },
+            {
+                "EventID": "DS-2024-05-10-A",
+                "PlayerName": "New Timer",
+                "RoleAtRegistration": "Start",
+                "Teilgenommen": 1,
+            },
+        ]
+    )
+
+    reliability = compute_player_reliability(
+        events, reliability_start_date=cutoff, reference_dt=datetime(2024, 6, 1, tzinfo=timezone.utc)
+    )
+
+    assert set(reliability.keys()) == {"new timer"}
+
+
+def test_reliability_is_deterministic_with_same_inputs():
+    cutoff = date(2024, 5, 1)
+    events = pd.DataFrame(
+        [
+            {
+                "EventID": "DS-2024-05-10-A",
+                "PlayerName": "Repeatable",
+                "RoleAtRegistration": "Start",
+                "Teilgenommen": 1,
+            },
+            {
+                "EventID": "DS-2024-05-17-A",
+                "PlayerName": "Repeatable",
+                "RoleAtRegistration": "Start",
+                "Teilgenommen": 0,
+            },
+        ]
+    )
+
+    first_run = compute_player_reliability(
+        events, reliability_start_date=cutoff, reference_dt=datetime(2024, 6, 1, tzinfo=timezone.utc)
+    )
+    second_run = compute_player_reliability(
+        events, reliability_start_date=cutoff, reference_dt=datetime(2024, 6, 1, tzinfo=timezone.utc)
+    )
+
+    assert first_run == second_run
