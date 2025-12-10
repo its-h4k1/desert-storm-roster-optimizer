@@ -558,16 +558,35 @@
     return result;
   }
 
+  function refreshPlayerReliabilityIndex() {
+    const index = new Map();
+    const rel = shared.playerReliability || {};
+    const aliasMap = shared.aliasMap instanceof Map ? shared.aliasMap : null;
+
+    Object.entries(rel).forEach(([name, stats]) => {
+      const canon = canonicalNameJS(name || "");
+      if (!canon) return;
+      const resolved = aliasMap?.get(canon) || canon;
+      index.set(canon, stats);
+      index.set(resolved, stats);
+    });
+
+    shared.playerReliabilityCanonIndex = index;
+    return index;
+  }
+
   function hydrateReliabilityFromPayload(payload) {
     shared.latestPayload = payload || null;
     shared.reliabilityStartDate = payload?.reliability_config?.reliability_start_date || null;
     shared.playerReliability = buildReliabilityMap(payload);
+    refreshPlayerReliabilityIndex();
     return shared.playerReliability;
   }
 
   shared.playerReliability = shared.playerReliability || {};
   shared.latestPayload = shared.latestPayload || null;
   shared.aliasMap = shared.aliasMap || new Map();
+  shared.playerReliabilityCanonIndex = shared.playerReliabilityCanonIndex || new Map();
   shared.reliabilityStartDate = shared.reliabilityStartDate || null;
   shared.REL_MIN_EVENTS_FOR_BUCKET =
     shared.REL_MIN_EVENTS_FOR_BUCKET == null ? 3 : shared.REL_MIN_EVENTS_FOR_BUCKET;
@@ -580,6 +599,20 @@
 
   shared.getPlayerReliability = function (name) {
     if (!name) return null;
+
+    const canon = canonicalNameJS(name);
+    if (canon) {
+      const aliasMap = shared.aliasMap instanceof Map ? shared.aliasMap : null;
+      const resolvedCanon = aliasMap?.get(canon) || canon;
+      const index = shared.playerReliabilityCanonIndex instanceof Map
+        ? shared.playerReliabilityCanonIndex
+        : null;
+      if (index && index.size) {
+        if (index.has(resolvedCanon)) return index.get(resolvedCanon);
+        if (index.has(canon)) return index.get(canon);
+      }
+    }
+
     const trimmed = String(name).trim();
     if (!trimmed) return null;
     if (shared.playerReliability[trimmed]) {
@@ -656,6 +689,9 @@
       });
     }
     shared.aliasMap = map;
+    if (shared.refreshPlayerReliabilityIndex) {
+      shared.refreshPlayerReliabilityIndex();
+    }
     return map;
   };
 
@@ -845,6 +881,7 @@
     debugPrintAdminAutocompleteState,
     debugTestAdminQuery,
     hydrateReliabilityFromPayload,
+    refreshPlayerReliabilityIndex,
     playerReliability: shared.playerReliability,
     latestPayload: shared.latestPayload,
     allKnownPlayersForAdmin: shared.allKnownPlayersForAdmin,
