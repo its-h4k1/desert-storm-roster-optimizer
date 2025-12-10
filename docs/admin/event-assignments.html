@@ -206,7 +206,7 @@
                   <h2>Spieler hinzufügen</h2>
                   <div class="controls" style="gap:0.65rem;">
                     <label style="min-width:220px;flex:1;">Spieler (Allianz oder Roster)
-                      <input type="search" id="playerInput" list="playerOptions" placeholder="Name eingeben…" autocomplete="off">
+                      <input type="search" id="playerInput" placeholder="Name eingeben…" autocomplete="off">
                       <div id="signup-player-reliability" class="reliability-preview muted-text"></div>
                     </label>
                     <label>Gruppe
@@ -273,7 +273,7 @@
                       </select>
                     </label>
                     <label style="min-width:220px;">Spieler (Allianz oder Roster)
-                      <input type="search" id="responsePlayerInput" list="playerOptions" placeholder="Name eingeben…" autocomplete="off">
+                      <input type="search" id="responsePlayerInput" placeholder="Name eingeben…" autocomplete="off">
                       <div id="response-player-reliability" class="reliability-preview muted-text"></div>
                     </label>
                     <label style="flex:1;min-width:180px;">Notiz (optional)
@@ -342,8 +342,6 @@
     <div id="statusText" class="status-text">Noch keine Änderungen.</div>
   </div>
 
-  <datalist id="playerOptions"></datalist>
-
   <script src="../shared.js"></script>
   <script src="https://unpkg.com/papaparse@5.4.1/papaparse.min.js"></script>
   <script>
@@ -364,7 +362,6 @@
         reloadBtn: document.getElementById('reloadBtn'),
         saveBtn: document.getElementById('saveBtn'),
         playerInput: document.getElementById('playerInput'),
-        playerOptions: document.getElementById('playerOptions'),
         groupInput: document.getElementById('groupInput'),
         roleInput: document.getElementById('roleInput'),
         addBtn: document.getElementById('addBtn'),
@@ -1084,12 +1081,6 @@
         state.playerNames = Array.isArray(updated)
           ? updated.slice()
           : Array.from(new Set(additionalNames)).sort((a,b) => a.localeCompare(b, 'de', { sensitivity:'base' }));
-        elements.playerOptions.innerHTML = '';
-        state.playerNames.forEach(name => {
-          const opt = document.createElement('option');
-          opt.value = name;
-          elements.playerOptions.appendChild(opt);
-        });
         refreshAutocompletes();
       }
 
@@ -1242,9 +1233,8 @@
 
       function applyPlayerPrefill() {
         if (!playerPrefillCanon || !elements.playerInput) return;
-        const options = Array.from(elements.playerOptions?.children || []);
-        const match = options.find(opt => canonicalNameJS(opt.value || '') === playerPrefillCanon);
-        const valueToUse = (match && match.value) ? match.value : (playerPrefillRaw || '');
+        const match = (state.playerNames || []).find(name => canonicalNameJS(name || '') === playerPrefillCanon);
+        const valueToUse = match || playerPrefillRaw || '';
         if (valueToUse) {
           elements.playerInput.value = valueToUse;
           if (elements.addPanel) elements.addPanel.classList.add('prefill-highlight');
