@@ -227,7 +227,7 @@
   </div>
   <div class="admin-overlay"></div>
 
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js" integrity="sha512-9b7mAJauTSce+YhuaTic9YzQ0dTQyzhGYlNaKxaVGxBMcrFJuw6y3Cl7umAIcXPBkU4hz7PuYfctgEDaoMvf4g==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
   <script src="../shared.js"></script>
   <script src="admin.js"></script>
   <script>
@@ -294,13 +294,13 @@
       elements.statusText.style.color = tone === "error" ? "#991b1b" : tone === "ok" ? "#0f7b43" : "";
     }
 
-    function buildCandidatePaths(path) {
-      const clean = path.replace(/^\/+/, "");
-      const prefixes = ["../../", "../", "./", ""];
-      const candidates = prefixes.map(p => `${p}${clean}`.replace(/\/+g, "/"));
-      candidates.push(`https://raw.githubusercontent.com/${repoOwner}/${repoName}/${defaultBranch}/${clean}`);
-      return candidates;
-    }
+      function buildCandidatePaths(path) {
+        const clean = path.replace(/^\/+/, "");
+        const prefixes = ["../../", "../", "./", ""];
+        const candidates = prefixes.map(p => `${p}${clean}`.replace(/\/+/g, "/"));
+        candidates.push(`https://raw.githubusercontent.com/${repoOwner}/${repoName}/${defaultBranch}/${clean}`);
+        return candidates;
+      }
 
     async function fetchFirstAvailable(urls) {
       for (const url of urls) {
