@@ -720,32 +720,33 @@
   function buildAllKnownPlayersForAdmin(latestPayload) {
     const namesByCanon = new Map();
 
-    const addName = (raw) => {
+    const upsertName = (raw) => {
       const aliasKey = canonicalNameJS(raw || "");
       if (!aliasKey) return;
       const canonical = shared.aliasMap ? shared.aliasMap.get(aliasKey) || aliasKey : aliasKey;
       const normalized = normalizePlayerName(raw || "") || canonical;
-      if (!namesByCanon.has(canonical)) {
+      const existing = namesByCanon.get(canonical);
+      if (!existing || existing === canonical) {
         namesByCanon.set(canonical, normalized);
       }
     };
 
     const addFromObjectKeys = (obj) => {
       if (!obj || typeof obj !== "object") return;
-      Object.keys(obj).forEach(addName);
+      Object.keys(obj).forEach(upsertName);
     };
 
     const addFromArray = (arr, pickers = []) => {
       if (!Array.isArray(arr)) return;
       arr.forEach((item) => {
         if (typeof item === "string") {
-          addName(item);
+          upsertName(item);
           return;
         }
         pickers.forEach((fn) => {
           if (typeof fn !== "function") return;
           const candidate = fn(item);
-          if (candidate) addName(candidate);
+          if (candidate) upsertName(candidate);
         });
       });
     };
@@ -797,14 +798,20 @@
       addFromArray(latestPayload?.event_responses?.removed_from_pool, [(entry) => entry?.player || entry]);
     }
 
-    shared.allKnownPlayersForAdmin = Array.from(namesByCanon.values())
-      .sort((a, b) => a.localeCompare(b, "de", { sensitivity: "base" }));
+    const sortedEntries = Array.from(namesByCanon.entries())
+      .sort((a, b) => a[1].localeCompare(b[1], "de", { sensitivity: "base" }));
+    shared.adminPlayerNameByCanon = new Map(sortedEntries);
+    shared.allKnownPlayersForAdmin = sortedEntries.map(([, name]) => name);
     return shared.allKnownPlayersForAdmin;
   }
 
   function buildPlayerAutocompleteIndexForAdmin() {
-    const names = shared.allKnownPlayersForAdmin || [];
-    const index = names.map((name) => ({ name, lc: name.toLowerCase(), canon: canonicalNameJS(name) }));
+    const entries = shared.adminPlayerNameByCanon
+      ? Array.from(shared.adminPlayerNameByCanon.entries())
+      : (shared.allKnownPlayersForAdmin || []).map((name) => [canonicalNameJS(name), name]);
+    const index = entries
+      .filter((entry) => entry[0])
+      .map(([canon, name]) => ({ name, canon, lc: name.toLowerCase() }));
     shared.playerNameIndexForAdmin = index;
     return index;
   }
@@ -837,16 +844,27 @@
     if (shared.prepareAliasMapFromPayload) {
       shared.prepareAliasMapFromPayload(sourcePayload);
     }
-    const baseNames = shared.buildAllKnownPlayersForAdmin
-      ? shared.buildAllKnownPlayersForAdmin(sourcePayload)
-      : [];
-    const set = new Set(baseNames || []);
+    if (shared.buildAllKnownPlayersForAdmin) {
+      shared.buildAllKnownPlayersForAdmin(sourcePayload);
+    }
+
+    const namesByCanon = new Map(shared.adminPlayerNameByCanon || []);
     const addExtra = (raw) => {
       const normalized = normalizePlayerName(raw || "");
-      if (normalized) set.add(normalized);
+      const aliasKey = canonicalNameJS(normalized);
+      if (!aliasKey) return;
+      const canonical = shared.aliasMap ? shared.aliasMap.get(aliasKey) || aliasKey : aliasKey;
+      const existing = namesByCanon.get(canonical);
+      if (!existing || existing === canonical) {
+        namesByCanon.set(canonical, normalized || canonical);
+      }
     };
     (additionalNames || []).forEach(addExtra);
-    shared.allKnownPlayersForAdmin = Array.from(set).sort((a, b) => a.localeCompare(b, "de", { sensitivity: "base" }));
+
+    const sortedEntries = Array.from(namesByCanon.entries())
+      .sort((a, b) => a[1].localeCompare(b[1], "de", { sensitivity: "base" }));
+    shared.adminPlayerNameByCanon = new Map(sortedEntries);
+    shared.allKnownPlayersForAdmin = sortedEntries.map(([, name]) => name);
     if (shared.buildPlayerAutocompleteIndexForAdmin) {
       shared.buildPlayerAutocompleteIndexForAdmin();
     }
@@ -915,6 +933,7 @@
     playerReliability: shared.playerReliability,
     latestPayload: shared.latestPayload,
     allKnownPlayersForAdmin: shared.allKnownPlayersForAdmin,
+    adminPlayerNameByCanon: shared.adminPlayerNameByCanon,
     playerNameIndexForAdmin: shared.playerNameIndexForAdmin,
     aliasMap: shared.aliasMap,
     reliabilityStartDate: shared.reliabilityStartDate,
