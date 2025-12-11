@@ -2,22 +2,29 @@
   global.dsroShared = global.dsroShared || {};
   const shared = global.dsroShared;
   const ZERO_WIDTH_RE = /[\u200b\u200c\u200d\u200e\u200f\u2060\ufeff]/g;
+  const COMBINING_DOT_ABOVE_RE = /\u0307/g;
   const HOMO_TRANSLATE = {
     "А":"A","В":"B","Е":"E","К":"K","М":"M","Н":"H","О":"O",
     "Р":"P","С":"S","Т":"T","Х":"X","І":"I","Ј":"J","У":"Y",
     "а":"a","е":"e","о":"o","р":"p","с":"s","х":"x","у":"y",
     "к":"k","м":"m","т":"t","н":"h","і":"i","ј":"j","ѵ":"y",
+    "İ":"I","ı":"i",
   };
 
   function canonicalNameJS(value) {
     if (value == null) return "";
     let s = String(value);
     if (typeof s.normalize === "function") {
-      s = s.normalize("NFKC");
+      s = s.normalize("NFKD");
     }
     s = s.replace(ZERO_WIDTH_RE, "");
     s = s.split("").map(ch => HOMO_TRANSLATE[ch] || ch).join("");
-    s = s.toLowerCase();
+    s = s.replace(COMBINING_DOT_ABOVE_RE, "");
+    s = s.toLocaleLowerCase("en-US");
+    s = s.replace(COMBINING_DOT_ABOVE_RE, "");
+    if (typeof s.normalize === "function") {
+      s = s.normalize("NFKC");
+    }
     s = s.trim().replace(/\s+/g, " ");
     return s;
   }
