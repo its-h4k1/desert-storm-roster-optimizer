@@ -288,6 +288,16 @@
       }
     }
 
+    function setCurrentName(group, nextName) {
+      const next = normalizePlayerName(nextName);
+      if (!group || !next || next === group.currentName) return false;
+      const previous = group.currentName;
+      if (previous) group.aliases.add(previous);
+      group.aliases.delete(next);
+      group.currentName = next;
+      return true;
+    }
+
     function normalizeLineEndings(text) { return (text || "").replace(/\r\n/g, "\n").replace(/\r/g, "\n"); }
     function ensureTrailingNewline(text) { if (!text) return "\n"; return /\n$/.test(text) ? text : text + "\n"; }
     function formatCsvValue(value) {
@@ -468,14 +478,8 @@
         input.addEventListener("keydown", (ev) => {
           if (ev.key === "Enter") {
             ev.preventDefault();
-            const next = normalizePlayerName(input.value);
-            if (next && next !== group.currentName) {
-              group.aliases.add(group.currentName);
-              group.currentName = next;
-              renderGroups();
-            } else {
-              renderGroups();
-            }
+            if (setCurrentName(group, input.value)) renderGroups();
+            else renderGroups();
           } else if (ev.key === "Escape") {
             ev.preventDefault();
             renderGroups();
@@ -522,11 +526,7 @@
         starBtn.title = "Als aktuellen Namen setzen";
         starBtn.textContent = "⭐";
         starBtn.addEventListener("click", () => {
-          if (group.canonicalLabel) {
-            group.aliases.add(group.currentName);
-            group.currentName = group.canonicalLabel;
-            renderGroups();
-          }
+          if (group.canonicalLabel && setCurrentName(group, group.canonicalLabel)) renderGroups();
         });
 
         actions.appendChild(editBtn);
@@ -590,6 +590,12 @@
             const chip = document.createElement("span");
             chip.className = "chip";
             chip.textContent = alias;
+            const promoteBtn = document.createElement("button");
+            promoteBtn.title = "Als Hauptnamen setzen";
+            promoteBtn.textContent = "⭐";
+            promoteBtn.addEventListener("click", () => {
+              if (setCurrentName(group, alias)) renderGroups();
+            });
             const removeBtn = document.createElement("button");
             removeBtn.title = "Alias entfernen";
             removeBtn.textContent = "✕";
@@ -597,6 +603,7 @@
               group.aliases.delete(alias);
               renderGroups();
             });
+            chip.appendChild(promoteBtn);
             chip.appendChild(removeBtn);
             chip.addEventListener("dblclick", () => moveAlias(alias, group.canonicalKey));
             chips.appendChild(chip);
