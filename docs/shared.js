@@ -526,9 +526,17 @@
 
     let foundSource = null;
     for (const src of candidateSources) {
-      if (src && (typeof src === "object" || Array.isArray(src))) {
+      if (!src || (typeof src !== "object" && !Array.isArray(src))) continue;
+
+      const hasEntries = Array.isArray(src) ? src.length > 0 : Object.keys(src).length > 0;
+
+      if (hasEntries) {
         foundSource = src;
         break;
+      }
+
+      if (!foundSource) {
+        foundSource = src;
       }
     }
 
