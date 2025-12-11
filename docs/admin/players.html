@@ -786,18 +786,30 @@
       renderGroups();
     }
 
+    function deriveAllianceRows() {
+      const rows = [];
+      state.groups.forEach(group => {
+        group.rows.forEach(row => {
+          const clone = { ...row };
+          clone[state.playerNameField] = group.currentName;
+          clone.currentName = group.currentName;
+          clone.canonicalKey = group.canonicalKey;
+          rows.push(clone);
+        });
+      });
+      return rows;
+    }
+
     function buildAllianceCsv() {
-      return buildCsvFromRows(state.playerHeaders, state.allianceRows.map(row => {
-        const match = state.groups.get(row.canonicalKey);
-        const clone = { ...row };
-        if (match) clone[state.playerNameField] = match.currentName;
-        return clone;
-      }));
+      const derived = deriveAllianceRows();
+      state.allianceRows = derived;
+      return buildCsvFromRows(state.playerHeaders, derived);
     }
 
     function buildAliasCsv() {
       const headers = state.aliasHeaders && state.aliasHeaders.length ? state.aliasHeaders : [state.aliasCanonicalField, state.aliasAliasField];
       const rows = [];
+      const nextAliasRows = [];
       state.groups.forEach(group => {
         const canon = group.canonicalLabel || group.currentName || group.canonicalKey;
         const ensureAlias = (alias) => {
@@ -806,6 +818,7 @@
           row[state.aliasCanonicalField] = canon;
           row[state.aliasAliasField] = alias;
           rows.push(row);
+          nextAliasRows.push({ canonical: canon, alias });
         };
         const allAliases = new Set(group.aliases);
         if (canonicalNameJS(group.currentName) !== group.canonicalKey) {
@@ -813,6 +826,7 @@
         }
         allAliases.forEach(ensureAlias);
       });
+      state.aliasRows = nextAliasRows;
       return buildCsvFromRows(headers, rows);
     }
 
