@@ -560,7 +560,10 @@
                   <div id="aliasTabPanel" class="tab-panel">
                     <div style="display:flex;align-items:center;gap:0.75rem;flex-wrap:wrap;">
                       <strong style="flex:1">Aliase</strong>
-                      <button id="addAliasBtn" class="ghost" style="border:1px dashed rgba(15,23,42,0.3);">Alias hinzufügen</button>
+                      <div style="display:flex;gap:0.5rem;flex-wrap:wrap;align-items:center;">
+                        <input id="aliasInput" type="text" placeholder="Alias eingeben…" style="min-width:180px;">
+                        <button id="addAliasBtn" class="ghost" style="border:1px dashed rgba(15,23,42,0.3);">Alias hinzufügen</button>
+                      </div>
                     </div>
                     <div class="table-wrapper" style="border:none;box-shadow:none;">
                       <table>
@@ -636,6 +639,7 @@
         emptyDetails: document.getElementById("emptyDetails"),
         detailsContent: document.getElementById("detailsContent"),
         detailName: document.getElementById("detailName"),
+        aliasInput: document.getElementById("aliasInput"),
         aliasBody: document.getElementById("aliasBody"),
         aliasEmpty: document.getElementById("aliasEmpty"),
         aliasCount: document.getElementById("aliasCount"),
@@ -686,6 +690,9 @@
       const repoName = "desert-storm-roster-optimizer";
       const defaultBranch = "main";
       const SETTINGS_KEY = "dsro-player-admin-settings";
+      const canonicalNameJS = (dsroShared && typeof dsroShared.canonicalNameJS === "function")
+        ? dsroShared.canonicalNameJS
+        : (value => (value == null ? "" : String(value).trim().toLowerCase()));
       const getAdminKey = () => dsroShared.getAdminKey();
 
       // Diese Spalten kodieren das Allianz-Membership-Flag (InAlliance==1 bedeutet "im Roster").
@@ -700,38 +707,6 @@
       const ALLIANCE_MEMBERSHIP_HINT = "Wenn deaktiviert, gilt der Spieler als ausgetreten und wird im Roster ignoriert.";
       const DEFAULT_ABSENCE_HEADERS = ["PlayerName", "From", "To", "Reason", "InAlliance"];
       const ABSENCES_READ_ONLY = true;
-      const ZERO_WIDTH_REGEX = /[\u200B-\u200F\u2060\uFEFF]/g;
-      const HOMOGLYPH_MAP = {
-        "А": "A",
-        "В": "B",
-        "Е": "E",
-        "К": "K",
-        "М": "M",
-        "Н": "H",
-        "О": "O",
-        "Р": "P",
-        "С": "S",
-        "Т": "T",
-        "Х": "X",
-        "І": "I",
-        "Ј": "J",
-        "У": "Y",
-        "а": "a",
-        "е": "e",
-        "о": "o",
-        "р": "p",
-        "с": "s",
-        "х": "x",
-        "у": "y",
-        "к": "k",
-        "м": "m",
-        "т": "t",
-        "н": "h",
-        "і": "i",
-        "ј": "j",
-        "ѵ": "y",
-      };
-      const HOMOGLYPH_REGEX = new RegExp(`[${Object.keys(HOMOGLYPH_MAP).join("")}]`, "g");
 
       function isAllianceMembershipField(field) {
         return ALLIANCE_MEMBERSHIP_COLUMNS.includes(field);
@@ -898,20 +873,7 @@
       }
 
       function normalizePlayerKey(value) {
-        if (value === undefined || value === null) return "";
-        let text = value.toString();
-        if (typeof text.normalize === "function") {
-          try {
-            text = text.normalize("NFKC");
-          } catch (err) {
-            console.warn("Unicode-Normalisierung nicht möglich", err);
-          }
-        }
-        text = text.replace(ZERO_WIDTH_REGEX, "");
-        text = text.replace(HOMOGLYPH_REGEX, ch => HOMOGLYPH_MAP[ch] || ch);
-        text = text.toLowerCase();
-        text = text.replace(/\s+/g, " ").trim();
-        return text;
+        return canonicalNameJS(value);
       }
 
       async function fetchFirstAvailable(urls) {
@@ -931,10 +893,38 @@
       function buildCandidatePaths(path) {
         const cleanPath = path.replace(/^\/+/, "");
         const prefixes = ["../../", "../", "./", ""];
-        const candidates = prefixes.map(prefix => `${prefix}${cleanPath}`.replace(/\/+/g, "/"));
+        const candidates = prefixes.map(prefix => `${prefix}${cleanPath}`.replace(/\/+g, "/"));
         const rawUrl = `https://raw.githubusercontent.com/${repoOwner}/${repoName}/${defaultBranch}/${cleanPath}`;
         candidates.push(rawUrl);
         return candidates;
+      }
+
+      function mergePlayerRows(targetRow, sourceRow) {
+        state.playerHeaders.forEach((header) => {
+          const sourceVal = sourceRow[header];
+          const targetVal = targetRow[header];
+
+          if (isAllianceMembershipField(header)) {
+            const normalized = (sourceVal ?? "").toString().trim();
+            const isActive = normalized && normalized !== "0" && normalized.toLowerCase() !== "false";
+            if (isActive) {
+              targetRow[header] = normalized;
+            }
+            return;
+          }
+
+          const targetEmpty = targetVal === undefined || targetVal === null || targetVal === "";
+          const hasSource = sourceVal !== undefined && sourceVal !== null && sourceVal !== "";
+          if (targetEmpty && hasSource) {
+            targetRow[header] = sourceVal;
+          }
+        });
+      }
+
+      function resolveCanonicalDisplayName(canonicalKey, fallback) {
+        const match = state.players.find(player => player.canonicalKey === canonicalKey);
+        if (match) return match.canonical;
+        return fallback || "";
       }
 
       async function loadAlliance() {
@@ -946,18 +936,27 @@
         state.playerHeaders = parsed.meta.fields || [];
         state.playerNameField = detectNameField(state.playerHeaders);
         state.statusFields = state.playerHeaders.filter(header => ALLIANCE_MEMBERSHIP_COLUMNS.includes(header));
-        state.players = (parsed.data || [])
-          .map((row, index) => {
-            const safeRow = { ...row };
-            const canonical = (safeRow[state.playerNameField] || "").toString().trim();
-            if (!canonical) return null;
-            return {
-              id: index,
-              canonical,
-              rawRow: safeRow,
-            };
-          })
-          .filter(Boolean);
+        const playersByCanon = new Map();
+        (parsed.data || []).forEach((row) => {
+          const safeRow = { ...row };
+          const canonical = (safeRow[state.playerNameField] || "").toString().trim();
+          const canonicalKey = normalizePlayerKey(canonical);
+          if (!canonicalKey) return;
+          const existing = playersByCanon.get(canonicalKey);
+          if (existing) {
+            mergePlayerRows(existing.rawRow, safeRow);
+            return;
+          }
+          playersByCanon.set(canonicalKey, {
+            canonical: canonical || safeRow[state.playerNameField],
+            canonicalKey,
+            rawRow: safeRow,
+          });
+        });
+        state.players = Array.from(playersByCanon.values()).map((player, index) => ({
+          id: index,
+          ...player,
+        }));
         if (state.players.length) {
           state.selectedPlayerId = state.players[0].id;
         } else {
@@ -975,20 +974,30 @@
           state.aliasHeaders = parsed.meta.fields && parsed.meta.fields.length ? parsed.meta.fields : ["Canonical", "Alias"];
           state.aliasCanonicalField = detectAliasField(state.aliasHeaders, ["Canonical", "PlayerName", "Name"]);
           state.aliasAliasField = detectAliasField(state.aliasHeaders, ["Alias", "DisplayName"]);
-          state.aliases = (parsed.data || [])
-            .map((row, index) => {
-              const safeRow = { ...row };
-              const canonical = (safeRow[state.aliasCanonicalField] || "").toString().trim();
-              const alias = (safeRow[state.aliasAliasField] || "").toString().trim();
-              if (!canonical || !alias) return null;
-              return {
+          const aliasMap = new Map();
+          (parsed.data || []).forEach((row, index) => {
+            const safeRow = { ...row };
+            const canonicalRaw = (safeRow[state.aliasCanonicalField] || "").toString().trim();
+            const aliasRaw = (safeRow[state.aliasAliasField] || "").toString().trim();
+            const canonicalKey = normalizePlayerKey(canonicalRaw);
+            const aliasKey = normalizePlayerKey(aliasRaw);
+            if (!canonicalKey || !aliasKey) return;
+            const canonical = resolveCanonicalDisplayName(canonicalKey, canonicalRaw);
+            safeRow[state.aliasCanonicalField] = canonical;
+            safeRow[state.aliasAliasField] = aliasRaw;
+            const dedupeKey = `${canonicalKey}::${aliasKey}`;
+            if (!aliasMap.has(dedupeKey)) {
+              aliasMap.set(dedupeKey, {
                 id: index,
                 canonical,
-                alias,
+                canonicalKey,
+                alias: aliasRaw,
+                aliasKey,
                 rawRow: safeRow,
-              };
-            })
-            .filter(Boolean);
+              });
+            }
+          });
+          state.aliases = Array.from(aliasMap.values());
         } catch (err) {
           console.warn("Aliases konnten nicht geladen werden, starte neu", err);
           state.aliasHeaders = ["Canonical", "Alias"];
@@ -1075,12 +1084,14 @@
       }
 
       function getFilteredPlayers() {
-        const query = elements.playerSearch.value.trim().toLowerCase();
+        const rawQuery = elements.playerSearch.value.trim();
+        const query = rawQuery.toLowerCase();
+        const queryCanon = normalizePlayerKey(rawQuery);
         return state.players
           .map(player => ({ ...player }))
           .filter(player => {
             if (!query) return true;
-            return player.canonical.toLowerCase().includes(query);
+            return player.canonical.toLowerCase().includes(query) || (queryCanon && player.canonicalKey.includes(queryCanon));
           })
           .sort((a, b) => a.canonical.localeCompare(b.canonical, "de", { sensitivity: "base" }));
       }
@@ -1199,7 +1210,7 @@
       function renderAliasTable(player) {
         const tbody = elements.aliasBody;
         tbody.innerHTML = "";
-        const rows = state.aliases.filter(alias => alias.canonical === player.canonical);
+        const rows = state.aliases.filter(alias => alias.canonicalKey === player.canonicalKey);
         elements.aliasCount.textContent = `${rows.length} Alias${rows.length === 1 ? "" : "e"}`;
         if (!rows.length) {
           elements.aliasEmpty.style.display = "block";
@@ -1527,23 +1538,32 @@
       }
 
       function canonicalExists(name, ignoreId) {
-        const norm = name.toLowerCase();
-        return state.players.some(player => player.id !== ignoreId && player.canonical.toLowerCase() === norm);
+        const key = normalizePlayerKey(name);
+        if (!key) return false;
+        return state.players.some(player => player.id !== ignoreId && player.canonicalKey === key);
       }
 
       function aliasExists(name) {
-        const norm = name.toLowerCase();
-        return state.aliases.some(alias => alias.alias.toLowerCase() === norm);
+        const key = normalizePlayerKey(name);
+        if (!key) return false;
+        return state.aliases.some(alias => alias.aliasKey === key);
       }
 
       function addAlias() {
         const player = getSelectedPlayer();
         if (!player) return;
-        const value = window.prompt(`Neuen Alias für ${player.canonical} eingeben:`);
-        if (!value) return;
+        const value = (elements.aliasInput?.value || "").trim();
+        if (!value) {
+          setStatus("Alias-Feld ist leer.", "warn");
+          return;
+        }
         const trimmed = value.trim();
-        if (!trimmed) return;
-        if (canonicalExists(trimmed, player.id) || aliasExists(trimmed)) {
+        const aliasKey = normalizePlayerKey(trimmed);
+        if (!aliasKey) {
+          setStatus("Alias konnte nicht normalisiert werden.", "error");
+          return;
+        }
+        if (aliasKey === player.canonicalKey || canonicalExists(trimmed, player.id) || aliasExists(trimmed)) {
           setStatus("Alias bereits vorhanden.", "error");
           return;
         }
@@ -1556,10 +1576,15 @@
         const alias = {
           id: Date.now(),
           canonical: player.canonical,
+          canonicalKey: player.canonicalKey,
           alias: trimmed,
+          aliasKey,
           rawRow: newRow,
         };
         state.aliases.push(alias);
+        if (elements.aliasInput) {
+          elements.aliasInput.value = "";
+        }
         renderDetails();
         updateSaveButtonState();
         setStatus("Alias hinzugefügt. Speichern nicht vergessen.", "warn");
@@ -1582,16 +1607,18 @@
           return;
         }
         const oldName = player.canonical;
+        const oldKey = player.canonicalKey || normalizePlayerKey(oldName);
+        const newKey = normalizePlayerKey(newName);
         player.canonical = newName;
+        player.canonicalKey = newKey;
         player.rawRow[state.playerNameField] = newName;
         state.aliases.forEach(alias => {
-          if (alias.canonical === oldName) {
+          if (alias.canonicalKey === oldKey || normalizePlayerKey(alias.canonical) === normalizePlayerKey(oldName)) {
             alias.canonical = newName;
+            alias.canonicalKey = newKey;
             alias.rawRow[state.aliasCanonicalField] = newName;
           }
         });
-        const oldKey = normalizePlayerKey(oldName);
-        const newKey = normalizePlayerKey(newName);
         state.absences.forEach(absence => {
           if (absence.canonicalKey === oldKey) {
             absence.playerName = newName;
@@ -1740,6 +1767,14 @@
           renderPlayerTable();
         });
         elements.renameBtn.addEventListener("click", () => applyPlayerRename());
+        if (elements.aliasInput) {
+          elements.aliasInput.addEventListener("keydown", (event) => {
+            if (event.key === "Enter") {
+              event.preventDefault();
+              addAlias();
+            }
+          });
+        }
         elements.addAliasBtn.addEventListener("click", () => addAlias());
         if (elements.addAbsenceBtn) {
           elements.addAbsenceBtn.addEventListener("click", () => addAbsenceForSelectedPlayer());
