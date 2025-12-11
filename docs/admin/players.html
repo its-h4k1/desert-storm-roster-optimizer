@@ -37,12 +37,8 @@
 
     .page-header h2 { margin: 0; }
 
-    .controls {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 0.6rem;
-      align-items: center;
-    }
+    .controls { display: grid; gap: 0.75rem; }
+    .controls .control-row { display: flex; flex-wrap: wrap; gap: 0.6rem; align-items: center; }
 
     label {
       display: flex;
@@ -95,6 +91,9 @@
       border: 1px dashed var(--border);
       border-radius: 0.55rem;
     }
+
+    .autocomplete-menu { display: flex; flex-wrap: wrap; gap: 0.35rem; padding: 0.35rem; }
+    .autocomplete-item { flex: 0 0 auto; }
 
     .status { display: flex; gap: 0.5rem; align-items: center; color: var(--muted); }
     .status .badge { padding: 0.2rem 0.5rem; border-radius: 0.5rem; background: rgba(15, 23, 42, 0.08); font-weight: 600; }
@@ -198,17 +197,22 @@
               <p style="margin:0;color:var(--muted)">Pflegt <code>data/alliance.csv</code> und <code>data/aliases.csv</code> mit stabilen kanonischen IDs.</p>
             </div>
             <div class="controls">
-              <label>Worker URL
-                <input id="workerUrl" type="text" value="https://ds-commit.hak1.workers.dev/write-file" spellcheck="false">
-              </label>
-              <label>Branch
-                <input id="branchInput" type="text" value="main" spellcheck="false">
-              </label>
-              <label>Suche
-                <input id="searchInput" type="search" placeholder="Spieler oder Alias…" autocomplete="off">
-              </label>
-              <button id="reloadBtn" class="ghost">Neu laden</button>
-              <button id="saveBtn" class="primary">Speichern</button>
+              <div class="control-row">
+                <label style="flex:1;min-width:260px;">Spieler suchen
+                  <input id="searchInput" type="search" placeholder="Name oder ID…" autocomplete="off">
+                </label>
+                <button id="showAllToggle" class="ghost" type="button">Alle Spieler anzeigen</button>
+              </div>
+              <div class="control-row">
+                <label>Worker URL
+                  <input id="workerUrl" type="text" value="https://ds-commit.hak1.workers.dev/write-file" spellcheck="false">
+                </label>
+                <label>Branch
+                  <input id="branchInput" type="text" value="main" spellcheck="false">
+                </label>
+                <button id="reloadBtn" class="ghost">Neu laden</button>
+                <button id="saveBtn" class="primary">Speichern</button>
+              </div>
             </div>
             <div class="status" id="statusBar">
               <span class="badge">Status</span>
@@ -256,6 +260,8 @@
       originalAliasesCsv: "",
       loading: false,
       saving: false,
+      showAllPlayers: false,
+      highlightedKey: "",
     };
 
     const elements = {
@@ -264,10 +270,23 @@
       workerUrl: document.getElementById("workerUrl"),
       branchInput: document.getElementById("branchInput"),
       searchInput: document.getElementById("searchInput"),
+      showAllToggle: document.getElementById("showAllToggle"),
       reloadBtn: document.getElementById("reloadBtn"),
       saveBtn: document.getElementById("saveBtn"),
       statusText: document.getElementById("statusText"),
     };
+
+    function buildNameIndex() {
+      const names = [];
+      state.groups.forEach(group => {
+        if (group.currentName) names.push(group.currentName);
+        if (group.canonicalLabel) names.push(group.canonicalLabel);
+        group.aliases.forEach(a => names.push(a));
+      });
+      if (window.dsroShared?.refreshAdminPlayerIndex) {
+        window.dsroShared.refreshAdminPlayerIndex({ additionalNames: names });
+      }
+    }
 
     function normalizeLineEndings(text) { return (text || "").replace(/\r\n/g, "\n").replace(/\r/g, "\n"); }
     function ensureTrailingNewline(text) { if (!text) return "\n"; return /\n$/.test(text) ? text : text + "\n"; }
@@ -421,15 +440,24 @@
       const duplicateMap = new Map();
       duplicates.forEach(item => item.groups.forEach(g => duplicateMap.set(g.canonicalKey, item)));
 
-      const groups = Array.from(state.groups.values()).filter(g => {
-        if (!query) return true;
-        const haystack = [g.currentName, g.canonicalLabel, ...Array.from(g.aliases)];
-        return haystack.some(name => name.toLowerCase().includes(query.toLowerCase()) || canonicalNameJS(name) === queryCanon);
+      const hasQuery = Boolean(query);
+      const allGroups = Array.from(state.groups.values());
+      const filtered = allGroups.filter(g => {
+        const hasAlias = g.aliases.size > 0;
+        const matchesQuery = hasQuery && ([g.currentName, g.canonicalLabel, g.canonicalKey, ...Array.from(g.aliases)]
+          .some(name => {
+            if (!name) return false;
+            const canon = canonicalNameJS(name);
+            return name.toLowerCase().includes(query.toLowerCase()) || canon === queryCanon;
+          }));
+        const spotlight = state.highlightedKey && state.highlightedKey === g.canonicalKey;
+        if (state.showAllPlayers) return true;
+        return hasAlias || matchesQuery || spotlight;
       }).sort((a, b) => a.currentName.localeCompare(b.currentName, "de", { sensitivity: "base" }));
 
       elements.groupList.innerHTML = "";
-      elements.groupEmpty.classList.toggle("hidden", groups.length > 0);
-      if (!groups.length) return;
+      elements.groupEmpty.classList.toggle("hidden", filtered.length > 0);
+      if (!filtered.length) return;
 
       const makeInlineEdit = (group, container) => {
         container.innerHTML = "";
@@ -458,7 +486,7 @@
         input.focus();
       };
 
-      groups.forEach(group => {
+      filtered.forEach(group => {
         const row = document.createElement("div");
         row.className = "group-row";
 
@@ -594,6 +622,7 @@
 
         elements.groupList.appendChild(row);
       });
+      buildNameIndex();
     }
 
     function moveAlias(alias, fromKey) {
@@ -627,6 +656,111 @@
         if (involved.length > 1) suggestions.push({ norm, groups: involved });
       });
       return suggestions;
+    }
+
+    function resolveGroupByQuery(rawQuery) {
+      const query = (rawQuery || "").trim();
+      if (!query) return null;
+      const canon = canonicalNameJS(query);
+      const lc = query.toLowerCase();
+      return Array.from(state.groups.values()).find(g => {
+        if (g.canonicalKey === query || g.canonicalKey === canon) return true;
+        const names = [g.currentName, g.canonicalLabel, ...Array.from(g.aliases)];
+        return names.some(name => {
+          if (!name) return false;
+          return canonicalNameJS(name) === canon || name.toLowerCase().includes(lc);
+        });
+      }) || null;
+    }
+
+    function attachPlayerAutocomplete(inputEl, { onCommit } = {}) {
+      if (!inputEl) return null;
+      const parent = inputEl.parentElement;
+      if (parent && !parent.classList.contains("autocomplete-wrapper")) {
+        parent.classList.add("autocomplete-wrapper");
+      }
+      const dropdown = document.createElement("div");
+      dropdown.className = "autocomplete-menu";
+      dropdown.style.display = "none";
+      (parent || inputEl).appendChild(dropdown);
+
+      let items = [];
+      let activeIndex = -1;
+      let blurTimer = null;
+
+      const closeMenu = () => {
+        dropdown.style.display = "none";
+        dropdown.innerHTML = "";
+        items = [];
+        activeIndex = -1;
+      };
+
+      const commitValue = (value) => {
+        inputEl.value = value;
+        if (typeof onCommit === "function") onCommit(value);
+        inputEl.dispatchEvent(new Event("input", { bubbles: true }));
+        closeMenu();
+      };
+
+      const setActive = (nextIndex) => {
+        activeIndex = nextIndex;
+        Array.from(dropdown.children).forEach((child, idx) => {
+          child.classList.toggle("active", idx === activeIndex);
+        });
+      };
+
+      const renderList = (list) => {
+        dropdown.innerHTML = "";
+        list.forEach((name, idx) => {
+          const btn = document.createElement("button");
+          btn.type = "button";
+          btn.className = "autocomplete-item";
+          btn.textContent = name;
+          btn.addEventListener("mousedown", (e) => { e.preventDefault(); commitValue(name); });
+          btn.addEventListener("mousemove", () => setActive(idx));
+          dropdown.appendChild(btn);
+        });
+        dropdown.style.display = list.length ? "block" : "none";
+      };
+
+      const updateList = () => {
+        const term = inputEl.value || "";
+        const trimmed = term.trim();
+        if (!trimmed) { closeMenu(); return; }
+        const maxItems = 16;
+        const results = window.dsroShared?.queryPlayerNamesForAdmin
+          ? window.dsroShared.queryPlayerNamesForAdmin(trimmed, maxItems)
+          : Array.from(state.groups.values())
+            .map(g => g.currentName)
+            .filter(name => (name || "").toLowerCase().includes(trimmed.toLowerCase()))
+            .slice(0, maxItems);
+        items = results;
+        renderList(items);
+        setActive(items.length ? 0 : -1);
+      };
+
+      inputEl.addEventListener("input", updateList);
+      inputEl.addEventListener("focus", updateList);
+      inputEl.addEventListener("keydown", (e) => {
+        if (e.key === "ArrowDown") {
+          if (!items.length) updateList();
+          if (items.length) { e.preventDefault(); setActive(activeIndex < items.length - 1 ? activeIndex + 1 : 0); }
+        } else if (e.key === "ArrowUp") {
+          if (!items.length) updateList();
+          if (items.length) { e.preventDefault(); setActive(activeIndex > 0 ? activeIndex - 1 : items.length - 1); }
+        } else if (e.key === "Enter") {
+          if (items.length && activeIndex >= 0) { e.preventDefault(); commitValue(items[activeIndex]); }
+        } else if (e.key === "Escape") {
+          if (dropdown.style.display !== "none") { e.preventDefault(); closeMenu(); }
+        }
+      });
+
+      inputEl.addEventListener("blur", () => {
+        blurTimer = setTimeout(() => closeMenu(), 120);
+      });
+      dropdown.addEventListener("mousedown", () => { if (blurTimer) { clearTimeout(blurTimer); blurTimer = null; } });
+
+      return { refresh: updateList, close: closeMenu };
     }
 
     function mergeGroups(groups) {
@@ -675,6 +809,18 @@
       return buildCsvFromRows(headers, rows);
     }
 
+    function handleSearchInput() {
+      const match = resolveGroupByQuery(elements.searchInput.value);
+      state.highlightedKey = match ? match.canonicalKey : "";
+      renderGroups();
+    }
+
+    function toggleShowAll() {
+      state.showAllPlayers = !state.showAllPlayers;
+      elements.showAllToggle.textContent = state.showAllPlayers ? "Nur Alias-Gruppen anzeigen" : "Alle Spieler anzeigen";
+      renderGroups();
+    }
+
     async function saveChanges() {
       rememberSettings();
       const adminKey = window.dsroShared?.getAdminKey?.();
@@ -705,6 +851,10 @@
     async function reloadData() {
       state.loading = true; elements.reloadBtn.disabled = true; elements.saveBtn.disabled = true; setStatus("Lade…", "info");
       try {
+        state.highlightedKey = "";
+        state.showAllPlayers = false;
+        if (elements.showAllToggle) elements.showAllToggle.textContent = "Alle Spieler anzeigen";
+        if (elements.searchInput) elements.searchInput.value = "";
         state.groups.clear();
         await loadAlliance();
         await loadAliases();
@@ -721,7 +871,14 @@
 
     function init() {
       restoreSettings();
-      elements.searchInput.addEventListener("input", renderGroups);
+      const auto = attachPlayerAutocomplete(elements.searchInput, {
+        onCommit: (value) => {
+          const match = resolveGroupByQuery(value);
+          state.highlightedKey = match ? match.canonicalKey : "";
+        },
+      });
+      elements.searchInput.addEventListener("input", handleSearchInput);
+      elements.showAllToggle.addEventListener("click", toggleShowAll);
       elements.reloadBtn.addEventListener("click", reloadData);
       elements.saveBtn.addEventListener("click", saveChanges);
       reloadData();
