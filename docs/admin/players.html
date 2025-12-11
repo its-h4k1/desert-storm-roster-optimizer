@@ -680,23 +680,96 @@
       renderGroups();
     }
 
+    function buildVisualKey(value) {
+      const canon = canonicalNameJS(value || "");
+      const digitFold = canon.replace(/[01]/g, ch => (ch === "0" ? "o" : "l"))
+        .replace(/[3]/g, "e")
+        .replace(/[4]/g, "a")
+        .replace(/[5]/g, "s")
+        .replace(/[7]/g, "t")
+        .replace(/[8]/g, "b");
+      return digitFold.replace(/[^a-z0-9]/g, "");
+    }
+
+    function levenshtein(a, b) {
+      const s = buildVisualKey(a);
+      const t = buildVisualKey(b);
+      if (!s || !t) return Number.MAX_SAFE_INTEGER;
+      if (s === t) return 0;
+      const dp = Array.from({ length: s.length + 1 }, () => new Array(t.length + 1).fill(0));
+      for (let i = 0; i <= s.length; i += 1) dp[i][0] = i;
+      for (let j = 0; j <= t.length; j += 1) dp[0][j] = j;
+      for (let i = 1; i <= s.length; i += 1) {
+        for (let j = 1; j <= t.length; j += 1) {
+          const cost = s[i - 1] === t[j - 1] ? 0 : 1;
+          dp[i][j] = Math.min(
+            dp[i - 1][j] + 1,
+            dp[i][j - 1] + 1,
+            dp[i - 1][j - 1] + cost,
+          );
+        }
+      }
+      return dp[s.length][t.length];
+    }
+
+    function looksSimilar(a, b) {
+      const keyA = buildVisualKey(a);
+      const keyB = buildVisualKey(b);
+      if (!keyA || !keyB) return false;
+      if (keyA === keyB) return true;
+      const distance = levenshtein(keyA, keyB);
+      const maxLen = Math.max(keyA.length, keyB.length);
+      return distance <= 1 || (maxLen >= 5 && distance <= 2);
+    }
+
+    function collectNames(group) {
+      return [group.currentName, group.canonicalLabel, ...group.aliases].filter(Boolean);
+    }
+
     function buildDuplicateSuggestions() {
       const bucket = new Map();
+      const visualBucket = new Map();
       state.groups.forEach(group => {
-        const allNames = [group.currentName, ...group.aliases];
+        const allNames = collectNames(group);
         allNames.forEach(name => {
-          const key = canonicalNameJS(name);
-          if (!key) return;
-          if (!bucket.has(key)) bucket.set(key, new Set());
-          bucket.get(key).add(group.canonicalKey);
+          const canonKey = canonicalNameJS(name);
+          if (canonKey) {
+            if (!bucket.has(canonKey)) bucket.set(canonKey, new Set());
+            bucket.get(canonKey).add(group.canonicalKey);
+          }
+          const visual = buildVisualKey(name);
+          if (visual) {
+            if (!visualBucket.has(visual)) visualBucket.set(visual, new Set());
+            visualBucket.get(visual).add(group.canonicalKey);
+          }
         });
       });
+
       const suggestions = [];
-      bucket.forEach((owners, norm) => {
+      const seenPairs = new Set();
+      const register = owners => {
         if (owners.size <= 1) return;
         const involved = Array.from(owners).map(k => state.groups.get(k)).filter(Boolean);
-        if (involved.length > 1) suggestions.push({ norm, groups: involved });
-      });
+        if (involved.length < 2) return;
+        const key = involved.map(g => g.canonicalKey).sort().join("::");
+        if (seenPairs.has(key)) return;
+        seenPairs.add(key);
+        suggestions.push({ groups: involved });
+      };
+
+      bucket.forEach(register);
+      visualBucket.forEach(register);
+
+      const groups = Array.from(state.groups.values());
+      for (let i = 0; i < groups.length; i += 1) {
+        for (let j = i + 1; j < groups.length; j += 1) {
+          const leftNames = collectNames(groups[i]);
+          const rightNames = collectNames(groups[j]);
+          const similar = leftNames.some(ln => rightNames.some(rn => looksSimilar(ln, rn)));
+          if (similar) register(new Set([groups[i].canonicalKey, groups[j].canonicalKey]));
+        }
+      }
+
       return suggestions;
     }
 
@@ -808,12 +881,18 @@
     function mergeGroups(groups) {
       if (!groups || groups.length < 2) return;
       const target = groups[0];
+      const addAlias = (alias) => {
+        const normalized = normalizePlayerName(alias);
+        if (normalized && normalized !== target.currentName) target.aliases.add(normalized);
+      };
       for (let i = 1; i < groups.length; i += 1) {
         const donor = groups[i];
-        donor.aliases.add(donor.currentName);
-        donor.aliases.forEach(a => target.aliases.add(a));
+        addAlias(donor.currentName);
+        addAlias(donor.canonicalLabel);
+        donor.aliases.forEach(addAlias);
         donor.rows.forEach(r => {
           r[state.playerNameField] = target.currentName;
+          r.canonicalKey = target.canonicalKey;
           target.rows.push(r);
         });
         state.groups.delete(donor.canonicalKey);
