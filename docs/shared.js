@@ -3,13 +3,19 @@
   const shared = global.dsroShared;
   const ZERO_WIDTH_RE = /[\u200b\u200c\u200d\u200e\u200f\u2060\ufeff]/g;
   const COMBINING_DOT_ABOVE_RE = /\u0307/g;
-  const HOMO_TRANSLATE = {
-    "А":"A","В":"B","Е":"E","К":"K","М":"M","Н":"H","О":"O",
-    "Р":"P","С":"S","Т":"T","Х":"X","І":"I","Ј":"J","У":"Y",
-    "а":"a","е":"e","о":"o","р":"p","с":"s","х":"x","у":"y",
-    "к":"k","м":"m","т":"t","н":"h","і":"i","ј":"j","ѵ":"y",
-    "İ":"I","ı":"i",
+  const CONFUSABLE_FOLD = {
+    "А": "A", "В": "B", "Е": "E", "К": "K", "М": "M", "Н": "H", "О": "O",
+    "Р": "P", "С": "C", "Т": "T", "Х": "X", "І": "I", "Ј": "J", "У": "Y",
+    "а": "a", "в": "b", "е": "e", "о": "o", "р": "p", "с": "c", "х": "x",
+    "у": "y", "к": "k", "м": "m", "т": "t", "н": "h", "і": "i", "ј": "j",
+    "ѵ": "y", "ӏ": "l", "Ӏ": "l", "Ь": "b", "ь": "b", "Ъ": "b", "ъ": "b",
+    "İ": "I", "ı": "i",
   };
+
+  function normalizeConfusables(value) {
+    if (!value) return value;
+    return value.split("").map(ch => CONFUSABLE_FOLD[ch] || ch).join("");
+  }
 
   function canonicalNameJS(value) {
     if (value == null) return "";
@@ -17,10 +23,11 @@
     if (typeof s.normalize === "function") {
       s = s.normalize("NFKD");
     }
+    s = normalizeConfusables(s);
     s = s.replace(ZERO_WIDTH_RE, "");
-    s = s.split("").map(ch => HOMO_TRANSLATE[ch] || ch).join("");
     s = s.replace(COMBINING_DOT_ABOVE_RE, "");
     s = s.toLocaleLowerCase("en-US");
+    s = normalizeConfusables(s);
     s = s.replace(COMBINING_DOT_ABOVE_RE, "");
     if (typeof s.normalize === "function") {
       s = s.normalize("NFKC");
@@ -858,12 +865,19 @@
     console.log("[dsroShared] admin testQuery:", term, "=>", shared.queryPlayerNamesForAdmin(term, 10));
   }
 
+  function debugCanonical(name) {
+    const canonical = canonicalNameJS(name);
+    console.log("[dsroShared] canonical", { input: name, canonical });
+    return canonical;
+  }
+
   shared.buildAllKnownPlayersForAdmin = buildAllKnownPlayersForAdmin;
   shared.buildPlayerAutocompleteIndexForAdmin = buildPlayerAutocompleteIndexForAdmin;
   shared.queryPlayerNamesForAdmin = queryPlayerNamesForAdmin;
   shared.refreshAdminPlayerIndex = refreshAdminPlayerIndex;
   shared.debugPrintAdminAutocompleteState = debugPrintAdminAutocompleteState;
   shared.debugTestAdminQuery = debugTestAdminQuery;
+  shared.debugCanonical = debugCanonical;
 
   Object.assign(shared, {
     canonicalNameJS,
@@ -895,6 +909,7 @@
     refreshAdminPlayerIndex,
     debugPrintAdminAutocompleteState,
     debugTestAdminQuery,
+    debugCanonical,
     hydrateReliabilityFromPayload,
     refreshPlayerReliabilityIndex,
     playerReliability: shared.playerReliability,

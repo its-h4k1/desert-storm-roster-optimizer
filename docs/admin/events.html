@@ -984,13 +984,7 @@
     }
 
     function normalizePlayerKey(name) {
-      if (name === null || name === undefined) return "";
-      return name
-        .toString()
-        .normalize("NFKC")
-        .replace(/\s+/g, " ")
-        .trim()
-        .toLowerCase();
+      return canonicalNameJS(name);
     }
 
     function similarity(a, b) {
