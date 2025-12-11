@@ -37,6 +37,19 @@
 
     .page-header h2 { margin: 0; }
 
+    .search-bar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.65rem;
+      align-items: flex-end;
+    }
+
+    .search-bar .search-field { flex: 1 1 240px; min-width: 200px; }
+    .search-bar .search-field input { width: 100%; }
+
+    .filter-toggle { color: var(--muted); font-size: 0.9rem; }
+    .filter-toggle button { padding: 0.2rem 0.5rem; }
+
     .controls {
       display: flex;
       flex-wrap: wrap;
@@ -197,15 +210,21 @@
               <h2>Alias-Gruppen</h2>
               <p style="margin:0;color:var(--muted)">Pflegt <code>data/alliance.csv</code> und <code>data/aliases.csv</code> mit stabilen kanonischen IDs.</p>
             </div>
+            <div class="search-bar">
+              <label class="search-field">Suche nach Spielername oder ID
+                <input id="searchInput" type="search" placeholder="Spieler, Alias oder ID suchen…" autocomplete="off">
+              </label>
+              <div class="filter-toggle">
+                <span id="filterHint">Zeigt nur Alias-Gruppen.</span>
+                <button id="toggleViewBtn" class="ghost" type="button">Alle Spieler anzeigen</button>
+              </div>
+            </div>
             <div class="controls">
               <label>Worker URL
                 <input id="workerUrl" type="text" value="https://ds-commit.hak1.workers.dev/write-file" spellcheck="false">
               </label>
               <label>Branch
                 <input id="branchInput" type="text" value="main" spellcheck="false">
-              </label>
-              <label>Suche
-                <input id="searchInput" type="search" placeholder="Spieler oder Alias…" autocomplete="off">
               </label>
               <button id="reloadBtn" class="ghost">Neu laden</button>
               <button id="saveBtn" class="primary">Speichern</button>
@@ -256,6 +275,7 @@
       originalAliasesCsv: "",
       loading: false,
       saving: false,
+      showAll: false,
     };
 
     const elements = {
@@ -267,6 +287,8 @@
       reloadBtn: document.getElementById("reloadBtn"),
       saveBtn: document.getElementById("saveBtn"),
       statusText: document.getElementById("statusText"),
+      toggleViewBtn: document.getElementById("toggleViewBtn"),
+      filterHint: document.getElementById("filterHint"),
     };
 
     function normalizeLineEndings(text) { return (text || "").replace(/\r\n/g, "\n").replace(/\r/g, "\n"); }
@@ -414,20 +436,46 @@
       });
     }
 
+    function groupHasAlias(group) {
+      return group.aliases.size > 0;
+    }
+
     function renderGroups() {
       const query = elements.searchInput.value.trim();
       const queryCanon = canonicalNameJS(query);
+      const isSearching = !!query;
       const duplicates = buildDuplicateSuggestions();
       const duplicateMap = new Map();
       duplicates.forEach(item => item.groups.forEach(g => duplicateMap.set(g.canonicalKey, item)));
 
       const groups = Array.from(state.groups.values()).filter(g => {
-        if (!query) return true;
-        const haystack = [g.currentName, g.canonicalLabel, ...Array.from(g.aliases)];
-        return haystack.some(name => name.toLowerCase().includes(query.toLowerCase()) || canonicalNameJS(name) === queryCanon);
+        const matchesQuery = () => {
+          const haystack = [g.currentName, g.canonicalLabel, g.canonicalKey, ...Array.from(g.aliases)];
+          return haystack.some(name => name.toLowerCase().includes(query.toLowerCase()) || canonicalNameJS(name) === queryCanon);
+        };
+        if (isSearching) return matchesQuery();
+        if (state.showAll) return true;
+        return groupHasAlias(g);
       }).sort((a, b) => a.currentName.localeCompare(b.currentName, "de", { sensitivity: "base" }));
 
       elements.groupList.innerHTML = "";
+      const aliasGroups = Array.from(state.groups.values()).filter(groupHasAlias).length;
+      const toggleLabel = state.showAll ? "Nur Alias-Gruppen" : "Alle Spieler anzeigen";
+      elements.toggleViewBtn.textContent = toggleLabel;
+      elements.toggleViewBtn.title = state.showAll
+        ? "Zur kompakten Alias-Ansicht wechseln"
+        : "Alle Spieler (auch ohne Aliase) einblenden";
+      elements.filterHint.textContent = isSearching
+        ? "Suche aktiv: zeigt alle Treffer, auch ohne Aliase."
+        : state.showAll
+          ? "Zeigt alle Spielergruppen."
+          : `Zeigt ${aliasGroups} Alias-Gruppen. Spieler ohne Aliase sind ausgeblendet.`;
+
+      elements.groupEmpty.textContent = isSearching
+        ? "Keine Spieler zur Suche gefunden."
+        : state.showAll
+          ? "Keine Spieler geladen."
+          : "Keine Alias-Gruppen gefunden. Nutze die Suche oder blende alle Spieler ein.";
       elements.groupEmpty.classList.toggle("hidden", groups.length > 0);
       if (!groups.length) return;
 
@@ -722,6 +770,7 @@
     function init() {
       restoreSettings();
       elements.searchInput.addEventListener("input", renderGroups);
+      elements.toggleViewBtn.addEventListener("click", () => { state.showAll = !state.showAll; renderGroups(); });
       elements.reloadBtn.addEventListener("click", reloadData);
       elements.saveBtn.addEventListener("click", saveChanges);
       reloadData();
