@@ -432,6 +432,30 @@
       const DEFAULT_HEADERS = ["PlayerName", "From", "To", "Reason", "InAlliance"];
 
       const getAdminKey = () => dsroShared.getAdminKey();
+      const resolvePlayerDisplayName = typeof dsroShared.resolvePlayerDisplayName === "function"
+        ? dsroShared.resolvePlayerDisplayName
+        : (name) => (name || "");
+      const setPlayerInputSelection = typeof dsroShared.setPlayerInputSelection === "function"
+        ? dsroShared.setPlayerInputSelection
+        : ((inputEl, value, display) => {
+            if (!inputEl) return;
+            inputEl.dataset.playerValue = value || "";
+            inputEl.dataset.playerDisplay = display || value || "";
+            inputEl.value = inputEl.dataset.playerDisplay;
+          });
+      const resolvePlayerInputValue = typeof dsroShared.resolvePlayerInputValue === "function"
+        ? dsroShared.resolvePlayerInputValue
+        : ((inputEl) => {
+            if (!inputEl) return "";
+            const currentDisplay = (inputEl.value || "").trim();
+            const storedDisplay = (inputEl.dataset.playerDisplay || "").trim();
+            const storedValue = (inputEl.dataset.playerValue || "").trim();
+            if (storedValue && storedDisplay && currentDisplay === storedDisplay) return storedValue;
+            return currentDisplay;
+          });
+      const resetPlayerInputSelection = typeof dsroShared.resetPlayerInputSelection === "function"
+        ? dsroShared.resetPlayerInputSelection
+        : ((inputEl) => setPlayerInputSelection(inputEl, "", ""));
 
       function getBranch() {
         const raw = elements.branch.value.trim();
@@ -676,9 +700,15 @@
               const input = document.createElement("input");
               input.type = "text";
               input.setAttribute("list", "playerOptions");
-              input.value = row.raw[header] ?? "";
+              const storedName = row.raw[header] ?? "";
+              const displayName = resolvePlayerDisplayName(storedName);
+              setPlayerInputSelection(input, storedName, displayName, { resolver: resolvePlayerDisplayName });
               input.placeholder = "Spieler wählen oder eingeben";
-              input.addEventListener("input", () => updateField(row.id, header, input.value));
+              input.addEventListener("input", () => updateField(row.id, header, resolvePlayerInputValue(input)));
+              input.addEventListener("blur", () => {
+                const value = resolvePlayerInputValue(input);
+                setPlayerInputSelection(input, value, resolvePlayerDisplayName(value), { resolver: resolvePlayerDisplayName });
+              });
               td.appendChild(input);
             } else if (header.toLowerCase() === "from" || header.toLowerCase() === "to") {
               const input = document.createElement("input");

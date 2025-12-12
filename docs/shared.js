@@ -741,6 +741,32 @@
     return normalizePlayerName(display) || resolvedCanon;
   };
 
+  function setPlayerInputSelection(inputEl, value, display, { resolver } = {}) {
+    if (!inputEl) return;
+    const resolveDisplay = typeof resolver === "function" ? resolver : shared.resolvePlayerDisplayName;
+    const displayName = display != null ? display : (resolveDisplay ? resolveDisplay(value) : value);
+    inputEl.dataset.playerValue = value || "";
+    inputEl.dataset.playerDisplay = displayName || value || "";
+    inputEl.value = inputEl.dataset.playerDisplay;
+  }
+
+  function resolvePlayerInputValue(inputEl) {
+    if (!inputEl) return "";
+    const currentDisplay = (inputEl.value || "").trim();
+    const storedDisplay = (inputEl.dataset.playerDisplay || "").trim();
+    const storedValue = (inputEl.dataset.playerValue || "").trim();
+    if (storedValue && storedDisplay && currentDisplay === storedDisplay) return storedValue;
+    return currentDisplay;
+  }
+
+  function resetPlayerInputSelection(inputEl) {
+    setPlayerInputSelection(inputEl, "", "");
+  }
+
+  shared.setPlayerInputSelection = setPlayerInputSelection;
+  shared.resolvePlayerInputValue = resolvePlayerInputValue;
+  shared.resetPlayerInputSelection = resetPlayerInputSelection;
+
   function buildAllKnownPlayersForAdmin(latestPayload) {
     const namesByCanon = new Map();
 
