@@ -230,7 +230,7 @@
             </div>
             <div class="toolbar">
               <label class="search">Spieler suchen
-                <input id="searchInput" type="search" placeholder="Name oder ID…" autocomplete="off">
+                <input id="searchInput" type="search" placeholder="Name suchen…" autocomplete="off">
               </label>
               <div class="toolbar-actions">
                 <button id="showAllToggle" class="ghost" type="button">Alle Spieler anzeigen</button>
@@ -279,6 +279,10 @@
       ? window.dsroShared.canonicalNameJS
       : (v => (v || "").toString().trim().toLowerCase());
     const normalizePlayerName = (v) => (window.dsroShared?.normalizePlayerName?.(v) || (v || "").toString().trim());
+    const resolvePlayerDisplayName =
+      (window.dsroShared && typeof window.dsroShared.resolvePlayerDisplayName === "function")
+        ? window.dsroShared.resolvePlayerDisplayName
+        : (name) => normalizePlayerName(name);
 
     const state = {
       playerHeaders: [],
@@ -454,6 +458,9 @@
       } catch (err) {
         console.warn("aliases load", err);
         state.originalAliasesCsv = "Canonical,Alias\n";
+        state.aliasHeaders = ["Canonical", "Alias"];
+        state.aliasCanonicalField = "Canonical";
+        state.aliasAliasField = "Alias";
         state.aliasRows = [];
       }
     }
@@ -545,11 +552,12 @@
         title.className = "group-title";
         const nameSlot = document.createElement("div");
         nameSlot.className = "group-name";
-        nameSlot.textContent = group.currentName || group.canonicalLabel;
+        const displayName = resolvePlayerDisplayName(group.currentName || group.canonicalLabel);
+        nameSlot.textContent = displayName;
         title.appendChild(nameSlot);
         const meta = document.createElement("span");
         meta.className = "group-meta";
-        meta.textContent = `ID: ${group.canonicalKey}`;
+        meta.textContent = `${group.rows.length} Datensätze · ${group.aliases.size} Aliase`;
         title.appendChild(meta);
         head.appendChild(title);
 
@@ -625,7 +633,7 @@
           aliases.forEach(alias => {
             const chip = document.createElement("span");
             chip.className = "chip";
-            chip.textContent = alias;
+            chip.textContent = resolvePlayerDisplayName(alias);
             const promoteBtn = document.createElement("button");
             promoteBtn.title = "Als Hauptnamen setzen";
             promoteBtn.textContent = "⭐";
@@ -654,7 +662,9 @@
         if (duplicate) {
           const hint = document.createElement("div");
           hint.className = "hint";
-          const names = duplicate.groups.map(g => g.currentName).join(", ");
+          const names = duplicate.groups
+            .map(g => resolvePlayerDisplayName(g.currentName || g.canonicalLabel))
+            .join(", ");
           hint.textContent = `⚠️ Diese Namen sehen gleich aus: ${names}`;
           const mergeBtn = document.createElement("button");
           mergeBtn.textContent = "Zusammenführen";
@@ -847,7 +857,7 @@
         const results = window.dsroShared?.queryPlayerNamesForAdmin
           ? window.dsroShared.queryPlayerNamesForAdmin(trimmed, maxItems)
           : Array.from(state.groups.values())
-            .map(g => g.currentName)
+            .map(g => resolvePlayerDisplayName(g.currentName || g.canonicalLabel))
             .filter(name => (name || "").toLowerCase().includes(trimmed.toLowerCase()))
             .slice(0, maxItems);
         items = results;
@@ -989,9 +999,18 @@
       try {
         state.highlightedKey = "";
         state.showAllPlayers = false;
+        state.playerHeaders = [];
+        state.playerNameField = "PlayerName";
+        state.allianceRows = [];
+        state.originalAllianceCsv = "";
+        state.aliasHeaders = ["Canonical", "Alias"];
+        state.aliasCanonicalField = "Canonical";
+        state.aliasAliasField = "Alias";
+        state.aliasRows = [];
+        state.originalAliasesCsv = "";
         if (elements.showAllToggle) elements.showAllToggle.textContent = "Alle Spieler anzeigen";
         if (elements.searchInput) elements.searchInput.value = "";
-        state.groups.clear();
+        state.groups = new Map();
         await loadAlliance();
         await loadAliases();
         rebuildGroupsFromAlliance();
