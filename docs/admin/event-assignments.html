@@ -412,6 +412,27 @@
             .replace(/>/g, '&gt;')
             .replace(/"/g, '&quot;')
             .replace(/'/g, '&#39;'));
+      const setPlayerInputSelection = (shared && typeof shared.setPlayerInputSelection === 'function')
+        ? shared.setPlayerInputSelection
+        : ((inputEl, value, display) => {
+            if (!inputEl) return;
+            inputEl.dataset.playerValue = value || '';
+            inputEl.dataset.playerDisplay = display || value || '';
+            inputEl.value = inputEl.dataset.playerDisplay;
+          });
+      const resolvePlayerInputValue = (shared && typeof shared.resolvePlayerInputValue === 'function')
+        ? shared.resolvePlayerInputValue
+        : ((inputEl) => {
+            if (!inputEl) return '';
+            const currentDisplay = (inputEl.value || '').trim();
+            const storedDisplay = (inputEl.dataset.playerDisplay || '').trim();
+            const storedValue = (inputEl.dataset.playerValue || '').trim();
+            if (storedValue && storedDisplay && currentDisplay === storedDisplay) return storedValue;
+            return currentDisplay;
+          });
+      const resetPlayerInputSelection = (shared && typeof shared.resetPlayerInputSelection === 'function')
+        ? shared.resetPlayerInputSelection
+        : ((inputEl) => setPlayerInputSelection(inputEl, '', ''));
       const computeSiteRoot = (shared && typeof shared.computeSiteRoot === 'function')
         ? shared.computeSiteRoot
         : (pathname => {
@@ -1084,22 +1105,6 @@
         refreshAutocompletes();
       }
 
-      function setPlayerInputSelection(inputEl, value, display) {
-        if (!inputEl) return;
-        inputEl.dataset.playerValue = value || '';
-        inputEl.dataset.playerDisplay = display || value || '';
-        inputEl.value = inputEl.dataset.playerDisplay;
-      }
-
-      function resolvePlayerInputValue(inputEl) {
-        if (!inputEl) return '';
-        const currentDisplay = (inputEl.value || '').trim();
-        const storedDisplay = (inputEl.dataset.playerDisplay || '').trim();
-        const storedValue = (inputEl.dataset.playerValue || '').trim();
-        if (storedValue && storedDisplay && currentDisplay === storedDisplay) return storedValue;
-        return currentDisplay;
-      }
-
       function attachPlayerAutocomplete(inputEl, getNamesFn, opts={}) {
         if (!inputEl) return null;
         const maxItems = Number(opts.maxItems) || 8;
@@ -1420,8 +1425,7 @@
         entry.Commitment = 'hard';
         entry.Source = 'manual';
         entry.Note = '';
-        elements.playerInput.dataset.playerValue = '';
-        elements.playerInput.dataset.playerDisplay = '';
+        resetPlayerInputSelection(elements.playerInput);
         renderAssignments();
         updateSaveButtonState();
         setStatus('Eintrag hinzugefügt/aktualisiert.', 'info');
@@ -1555,9 +1559,7 @@
           state.responses.push({ PlayerName: player, Status: status, ResponseTime: nowIso, Source: 'manual', Note: note });
         }
 
-        elements.responsePlayerInput.value = '';
-        elements.responsePlayerInput.dataset.playerValue = '';
-        elements.responsePlayerInput.dataset.playerDisplay = '';
+        resetPlayerInputSelection(elements.responsePlayerInput);
         elements.responseNoteInput.value = '';
         elements.responseStatusInput.value = '';
         setStatus('Antwort gespeichert.', 'info');
