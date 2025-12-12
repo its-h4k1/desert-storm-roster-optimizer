@@ -516,6 +516,22 @@
         return json;
       }
 
+      async function mirrorResultToDocs({ eventId, payload }) {
+        const mirrorPayload = {
+          ...payload,
+          path: `docs/data/event_results/${eventId}.json`,
+          message: `admin: mirror event results ${eventId}`,
+        };
+        try {
+          await writeFile(mirrorPayload);
+          return true;
+        } catch (err) {
+          console.error('Mirror nach docs/data fehlgeschlagen', err);
+          addWarning(`Mirror nach docs/data/event_results fehlgeschlagen: ${err.message || err}`);
+          return false;
+        }
+      }
+
       async function handleSave() {
         const eventId = validateEventId(elements.eventId.value);
         if (!eventId) {
@@ -551,7 +567,13 @@
         setStatus('Speichere Ergebnis via Worker…');
         try {
           await writeFile(payload);
-          setStatus('Ergebnis gespeichert.', 'success');
+          setStatus('Ergebnis gespeichert. Mirror wird aktualisiert…');
+          const mirrored = await mirrorResultToDocs({ eventId, payload });
+          if (mirrored) {
+            setStatus('Ergebnis gespeichert & Mirror aktualisiert.', 'success');
+          } else {
+            setStatus('Gespeichert, aber Mirror nicht aktualisiert (siehe Hinweise).', 'error');
+          }
           applyMeta(elements.resultMeta, `Gespeichert @ ${new Date().toLocaleString()}`, 'success');
           state.savedResults = results;
           state.savedResultsMap = mapResultsByKey(results);
