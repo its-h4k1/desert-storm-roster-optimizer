@@ -1084,6 +1084,22 @@
         refreshAutocompletes();
       }
 
+      function setPlayerInputSelection(inputEl, value, display) {
+        if (!inputEl) return;
+        inputEl.dataset.playerValue = value || '';
+        inputEl.dataset.playerDisplay = display || value || '';
+        inputEl.value = inputEl.dataset.playerDisplay;
+      }
+
+      function resolvePlayerInputValue(inputEl) {
+        if (!inputEl) return '';
+        const currentDisplay = (inputEl.value || '').trim();
+        const storedDisplay = (inputEl.dataset.playerDisplay || '').trim();
+        const storedValue = (inputEl.dataset.playerValue || '').trim();
+        if (storedValue && storedDisplay && currentDisplay === storedDisplay) return storedValue;
+        return currentDisplay;
+      }
+
       function attachPlayerAutocomplete(inputEl, getNamesFn, opts={}) {
         if (!inputEl) return null;
         const maxItems = Number(opts.maxItems) || 8;
@@ -1111,8 +1127,7 @@
         const commitValue = (item) => {
           const value = item && typeof item === 'object' ? (item.value ?? item.display ?? '') : item;
           const display = item && typeof item === 'object' ? (item.display ?? item.value ?? '') : item;
-          inputEl.dataset.playerValue = value || '';
-          inputEl.value = display || value || '';
+          setPlayerInputSelection(inputEl, value, display);
           closeMenu();
           inputEl.dispatchEvent(new Event('input', { bubbles: true }));
         };
@@ -1252,7 +1267,9 @@
         const match = (state.playerNames || []).find(name => canonicalNameJS(name || '') === playerPrefillCanon);
         const valueToUse = match || playerPrefillRaw || '';
         if (valueToUse) {
-          elements.playerInput.value = valueToUse;
+          setPlayerInputSelection(elements.playerInput, valueToUse, shared?.resolvePlayerDisplayName
+            ? shared.resolvePlayerDisplayName(valueToUse)
+            : valueToUse);
           if (elements.addPanel) elements.addPanel.classList.add('prefill-highlight');
           updatePlayerReliabilityPreview(elements.playerInput.value, 'signup');
         }
@@ -1320,7 +1337,9 @@
             tr.classList.add('prefill-highlight');
           }
           const playerTd = document.createElement('td');
-          const playerName = row.PlayerName || '–';
+          const playerName = shared?.resolvePlayerDisplayName
+            ? shared.resolvePlayerDisplayName(row.PlayerName || '')
+            : (row.PlayerName || '–');
           playerTd.textContent = playerName;
           const response = canon ? responseByCanon.get(canon) : null;
           if (response) {
@@ -1392,14 +1411,17 @@
 
 
       function addAssignment() {
-        const player = elements.playerInput.value.trim();
-        if (!player) { setStatus('Bitte Spieler auswählen.', 'warn'); elements.playerInput.focus(); return; }
+        const player = resolvePlayerInputValue(elements.playerInput);
+        const playerDisplay = elements.playerInput.value.trim();
+        if (!playerDisplay) { setStatus('Bitte Spieler auswählen.', 'warn'); elements.playerInput.focus(); return; }
         const entry = ensureAssignment(player);
         entry.Group = elements.groupInput.value;
         entry.Role = elements.roleInput.value;
         entry.Commitment = 'hard';
         entry.Source = 'manual';
         entry.Note = '';
+        elements.playerInput.dataset.playerValue = '';
+        elements.playerInput.dataset.playerDisplay = '';
         renderAssignments();
         updateSaveButtonState();
         setStatus('Eintrag hinzugefügt/aktualisiert.', 'info');
@@ -1422,7 +1444,10 @@
           const tr = document.createElement('tr');
 
           const playerTd = document.createElement('td');
-          playerTd.textContent = row.PlayerName || '–';
+          const playerName = shared?.resolvePlayerDisplayName
+            ? shared.resolvePlayerDisplayName(row.PlayerName || '')
+            : (row.PlayerName || '–');
+          playerTd.textContent = playerName;
           tr.appendChild(playerTd);
 
           const statusTd = document.createElement('td');
@@ -1501,10 +1526,11 @@
       }
 
       function addResponse() {
-        const player = elements.responsePlayerInput.value.trim();
+        const player = resolvePlayerInputValue(elements.responsePlayerInput);
+        const playerDisplay = elements.responsePlayerInput.value.trim();
         const status = normalizeResponseStatus(elements.responseStatusInput.value);
         const note = elements.responseNoteInput.value || '';
-        if (!player) { setStatus('Bitte Spieler für Antwort wählen.', 'warn'); elements.responsePlayerInput.focus(); return; }
+        if (!playerDisplay) { setStatus('Bitte Spieler für Antwort wählen.', 'warn'); elements.responsePlayerInput.focus(); return; }
 
         const canon = canonicalNameJS(player);
         const idxExisting = findResponseIndexByCanon(canon);
@@ -1530,6 +1556,8 @@
         }
 
         elements.responsePlayerInput.value = '';
+        elements.responsePlayerInput.dataset.playerValue = '';
+        elements.responsePlayerInput.dataset.playerDisplay = '';
         elements.responseNoteInput.value = '';
         elements.responseStatusInput.value = '';
         setStatus('Antwort gespeichert.', 'info');
