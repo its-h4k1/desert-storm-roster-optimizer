@@ -566,17 +566,8 @@
         addBtn.title = "Alias hinzufügen";
         addBtn.textContent = "➕";
 
-        const starBtn = document.createElement("button");
-        starBtn.className = "icon";
-        starBtn.title = "Als aktuellen Namen setzen";
-        starBtn.textContent = "⭐";
-        starBtn.addEventListener("click", () => {
-          if (group.canonicalLabel && setCurrentName(group, group.canonicalLabel)) renderGroups();
-        });
-
         actions.appendChild(editBtn);
         actions.appendChild(addBtn);
-        actions.appendChild(starBtn);
         head.appendChild(actions);
         row.appendChild(head);
 
