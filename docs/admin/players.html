@@ -481,11 +481,15 @@
     function renderGroups() {
       const query = elements.searchInput.value.trim();
       const queryCanon = canonicalNameJS(query);
+      const queryLower = query.toLowerCase();
+      const hasQuery = Boolean(query);
+      const resolved = hasQuery ? resolveGroupByQuery(query) : null;
+      const spotlightKey = state.highlightedKey || resolved?.canonicalKey || "";
+
       const duplicates = buildDuplicateSuggestions();
       const duplicateMap = new Map();
       duplicates.forEach(item => item.groups.forEach(g => duplicateMap.set(g.canonicalKey, item)));
 
-      const hasQuery = Boolean(query);
       const allGroups = Array.from(state.groups.values());
       const filtered = allGroups.filter(g => {
         const hasAlias = g.aliases.size > 0;
@@ -493,11 +497,17 @@
           .some(name => {
             if (!name) return false;
             const canon = canonicalNameJS(name);
-            return name.toLowerCase().includes(query.toLowerCase()) || canon === queryCanon;
+            return name.toLowerCase().includes(queryLower) || canon === queryCanon;
           }));
-        const spotlight = state.highlightedKey && state.highlightedKey === g.canonicalKey;
-        if (state.showAllPlayers) return true;
-        return hasAlias || matchesQuery || spotlight;
+        const spotlight = spotlightKey && spotlightKey === g.canonicalKey;
+        const spotlightCluster = spotlightKey
+          && duplicateMap.has(spotlightKey)
+          && duplicateMap.get(spotlightKey).groups.some(item => item.canonicalKey === g.canonicalKey);
+
+        if (!hasQuery && state.showAllPlayers) return true;
+        if (!hasQuery) return hasAlias || spotlight;
+
+        return matchesQuery || spotlight || spotlightCluster;
       }).sort((a, b) => a.currentName.localeCompare(b.currentName, "de", { sensitivity: "base" }));
 
       elements.groupList.innerHTML = "";
