@@ -434,22 +434,33 @@
       const getAdminKey = () => dsroShared.getAdminKey();
       const resolvePlayerDisplayName = typeof dsroShared.resolvePlayerDisplayName === "function"
         ? dsroShared.resolvePlayerDisplayName
-        : (name) => (name || "");
+        : (name) => (console.debug("[absences] missing resolvePlayerDisplayName"), name || "");
       const setPlayerInputSelection = typeof dsroShared.setPlayerInputSelection === "function"
         ? dsroShared.setPlayerInputSelection
         : ((inputEl, value, display) => {
+            console.debug("[absences] shared.setPlayerInputSelection unavailable – fallback");
             if (!inputEl) return;
             inputEl.dataset.playerValue = value || "";
             inputEl.dataset.playerDisplay = display || value || "";
             inputEl.value = inputEl.dataset.playerDisplay;
+            if (!inputEl.value) {
+              inputEl.dataset.playerValue = "";
+              inputEl.dataset.playerDisplay = "";
+            }
           });
       const resolvePlayerInputValue = typeof dsroShared.resolvePlayerInputValue === "function"
         ? dsroShared.resolvePlayerInputValue
         : ((inputEl) => {
+            console.debug("[absences] shared.resolvePlayerInputValue unavailable – fallback");
             if (!inputEl) return "";
             const currentDisplay = (inputEl.value || "").trim();
             const storedDisplay = (inputEl.dataset.playerDisplay || "").trim();
             const storedValue = (inputEl.dataset.playerValue || "").trim();
+            if (!currentDisplay && (storedDisplay || storedValue)) {
+              inputEl.dataset.playerDisplay = "";
+              inputEl.dataset.playerValue = "";
+              return "";
+            }
             if (storedValue && storedDisplay && currentDisplay === storedDisplay) return storedValue;
             return currentDisplay;
           });
