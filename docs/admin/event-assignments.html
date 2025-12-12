@@ -1108,8 +1108,11 @@
           activeIndex = -1;
         };
 
-        const commitValue = (value) => {
-          inputEl.value = value;
+        const commitValue = (item) => {
+          const value = item && typeof item === 'object' ? (item.value ?? item.display ?? '') : item;
+          const display = item && typeof item === 'object' ? (item.display ?? item.value ?? '') : item;
+          inputEl.dataset.playerValue = value || '';
+          inputEl.value = display || value || '';
           closeMenu();
           inputEl.dispatchEvent(new Event('input', { bubbles: true }));
         };
@@ -1124,14 +1127,18 @@
 
         const renderList = (list) => {
           dropdown.innerHTML = '';
-          list.forEach((name, idx) => {
+          list.forEach((entry, idx) => {
+            const value = entry && typeof entry === 'object' ? (entry.value ?? entry.display ?? '') : entry;
+            const display = entry && typeof entry === 'object'
+              ? (entry.display ?? entry.value ?? '')
+              : (shared?.resolvePlayerDisplayName ? shared.resolvePlayerDisplayName(entry) : entry);
             const btn = document.createElement('button');
             btn.type = 'button';
             btn.className = 'autocomplete-item';
-            btn.textContent = name;
+            btn.textContent = display;
             btn.addEventListener('mousedown', (e) => {
               e.preventDefault();
-              commitValue(name);
+              commitValue({ value, display });
             });
             btn.addEventListener('mousemove', () => setActive(idx));
             dropdown.appendChild(btn);
@@ -1159,9 +1166,18 @@
               .slice(0, maxItems)
               .map(entry => entry.name);
           }
-          items = filtered;
+          items = filtered.map((entry) => {
+            const value = entry && typeof entry === 'object' ? (entry.value ?? entry.name ?? '') : entry;
+            const display = entry && typeof entry === 'object'
+              ? (entry.display ?? entry.value ?? entry.name ?? '')
+              : value;
+            const resolvedDisplay = shared?.resolvePlayerDisplayName
+              ? shared.resolvePlayerDisplayName(display)
+              : display;
+            return { value, display: resolvedDisplay };
+          });
           activeIndex = filtered.length ? 0 : -1;
-          renderList(filtered);
+          renderList(items);
           setActive(activeIndex);
         };
 
