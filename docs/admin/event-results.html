@@ -1,0 +1,605 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="robots" content="noindex, nofollow" />
+  <title>Eventergebnis erfassen</title>
+  <link rel="stylesheet" href="admin.css" />
+  <style>
+    body { margin: 0; background: var(--bg); color: var(--text); }
+    .page-header { display:flex; flex-wrap:wrap; gap:0.75rem; align-items:flex-start; background:var(--glass); padding:1rem 1.25rem; border-bottom:1px solid var(--border); position:sticky; top:0; z-index:4; }
+    .page-header h1 { margin:0; font-size:1.5rem; }
+    .page-header .eyebrow { margin:0; color:var(--text-muted); font-size:0.9rem; letter-spacing:0.02em; text-transform:uppercase; }
+    .page-header .meta-line { margin:0.1rem 0 0; color:var(--text-muted); font-size:0.95rem; }
+    .header-meta { display:flex; gap:0.5rem; align-items:center; flex-wrap:wrap; margin-left:auto; }
+    .pill { display:inline-flex; align-items:center; gap:0.35rem; padding:0.25rem 0.6rem; border-radius:999px; font-size:0.85rem; background:var(--bg-alt); color:var(--text); border:1px solid var(--border); }
+    .pill.info { background:#e0f2fe; color:#075985; border-color:#bae6fd; }
+    .pill.success { background:#dcfce7; color:#14532d; border-color:#bbf7d0; }
+    .pill.warn { background:#fff7ed; color:#9a3412; border-color:#fed7aa; }
+    .pill.error { background:#fee2e2; color:#991b1b; border-color:#fecdd3; }
+    .admin-content { width:min(1200px,100%); }
+    .page-main { display:grid; gap:1rem; padding:1rem; }
+    .panel { background:var(--panel); border:1px solid var(--border); border-radius:1rem; padding:1rem; box-shadow:var(--shadow-panel,0 18px 40px rgba(15,23,42,0.08)); display:grid; gap:0.75rem; }
+    .panel h2 { margin:0; }
+    .controls { display:flex; flex-wrap:wrap; gap:0.75rem; align-items:flex-end; }
+    label { display:flex; flex-direction:column; gap:0.35rem; font-size:0.9rem; color:var(--text-muted); }
+    input[type="text"], input[type="url"], input[type="password"], input[type="number"], textarea { font:inherit; padding:0.5rem 0.65rem; border-radius:0.75rem; border:1px solid var(--border); background:var(--bg-alt); color:var(--text); min-width:12rem; }
+    input:focus, textarea:focus { outline:2px solid rgba(37,99,235,0.35); outline-offset:1px; }
+    button { font:inherit; border:1px solid var(--border); border-radius:0.75rem; padding:0.55rem 1rem; background:#fff; color:var(--text); cursor:pointer; display:inline-flex; align-items:center; gap:0.4rem; }
+    button:hover { background:#f8fafc; }
+    button:disabled { opacity:0.6; cursor:not-allowed; }
+    table { width:100%; border-collapse:collapse; min-width:880px; }
+    thead { background:var(--bg-alt); position:sticky; top:0; z-index:3; text-transform:uppercase; font-size:0.8rem; letter-spacing:0.04em; }
+    th, td { padding:0.65rem 0.8rem; border-bottom:1px solid var(--border); text-align:left; vertical-align:top; }
+    tbody tr:nth-child(2n) td { background:var(--panel-muted); }
+    .table-wrapper { border:1px solid var(--border); border-radius:0.9rem; overflow:auto; box-shadow:var(--shadow-card); background:var(--panel-muted); }
+    .hint { color:var(--text-muted); font-size:0.85rem; }
+    .status-bar { display:flex; gap:0.5rem; flex-wrap:wrap; align-items:center; font-size:0.9rem; color:var(--text-muted); }
+    .badge { display:inline-flex; align-items:center; gap:0.35rem; padding:0.3rem 0.65rem; border-radius:999px; border:1px solid var(--border); background:var(--panel-muted); font-weight:600; font-size:0.85rem; }
+    .warnings { display:grid; gap:0.35rem; }
+    .warning { border:1px solid #fed7aa; background:#fff7ed; color:#9a3412; border-radius:0.85rem; padding:0.65rem 0.8rem; font-size:0.9rem; }
+    .empty-state { padding:1rem; border:1px dashed var(--border); border-radius:0.9rem; text-align:center; color:var(--text-muted); }
+    .mono { font-family: ui-monospace, SFMono-Regular, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace; }
+  </style>
+</head>
+<body>
+  <div class="admin-shell">
+    <aside class="admin-sidebar">
+      <div class="admin-sidebar-header">
+        <div class="admin-logo">ELT Admin</div>
+        <button class="sidebar-close" aria-label="Navigation schließen">✕</button>
+      </div>
+      <nav class="admin-nav">
+        <a href="index.html">CSV &amp; Datei-Tools</a>
+        <a href="events.html">Events erfassen</a>
+        <a href="players.html">Spieler &amp; Aliase</a>
+        <a href="absences.html">Absenzen</a>
+        <a href="group-preferences.html">Gruppenpräferenzen</a>
+        <a href="event-assignments.html">Event-Zusagen</a>
+        <a href="attendance-config.html">Attendance-Config</a>
+        <a href="noshow-dashboard.html">No-Show Analyse</a>
+        <a href="event-results.html" class="active">Event-Ergebnisse</a>
+      </nav>
+    </aside>
+
+    <div class="admin-main">
+      <header class="admin-header">
+        <button class="sidebar-toggle" aria-label="Navigation öffnen">☰</button>
+        <div class="page-title">
+          <p>Events</p>
+          <h1>Eventergebnis erfassen</h1>
+        </div>
+        <div class="admin-header-actions">
+          <span id="adminKeyState" class="pill info">Admin-Key wird geprüft…</span>
+        </div>
+      </header>
+
+      <main class="admin-content">
+        <section class="admin-section" style="padding:1rem;">
+          <div class="page-header">
+            <div>
+              <p class="eyebrow">Post-Event</p>
+              <h1>Ergebnis für Event eintragen</h1>
+              <p class="meta-line">Aufstellung übernehmen → Anwesenheit &amp; Punkte erfassen → Speichern via Commit-Flow.</p>
+            </div>
+            <div class="header-meta">
+              <span id="snapshotMeta" class="badge">Kein Snapshot geladen</span>
+              <span id="resultMeta" class="badge">Kein Ergebnis geladen</span>
+            </div>
+          </div>
+
+          <div class="page-main">
+            <section class="panel">
+              <div class="controls">
+                <label>Event-ID (Format DS-YYYY-MM-DD-A/B)
+                  <input id="eventId" type="text" placeholder="DS-2025-01-31-A" autocomplete="off" spellcheck="false">
+                </label>
+                <label>Worker URL
+                  <input id="workerUrl" type="url" value="https://ds-commit.hak1.workers.dev/write-file" spellcheck="false">
+                  <small class="hint">Wird lokal gespeichert.</small>
+                </label>
+                <label>Branch
+                  <input id="branchInput" type="text" value="main" spellcheck="false">
+                </label>
+                <label>Admin-Key (Fallback)
+                  <input id="adminKeyFallback" type="password" placeholder="Optional – zentral gespeichert" autocomplete="off">
+                </label>
+                <div class="controls" style="gap:0.5rem;">
+                  <button id="loadRosterBtn" type="button">Aufstellung übernehmen</button>
+                  <button id="loadResultsBtn" type="button">Ergebnis laden</button>
+                  <button id="saveBtn" type="button">Speichern</button>
+                </div>
+              </div>
+              <div class="status-bar">
+                <span id="statusText">Warte auf Aktion…</span>
+                <span id="warningPill" class="pill warn" style="display:none;"></span>
+              </div>
+              <div class="warnings" id="warningList" aria-live="polite"></div>
+            </section>
+
+            <section class="panel">
+              <div class="table-wrapper">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Spieler</th>
+                      <th>Gruppe</th>
+                      <th>Slot</th>
+                      <th>Rolle</th>
+                      <th>Anwesend</th>
+                      <th>Punkte</th>
+                      <th>Notiz</th>
+                    </tr>
+                  </thead>
+                  <tbody id="resultTableBody">
+                    <tr><td colspan="7" class="empty-state">Noch keine Aufstellung geladen.</td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </section>
+          </div>
+        </section>
+      </main>
+    </div>
+  </div>
+
+  <script src="../shared.js"></script>
+  <script>
+    (function(){
+      const shared = window.dsroShared || {};
+      const $ = (sel) => document.querySelector(sel);
+      const elements = {
+        eventId: $('#eventId'),
+        workerUrl: $('#workerUrl'),
+        branchInput: $('#branchInput'),
+        adminKeyFallback: $('#adminKeyFallback'),
+        loadRosterBtn: $('#loadRosterBtn'),
+        loadResultsBtn: $('#loadResultsBtn'),
+        saveBtn: $('#saveBtn'),
+        statusText: $('#statusText'),
+        warningPill: $('#warningPill'),
+        warningList: $('#warningList'),
+        tableBody: $('#resultTableBody'),
+        snapshotMeta: $('#snapshotMeta'),
+        resultMeta: $('#resultMeta'),
+        adminKeyState: $('#adminKeyState'),
+      };
+
+      const STORAGE_KEY = 'dsro-event-results-admin';
+      const EVENT_RE = /^DS-\d{4}-\d{2}-\d{2}-[AB]$/i;
+      const state = {
+        rosterRows: [],
+        savedResults: [],
+        savedResultsMap: new Map(),
+        latestSnapshotMeta: '',
+        resultMeta: '',
+        loading: false,
+        saving: false,
+      };
+
+      function setStatus(text, tone = 'muted') {
+        if (elements.statusText) {
+          elements.statusText.textContent = text;
+          elements.statusText.className = tone === 'error' ? 'error' : tone === 'success' ? 'success' : '';
+        }
+      }
+
+      function setWarningBanner(message) {
+        if (!elements.warningPill) return;
+        if (message) {
+          elements.warningPill.textContent = message;
+          elements.warningPill.style.display = 'inline-flex';
+        } else {
+          elements.warningPill.style.display = 'none';
+        }
+      }
+
+      function addWarning(message) {
+        if (!elements.warningList) return;
+        const div = document.createElement('div');
+        div.className = 'warning';
+        div.textContent = message;
+        elements.warningList.appendChild(div);
+      }
+
+      function clearWarnings() {
+        if (!elements.warningList) return;
+        elements.warningList.innerHTML = '';
+      }
+
+      function validateEventId(raw) {
+        if (!raw) return '';
+        const trimmed = raw.trim().toUpperCase();
+        return EVENT_RE.test(trimmed) ? trimmed : '';
+      }
+
+      function applyMeta(el, text, tone = 'muted') {
+        if (!el) return;
+        el.textContent = text;
+        el.className = `badge ${tone}`.trim();
+      }
+
+      function loadSettings() {
+        const saved = localStorage.getItem(STORAGE_KEY);
+        if (saved) {
+          try {
+            const parsed = JSON.parse(saved);
+            if (parsed.workerUrl) elements.workerUrl.value = parsed.workerUrl;
+            if (parsed.branch) elements.branchInput.value = parsed.branch;
+            if (parsed.eventId) elements.eventId.value = parsed.eventId;
+          } catch (err) {
+            console.warn('Settings konnten nicht gelesen werden', err);
+          }
+        } else {
+          const sharedSettings = shared.readSharedAdminSettings ? shared.readSharedAdminSettings() : null;
+          if (sharedSettings) {
+            if (sharedSettings.workerUrl) elements.workerUrl.value = sharedSettings.workerUrl;
+            if (sharedSettings.customBranch) elements.branchInput.value = sharedSettings.customBranch;
+            if (sharedSettings.branchSelect) elements.branchInput.value = sharedSettings.branchSelect;
+          }
+        }
+        shared.applyAdminKeyInput?.(elements.adminKeyFallback, { syncOnInput: false });
+      }
+
+      function persistSettings() {
+        try {
+          const payload = {
+            workerUrl: elements.workerUrl.value,
+            branch: elements.branchInput.value,
+            eventId: elements.eventId.value,
+          };
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
+        } catch (err) {
+          console.warn('Settings konnten nicht gespeichert werden', err);
+        }
+      }
+
+      function derivePlayerKey(name) {
+        const aliasMap = shared.aliasMap instanceof Map ? shared.aliasMap : null;
+        const canonical = shared.canonicalNameJS ? shared.canonicalNameJS(name || '') : (name || '').toLowerCase();
+        return aliasMap?.get(canonical) || canonical;
+      }
+
+      function buildRosterRows(payload) {
+        const rows = [];
+        if (!payload) return rows;
+        shared.prepareAliasMapFromPayload?.(payload);
+        const add = (list, group, slot) => {
+          (list || []).forEach((entry, idx) => {
+            const rawName = entry?.name || entry?.raw_name || `#${idx + 1}`;
+            const display = shared.resolvePlayerDisplayName ? shared.resolvePlayerDisplayName(rawName) : rawName;
+            rows.push({
+              player_key: derivePlayerKey(rawName),
+              display_name: display,
+              display_name_snapshot: display,
+              slot,
+              group,
+              role: entry?.role || slot,
+            });
+          });
+        };
+        add(payload?.team_a?.start, 'A', 'Start');
+        add(payload?.team_a?.subs, 'A', 'Sub');
+        add(payload?.team_b?.start, 'B', 'Start');
+        add(payload?.team_b?.subs, 'B', 'Sub');
+        return rows;
+      }
+
+      function mapResultsByKey(results = []) {
+        const map = new Map();
+        results.forEach((entry) => {
+          const key = entry?.player_key || derivePlayerKey(entry?.display_name || entry?.name || '');
+          if (!key) return;
+          map.set(key, entry);
+        });
+        return map;
+      }
+
+      function renderWarnings(rows) {
+        clearWarnings();
+        const duplicateKeys = rows.reduce((acc, row) => {
+          acc[row.player_key] = (acc[row.player_key] || 0) + 1;
+          return acc;
+        }, {});
+        const dupes = Object.entries(duplicateKeys).filter(([, count]) => count > 1).map(([key]) => key);
+        if (dupes.length) {
+          addWarning(`Doppelte Spieler-Schlüssel im Roster: ${dupes.join(', ')}`);
+          setWarningBanner('Duplikate erkannt');
+        } else {
+          setWarningBanner('');
+        }
+
+        const missing = rows.filter((row) => !state.savedResultsMap.has(row.player_key));
+        if (missing.length) {
+          addWarning(`${missing.length} Spieler haben noch kein Ergebnis – bitte prüfen.`);
+        }
+        const extra = state.savedResults.filter((entry) => !rows.some((row) => row.player_key === entry.player_key));
+        if (extra.length) {
+          addWarning(`${extra.length} gespeicherte Einträge nicht im aktuellen Roster gefunden.`);
+        }
+      }
+
+      function renderTable() {
+        if (!elements.tableBody) return;
+        elements.tableBody.innerHTML = '';
+        const rows = [];
+        const seen = new Set();
+        state.rosterRows.forEach((row) => {
+          const saved = state.savedResultsMap.get(row.player_key) || {};
+          rows.push({ ...row, attended: !!saved.attended, points: Number(saved.points) || 0, note: saved.note || '' });
+          seen.add(row.player_key);
+        });
+        state.savedResults.forEach((entry) => {
+          if (seen.has(entry.player_key)) return;
+          rows.push({
+            player_key: entry.player_key || derivePlayerKey(entry.display_name_snapshot || entry.display_name || entry.name || ''),
+            display_name: entry.display_name_snapshot || entry.display_name || entry.name || entry.player_key,
+            display_name_snapshot: entry.display_name_snapshot || entry.display_name || entry.name || entry.player_key,
+            group: entry.group || entry.team || '–',
+            slot: entry.slot || entry.role || 'n/a',
+            role: entry.role || entry.slot || '',
+            attended: !!entry.attended,
+            points: Number(entry.points) || 0,
+            note: entry.note || '',
+          });
+        });
+
+        if (!rows.length) {
+          const tr = document.createElement('tr');
+          const td = document.createElement('td');
+          td.colSpan = 7;
+          td.className = 'empty-state';
+          td.textContent = 'Noch keine Aufstellung geladen.';
+          tr.appendChild(td);
+          elements.tableBody.appendChild(tr);
+          return;
+        }
+
+        rows.forEach((row) => {
+          const tr = document.createElement('tr');
+          tr.dataset.playerKey = row.player_key;
+          tr.dataset.displayName = row.display_name_snapshot || row.display_name;
+          tr.dataset.slot = row.slot;
+          tr.dataset.group = row.group;
+          tr.dataset.role = row.role;
+
+          const cells = [
+            row.display_name_snapshot || row.display_name || row.player_key,
+            row.group,
+            row.slot,
+            row.role,
+          ];
+          cells.forEach((text) => {
+            const td = document.createElement('td');
+            td.textContent = text || '';
+            td.className = 'mono';
+            tr.appendChild(td);
+          });
+
+          const attendedTd = document.createElement('td');
+          const attendedInput = document.createElement('input');
+          attendedInput.type = 'checkbox';
+          attendedInput.checked = !!row.attended;
+          attendedInput.className = 'attended';
+          attendedTd.appendChild(attendedInput);
+          tr.appendChild(attendedTd);
+
+          const pointsTd = document.createElement('td');
+          const pointsInput = document.createElement('input');
+          pointsInput.type = 'number';
+          pointsInput.min = '0';
+          pointsInput.step = '1';
+          pointsInput.value = Number.isFinite(row.points) ? row.points : 0;
+          pointsInput.className = 'points';
+          pointsTd.appendChild(pointsInput);
+          tr.appendChild(pointsTd);
+
+          const noteTd = document.createElement('td');
+          const noteInput = document.createElement('textarea');
+          noteInput.value = row.note || '';
+          noteInput.rows = 2;
+          noteInput.className = 'note';
+          noteTd.appendChild(noteInput);
+          tr.appendChild(noteTd);
+
+          elements.tableBody.appendChild(tr);
+        });
+
+        renderWarnings(rows);
+      }
+
+      async function fetchLatest() {
+        const url = shared.buildLatestJsonUrl ? shared.buildLatestJsonUrl({ cacheBuster: `?v=${Date.now()}` }) : 'out/latest.json';
+        return shared.fetchJsonWithErrors ? shared.fetchJsonWithErrors(url) : (await fetch(url)).json();
+      }
+
+      async function handleLoadRoster() {
+        const eventId = validateEventId(elements.eventId.value);
+        if (!eventId) {
+          setStatus('Ungültige Event-ID. Format: DS-YYYY-MM-DD-A/B', 'error');
+          return;
+        }
+        setStatus('Lade Aufstellung aus latest.json…');
+        state.loading = true;
+        try {
+          const payload = await fetchLatest();
+          state.rosterRows = buildRosterRows(payload);
+          state.latestSnapshotMeta = payload?.generated_at || 'latest.json';
+          applyMeta(elements.snapshotMeta, `Aufstellung: ${state.rosterRows.length} Spieler · ${state.latestSnapshotMeta}`);
+          const suggestion = shared.suggestDsEventIdForGroup ? shared.suggestDsEventIdForGroup({ payload, groupLetter: eventId.slice(-1) }) : '';
+          if (!elements.eventId.value && suggestion) {
+            elements.eventId.value = suggestion;
+          }
+          renderTable();
+          setStatus('Aufstellung übernommen.', 'success');
+        } catch (err) {
+          console.error(err);
+          setStatus(`Konnte latest.json nicht laden: ${err.message}`, 'error');
+        } finally {
+          state.loading = false;
+          persistSettings();
+        }
+      }
+
+      async function handleLoadResults() {
+        const eventId = validateEventId(elements.eventId.value);
+        if (!eventId) {
+          setStatus('Ungültige Event-ID. Format: DS-YYYY-MM-DD-A/B', 'error');
+          return;
+        }
+        setStatus('Lade gespeichertes Ergebnis…');
+        state.loading = true;
+        try {
+          const base = shared.computeSiteRoot ? shared.computeSiteRoot(location.pathname) : './';
+          const url = `${base}data/event_results/${eventId}.json?v=${Date.now()}`;
+          const resultJson = await (shared.fetchJsonWithErrors ? shared.fetchJsonWithErrors(url) : (await fetch(url)).json());
+          const entries = Array.isArray(resultJson) ? resultJson : Array.isArray(resultJson?.results) ? resultJson.results : [];
+          state.savedResults = entries.map((entry) => ({ event_id: eventId, ...entry }));
+          state.savedResultsMap = mapResultsByKey(state.savedResults);
+          state.resultMeta = resultJson?.generated_at || 'geladen';
+          applyMeta(elements.resultMeta, `Ergebnis geladen @ ${state.resultMeta}`, 'success');
+          renderTable();
+          setStatus(`${entries.length} Einträge geladen.`, 'success');
+        } catch (err) {
+          console.error(err);
+          state.savedResults = [];
+          state.savedResultsMap = new Map();
+          applyMeta(elements.resultMeta, 'Kein Ergebnis gefunden', 'warn');
+          renderTable();
+          setStatus(`Ergebnis konnte nicht geladen werden (${err.message}).`, 'error');
+        } finally {
+          state.loading = false;
+          persistSettings();
+        }
+      }
+
+      function collectResults() {
+        if (!elements.tableBody) return [];
+        const rows = Array.from(elements.tableBody.querySelectorAll('tr'));
+        return rows.map((row) => {
+          const attended = row.querySelector('input.attended')?.checked || false;
+          const pointsVal = parseInt(row.querySelector('input.points')?.value, 10);
+          const points = Number.isFinite(pointsVal) ? pointsVal : 0;
+          const note = row.querySelector('textarea.note')?.value || '';
+          return {
+            event_id: validateEventId(elements.eventId.value) || '',
+            player_key: row.dataset.playerKey || '',
+            display_name_snapshot: row.dataset.displayName || row.dataset.playerKey,
+            slot: row.dataset.slot || '',
+            group: row.dataset.group || '',
+            role: row.dataset.role || '',
+            attended,
+            points,
+            note,
+          };
+        });
+      }
+
+      async function writeFile(payload) {
+        const headers = shared.buildAdminHeaders ? shared.buildAdminHeaders({
+          adminKey: shared.getAdminKey?.(),
+          headers: { 'Content-Type': 'application/json' },
+        }) : { 'Content-Type': 'application/json', 'X-Admin-Key': shared.getAdminKey?.() };
+        const res = await fetch(elements.workerUrl.value.trim(), {
+          method: 'POST',
+          headers,
+          body: JSON.stringify(payload),
+          mode: 'cors',
+        });
+        if (!res.ok) {
+          const text = await res.text().catch(() => '');
+          throw new Error(text || `HTTP ${res.status}`);
+        }
+        const json = await res.json().catch(() => ({}));
+        if (json && json.ok === false) throw new Error(json.error || 'Worker-Fehler');
+        return json;
+      }
+
+      async function handleSave() {
+        const eventId = validateEventId(elements.eventId.value);
+        if (!eventId) {
+          setStatus('Ungültige Event-ID. Format: DS-YYYY-MM-DD-A/B', 'error');
+          return;
+        }
+        const adminKey = shared.getAdminKey ? shared.getAdminKey() : '';
+        if (!adminKey) {
+          setStatus('Kein Admin-Key gesetzt – bitte einloggen.', 'error');
+          return;
+        }
+        const workerUrl = (elements.workerUrl.value || '').trim();
+        if (!workerUrl) {
+          setStatus('Worker-URL fehlt.', 'error');
+          return;
+        }
+        const results = collectResults();
+        if (!results.length) {
+          setStatus('Keine Daten zum Speichern.', 'error');
+          return;
+        }
+        const payload = {
+          path: `data/event_results/${eventId}.json`,
+          branch: (elements.branchInput.value || 'main').trim() || 'main',
+          message: `admin: update event results ${eventId}`,
+          content: JSON.stringify({
+            event_id: eventId,
+            generated_at: new Date().toISOString(),
+            results,
+          }, null, 2),
+        };
+        state.saving = true;
+        setStatus('Speichere Ergebnis via Worker…');
+        try {
+          await writeFile(payload);
+          setStatus('Ergebnis gespeichert.', 'success');
+          applyMeta(elements.resultMeta, `Gespeichert @ ${new Date().toLocaleString()}`, 'success');
+          state.savedResults = results;
+          state.savedResultsMap = mapResultsByKey(results);
+          renderTable();
+        } catch (err) {
+          console.error(err);
+          setStatus(`Speichern fehlgeschlagen: ${err.message}`, 'error');
+        } finally {
+          state.saving = false;
+          persistSettings();
+        }
+      }
+
+      function renderAdminKeyState({ message, tone = 'info' }) {
+        if (!elements.adminKeyState) return;
+        elements.adminKeyState.textContent = message;
+        elements.adminKeyState.className = `pill ${tone}`.trim();
+      }
+
+      function initEvents() {
+        elements.loadRosterBtn?.addEventListener('click', handleLoadRoster);
+        elements.loadResultsBtn?.addEventListener('click', handleLoadResults);
+        elements.saveBtn?.addEventListener('click', handleSave);
+        ['workerUrl', 'branchInput', 'eventId'].forEach((key) => {
+          elements[key]?.addEventListener('change', persistSettings);
+        });
+      }
+
+      function initAdminGate() {
+        shared.initAdminKeyGate?.({
+          statusEl: elements.adminKeyState,
+          fallbackInput: elements.adminKeyFallback,
+          onValid: () => {
+            renderAdminKeyState({ message: 'Admin-Key ist gesetzt (zentral).', tone: 'success' });
+          },
+          renderStatus: renderAdminKeyState,
+        });
+      }
+
+      function init() {
+        loadSettings();
+        initEvents();
+        initAdminGate();
+      }
+
+      document.addEventListener('DOMContentLoaded', init);
+    })();
+  </script>
+  <script src="admin.js"></script>
+</body>
+</html>
