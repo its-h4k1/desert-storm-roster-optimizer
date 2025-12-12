@@ -35,7 +35,7 @@ from src.effective_signups import (
 )
 from src.event_responses import EventResponse, load_event_responses_for_next_event
 from src.stats import PlayerReliability, compute_player_reliability
-from src.utils import canonical_name
+from src.utils import canonical_name, load_alias_map
 
 
 # --------------------------
@@ -76,14 +76,82 @@ def _parse_args() -> argparse.Namespace:
 # Payload helpers
 # --------------------------
 
-def _entry_to_dict(entry: RosterEntry) -> Dict[str, object]:
+def _entry_to_dict(
+    entry: RosterEntry,
+    *,
+    resolve_display_name,
+) -> Dict[str, object]:
+    display_name = resolve_display_name(entry.name)
     return {
-        "name": entry.name,
+        "name": display_name,
+        "raw_name": entry.name,
         "role": entry.role,
         "note": entry.note,
         "tags": entry.tags,
         "source": entry.source,
     }
+
+
+def _load_alias_data(
+    aliases_path: str = "data/aliases.csv", alliance_path: str = "data/alliance.csv"
+) -> tuple[Dict[str, str], Dict[str, str]]:
+    """Load alias map + display names from aliases/alliance tables."""
+
+    alias_map: Dict[str, str] = {}
+    canonical_display: Dict[str, str] = {}
+
+    aliases_file = Path(aliases_path)
+    if aliases_file.exists():
+        # load_alias_map übernimmt Normalisierung + Zyklenerkennung
+        alias_map = load_alias_map(aliases_file.as_posix())
+        try:
+            df = pd.read_csv(aliases_file, comment="#", dtype=str)
+        except Exception:
+            df = pd.DataFrame(columns=["Canonical", "Alias"])
+
+        cols = {c.lower(): c for c in df.columns}
+        canon_col = cols.get("canonical")
+        if canon_col:
+            for raw in df[canon_col].fillna(""):
+                display = str(raw).strip()
+                canon_key = canonical_name(display)
+                if canon_key and display:
+                    canonical_display.setdefault(canon_key, display)
+
+    alliance_file = Path(alliance_path)
+    if alliance_file.exists():
+        try:
+            alliance_df = pd.read_csv(alliance_file, comment="#", dtype=str)
+        except Exception:
+            alliance_df = pd.DataFrame(columns=["PlayerName"])
+
+        if "PlayerName" in alliance_df.columns:
+            for raw in alliance_df["PlayerName"].fillna(""):
+                display = str(raw).strip()
+                canon_key = canonical_name(display)
+                if canon_key and display:
+                    canonical_display.setdefault(canon_key, display)
+
+    return alias_map, canonical_display
+
+
+def _make_display_name_resolver(
+    alias_map: Dict[str, str] | None,
+    canonical_display: Dict[str, str] | None,
+):
+    """Build a resolver that prefers canonical display names if available."""
+
+    alias_map = alias_map or {}
+    canonical_display = canonical_display or {}
+
+    def _resolve(raw: str) -> str:
+        canon = canonical_name(raw)
+        resolved_canon = alias_map.get(canon, canon)
+        display = canonical_display.get(resolved_canon) or canonical_display.get(canon)
+        display = (display or str(raw)).strip()
+        return display or resolved_canon
+
+    return _resolve
 
 
 def _load_event_history() -> pd.DataFrame:
@@ -147,6 +215,8 @@ def _build_payload(
     event_datetime_local,
     signup_deadline_local,
     config,
+    alias_map: Dict[str, str] | None = None,
+    canonical_display: Dict[str, str] | None = None,
     reliability_players: Dict[str, PlayerReliability] | None = None,
 ) -> Dict[str, object]:
     team_a: Dict[str, List[RosterEntry]] = rosters.get("team_a", {})  # type: ignore[assignment]
@@ -157,6 +227,8 @@ def _build_payload(
     team_a_subs = team_a.get("subs", [])
     team_b_start = team_b.get("start", [])
     team_b_subs = team_b.get("subs", [])
+
+    resolve_display_name = _make_display_name_resolver(alias_map, canonical_display)
 
     rostered_canons = {
         canonical_name(entry.name)
@@ -182,8 +254,12 @@ def _build_payload(
     name_by_canon: Dict[str, str] = {}
     for s in signups:
         name_by_canon[s.canon] = s.name
+        resolved = canonical_name(s.name)
+        canonical_display.setdefault(resolved, s.name) if canonical_display is not None else None
     for resp in responses:
         name_by_canon.setdefault(resp.canon, resp.name)
+        resolved = canonical_name(resp.name)
+        canonical_display.setdefault(resolved, resp.name) if canonical_display is not None else None
 
     signup_states_export: Dict[str, object] = {}
     for canon, state in signup_states.items():
@@ -192,9 +268,10 @@ def _build_payload(
             entry["last_response_time"] = (
                 state.last_response.response_time.astimezone(timezone.utc).isoformat()
             )
+        display_name = resolve_display_name(name_by_canon.get(canon, canon))
         entry["canon"] = canon
-        entry["name"] = name_by_canon.get(canon, canon)
-        signup_states_export[name_by_canon.get(canon, canon)] = entry
+        entry["name"] = display_name
+        signup_states_export[display_name] = entry
 
     return {
         "event": {
@@ -207,16 +284,31 @@ def _build_payload(
             "signup_deadline_local": signup_deadline_local.isoformat(),
         },
         "team_a": {
-            "start": [_entry_to_dict(e) for e in team_a_start],
-            "subs": [_entry_to_dict(e) for e in team_a_subs],
+            "start": [
+                _entry_to_dict(e, resolve_display_name=resolve_display_name)
+                for e in team_a_start
+            ],
+            "subs": [
+                _entry_to_dict(e, resolve_display_name=resolve_display_name)
+                for e in team_a_subs
+            ],
         },
         "team_b": {
-            "start": [_entry_to_dict(e) for e in team_b_start],
-            "subs": [_entry_to_dict(e) for e in team_b_subs],
+            "start": [
+                _entry_to_dict(e, resolve_display_name=resolve_display_name)
+                for e in team_b_start
+            ],
+            "subs": [
+                _entry_to_dict(e, resolve_display_name=resolve_display_name)
+                for e in team_b_subs
+            ],
         },
         "hard_signups_not_in_roster": [
-            _entry_to_dict(e) for e in hard_signups_not_in_roster
+            _entry_to_dict(e, resolve_display_name=resolve_display_name)
+            for e in hard_signups_not_in_roster
         ],
+        "alias_map": alias_map or {},
+        "canonical_display": canonical_display or {},
         "signup_stats": {
             "hard_signups": len(signups),
             "hard_signups_eligible": len(eligible_signups),
@@ -285,6 +377,7 @@ def main() -> None:
     cfg = get_config()
     signups = load_hard_signups_for_next_event(args.event_signups)
     responses = load_event_responses_for_next_event()
+    alias_map, canonical_display = _load_alias_data()
     event_dt_local = compute_event_datetime_local(args.event_date, args.event_time)
     event_history = _load_event_history()
     reliability_players = compute_player_reliability(
@@ -312,6 +405,8 @@ def main() -> None:
         event_datetime_local=event_dt_local,
         signup_deadline_local=signup_deadline_for_event(event_dt_local),
         config=cfg,
+        alias_map=alias_map,
+        canonical_display=canonical_display,
         reliability_players=reliability_players,
     )
     _write_outputs(Path(args.out), payload)

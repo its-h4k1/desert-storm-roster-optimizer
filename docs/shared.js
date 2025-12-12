@@ -699,6 +699,7 @@
 
   shared.prepareAliasMapFromPayload = function (payload) {
     const map = new Map();
+    const canonicalDisplay = new Map();
     if (payload && typeof payload === "object") {
       const candidateSources = [payload.alias_map, payload.player_aliases, payload.player_alias_map, payload.aliases];
       candidateSources.forEach((src) => {
@@ -709,12 +710,35 @@
           if (aliasKey) map.set(aliasKey, canonValue || aliasKey);
         });
       });
+
+      if (payload.canonical_display && typeof payload.canonical_display === "object") {
+        Object.entries(payload.canonical_display).forEach(([canon, display]) => {
+          const key = canonicalNameJS(canon || "");
+          const value = normalizePlayerName(display || canon || "");
+          if (key && value) canonicalDisplay.set(key, value);
+        });
+      }
     }
     shared.aliasMap = map;
+    shared.canonicalDisplayMap = canonicalDisplay;
     if (shared.refreshPlayerReliabilityIndex) {
       shared.refreshPlayerReliabilityIndex();
     }
     return map;
+  };
+
+  shared.resolvePlayerDisplayName = function (rawName) {
+    const normalized = normalizePlayerName(rawName || "");
+    const canon = canonicalNameJS(normalized || rawName || "");
+    const aliasMap = shared.aliasMap instanceof Map ? shared.aliasMap : null;
+    const canonicalDisplay = shared.canonicalDisplayMap instanceof Map ? shared.canonicalDisplayMap : null;
+    const resolvedCanon = aliasMap?.get(canon) || canon;
+    const display = (canonicalDisplay?.get(resolvedCanon))
+      || (canonicalDisplay?.get(canon))
+      || normalized
+      || rawName
+      || resolvedCanon;
+    return normalizePlayerName(display) || resolvedCanon;
   };
 
   function buildAllKnownPlayersForAdmin(latestPayload) {

@@ -114,6 +114,13 @@
       latestPayload: null,
     };
 
+    const resolvePlayerName = (name) => {
+      if (window.dsroShared?.resolvePlayerDisplayName) {
+        return window.dsroShared.resolvePlayerDisplayName(name);
+      }
+      return name;
+    };
+
     function showError(message) {
       statusBox.textContent = message;
       statusBox.style.display = 'block';
@@ -150,8 +157,9 @@
       entries.forEach((player, index) => {
         const li = document.createElement('li');
         li.className = 'player';
+        const displayName = resolvePlayerName(player.name);
         const tags = (player.tags || []).map((t) => `<span class="tag">${t}</span>`).join('');
-        li.innerHTML = `<div class="player-number">${index + 1}</div><div><h4>${player.name}${tags}</h4><div class="meta">${player.role}${player.note ? ' · ' + player.note : ''}${player.source ? ' · Quelle: ' + player.source : ''}</div></div>`;
+        li.innerHTML = `<div class="player-number">${index + 1}</div><div><h4>${displayName}${tags}</h4><div class="meta">${player.role}${player.note ? ' · ' + player.note : ''}${player.source ? ' · Quelle: ' + player.source : ''}</div></div>`;
         container.appendChild(li);
       });
     }
@@ -222,7 +230,7 @@
       // Exportiert die Startaufstellung als DS-Event-Teilnahmeliste im Format EventID, Slot, PlayerName, RoleAtRegistration.
       const startList = getStartList(groupKey);
       const header = ['EventID', 'Slot', 'PlayerName', 'RoleAtRegistration'];
-      const rows = startList.map((player, index) => [eventId, index + 1, player.name || '', 'Start']);
+      const rows = startList.map((player, index) => [eventId, index + 1, resolvePlayerName(player.name) || '', 'Start']);
       const csv = buildSimpleCsv(header, rows);
 
       if (navigator.clipboard && typeof navigator.clipboard.writeText === 'function') {
@@ -247,6 +255,9 @@
         if (!res.ok) throw new Error('latest.json HTTP ' + res.status);
         const data = await res.json();
         state.latestPayload = data;
+        if (window.dsroShared?.prepareAliasMapFromPayload) {
+          window.dsroShared.prepareAliasMapFromPayload(data);
+        }
         if (window.dsroShared?.hydrateReliabilityFromPayload) {
           window.dsroShared.hydrateReliabilityFromPayload(data);
         }
