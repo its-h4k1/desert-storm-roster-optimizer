@@ -415,18 +415,29 @@
       const setPlayerInputSelection = (shared && typeof shared.setPlayerInputSelection === 'function')
         ? shared.setPlayerInputSelection
         : ((inputEl, value, display) => {
+            console.debug('[event-assignments] shared.setPlayerInputSelection unavailable – fallback');
             if (!inputEl) return;
             inputEl.dataset.playerValue = value || '';
             inputEl.dataset.playerDisplay = display || value || '';
             inputEl.value = inputEl.dataset.playerDisplay;
+            if (!inputEl.value) {
+              inputEl.dataset.playerValue = '';
+              inputEl.dataset.playerDisplay = '';
+            }
           });
       const resolvePlayerInputValue = (shared && typeof shared.resolvePlayerInputValue === 'function')
         ? shared.resolvePlayerInputValue
         : ((inputEl) => {
+            console.debug('[event-assignments] shared.resolvePlayerInputValue unavailable – fallback');
             if (!inputEl) return '';
             const currentDisplay = (inputEl.value || '').trim();
             const storedDisplay = (inputEl.dataset.playerDisplay || '').trim();
             const storedValue = (inputEl.dataset.playerValue || '').trim();
+            if (!currentDisplay && (storedDisplay || storedValue)) {
+              inputEl.dataset.playerDisplay = '';
+              inputEl.dataset.playerValue = '';
+              return '';
+            }
             if (storedValue && storedDisplay && currentDisplay === storedDisplay) return storedValue;
             return currentDisplay;
           });

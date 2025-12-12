@@ -748,6 +748,14 @@
     inputEl.dataset.playerValue = value || "";
     inputEl.dataset.playerDisplay = displayName || value || "";
     inputEl.value = inputEl.dataset.playerDisplay;
+    if (!inputEl.value && (inputEl.dataset.playerValue || inputEl.dataset.playerDisplay)) {
+      console.debug("[dsroShared] player input cleared but dataset not reset – forcing blank state", {
+        playerValue: inputEl.dataset.playerValue,
+        playerDisplay: inputEl.dataset.playerDisplay,
+      });
+      inputEl.dataset.playerValue = "";
+      inputEl.dataset.playerDisplay = "";
+    }
   }
 
   function resolvePlayerInputValue(inputEl) {
@@ -755,6 +763,15 @@
     const currentDisplay = (inputEl.value || "").trim();
     const storedDisplay = (inputEl.dataset.playerDisplay || "").trim();
     const storedValue = (inputEl.dataset.playerValue || "").trim();
+    if (!currentDisplay && (storedDisplay || storedValue)) {
+      console.debug("[dsroShared] Resetting stale player input dataset after manual clear", {
+        storedDisplay,
+        storedValue,
+      });
+      inputEl.dataset.playerDisplay = "";
+      inputEl.dataset.playerValue = "";
+      return "";
+    }
     if (storedValue && storedDisplay && currentDisplay === storedDisplay) return storedValue;
     return currentDisplay;
   }
