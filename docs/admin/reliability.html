@@ -1,0 +1,501 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="robots" content="noindex, nofollow" />
+  <title>Zuverlässigkeit &amp; No-Show</title>
+  <link rel="stylesheet" href="admin.css" />
+  <style>
+    body { margin:0; background:var(--bg); color:var(--text); }
+    .page-main { display:grid; gap:1rem; padding:1rem; }
+    .panel { background:var(--panel); border:1px solid var(--border); border-radius:1rem; padding:1rem; box-shadow:var(--shadow-panel,0 16px 36px rgba(15,23,42,0.08)); }
+    .panel h2 { margin:0 0 0.2rem; }
+    .page-header { display:flex; gap:0.75rem; flex-wrap:wrap; align-items:flex-start; background:var(--glass); padding:1rem 1.25rem; border-bottom:1px solid var(--border); position:sticky; top:0; z-index:4; }
+    .page-header h1 { margin:0; font-size:1.65rem; }
+    .page-header p { margin:0.15rem 0 0; color:var(--text-muted); }
+    .meta-line { color:var(--text-muted); font-size:0.95rem; }
+    .pill { display:inline-flex; align-items:center; gap:0.35rem; padding:0.3rem 0.65rem; border-radius:999px; border:1px solid var(--border); background:var(--panel-muted); font-weight:600; font-size:0.85rem; }
+    .pill.warn { background:#fff7ed; color:#9a3412; border-color:#fed7aa; }
+    .pill.info { background:#e0f2fe; color:#075985; border-color:#bae6fd; }
+    .filters { display:flex; flex-wrap:wrap; gap:0.75rem; align-items:flex-end; }
+    label { display:flex; flex-direction:column; gap:0.35rem; font-size:0.9rem; color:var(--text-muted); }
+    input[type="text"], input[type="search"] { font:inherit; padding:0.55rem 0.65rem; border-radius:0.75rem; border:1px solid var(--border); background:var(--bg-alt); color:var(--text); min-width:14rem; }
+    input:focus { outline:2px solid rgba(37,99,235,0.35); outline-offset:1px; }
+    .checkbox { display:flex; gap:0.45rem; align-items:center; font-size:0.95rem; color:var(--text); }
+    .checkbox input { width:1rem; height:1rem; }
+    .table-wrapper { border:1px solid var(--border); border-radius:1rem; overflow:auto; background:var(--panel-muted); box-shadow:var(--shadow-card); }
+    table { width:100%; border-collapse:collapse; min-width:880px; }
+    thead { background:var(--bg-alt); position:sticky; top:0; z-index:2; }
+    th, td { padding:0.65rem 0.8rem; border-bottom:1px solid var(--border); text-align:left; vertical-align:top; }
+    th { font-size:0.85rem; text-transform:uppercase; letter-spacing:0.04em; color:var(--text-muted); cursor:pointer; user-select:none; }
+    tbody tr:hover td { background:var(--panel-muted); }
+    .muted { color:var(--text-muted); }
+    .bucket { display:inline-flex; gap:0.4rem; align-items:center; font-weight:700; text-transform:capitalize; }
+    .bucket:before { content:"●"; display:inline-block; }
+    .bucket.hoch:before { color:#0f7b43; }
+    .bucket.mittel:before { color:#b45309; }
+    .bucket.niedrig:before { color:#b91c1c; }
+    .bucket.neu:before { color:#6b7280; }
+    .meta-grid { display:flex; gap:0.5rem; flex-wrap:wrap; }
+    .detail-row { background:var(--panel); }
+    .history { display:grid; gap:0.4rem; }
+    .history-item { padding:0.5rem 0.65rem; border:1px solid var(--border); border-radius:0.75rem; background:var(--panel-muted); display:flex; flex-wrap:wrap; gap:0.5rem; align-items:center; }
+    .history-item .event { font-weight:700; }
+    .history-item .status { padding:0.15rem 0.5rem; border-radius:0.65rem; border:1px solid var(--border); font-weight:600; }
+    .status.attended { background:#dcfce7; color:#14532d; border-color:#bbf7d0; }
+    .status.missed { background:#fee2e2; color:#b91c1c; border-color:#fecdd3; }
+    .empty { color:var(--text-muted); font-style:italic; }
+    .sortable { display:flex; align-items:center; gap:0.35rem; }
+    .sort-indicator { font-size:0.85rem; color:var(--text-muted); }
+  </style>
+</head>
+<body>
+  <div class="admin-shell">
+    <aside class="admin-sidebar">
+      <div class="admin-sidebar-header">
+        <div class="admin-logo">ELT Admin</div>
+        <button class="sidebar-close" aria-label="Navigation schließen">✕</button>
+      </div>
+      <nav class="admin-nav">
+        <a href="index.html">CSV &amp; Datei-Tools</a>
+        <a href="events.html">Events erfassen</a>
+        <a href="players.html">Spieler &amp; Aliase</a>
+        <a href="absences.html">Absenzen</a>
+        <a href="group-preferences.html">Gruppenpräferenzen</a>
+        <a href="event-assignments.html">Event-Zusagen</a>
+        <a href="attendance-config.html">Attendance-Config</a>
+        <a href="noshow-dashboard.html">No-Show Analyse</a>
+        <a href="event-results.html">Event-Ergebnisse</a>
+        <a href="reliability.html" class="active">Reliability</a>
+      </nav>
+    </aside>
+
+    <div class="admin-main">
+      <header class="admin-header">
+        <button class="sidebar-toggle" aria-label="Navigation öffnen">☰</button>
+        <div class="page-title">
+          <p>No-Show / Zuverlässigkeit</p>
+          <h1>Reliability Dashboard</h1>
+        </div>
+        <div class="admin-header-actions">
+          <div class="admin-header-tools">
+            <div class="admin-status-line">
+              <span id="reliabilityStart" class="pill info">Lade Fenster…</span>
+            </div>
+            <a class="btn ghost" href="../index.html">Zur Roster-Ansicht</a>
+          </div>
+        </div>
+      </header>
+
+      <main class="admin-content">
+        <section class="admin-section" style="padding:1rem;">
+          <div class="page-header">
+            <div>
+              <p class="eyebrow" style="margin:0; color:var(--text-muted);">Teilnahme erbitten</p>
+              <h1>Kompaktes Zuverlässigkeitsfenster</h1>
+              <p class="meta-line">Aggregiert über die letzten 3 Events (JSON Event-Results) seit reliability_start_date.</p>
+            </div>
+            <div class="meta-grid">
+              <span id="eventWindowMeta" class="pill">Lädt…</span>
+              <span id="dataSourceMeta" class="pill">Quelle: latest.json</span>
+            </div>
+          </div>
+
+          <div class="page-main">
+            <section class="panel">
+              <h2>Filter</h2>
+              <div class="filters">
+                <label>Spieler suchen
+                  <input id="searchInput" type="search" placeholder="Name oder Alias" autocomplete="off" />
+                </label>
+                <div class="checkbox">
+                  <input id="withEventsOnly" type="checkbox" checked />
+                  <label for="withEventsOnly" style="margin:0;">Nur Spieler mit ≥1 Event im Fenster</label>
+                </div>
+                <div class="checkbox">
+                  <input id="includeNew" type="checkbox" checked />
+                  <label for="includeNew" style="margin:0;">"Neu"-Bucket einblenden</label>
+                </div>
+              </div>
+            </section>
+
+            <section class="panel">
+              <h2>Zuverlässigkeits-Übersicht</h2>
+              <p class="meta-line">Klick auf eine Zeile öffnet die Event-Historie (max. letzte 3 Events).</p>
+              <div class="table-wrapper">
+                <table>
+                  <thead>
+                    <tr>
+                      <th data-sort="name" class="sortable">Spieler <span class="sort-indicator" data-sort-indicator="name"></span></th>
+                      <th data-sort="events" class="sortable">Events <span class="sort-indicator" data-sort-indicator="events"></span></th>
+                      <th data-sort="attendance" class="sortable">Attendance <span class="sort-indicator" data-sort-indicator="attendance"></span></th>
+                      <th data-sort="noshow" class="sortable">No-Shows <span class="sort-indicator" data-sort-indicator="noshow"></span></th>
+                      <th data-sort="cancels" class="sortable">Early/Late Cancels <span class="sort-indicator" data-sort-indicator="cancels"></span></th>
+                      <th data-sort="bucket" class="sortable">Bucket <span class="sort-indicator" data-sort-indicator="bucket"></span></th>
+                    </tr>
+                  </thead>
+                  <tbody id="reliabilityTableBody">
+                    <tr><td colspan="6" class="muted">Lade Daten…</td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </section>
+          </div>
+        </section>
+      </main>
+    </div>
+  </div>
+
+  <script src="../shared.js"></script>
+  <script src="admin.js"></script>
+  <script>
+    (function(){
+      const shared = window.dsroShared || {};
+      const $ = (sel) => document.querySelector(sel);
+      const elements = {
+        tableBody: $('#reliabilityTableBody'),
+        searchInput: $('#searchInput'),
+        withEventsOnly: $('#withEventsOnly'),
+        includeNew: $('#includeNew'),
+        reliabilityStart: $('#reliabilityStart'),
+        eventWindowMeta: $('#eventWindowMeta'),
+        dataSourceMeta: $('#dataSourceMeta'),
+        sortIndicators: document.querySelectorAll('[data-sort-indicator]'),
+      };
+
+      const state = {
+        rows: [],
+        sortKey: 'bucket',
+        sortDir: 'asc', // asc → worst first for bucket mapping
+        search: '',
+        includeNew: true,
+        withEventsOnly: true,
+        eventResults: [],
+        expanded: new Set(),
+        reliabilityStartDate: null,
+      };
+
+      function formatDate(iso){
+        if (!iso) return '';
+        const d = new Date(iso + 'T00:00:00Z');
+        return d.toLocaleDateString('de-DE', { year: 'numeric', month: 'short', day: '2-digit' });
+      }
+
+      function formatNumber(n){
+        return Number(n || 0).toLocaleString('de-DE');
+      }
+
+      function formatPercent(num){
+        if (!Number.isFinite(num)) return '-';
+        return (num * 100).toFixed(0) + '%';
+      }
+
+      function parseReliabilityRows(payload){
+        const rel = (payload && payload.reliability && payload.reliability.players) || {};
+        const rows = [];
+        Object.entries(rel).forEach(([canon, raw]) => {
+          const stats = {
+            events: Number(raw?.events || 0),
+            attendance: Number(raw?.attendance || 0),
+            noShows: Number(raw?.no_shows || 0),
+            earlyCancels: Number(raw?.early_cancels || 0),
+            lateCancels: Number(raw?.late_cancels || 0),
+          };
+          const bucketInfo = typeof shared.computeReliabilityBucket === 'function'
+            ? shared.computeReliabilityBucket(stats)
+            : { bucket: 'neu', label: 'neu' };
+          rows.push({
+            canon,
+            display: typeof shared.resolvePlayerDisplayName === 'function'
+              ? shared.resolvePlayerDisplayName(canon)
+              : canon,
+            stats,
+            bucketInfo,
+            noShowRate: stats.events ? stats.noShows / stats.events : 0,
+            attendanceRate: stats.events ? stats.attendance / stats.events : 0,
+          });
+        });
+        return rows;
+      }
+
+      function bucketRank(bucket){
+        const order = { niedrig: 0, mittel: 1, neu: 2, hoch: 3 };
+        return order[bucket] ?? 2;
+      }
+
+      function sortRows(rows){
+        const dir = state.sortDir === 'desc' ? -1 : 1;
+        return rows.slice().sort((a, b) => {
+          const bucketDiff = bucketRank(a.bucketInfo.bucket) - bucketRank(b.bucketInfo.bucket);
+          if (state.sortKey === 'bucket') {
+            if (bucketDiff !== 0) return bucketDiff * dir;
+            if (b.noShowRate !== a.noShowRate) return (b.noShowRate - a.noShowRate) * dir;
+            return (a.stats.events - b.stats.events) * dir;
+          }
+          if (state.sortKey === 'events') return (a.stats.events - b.stats.events) * dir;
+          if (state.sortKey === 'attendance') return (a.attendanceRate - b.attendanceRate) * dir;
+          if (state.sortKey === 'noshow') return (a.noShowRate - b.noShowRate) * dir;
+          if (state.sortKey === 'cancels') {
+            const aCancels = a.stats.earlyCancels + a.stats.lateCancels;
+            const bCancels = b.stats.earlyCancels + b.stats.lateCancels;
+            return (aCancels - bCancels) * dir;
+          }
+          if (state.sortKey === 'name') return a.display.localeCompare(b.display, 'de', { sensitivity:'base' }) * dir;
+          return bucketDiff * dir;
+        });
+      }
+
+      function applyFilters(rows){
+        const term = state.search.trim().toLowerCase();
+        return rows.filter((row) => {
+          if (state.withEventsOnly && row.stats.events < 1) return false;
+          if (!state.includeNew && row.bucketInfo.bucket === 'neu') return false;
+          if (term && !row.display.toLowerCase().includes(term)) return false;
+          return true;
+        });
+      }
+
+      function renderSortIndicators(){
+        elements.sortIndicators.forEach((el) => {
+          const key = el.dataset.sortIndicator;
+          if (!key) return;
+          if (key === state.sortKey) {
+            el.textContent = state.sortDir === 'asc' ? '▲' : '▼';
+          } else {
+            el.textContent = '';
+          }
+        });
+      }
+
+      function renderTable(){
+        if (!elements.tableBody) return;
+        const filtered = applyFilters(sortRows(state.rows));
+        elements.tableBody.innerHTML = '';
+        if (!filtered.length) {
+          const tr = document.createElement('tr');
+          const td = document.createElement('td');
+          td.colSpan = 6;
+          td.className = 'muted';
+          td.textContent = 'Keine Treffer für die aktuellen Filter.';
+          tr.appendChild(td);
+          elements.tableBody.appendChild(tr);
+          return;
+        }
+
+        filtered.forEach((row) => {
+          const tr = document.createElement('tr');
+          tr.className = 'clickable-row';
+          tr.dataset.player = row.canon;
+          tr.addEventListener('click', () => toggleRow(row.canon));
+
+          const attendanceText = `${formatNumber(row.stats.attendance)} / ${formatNumber(row.stats.events)} (${formatPercent(row.attendanceRate)})`;
+          const cancelText = `${formatNumber(row.stats.earlyCancels)} / ${formatNumber(row.stats.lateCancels)}`;
+
+          tr.innerHTML = `
+            <td>${shared.escapeHtml ? shared.escapeHtml(row.display) : row.display}</td>
+            <td>${formatNumber(row.stats.events)}</td>
+            <td>${attendanceText}</td>
+            <td>${formatNumber(row.stats.noShows)}</td>
+            <td>${cancelText}</td>
+            <td><span class="bucket ${row.bucketInfo.bucket}">${row.bucketInfo.label}</span></td>
+          `;
+          elements.tableBody.appendChild(tr);
+
+          if (state.expanded.has(row.canon)) {
+            const detail = document.createElement('tr');
+            detail.className = 'detail-row';
+            const td = document.createElement('td');
+            td.colSpan = 6;
+            td.appendChild(renderHistory(row.canon));
+            detail.appendChild(td);
+            elements.tableBody.appendChild(detail);
+          }
+        });
+      }
+
+      function resolveCanon(raw){
+        const canon = typeof shared.canonicalNameJS === 'function' ? shared.canonicalNameJS(raw || '') : (raw || '').trim().toLowerCase();
+        if (!canon) return '';
+        const aliasMap = shared.aliasMap instanceof Map ? shared.aliasMap : null;
+        return aliasMap?.get(canon) || canon;
+      }
+
+      function renderHistory(canon){
+        const container = document.createElement('div');
+        container.className = 'history';
+        const events = state.eventResults || [];
+        if (!events.length) {
+          const p = document.createElement('p');
+          p.className = 'empty';
+          p.textContent = 'Kein Event-Result geladen.';
+          container.appendChild(p);
+          return container;
+        }
+
+        events.forEach((evt) => {
+          const eventId = evt.event_id || evt.id || 'Event';
+          const match = (evt.results || []).find((r) => resolveCanon(r.player_key || r.player || r.display_name_snapshot) === canon);
+          const item = document.createElement('div');
+          item.className = 'history-item';
+          const eventLabel = document.createElement('div');
+          eventLabel.className = 'event';
+          eventLabel.textContent = `${eventId}`;
+          item.appendChild(eventLabel);
+
+          if (match) {
+            const attended = !!match.attended || !!match.Teilgenommen;
+            const status = document.createElement('span');
+            status.className = 'status ' + (attended ? 'attended' : 'missed');
+            status.textContent = attended ? 'Anwesend' : 'No-Show';
+            item.appendChild(status);
+
+            if (match.points != null) {
+              const pts = document.createElement('span');
+              pts.className = 'muted';
+              pts.textContent = `Punkte: ${formatNumber(match.points)}`;
+              item.appendChild(pts);
+            }
+
+            if (match.note) {
+              const note = document.createElement('span');
+              note.className = 'muted';
+              note.textContent = `Notiz: ${match.note}`;
+              item.appendChild(note);
+            }
+          } else {
+            const empty = document.createElement('span');
+            empty.className = 'muted';
+            empty.textContent = 'Kein Eintrag in den letzten Events.';
+            item.appendChild(empty);
+          }
+
+          container.appendChild(item);
+        });
+        return container;
+      }
+
+      function toggleRow(canon){
+        if (state.expanded.has(canon)) {
+          state.expanded.delete(canon);
+        } else {
+          state.expanded.add(canon);
+        }
+        renderTable();
+      }
+
+      function attachSortHandlers(){
+        document.querySelectorAll('th[data-sort]').forEach((th) => {
+          th.addEventListener('click', () => {
+            const key = th.dataset.sort;
+            if (!key) return;
+            if (state.sortKey === key) {
+              state.sortDir = state.sortDir === 'asc' ? 'desc' : 'asc';
+            } else {
+              state.sortKey = key;
+              state.sortDir = key === 'bucket' ? 'asc' : 'desc';
+            }
+            renderSortIndicators();
+            renderTable();
+          });
+        });
+      }
+
+      function initFilters(){
+        elements.searchInput?.addEventListener('input', (e) => {
+          state.search = e.target.value || '';
+          renderTable();
+        });
+        elements.withEventsOnly?.addEventListener('change', (e) => {
+          state.withEventsOnly = !!e.target.checked;
+          renderTable();
+        });
+        elements.includeNew?.addEventListener('change', (e) => {
+          state.includeNew = !!e.target.checked;
+          renderTable();
+        });
+      }
+
+      async function fetchLatestPayload(){
+        const url = (shared.buildLatestJsonUrl ? shared.buildLatestJsonUrl() : '../out/latest.json');
+        if (elements.dataSourceMeta) elements.dataSourceMeta.textContent = `Quelle: ${url}`;
+        const payload = await (shared.fetchJsonWithErrors ? shared.fetchJsonWithErrors(url) : fetch(url).then((r) => r.json()));
+        if (shared.prepareAliasMapFromPayload) shared.prepareAliasMapFromPayload(payload);
+        if (shared.hydrateReliabilityFromPayload) shared.hydrateReliabilityFromPayload(payload);
+        if (shared.refreshAdminPlayerIndex) shared.refreshAdminPlayerIndex({ payload });
+        state.reliabilityStartDate = payload?.reliability_config?.reliability_start_date || payload?.reliability?.meta?.reliability_start_date || null;
+        return payload;
+      }
+
+      function computeCandidateEventIds(){
+        const ids = [];
+        const today = new Date();
+        let start = state.reliabilityStartDate
+          ? new Date(state.reliabilityStartDate + 'T00:00:00Z')
+          : new Date();
+        if (Number.isNaN(start.getTime())) start = new Date();
+        const dt = new Date(Date.UTC(start.getUTCFullYear(), start.getUTCMonth(), start.getUTCDate()));
+        while (dt <= today && ids.length < 16) {
+          const iso = dt.toISOString().slice(0,10);
+          ids.push(`DS-${iso}`);
+          dt.setUTCDate(dt.getUTCDate() + 7);
+        }
+        return ids.slice(-8).reverse();
+      }
+
+      async function fetchEventResults(){
+        const candidates = computeCandidateEventIds();
+        const found = [];
+        for (const id of candidates) {
+          if (found.length >= 4) break;
+          const url = `../data/event_results/${id}.json`;
+          try {
+            const res = await fetch(url);
+            if (!res.ok) continue;
+            const data = await res.json();
+            data.event_id = data.event_id || id;
+            found.push(data);
+          } catch (err) {
+            console.warn('Event-Result nicht geladen', id, err);
+          }
+        }
+        found.sort((a, b) => String(b.event_id || '').localeCompare(String(a.event_id || '')));
+        state.eventResults = found.slice(0, 3);
+        if (elements.eventWindowMeta) {
+          if (state.eventResults.length) {
+            const ids = state.eventResults.map((e) => e.event_id).join(', ');
+            elements.eventWindowMeta.textContent = `Fenster: ${ids}`;
+          } else {
+            elements.eventWindowMeta.textContent = 'Keine Event-Results geladen';
+          }
+        }
+      }
+
+      async function init(){
+        attachSortHandlers();
+        initFilters();
+        renderSortIndicators();
+        try {
+          const payload = await fetchLatestPayload();
+          state.rows = parseReliabilityRows(payload);
+          if (elements.reliabilityStart) {
+            elements.reliabilityStart.textContent = state.reliabilityStartDate
+              ? `reliability_start_date: ${state.reliabilityStartDate}`
+              : 'reliability_start_date fehlt';
+          }
+          renderTable();
+          await fetchEventResults();
+          renderTable();
+        } catch (err) {
+          console.error(err);
+          if (elements.tableBody) {
+            elements.tableBody.innerHTML = `<tr><td colspan="6" class="muted">Fehler beim Laden von latest.json: ${shared.escapeHtml ? shared.escapeHtml(String(err)) : err}</td></tr>`;
+          }
+        }
+      }
+
+      document.addEventListener('DOMContentLoaded', init);
+    })();
+  </script>
+</body>
+</html>
