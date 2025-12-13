@@ -26,8 +26,11 @@ import pandas as pd
 
 # Paket-Import (aus utils.py)
 from src.utils import parse_event_date, exp_decay_weight, canonical_name
-from src.attendance_config import RELIABILITY_START_DATE
 from src.effective_signups import EffectiveSignupState
+
+# Attendance-config is no longer configurable; reliability stats always start
+# from the full available history.
+RELIABILITY_START_DATE: date | None = None
 
 ROLES_START = {"Start"}
 ROLES_SUB = {"Ersatz"}
@@ -612,4 +615,5 @@ __all__ = [
     "compute_team_prior",
     "eb_rate",
     "eb_score",
+    "RELIABILITY_START_DATE",
 ]
