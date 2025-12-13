@@ -23,7 +23,6 @@ from typing import Dict, List
 import pandas as pd
 
 from src.config import get_config
-from src.attendance_config import RELIABILITY_START_DATE
 from src.core_roster import RosterEntry, build_rosters_from_hard_signups
 from src.core_signups import Signup, load_hard_signups_for_next_event
 from src.effective_signups import (
@@ -34,7 +33,11 @@ from src.effective_signups import (
     signup_deadline_for_event,
 )
 from src.event_responses import EventResponse, load_event_responses_for_next_event
-from src.stats import PlayerReliability, compute_player_reliability
+from src.stats import (
+    RELIABILITY_START_DATE,
+    PlayerReliability,
+    compute_player_reliability,
+)
 from src.utils import canonical_name, load_alias_map
 
 
