@@ -150,7 +150,32 @@
           <h1>Assistent</h1>
         </div>
         <div class="admin-header-actions">
-          <a class="btn ghost" href="../index.html">Zur Roster-Ansicht</a>
+          <div class="admin-header-tools">
+            <div class="admin-status-line">
+              <div id="adminKeyStatus" class="pill info">Admin-Key wird geprüft…</div>
+            </div>
+            <details id="adminSettings" class="admin-settings">
+              <summary>⚙️ Einstellungen</summary>
+              <div class="admin-settings-grid">
+                <label>Worker URL
+                  <input id="workerUrl" type="text" value="https://ds-commit.hak1.workers.dev/write-file" spellcheck="false">
+                </label>
+                <label>Branch
+                  <input id="branchInput" type="text" value="main" spellcheck="false">
+                </label>
+                <div id="adminKeyFallbackRow" style="display:none;">
+                  <label style="margin:0;">Admin-Key (Fallback)
+                    <input id="adminKeyFallback" type="password" placeholder="Optional – wird zentral gespeichert" autocomplete="off">
+                  </label>
+                  <div class="admin-settings-actions" style="margin-top:0.35rem;justify-content:flex-start;">
+                    <button id="applyAdminKeyBtn" class="ghost" type="button">Admin-Key übernehmen</button>
+                  </div>
+                  <small class="hint" style="margin-top:0.25rem;">Nur nutzen, falls der zentrale Login noch nicht gesetzt wurde.</small>
+                </div>
+              </div>
+            </details>
+            <a class="btn ghost" href="../index.html">Zur Roster-Ansicht</a>
+          </div>
         </div>
       </header>
 
@@ -163,24 +188,8 @@
               <p>Empfiehlt Erinnerungen basierend auf No-Show-Risiko, Absenzen &amp; Allianz-Status und trackt die Rückmeldungen.</p>
             </div>
             <div class="settings">
-              <label>Worker URL
-                <input id="workerUrl" type="text" value="https://ds-commit.hak1.workers.dev/write-file" spellcheck="false">
-              </label>
-              <label>Branch
-                <input id="branchInput" type="text" value="main" spellcheck="false">
-              </label>
               <button id="reloadBtn" class="ghost">Neu laden</button>
               <button id="saveBtn" class="ok">Speichern</button>
-            </div>
-            <div class="admin-key-banner" id="adminKeyBanner">
-              <div id="adminKeyStatus" class="admin-key-status">Admin-Key wird geprüft…</div>
-              <div class="admin-key-fallback hidden" id="adminKeyFallback">
-                <small>Kein Admin-Key gefunden? Optional hier kurz hinterlegen (wird zentral gespeichert).</small>
-                <label>Admin-Key (Fallback)
-                  <input id="adminKey" type="password" placeholder="Admin-Key eingeben" autocomplete="off">
-                </label>
-                <button id="applyAdminKeyBtn" class="ghost" type="button">Admin-Key übernehmen</button>
-              </div>
             </div>
           </header>
 
@@ -313,9 +322,10 @@
       const elements = {
         workerUrl: document.getElementById('workerUrl'),
         branch: document.getElementById('branchInput'),
-        adminKey: document.getElementById('adminKey'),
         adminKeyStatus: document.getElementById('adminKeyStatus'),
+        adminSettings: document.getElementById('adminSettings'),
         adminKeyFallback: document.getElementById('adminKeyFallback'),
+        adminKeyFallbackRow: document.getElementById('adminKeyFallbackRow'),
         applyAdminKeyBtn: document.getElementById('applyAdminKeyBtn'),
         reloadBtn: document.getElementById('reloadBtn'),
         saveBtn: document.getElementById('saveBtn'),
@@ -738,30 +748,7 @@
       }
 
       function updateAdminKeyStatus() {
-        const adminKey = getAdminKey();
-        const hasKey = !!adminKey;
-        if (elements.adminKeyStatus) {
-          elements.adminKeyStatus.textContent = hasKey
-            ? 'Admin-Key ist gesetzt (aus zentraler Verwaltung).'
-            : 'Kein Admin-Key gesetzt – bitte über die Admin-Startseite einloggen.';
-          elements.adminKeyStatus.className = 'admin-key-status ' + (hasKey ? 'ok' : 'warn');
-        }
-        if (elements.adminKeyFallback) {
-          elements.adminKeyFallback.classList.toggle('hidden', hasKey);
-        }
         updateSaveButtonState();
-      }
-
-      function applyAdminKeyFromFallback() {
-        if (!elements.adminKey) return;
-        const value = (elements.adminKey.value || '').trim();
-        if (!value) {
-          setStatus('Kein Admin-Key eingegeben.', 'warn');
-          return;
-        }
-        dsroShared.saveAdminKey(value);
-        updateAdminKeyStatus();
-        setStatus('Admin-Key gespeichert (zentraler Store).', 'ok');
       }
 
       function setStatus(message, tone='info') {
@@ -1602,14 +1589,17 @@
           renderCandidates();
           saveCallupConfig({ useDefaults: true });
         });
-        if (elements.applyAdminKeyBtn) {
-          elements.applyAdminKeyBtn.addEventListener('click', () => applyAdminKeyFromFallback());
-        }
       }
 
-      dsroShared.applyAdminKeyInput(elements.adminKey, { syncOnInput: false, onChange: updateAdminKeyStatus });
+      dsroShared.initAdminKeyGate({
+        statusEl: elements.adminKeyStatus,
+        fallbackInput: elements.adminKeyFallback,
+        fallbackRow: elements.adminKeyFallbackRow,
+        fallbackButton: elements.applyAdminKeyBtn,
+        settingsToggle: elements.adminSettings,
+        onValid: () => updateAdminKeyStatus(),
+      });
       restoreSettings();
-      updateAdminKeyStatus();
       initEvents();
       renderConfigInputs();
       renderThresholds();
