@@ -36,7 +36,35 @@
           <h1>Konfiguration &amp; Roster-Rebuild</h1>
         </div>
         <div class="admin-header-actions">
-          <a class="btn ghost" href="../index.html">Zur Roster-Ansicht</a>
+          <div class="admin-header-tools">
+            <div class="admin-status-line">
+              <div id="statusPill" class="pill">Bereit</div>
+              <div id="adminKeyStatus" class="pill muted">Admin-Key prüfen…</div>
+            </div>
+            <div class="admin-status-line">
+              <button id="reloadBtn" class="ghost">Neu laden</button>
+              <button id="saveBtn" class="secondary">Speichern &amp; Roster neu bauen</button>
+            </div>
+            <details id="adminSettings" class="admin-settings">
+              <summary>⚙️ Einstellungen</summary>
+              <div class="admin-settings-grid">
+                <label>Worker URL
+                  <input id="workerUrl" type="text" value="https://ds-commit.hak1.workers.dev/attendance-config" spellcheck="false">
+                </label>
+                <label>Branch
+                  <input id="branchInput" type="text" value="main" spellcheck="false">
+                </label>
+                <div class="hint" id="adminKeyFallbackRow" style="margin:0;min-width:220px; display:none;">
+                  <div style="display:flex;gap:0.35rem;align-items:center;flex-wrap:wrap;">
+                    <input id="adminKeyFallback" type="password" placeholder="Fallback-Admin-Key" autocomplete="off" style="flex:1;min-width:160px;">
+                    <button id="adminKeyFallbackBtn" class="ghost" type="button">Fallback setzen</button>
+                  </div>
+                  <div class="hint" style="margin-top:0.25rem;">Nur nutzen, falls der zentrale Login nicht gesetzt ist.</div>
+                </div>
+              </div>
+            </details>
+            <a class="btn ghost" href="../index.html">Zur Roster-Ansicht</a>
+          </div>
         </div>
       </header>
 
@@ -50,25 +78,6 @@
                   Werte aus <code>out/latest.json</code> oder <code>data/attendance_config.yml</code> laden,
                   anpassen und direkt über den Worker committen. Anschließend wird der Roster-Build erneut angestoßen.
                 </p>
-              </div>
-              <div class="settings" style="align-items:flex-end;">
-                <label>Worker URL
-                  <input id="workerUrl" type="text" value="https://ds-commit.hak1.workers.dev/attendance-config" spellcheck="false">
-                </label>
-                <label>Branch
-                  <input id="branchInput" type="text" value="main" spellcheck="false">
-                </label>
-                <div class="hint" id="adminKeyFallbackRow" style="margin:0;min-width:220px;">
-                  <div id="adminKeyStatus" class="pill muted" style="margin-bottom:0.35rem;">Admin-Key prüfen…</div>
-                  <div style="display:flex;gap:0.35rem;align-items:center;flex-wrap:wrap;">
-                    <input id="adminKeyFallback" type="password" placeholder="Fallback-Admin-Key" autocomplete="off" style="flex:1;min-width:160px;">
-                    <button id="adminKeyFallbackBtn" class="ghost" type="button">Fallback setzen</button>
-                  </div>
-                  <div class="hint" style="margin-top:0.25rem;">Nur nutzen, falls der zentrale Login nicht gesetzt ist.</div>
-                </div>
-                <button id="reloadBtn" class="ghost">Neu laden</button>
-                <button id="saveBtn" class="secondary">Speichern &amp; Roster neu bauen</button>
-                <div id="statusPill" class="pill">Bereit</div>
               </div>
             </header>
 

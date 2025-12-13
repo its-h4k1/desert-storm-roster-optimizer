@@ -210,7 +210,33 @@
           <h1>Alias-Gruppen verwalten</h1>
         </div>
         <div class="admin-header-actions">
-          <a class="btn ghost" href="../index.html">Zur Roster-Ansicht</a>
+          <div class="admin-header-tools">
+            <div class="admin-status-line">
+              <div id="adminKeyStatus" class="pill info">Admin-Key wird geprüft…</div>
+            </div>
+            <details id="adminSettings" class="admin-settings">
+              <summary>⚙️ Einstellungen</summary>
+              <div class="admin-settings-grid">
+                <label>Worker URL
+                  <input id="workerUrl" type="text" value="https://ds-commit.hak1.workers.dev/write-file" spellcheck="false">
+                  <small>Ändern nur falls der Schreib-Worker gewechselt wird.</small>
+                </label>
+                <label>Branch
+                  <input id="branchInput" type="text" value="main" spellcheck="false">
+                  <small>Ziel-Branch für Schreiboperationen.</small>
+                </label>
+                <div id="adminKeyFallbackRow" style="display:none;">
+                  <label style="margin:0;">Admin-Key (Fallback)
+                    <input id="adminKeyFallback" type="password" placeholder="Optional – zentral gespeichert" autocomplete="off">
+                  </label>
+                  <div class="admin-settings-actions" style="margin-top:0.35rem;justify-content:flex-start;">
+                    <button id="adminKeyFallbackBtn" type="button">Admin-Key übernehmen</button>
+                  </div>
+                </div>
+              </div>
+            </details>
+            <a class="btn ghost" href="../index.html">Zur Roster-Ansicht</a>
+          </div>
         </div>
       </header>
 
@@ -238,19 +264,6 @@
                 <button id="saveBtn" class="primary" type="button">Speichern</button>
               </div>
             </div>
-            <details class="advanced">
-              <summary>Advanced / Technische Details</summary>
-              <div class="settings-grid">
-                <label>Worker URL
-                  <input id="workerUrl" type="text" value="https://ds-commit.hak1.workers.dev/write-file" spellcheck="false">
-                  <small>Ändern nur falls der Schreib-Worker gewechselt wird.</small>
-                </label>
-                <label>Branch
-                  <input id="branchInput" type="text" value="main" spellcheck="false">
-                  <small>Ziel-Branch für Schreiboperationen.</small>
-                </label>
-              </div>
-            </details>
           </section>
 
           <section class="card">
@@ -306,6 +319,11 @@
       groupEmpty: document.getElementById("groupEmpty"),
       workerUrl: document.getElementById("workerUrl"),
       branchInput: document.getElementById("branchInput"),
+      adminSettings: document.getElementById("adminSettings"),
+      adminKeyStatus: document.getElementById("adminKeyStatus"),
+      adminKeyFallbackRow: document.getElementById("adminKeyFallbackRow"),
+      adminKeyFallback: document.getElementById("adminKeyFallback"),
+      adminKeyFallbackBtn: document.getElementById("adminKeyFallbackBtn"),
       searchInput: document.getElementById("searchInput"),
       showAllToggle: document.getElementById("showAllToggle"),
       reloadBtn: document.getElementById("reloadBtn"),
@@ -360,6 +378,13 @@
       const pill = document.getElementById("statusBar");
       pill.classList.remove("ok", "error", "info");
       pill.classList.add(tone);
+    }
+
+    function renderAdminKeyStatus({ message, tone = "info" }) {
+      if (!elements.adminKeyStatus) return;
+      const cls = tone === "success" ? "info" : tone;
+      elements.adminKeyStatus.textContent = message || "";
+      elements.adminKeyStatus.className = `pill ${cls}`.trim();
     }
 
       function buildCandidatePaths(path) {
@@ -1024,7 +1049,20 @@
       }
     }
 
+    function initAdminKeyGate() {
+      if (!window.dsroShared?.initAdminKeyGate) return;
+      window.dsroShared.initAdminKeyGate({
+        statusEl: elements.adminKeyStatus,
+        fallbackInput: elements.adminKeyFallback,
+        fallbackRow: elements.adminKeyFallbackRow,
+        fallbackButton: elements.adminKeyFallbackBtn,
+        settingsToggle: elements.adminSettings,
+        renderStatus: renderAdminKeyStatus,
+      });
+    }
+
     function init() {
+      initAdminKeyGate();
       restoreSettings();
       const auto = attachPlayerAutocomplete(elements.searchInput, {
         onCommit: (value) => {

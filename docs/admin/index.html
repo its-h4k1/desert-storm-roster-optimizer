@@ -75,21 +75,31 @@
           <h1>Admin-Tools</h1>
         </div>
         <div class="admin-header-actions">
-          <span id="envSite" class="pill mono"></span>
-          <div id="authEmail" class="stat"></div>
-          <button id="btnLogin" class="btn pri">Anmelden</button>
-          <button id="btnLogout" class="btn err hidden">Abmelden</button>
-          <a class="btn ghost" href="../index.html">Zur Roster-Ansicht</a>
+          <div class="admin-header-tools">
+            <div class="admin-status-line">
+              <span id="envSite" class="pill mono"></span>
+              <div id="authEmail" class="stat"></div>
+              <div id="adminKeyStatus" class="pill info">Admin-Key wird geprüft…</div>
+            </div>
+            <div class="admin-status-line">
+              <button id="btnLogin" class="btn pri">Anmelden</button>
+              <button id="btnLogout" class="btn err hidden">Abmelden</button>
+              <a class="btn ghost" href="../index.html">Zur Roster-Ansicht</a>
+            </div>
+            <details id="adminSettings" class="admin-settings">
+              <summary>⚙️ Einstellungen</summary>
+              <div class="admin-settings-grid">
+                <div id="adminKeyFallback" style="display:none;">
+                  <small>Kein Admin-Key gefunden? Du kannst ihn über den Login-Button setzen oder hier nachtragen.</small>
+                  <div class="admin-settings-actions" style="margin:0;justify-content:flex-start;">
+                    <button id="btnAdminKeyFallback" class="btn ghost" type="button" style="width:max-content;">Admin-Key übernehmen</button>
+                  </div>
+                </div>
+              </div>
+            </details>
+          </div>
         </div>
       </header>
-
-      <div class="admin-key-banner" id="adminKeyBanner">
-        <div id="adminKeyStatus" class="admin-key-status">Admin-Key wird geprüft…</div>
-        <div id="adminKeyFallback" class="admin-key-fallback hidden">
-          <small>Kein Admin-Key gefunden? Du kannst ihn über den Login-Button setzen oder hier nachtragen.</small>
-          <button id="btnAdminKeyFallback" class="btn ghost" type="button" style="width:max-content;">Admin-Key übernehmen</button>
-        </div>
-      </div>
 
       <main class="admin-content">
         <section class="admin-section">
@@ -294,6 +304,7 @@ itsH4K1,2025-11-14,2025-11-30,Ferien,1
     const btnLogout = $('#btnLogout');
     const adminKeyStatus = $('#adminKeyStatus');
     const adminKeyFallback = $('#adminKeyFallback');
+    const adminSettings = document.getElementById('adminSettings');
     const btnAdminKeyFallback = $('#btnAdminKeyFallback');
 
     function currentAdminKey() { return dsroShared.getAdminKey(); }
@@ -307,9 +318,10 @@ itsH4K1,2025-11-14,2025-11-30,Ferien,1
         adminKeyStatus.textContent = hasKey
           ? 'Admin-Key gesetzt (zentral gespeichert).'
           : 'Kein Admin-Key gesetzt – bitte Admin-Key eintragen.';
-        adminKeyStatus.className = 'admin-key-status ' + (hasKey ? 'ok' : 'warn');
+        adminKeyStatus.className = 'pill ' + (hasKey ? 'info' : 'warn');
       }
-      if (adminKeyFallback) adminKeyFallback.classList.toggle('hidden', hasKey);
+      if (adminKeyFallback) adminKeyFallback.style.display = hasKey ? 'none' : 'block';
+      if (!hasKey && adminSettings) adminSettings.open = true;
     }
     updateAdminKeyStatus();
 

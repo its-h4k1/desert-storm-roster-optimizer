@@ -71,7 +71,33 @@
           <h1>Eventergebnis erfassen</h1>
         </div>
         <div class="admin-header-actions">
-          <span id="adminKeyState" class="pill info">Admin-Key wird geprüft…</span>
+          <div class="admin-header-tools">
+            <div class="admin-status-line">
+              <span id="adminKeyState" class="pill info">Admin-Key wird geprüft…</span>
+            </div>
+            <details id="adminSettings" class="admin-settings">
+              <summary>⚙️ Einstellungen</summary>
+              <div class="admin-settings-grid">
+                <label>Worker URL
+                  <input id="workerUrl" type="url" value="https://ds-commit.hak1.workers.dev/write-file" spellcheck="false">
+                  <small class="hint">Wird lokal gespeichert.</small>
+                </label>
+                <label>Branch
+                  <input id="branchInput" type="text" value="main" spellcheck="false">
+                </label>
+                <div>
+                  <div id="adminKeyFallbackRow" style="display:none;">
+                    <label style="margin:0;">Admin-Key (Fallback)
+                      <input id="adminKeyFallback" type="password" placeholder="Optional – zentral gespeichert" autocomplete="off">
+                    </label>
+                    <div class="admin-settings-actions" style="margin-top:0.35rem;justify-content:flex-start;">
+                      <button id="adminKeyFallbackBtn" type="button">Admin-Key übernehmen</button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </details>
+          </div>
         </div>
       </header>
 
@@ -94,16 +120,6 @@
               <div class="controls">
                 <label>Event-ID (Format DS-YYYY-MM-DD – gilt für beide Gruppen)
                   <input id="eventId" type="text" placeholder="DS-2025-01-31" autocomplete="off" spellcheck="false">
-                </label>
-                <label>Worker URL
-                  <input id="workerUrl" type="url" value="https://ds-commit.hak1.workers.dev/write-file" spellcheck="false">
-                  <small class="hint">Wird lokal gespeichert.</small>
-                </label>
-                <label>Branch
-                  <input id="branchInput" type="text" value="main" spellcheck="false">
-                </label>
-                <label>Admin-Key (Fallback)
-                  <input id="adminKeyFallback" type="password" placeholder="Optional – zentral gespeichert" autocomplete="off">
                 </label>
                 <div class="controls" style="gap:0.5rem;">
                   <button id="loadRosterBtn" type="button">Aufstellung übernehmen</button>
@@ -155,6 +171,8 @@
         workerUrl: $('#workerUrl'),
         branchInput: $('#branchInput'),
         adminKeyFallback: $('#adminKeyFallback'),
+        adminKeyFallbackRow: $('#adminKeyFallbackRow'),
+        adminSettings: $('#adminSettings'),
         loadRosterBtn: $('#loadRosterBtn'),
         loadResultsBtn: $('#loadResultsBtn'),
         saveBtn: $('#saveBtn'),
@@ -603,6 +621,8 @@
         shared.initAdminKeyGate?.({
           statusEl: elements.adminKeyState,
           fallbackInput: elements.adminKeyFallback,
+          fallbackRow: elements.adminKeyFallbackRow,
+          settingsToggle: elements.adminSettings,
           onValid: () => {
             renderAdminKeyState({ message: 'Admin-Key ist gesetzt (zentral).', tone: 'success' });
           },
