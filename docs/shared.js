@@ -280,11 +280,18 @@
     fallbackInput,
     fallbackRow,
     fallbackButton,
+    settingsToggle,
     alertEl,
     onValid,
     renderStatus,
   } = {}) {
     let initialized = false;
+
+    const openSettings = () => {
+      if (settingsToggle && typeof settingsToggle === "object") {
+        try { settingsToggle.open = true; } catch (_) { /* ignore */ }
+      }
+    };
 
     const render = ({ message, tone = "info", showAlert = false }) => {
       if (typeof renderStatus === "function") {
@@ -303,11 +310,13 @@
       if (fallbackRow) {
         fallbackRow.style.display = showAlert ? "block" : "none";
       }
+      if (showAlert) openSettings();
     };
 
     const showFallback = () => {
       if (fallbackRow) fallbackRow.style.display = "block";
       if (alertEl) alertEl.style.display = "grid";
+      openSettings();
     };
 
     const handleError = (err) => {

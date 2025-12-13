@@ -20,14 +20,6 @@
     .build-alert { border:1px solid #fcd34d; background:#fefce8; color:#92400e; border-radius:0.85rem; padding:0.85rem 1rem; display:grid; gap:0.35rem; }
     .build-alert strong { font-size:1rem; }
     .build-alert small { color:#b45309; }
-    .settings { display:flex; flex-wrap:wrap; gap:0.75rem; align-items:flex-end; }
-    .settings-toggle { border:1px solid var(--border); border-radius:0.85rem; padding:0.35rem 0.65rem; background:var(--panel-muted); }
-    .settings-toggle summary { list-style:none; cursor:pointer; display:flex; align-items:center; gap:0.4rem; font-weight:600; color:var(--text-muted); }
-    .settings-toggle summary::marker { display:none; }
-    .settings-toggle summary::-webkit-details-marker { display:none; }
-    .settings-toggle[open] { background:var(--panel); }
-    .settings-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:0.75rem; margin-top:0.75rem; }
-    .settings-actions { display:flex; gap:0.5rem; flex-wrap:wrap; align-items:center; justify-content:flex-end; margin-top:0.5rem; }
     .toolbar { display:flex; flex-wrap:wrap; gap:0.75rem; align-items:center; justify-content:space-between; padding:0.75rem 0; }
     .toolbar-actions { display:flex; gap:0.5rem; flex-wrap:wrap; align-items:center; }
     .toolbar-meta { display:flex; gap:0.6rem; flex-wrap:wrap; align-items:center; }
@@ -120,7 +112,39 @@
           <h1>Event-Zusagen &amp; manuelle Gruppen</h1>
         </div>
         <div class="admin-header-actions">
-          <a class="btn ghost" href="../index.html">Zur Roster-Ansicht</a>
+          <div class="admin-header-tools">
+            <div class="admin-status-line">
+              <div id="adminKeyStatus" class="pill info">Lädt Admin-Status…</div>
+            </div>
+            <details id="adminSettings" class="admin-settings">
+              <summary>⚙️ Einstellungen</summary>
+              <div class="admin-settings-grid">
+                <label>Worker URL
+                  <input id="workerUrl" type="text" value="https://ds-commit.hak1.workers.dev/write-file" spellcheck="false">
+                </label>
+                <label>Branch
+                  <input id="branchInput" type="text" value="main" spellcheck="false">
+                </label>
+                <div style="display:grid; gap:0.35rem;">
+                  <label style="margin:0; color:var(--text-muted); font-size:0.85rem;">Admin-Key</label>
+                  <div id="adminKeyFallbackRow" style="display:none;">
+                    <label style="margin:0;">
+                      <span style="display:block; font-size:0.85rem; color:var(--text-muted);">Fallback setzen</span>
+                      <input id="adminKeyFallback" type="password" placeholder="Optional – wird zentral gespeichert" autocomplete="off">
+                    </label>
+                    <div class="admin-settings-actions" style="margin:0;justify-content:flex-start;">
+                      <button id="adminKeyFallbackBtn" type="button">Admin-Key übernehmen</button>
+                    </div>
+                    <small class="hint" style="color:var(--text-muted);">Nur nutzen, falls der zentrale Login noch nicht gesetzt wurde.</small>
+                  </div>
+                </div>
+              </div>
+              <div class="admin-settings-actions">
+                <small class="hint" style="color:var(--text-muted);">Worker-URL &amp; Branch werden lokal gespeichert. Admin-Key kommt aus der zentralen Verwaltung.</small>
+              </div>
+            </details>
+            <a class="btn ghost" href="../index.html">Zur Roster-Ansicht</a>
+          </div>
         </div>
       </header>
 
@@ -142,34 +166,6 @@
                   <span id="rebuildStatusText">Build-Status lädt …</span>
                   <small class="hint" style="color:var(--text-muted);">Hinweis: Änderungen an event_signups_next.csv werden automatisch in den nächsten Roster-Build übernommen.</small>
                 </div>
-                <details class="settings-toggle">
-                  <summary>⚙️ Einstellungen</summary>
-                  <div class="settings-grid">
-                    <label>Worker URL
-                      <input id="workerUrl" type="text" value="https://ds-commit.hak1.workers.dev/write-file" spellcheck="false">
-                    </label>
-                    <label>Branch
-                      <input id="branchInput" type="text" value="main" spellcheck="false">
-                    </label>
-                    <div style="display:grid; gap:0.35rem;">
-                      <label style="margin:0; color:var(--text-muted); font-size:0.85rem;">Admin-Key</label>
-                      <div id="adminKeyStatus" class="pill info">Lädt Admin-Status…</div>
-                      <div id="adminKeyFallbackRow" style="display:none;">
-                        <label style="margin:0;">
-                          <span style="display:block; font-size:0.85rem; color:var(--text-muted);">Fallback setzen</span>
-                          <input id="adminKeyFallback" type="password" placeholder="Optional – wird zentral gespeichert" autocomplete="off">
-                        </label>
-                        <div class="settings-actions" style="margin:0;justify-content:flex-start;">
-                          <button id="adminKeyFallbackBtn" type="button">Admin-Key übernehmen</button>
-                        </div>
-                        <small class="hint" style="color:var(--text-muted);">Nur nutzen, falls der zentrale Login noch nicht gesetzt wurde.</small>
-                      </div>
-                    </div>
-                  </div>
-                  <div class="settings-actions">
-                    <small class="hint" style="color:var(--text-muted);">Worker-URL &amp; Branch werden lokal gespeichert. Admin-Key kommt aus der zentralen Verwaltung.</small>
-                  </div>
-                </details>
               </div>
             </header>
 
@@ -358,6 +354,7 @@
         adminKeyFallbackRow: document.getElementById('adminKeyFallbackRow'),
         adminKeyFallbackBtn: document.getElementById('adminKeyFallbackBtn'),
         adminKeyStatus: document.getElementById('adminKeyStatus'),
+        adminSettings: document.getElementById('adminSettings'),
         adminKeyAlert: document.getElementById('adminKeyAlert'),
         reloadBtn: document.getElementById('reloadBtn'),
         saveBtn: document.getElementById('saveBtn'),
@@ -1825,6 +1822,7 @@
         fallbackInput: elements.adminKeyFallback,
         fallbackRow: elements.adminKeyFallbackRow,
         fallbackButton: elements.adminKeyFallbackBtn,
+        settingsToggle: elements.adminSettings,
         alertEl: elements.adminKeyAlert,
         renderStatus: renderAdminKeyState,
         onValid: () => {

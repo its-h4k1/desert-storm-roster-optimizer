@@ -17,6 +17,7 @@
   const elements = {
     workerUrl: $("#workerUrl"),
     branchInput: $("#branchInput"),
+    adminSettings: $("#adminSettings"),
     adminKeyStatus: $("#adminKeyStatus"),
     adminKeyFallback: $("#adminKeyFallback"),
     adminKeyFallbackRow: $("#adminKeyFallbackRow"),
@@ -452,6 +453,9 @@
     }
     if (elements.adminKeyFallbackRow) {
       elements.adminKeyFallbackRow.style.display = adminKey ? "none" : "block";
+    }
+    if (!adminKey && elements.adminSettings) {
+      elements.adminSettings.open = true;
     }
   }
 

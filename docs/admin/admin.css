@@ -193,6 +193,64 @@ body {
   flex-wrap: wrap;
 }
 
+.admin-header-tools {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.admin-status-line {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.admin-settings {
+  border: 1px solid var(--border);
+  border-radius: 0.85rem;
+  padding: 0.35rem 0.65rem;
+  background: var(--panel-muted);
+}
+
+.admin-settings summary {
+  list-style: none;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-weight: 700;
+  color: var(--text-muted);
+}
+
+.admin-settings summary::marker,
+.admin-settings summary::-webkit-details-marker {
+  display: none;
+}
+
+.admin-settings[open] {
+  background: var(--panel);
+  box-shadow: var(--shadow-soft);
+}
+
+.admin-settings-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 0.75rem;
+  margin-top: 0.75rem;
+}
+
+.admin-settings-actions {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  margin-top: 0.5rem;
+}
+
 .admin-header-actions a {
   color: var(--accent);
   text-decoration: none;
