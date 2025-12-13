@@ -43,9 +43,9 @@
     .mono { font-family: ui-monospace, SFMono-Regular, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace; }
   </style>
 </head>
-<body>
-  <div class="admin-shell">
-    <aside class="admin-sidebar">
+  <body>
+    <div class="admin-shell">
+      <aside class="admin-sidebar">
       <div class="admin-sidebar-header">
         <div class="admin-logo">ELT Admin</div>
         <button class="sidebar-close" aria-label="Navigation schließen">✕</button>
@@ -130,6 +130,7 @@
               <div class="status-bar">
                 <span id="statusText">Warte auf Aktion…</span>
                 <span id="warningPill" class="pill warn" style="display:none;"></span>
+                <button id="retryMirrorBtn" type="button" style="display:none;">Mirror erneut versuchen</button>
               </div>
               <div class="warnings" id="warningList" aria-live="polite"></div>
             </section>
@@ -177,6 +178,7 @@
         loadRosterBtn: $('#loadRosterBtn'),
         loadResultsBtn: $('#loadResultsBtn'),
         saveBtn: $('#saveBtn'),
+        retryMirrorBtn: $('#retryMirrorBtn'),
         statusText: $('#statusText'),
         warningPill: $('#warningPill'),
         warningList: $('#warningList'),
@@ -196,6 +198,7 @@
         resultMeta: '',
         loading: false,
         saving: false,
+        lastSave: null,
       };
 
       function setStatus(text, tone = 'muted') {
@@ -226,6 +229,11 @@
       function clearWarnings() {
         if (!elements.warningList) return;
         elements.warningList.innerHTML = '';
+      }
+
+      function setMirrorRetryVisible(visible) {
+        if (!elements.retryMirrorBtn) return;
+        elements.retryMirrorBtn.style.display = visible ? 'inline-flex' : 'none';
       }
 
       function validateEventId(raw) {
@@ -512,39 +520,92 @@
         });
       }
 
-      async function writeFile(payload) {
-        const headers = shared.buildAdminHeaders ? shared.buildAdminHeaders({
-          adminKey: shared.getAdminKey?.(),
-          headers: { 'Content-Type': 'application/json' },
-        }) : { 'Content-Type': 'application/json', 'X-Admin-Key': shared.getAdminKey?.() };
-        const res = await fetch(elements.workerUrl.value.trim(), {
-          method: 'POST',
-          headers,
-          body: JSON.stringify(payload),
-          mode: 'cors',
-        });
-        if (!res.ok) {
-          const text = await res.text().catch(() => '');
-          throw new Error(text || `HTTP ${res.status}`);
+      function describeWorkerError(err) {
+        if (!err) return 'Unbekannter Fehler';
+        const parts = [];
+        const message = err?.message || '';
+        if (message) parts.push(message);
+        if (err?.status) parts.push(`Status: ${err.status}`);
+        const detail = err?.responseText || err?.body;
+        if (detail && detail !== message) {
+          parts.push(`Antwort: ${String(detail).slice(0, 280)}`);
         }
-        const json = await res.json().catch(() => ({}));
-        if (json && json.ok === false) throw new Error(json.error || 'Worker-Fehler');
-        return json;
+        return parts.filter(Boolean).join(' · ');
       }
 
-      async function mirrorResultToDocs({ eventId, payload }) {
-        const mirrorPayload = {
-          ...payload,
-          path: `docs/data/event_results/${eventId}.json`,
-          message: `admin: mirror event results ${eventId}`,
-        };
+      async function sendWorkerRequest({ payload, workerUrl }) {
+        const headers = shared.buildAdminHeaders ? shared.buildAdminHeaders({
+          adminKey: shared.getAdminKey?.(),
+          headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+        }) : { 'Content-Type': 'application/json', Accept: 'application/json', 'X-Admin-Key': shared.getAdminKey?.() };
+        let res;
         try {
-          await writeFile(mirrorPayload);
-          return true;
+          res = await fetch(workerUrl, {
+            method: 'POST',
+            headers,
+            body: JSON.stringify(payload),
+            mode: 'cors',
+          });
         } catch (err) {
-          console.error('Mirror nach docs/data fehlgeschlagen', err);
-          addWarning(`Mirror nach docs/data/event_results fehlgeschlagen: ${err.message || err}`);
-          return false;
+          const error = new Error(err?.message || 'Netzwerkfehler');
+          error.cause = err;
+          throw error;
+        }
+        const responseText = await res.text().catch(() => '');
+        let parsed = null;
+        try {
+          parsed = responseText ? JSON.parse(responseText) : null;
+        } catch (err) {
+          parsed = null;
+        }
+        const workerOk = parsed ? parsed.ok !== false : true;
+        if (!res.ok || !workerOk) {
+          const error = new Error((parsed && (parsed.error || parsed.detail)) || responseText || `HTTP ${res.status}`);
+          error.status = res.status;
+          error.responseText = responseText;
+          error.responseJson = parsed;
+          throw error;
+        }
+        return parsed || {};
+      }
+
+      async function writeFilesAtomic({ files, workerUrl, message }) {
+        const payload = {
+          files: files.map((file) => ({ path: file.path, content: file.content })),
+          branch: files[0]?.branch,
+          message: message || files[0]?.message || 'admin: commit files',
+        };
+        return sendWorkerRequest({ payload, workerUrl });
+      }
+
+      async function writeSingleFile({ file, workerUrl }) {
+        return sendWorkerRequest({ payload: file, workerUrl });
+      }
+
+      async function handleMirrorRetry() {
+        const last = state.lastSave;
+        if (!last) {
+          addWarning('Kein vorheriger Save vorhanden. Bitte erneut speichern.');
+          return;
+        }
+        setStatus('Mirror wird erneut geschrieben…');
+        setMirrorRetryVisible(false);
+        clearWarnings();
+        try {
+          const mirrorFile = {
+            path: `docs/data/event_results/${last.eventId}.json`,
+            branch: last.branch,
+            message: `admin: mirror event results ${last.eventId}`,
+            content: last.content,
+          };
+          await writeSingleFile({ file: mirrorFile, workerUrl: last.workerUrl });
+          setStatus('Mirror aktualisiert.', 'success');
+          applyMeta(elements.resultMeta, `Mirror aktualisiert @ ${new Date().toLocaleString()}`, 'success');
+        } catch (err) {
+          console.error('Mirror-Retry fehlgeschlagen', err);
+          addWarning(`Mirror erneut fehlgeschlagen: ${describeWorkerError(err)}`);
+          setStatus('Mirror erneut fehlgeschlagen – bitte Worker/Logs prüfen.', 'error');
+          setMirrorRetryVisible(true);
         }
       }
 
@@ -569,26 +630,67 @@
           setStatus('Keine Daten zum Speichern.', 'error');
           return;
         }
-        const payload = {
+        let handledError = false;
+        const branch = (elements.branchInput.value || 'main').trim() || 'main';
+        const content = JSON.stringify({
+          event_id: eventId,
+          generated_at: new Date().toISOString(),
+          results,
+        }, null, 2);
+        const baseFile = {
           path: `data/event_results/${eventId}.json`,
-          branch: (elements.branchInput.value || 'main').trim() || 'main',
+          branch,
           message: `admin: update event results ${eventId}`,
-          content: JSON.stringify({
-            event_id: eventId,
-            generated_at: new Date().toISOString(),
-            results,
-          }, null, 2),
+          content,
+        };
+        const mirrorFile = {
+          path: `docs/data/event_results/${eventId}.json`,
+          branch,
+          message: `admin: mirror event results ${eventId}`,
+          content,
+        };
+        const commitMessage = `admin: update event results ${eventId} (ssot + mirror)`;
+        state.lastSave = {
+          eventId,
+          branch,
+          content,
+          workerUrl,
         };
         state.saving = true;
         setStatus('Speichere Ergebnis via Worker…');
         try {
-          await writeFile(payload);
-          setStatus('Ergebnis gespeichert. Mirror wird aktualisiert…');
-          const mirrored = await mirrorResultToDocs({ eventId, payload });
-          if (mirrored) {
+          clearWarnings();
+          setMirrorRetryVisible(false);
+          const files = [baseFile, mirrorFile];
+          try {
+            await writeFilesAtomic({ files, workerUrl, message: commitMessage });
             setStatus('Ergebnis gespeichert & Mirror aktualisiert.', 'success');
-          } else {
-            setStatus('Gespeichert, aber Mirror nicht aktualisiert (siehe Hinweise).', 'error');
+          } catch (atomicErr) {
+            console.warn('Batch-Commit fehlgeschlagen, versuche sequenziell', atomicErr);
+            let ssotWritten = false;
+            try {
+              await writeSingleFile({ file: baseFile, workerUrl });
+              ssotWritten = true;
+            } catch (ssotErr) {
+              const msg = describeWorkerError(ssotErr);
+              addWarning(`SSOT konnte nicht gespeichert werden: ${msg}`);
+              throw ssotErr;
+            }
+            try {
+              await writeSingleFile({ file: mirrorFile, workerUrl });
+              setStatus('Ergebnis gespeichert & Mirror aktualisiert.', 'success');
+            } catch (mirrorErr) {
+              const msg = describeWorkerError(mirrorErr);
+              addWarning(`SSOT gespeichert, Mirror fehlgeschlagen: ${msg}`);
+              setStatus('SSOT gespeichert, Mirror fehlgeschlagen – bitte erneut versuchen.', 'error');
+              applyMeta(elements.resultMeta, 'SSOT gespeichert, Mirror fehlt', 'warn');
+              setMirrorRetryVisible(true);
+              state.savedResults = results;
+              state.savedResultsMap = mapResultsByKey(results);
+              renderTable();
+              handledError = true;
+              throw mirrorErr;
+            }
           }
           applyMeta(elements.resultMeta, `Gespeichert @ ${new Date().toLocaleString()}`, 'success');
           state.savedResults = results;
@@ -596,7 +698,9 @@
           renderTable();
         } catch (err) {
           console.error(err);
-          setStatus(`Speichern fehlgeschlagen: ${err.message}`, 'error');
+          if (!handledError) {
+            setStatus(`Speichern fehlgeschlagen: ${err.message}`, 'error');
+          }
         } finally {
           state.saving = false;
           persistSettings();
@@ -613,6 +717,7 @@
         elements.loadRosterBtn?.addEventListener('click', handleLoadRoster);
         elements.loadResultsBtn?.addEventListener('click', handleLoadResults);
         elements.saveBtn?.addEventListener('click', handleSave);
+        elements.retryMirrorBtn?.addEventListener('click', handleMirrorRetry);
         ['workerUrl', 'branchInput', 'eventId'].forEach((key) => {
           elements[key]?.addEventListener('change', persistSettings);
         });
