@@ -325,7 +325,39 @@
           <h1>Verwaltung</h1>
         </div>
         <div class="admin-header-actions">
-          <a class="btn ghost" href="../index.html">Zur Roster-Ansicht</a>
+          <div class="admin-header-tools">
+            <div class="admin-status-line">
+              <div id="adminKeyStatus" class="pill info">Lädt Admin-Status…</div>
+            </div>
+            <details id="adminSettings" class="admin-settings">
+              <summary>⚙️ Einstellungen</summary>
+              <div class="admin-settings-grid">
+                <label>Worker URL
+                  <input id="workerUrl" type="text" value="https://ds-commit.hak1.workers.dev/write-file" spellcheck="false">
+                </label>
+                <label>Branch
+                  <input id="branchInput" type="text" value="main" spellcheck="false">
+                </label>
+                <div style="display:grid; gap:0.35rem;">
+                  <label style="margin:0; color:var(--text-muted); font-size:0.85rem;">Admin-Key</label>
+                  <div id="adminKeyFallbackRow" style="display:none;">
+                    <label style="margin:0;">
+                      <span style="display:block; font-size:0.85rem; color:var(--text-muted);">Fallback setzen</span>
+                      <input id="adminKeyFallback" type="password" placeholder="Optional – wird zentral gespeichert" autocomplete="off">
+                    </label>
+                    <div class="admin-settings-actions" style="margin:0;justify-content:flex-start;">
+                      <button id="adminKeyFallbackBtn" type="button">Admin-Key übernehmen</button>
+                    </div>
+                    <small class="hint" style="color:var(--text-muted);">Nur nutzen, falls der zentrale Login noch nicht gesetzt wurde.</small>
+                  </div>
+                </div>
+              </div>
+              <div class="admin-settings-actions">
+                <small class="hint" style="color:var(--text-muted);">Worker-URL &amp; Branch werden lokal gespeichert. Admin-Key kommt aus der zentralen Verwaltung.</small>
+              </div>
+            </details>
+            <a class="btn ghost" href="../index.html">Zur Roster-Ansicht</a>
+          </div>
         </div>
       </header>
 
@@ -337,28 +369,16 @@
                 <h2>Gruppenpräferenzen verwalten</h2>
                 <p style="margin:0;color:#6b7280;font-size:0.9rem">Pflege von <code>data/alliance.csv</code> (Spalten <code>PrefGroup</code>, <code>PrefMode</code>, <code>PrefBoost</code>).</p>
               </div>
-              <div class="settings">
-              <label>Worker URL
-                <input id="workerUrl" type="text" value="https://ds-commit.hak1.workers.dev/write-file" spellcheck="false">
-              </label>
-              <label>Branch
-                <input id="branchInput" type="text" value="main" spellcheck="false">
-              </label>
-              <div style="display:grid; gap:0.35rem; min-width:220px;">
-                <label style="margin:0; color:var(--text-muted); font-size:0.85rem;">Admin-Key</label>
-                <div id="adminKeyStatus" class="pill info">Lädt Admin-Status…</div>
-                <div id="adminKeyFallbackRow" style="display:none;">
-                  <div class="inline-input" style="margin-top:0.1rem;">
-                    <input id="adminKeyFallback" type="password" placeholder="Optional – wird zentral gespeichert" autocomplete="off">
-                    <button id="adminKeyFallbackBtn" type="button">Admin-Key übernehmen</button>
-                  </div>
-                  <small class="hint" style="color:var(--text-muted);">Nur nutzen, falls der zentrale Login noch nicht gesetzt wurde.</small>
-                </div>
+              <div class="settings" style="justify-content:flex-end;">
+                <button id="reloadBtn" class="ghost">Neu laden</button>
+                <button id="saveBtn">Speichern</button>
               </div>
-              <button id="reloadBtn" class="ghost">Neu laden</button>
-              <button id="saveBtn">Speichern</button>
-            </div>
             </header>
+
+            <div id="adminKeyAlert" class="build-alert" style="display:none;" aria-live="polite">
+              <strong>Kein Admin-Key gesetzt</strong>
+              <p data-admin-alert-text>Bitte über die Admin-Startseite einloggen oder kurzfristig einen Admin-Key hinterlegen.</p>
+            </div>
 
             <main class="page-main">
             <section class="panel">
@@ -429,6 +449,8 @@
         adminKeyStatus: document.getElementById("adminKeyStatus"),
         adminKeyFallbackRow: document.getElementById("adminKeyFallbackRow"),
         adminKeyFallbackBtn: document.getElementById("adminKeyFallbackBtn"),
+        adminSettings: document.getElementById("adminSettings"),
+        adminKeyAlert: document.getElementById("adminKeyAlert"),
         reloadBtn: document.getElementById("reloadBtn"),
         saveBtn: document.getElementById("saveBtn"),
         searchInput: document.getElementById("searchInput"),
@@ -822,25 +844,20 @@
         localStorage.setItem(SETTINGS_KEY, JSON.stringify(values));
       }
 
-      function updateAdminKeyStatus() {
-        const adminKey = getAdminKey();
-        const hasKey = Boolean(adminKey);
+      function renderAdminKeyStatus({ message, tone = "info", showAlert = false } = {}) {
+        const toneClass = tone === "success" ? "info" : tone;
         if (elements.adminKeyStatus) {
-          elements.adminKeyStatus.textContent = hasKey
-            ? "Admin-Key ist gesetzt (zentral verwaltet)."
-            : "Kein Admin-Key gesetzt – bitte über die Admin-Startseite einloggen.";
-          elements.adminKeyStatus.className = hasKey ? "pill info" : "pill";
+          elements.adminKeyStatus.textContent = message || "";
+          elements.adminKeyStatus.className = `pill ${toneClass || "info"}`;
         }
         if (elements.adminKeyFallbackRow) {
-          elements.adminKeyFallbackRow.style.display = hasKey ? "none" : "block";
+          elements.adminKeyFallbackRow.style.display = showAlert ? "block" : "none";
         }
-      }
-
-      function applyFallbackAdminKey() {
-        const value = (elements.adminKeyFallback?.value || "").trim();
-        dsroShared.saveAdminKey(value);
-        updateAdminKeyStatus();
-        setStatus(value ? "Admin-Key übernommen (Fallback)." : "Admin-Key entfernt.", value ? "ok" : "warn");
+        if (elements.adminKeyAlert) {
+          elements.adminKeyAlert.style.display = showAlert ? "grid" : "none";
+          const alertText = elements.adminKeyAlert.querySelector("[data-admin-alert-text]");
+          if (alertText && message) alertText.textContent = message;
+        }
       }
 
       function initEvents() {
@@ -853,16 +870,21 @@
         }
         elements.workerUrl.addEventListener("change", persistSettings);
         elements.branch.addEventListener("change", persistSettings);
-        if (elements.adminKeyFallbackBtn) {
-          elements.adminKeyFallbackBtn.addEventListener("click", applyFallbackAdminKey);
-        }
       }
 
-      dsroShared.applyAdminKeyInput(elements.adminKeyFallback, { syncOnInput: false, onChange: updateAdminKeyStatus });
+      dsroShared.initAdminKeyGate({
+        statusEl: elements.adminKeyStatus,
+        fallbackInput: elements.adminKeyFallback,
+        fallbackRow: elements.adminKeyFallbackRow,
+        fallbackButton: elements.adminKeyFallbackBtn,
+        settingsToggle: elements.adminSettings,
+        alertEl: elements.adminKeyAlert,
+        renderStatus: renderAdminKeyStatus,
+      });
+
       restoreSettings();
       initEvents();
       applyDensityMode(!elements.compactToggle || elements.compactToggle.checked !== false);
-      updateAdminKeyStatus();
       reloadData();
     })();
   </script>
