@@ -165,6 +165,7 @@ def _load_event_history() -> pd.DataFrame:
     base = Path("data")
     pattern = "DS-*-*-*.csv"
     keep = []
+
     for path in base.glob(pattern):
         name = path.name
         if not name or not name.upper().startswith("DS-"):
@@ -197,11 +198,54 @@ def _load_event_history() -> pd.DataFrame:
             cols.append(effective_col)
         keep.append(df[cols].copy())
 
+    event_results_dir = base / "event_results"
+    if event_results_dir.exists():
+        for path in sorted(event_results_dir.glob("DS-*.json")):
+            try:
+                payload = json.loads(path.read_text(encoding="utf-8"))
+            except Exception:
+                continue
+
+            results = payload.get("results") or []
+            if not isinstance(results, list):
+                continue
+
+            records = []
+            for row in results:
+                event_id = (
+                    row.get("event_id")
+                    or payload.get("event_id")
+                    or path.stem
+                )
+                player = row.get("player_key") or row.get("player")
+                if not player:
+                    player = row.get("display_name_snapshot")
+                role = row.get("role") or row.get("slot") or ""
+                attended = row.get("attended")
+                if attended is None:
+                    attended = row.get("Teilgenommen")
+
+                records.append(
+                    {
+                        "EventID": event_id,
+                        "PlayerName": player or "",
+                        "RoleAtRegistration": role,
+                        "Teilgenommen": int(bool(attended)),
+                    }
+                )
+
+            if records:
+                keep.append(pd.DataFrame.from_records(records))
+
     if not keep:
         return pd.DataFrame(
             columns=["EventID", "PlayerName", "RoleAtRegistration", "Teilgenommen"]
         )
-    return pd.concat(keep, ignore_index=True)
+
+    df = pd.concat(keep, ignore_index=True)
+    return df.drop_duplicates(
+        subset=["EventID", "PlayerName", "RoleAtRegistration"], keep="last"
+    )
 
 
 def _build_payload(
