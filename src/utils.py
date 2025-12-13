@@ -624,18 +624,18 @@ def build_deterministic_roster(
 # ------------------------------------------------
 # Für stats.py: EventID-Datum & Zeitgewichtung
 # ------------------------------------------------
-_EVENT_ID_RE = re.compile(r"^DS-(\d{4})-(\d{2})-(\d{2})-[A-Z]$", re.IGNORECASE)
+_EVENT_ID_RE = re.compile(r"^DS-(\d{4})-(\d{2})-(\d{2})(?:-[A-Z])?$", re.IGNORECASE)
 
 def parse_event_date(event_id: str) -> datetime:
     """
-    Erwartet EventID wie DS-YYYY-MM-DD-A und liefert ein UTC-Datum.
+    Erwartet EventID wie DS-YYYY-MM-DD(-A) und liefert ein UTC-Datum.
     Fallback: now() bei unbekanntem Format.
     """
     s = str(event_id).strip()
     m = _EVENT_ID_RE.match(s)
     if not m:
         return datetime.now(timezone.utc)
-    y, mo, d = map(int, m.groups())
+    y, mo, d = map(int, m.groups()[:3])
     return datetime(y, mo, d, tzinfo=timezone.utc)
 
 def exp_decay_weight(event_dt: datetime, now_dt: datetime | None = None, half_life_days: float = 90.0) -> float:
