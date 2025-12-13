@@ -300,10 +300,10 @@
                 <div class="accordion-body">
                   <div class="help-grid">
                     <div class="help-card">
-                      <strong>Dauerhafte Gruppenpräferenzen</strong>
+                      <strong>Allianz-Stammdaten</strong>
                       <ul>
-                        <li>Quelle: <code>data/alliance.csv</code> (Spalten <code>PrefGroup</code>, <code>PrefMode</code>, <code>PrefBoost</code>).</li>
-                        <li>Wirken langfristig auf den Optimizer.</li>
+                        <li>Quelle: <code>data/alliance.csv</code> (Spalten <code>PlayerName</code>, <code>InAlliance</code>, optional <code>Note</code>).</li>
+                        <li>Grundlage für die Zuordnung, aber ohne Gruppenpräferenz-Logik.</li>
                       </ul>
                     </div>
                     <div class="help-card">
@@ -318,7 +318,7 @@
                       <strong>Verbindlichkeit &amp; Trennung</strong>
                       <ul>
                         <li><code>Commitment=hard</code> = verbindliche Zusage / Fixplatz im nächsten Roster-Build.</li>
-                        <li>Event-Zusagen sind unabhängig von <code>PrefGroup</code>; Reset leert nur den Zusage-Pool.</li>
+                        <li>Event-Zusagen sind komplett losgelöst von früheren Gruppenwünschen; Reset leert nur den Zusage-Pool.</li>
                       </ul>
                     </div>
                   </div>
@@ -600,7 +600,7 @@
         filters: { hardOnly: false },
       };
 
-      // Konzept-Notiz: Dauerhafte Gruppenpräferenzen (data/alliance.csv: PrefGroup/PrefMode/PrefBoost) steuern den Optimizer langfristig.
+      // Konzept-Notiz: data/alliance.csv liefert nur noch die Kaderbasis; die tatsächliche Einteilung kommt allein aus Hard-Commitments.
       // Der Zusage-Pool (data/event_signups_next.csv) gehört immer zum nächsten Event (aktuelles out/latest.json) und überschreibt den Optimizer nicht dauerhaft.
 
       function normalizeLineEndings(text) { return (text || '').replace(/\r\n/g, '\n').replace(/\r/g, '\n'); }

@@ -5,7 +5,6 @@ Kompatibel mit main.py (deterministic-only) und stats.py (parse_event_date/exp_d
 
 Korrekturen:
 - canonical_name: jetzt mit Lowercasing (fix für „Evil Activities“ vs „Evil activities“).
-- Robuste Defaults für Pref*-Spalten (kein .fillna() mehr auf Skalar).
 - _ensure_prob: liefert immer eine Series (Skalar-Fallback entfernt).
 """
 
@@ -84,16 +83,12 @@ def build_deterministic_roster(
     allow_unfilled: bool = False,
 ) -> pd.DataFrame:
     """
-    Baut eine eindeutige Aufstellung ohne Doppler unter Berücksichtigung von
-    Gruppenpräferenzen (hard/soft) und Boosts.
+    Baut eine eindeutige Aufstellung ohne Doppler.
 
     Erwartete Spalten (mindestens):
       - PlayerName
       - p_start[_A|_B] (optional gruppenspezifisch, sonst p_start global)
       - p_sub[_A|_B]   (optional gruppenspezifisch, sonst p_sub global)
-      - PrefGroup (A|B) optional
-      - PrefMode  (hard|soft) optional
-      - PrefBoost (0..1) optional, Standard 0.05 wenn PrefGroup passt und Boost<=0
 
     Erweiterungen für harte Zusagen:
       - forced_assignments: Liste vorberechneter Slots (PlayerName, Group, Role)
@@ -129,22 +124,6 @@ def build_deterministic_roster(
     else:
         df["risk_penalty"] = pd.Series([0.0] * len(df), index=df.index)
 
-    # Präferenz-Spalten robust befüllen (immer Series mit Index df.index)
-    df["PrefGroup"] = (
-        df["PrefGroup"].astype(str).str.upper()
-        if "PrefGroup" in df.columns
-        else pd.Series([""] * len(df), index=df.index)
-    )
-    df["PrefMode"] = (
-        df["PrefMode"].astype(str).str.lower()
-        if "PrefMode" in df.columns
-        else pd.Series([""] * len(df), index=df.index)
-    )
-    if "PrefBoost" in df.columns:
-        df["PrefBoost"] = pd.to_numeric(df["PrefBoost"], errors="coerce").fillna(0.0).clip(0.0, 1.0)
-    else:
-        df["PrefBoost"] = pd.Series([0.0] * len(df), index=df.index)
-
     # Gruppenbezogene Wahrscheinlichkeiten sicherstellen → immer Series
     def _ensure_prob(col_base: str, group: str) -> pd.Series:
         col_name = f"{col_base}_{group}"
@@ -162,19 +141,11 @@ def build_deterministic_roster(
         df[f"attend_start_{g}"] = _ensure_prob("attend_prob", g).clip(0.0, 1.0)
         df[f"attend_sub_{g}"] = _ensure_prob("attend_prob", g).clip(0.0, 1.0)
 
-    # Boosts nur in gewünschter Gruppe addieren (Standard 0.05 bei leerem Boost)
     for g in GROUPS:
-        mask = df["PrefGroup"] == g
-        # Standard-Boost 0.05, wenn Gruppe passt und Boost nicht gesetzt/<=0
-        eff_boost = df["PrefBoost"].where(mask, 0.0)
-        eff_boost = eff_boost.mask(mask & (eff_boost <= 0.0), 0.05)
-
         base_start = df[f"attend_start_{g}"]
         base_sub = df[f"attend_sub_{g}"]
-        boosted_start = (base_start + eff_boost).clip(0.0, 1.0)
-        boosted_sub = (base_sub + eff_boost).clip(0.0, 1.0)
-        df[f"score_{g}_start"] = (boosted_start - df["risk_penalty"]).clip(0.0, 1.0)
-        df[f"score_{g}_sub"] = (boosted_sub - df["risk_penalty"]).clip(0.0, 1.0)
+        df[f"score_{g}_start"] = (base_start - df["risk_penalty"]).clip(0.0, 1.0)
+        df[f"score_{g}_sub"] = (base_sub - df["risk_penalty"]).clip(0.0, 1.0)
 
     used: Set[str] = set()
     rows: List[Dict[str, str]] = []
@@ -314,9 +285,6 @@ def build_deterministic_roster(
         if candidates.empty:
             return candidates
 
-        pref_group = candidates["PrefGroup"].astype(str).str.upper()
-        pref_mode  = candidates["PrefMode"].astype(str).str.lower()
-
         def _resolve_min_attend(raw_threshold):
             if raw_threshold is None:
                 return None
@@ -328,26 +296,6 @@ def build_deterministic_roster(
                 return float(raw_val)
             except (TypeError, ValueError):
                 return None
-
-        recognized_pref = pref_group.isin(GROUPS)
-        cat1 = (pref_group == group) & (pref_mode == "hard")  # Muss nehmen, wenn vorhanden
-        cat2 = (pref_group == group) & (pref_mode == "soft")  # Bevorzugt
-        cat3 = (
-            ~(cat1 | cat2) &
-            ((pref_group == group) | (~recognized_pref) | (pref_group == ""))
-        )  # neutral/gleich/fallback
-        cat4 = (
-            ~(cat1 | cat2 | cat3) &
-            (pref_group.isin(GROUPS)) & (pref_group != group) & (pref_mode != "hard")
-        )  # andere Gruppe, aber nicht hard
-        cat5 = (
-            (pref_group.isin(GROUPS)) & (pref_group != group) & (pref_mode == "hard")
-        )  # andere Gruppe hard → nur wenn Slots sonst leer blieben
-
-        categories = [cat1, cat2, cat3, cat4, cat5]
-        selected_frames: List[pd.DataFrame] = []
-        selected_names: Set[str] = set()
-        remaining = count
 
         def _take_from(available_df: pd.DataFrame, remaining_slots: int) -> tuple[pd.DataFrame, int]:
             if available_df.empty:
@@ -419,35 +367,13 @@ def build_deterministic_roster(
                 return pd.DataFrame(columns=available_df.columns), local_remaining
             return available_df.loc[chosen_idx], local_remaining
 
-        for mask in categories:
-            if remaining <= 0:
-                break
-            available = candidates[mask & (~candidates["PlayerName"].isin(selected_names))]
-            if available.empty:
-                continue
-            take, remaining = _take_from(available, remaining)
-            if take.empty:
-                continue
-            selected_frames.append(take)
-            selected_names.update(take["PlayerName"].tolist())
-
-        if remaining > 0:
-            fallback = candidates[~candidates["PlayerName"].isin(selected_names)]
-            if not fallback.empty:
-                take, remaining = _take_from(fallback, remaining)
-                if not take.empty:
-                    selected_frames.append(take)
-                    selected_names.update(take["PlayerName"].tolist())
+        selected, remaining = _take_from(candidates, count)
 
         if remaining > 0 and not allow_unfilled:
             # An dieser Stelle fehlen uns real Kandidaten (z. B. vorher gefiltert/inaktiv)
             raise RuntimeError(f"Not enough candidates to fill {group} {role} (missing {remaining}).")
 
-        return (
-            pd.concat(selected_frames, ignore_index=True)
-            if selected_frames else
-            pd.DataFrame(columns=candidates.columns)
-        )
+        return selected
 
     def _consume(group: str, role: str, cap: int, stage_label: str, *, min_attend=_USE_DEFAULT) -> pd.DataFrame:
         picked = _pick_for(

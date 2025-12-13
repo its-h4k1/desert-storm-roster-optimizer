@@ -338,6 +338,12 @@ def _build_payload(
         entry["name"] = display_name
         signup_states_export[display_name] = entry
 
+    reliability_start = (
+        RELIABILITY_START_DATE.isoformat()
+        if RELIABILITY_START_DATE is not None
+        else "all-time"
+    )
+
     return {
         "event": {
             "id": args.event_id,
@@ -395,11 +401,7 @@ def _build_payload(
             "responses": len(responses),
         },
         "reliability_config": {
-            "reliability_start_date": (
-                RELIABILITY_START_DATE.isoformat()
-                if RELIABILITY_START_DATE is not None
-                else None
-            )
+            "reliability_start_date": reliability_start
         },
         "reliability": {
             "players": {
@@ -413,11 +415,7 @@ def _build_payload(
                 for name, stats in (reliability_players or {}).items()
             },
             "meta": {
-                "reliability_start_date": (
-                    RELIABILITY_START_DATE.isoformat()
-                    if RELIABILITY_START_DATE is not None
-                    else None
-                )
+                "reliability_start_date": reliability_start
             },
         },
     }

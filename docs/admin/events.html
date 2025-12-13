@@ -2213,7 +2213,7 @@
     async function prepareAllianceFile(branch, newPlayers) {
       if (!newPlayers.length) return null;
       const path = "data/alliance.csv";
-      const header = ["PlayerName", "InAlliance", "Note", "PrefGroup", "PrefMode", "PrefBoost"];
+      const header = ["PlayerName", "InAlliance", "Note"];
       let existingText = null;
       try {
         existingText = await loadTextFromBranch(branch, path);

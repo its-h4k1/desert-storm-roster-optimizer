@@ -41,6 +41,3 @@
 
   > Wenn neue Admin- oder Analyse-Seiten entstehen, bitte hier kurz Zweck & Datenquellen ergänzen und in der README verlinken.
 
-## Gruppenpräferenzen-Modell
-
-- Gruppenpräferenzen (PrefGroup/PrefMode/PrefBoost) werden im neuen Hard-Commitment-Flow nicht mehr ausgewertet und haben daher keine eigene Admin-Seite mehr.
