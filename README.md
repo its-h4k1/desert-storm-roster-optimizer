@@ -162,18 +162,11 @@ keinen Build-Schritt.
 4. Builder läuft lokal oder via GitHub Actions → neue `out/latest.*`. Ergebnis in `docs/index.html`
    (Roster) und `docs/admin/noshow-dashboard.html` (Analytics) prüfen.
 
-## Gruppen-Präferenzen
+## Allianz-Stammdaten
 
-Die Datei `data/alliance.csv` kann optionale Präferenzspalten enthalten, um Gruppenwünsche zu
-berücksichtigen. Die Spalten lassen sich direkt in der Admin-UI unter
-`docs/admin/group-preferences.html` per Dropdown pflegen:
-
-```
-PlayerName,InAlliance,PrefGroup,PrefMode,PrefBoost
-itsH4K1,1,A,hard,
-Cupra290,1,B,soft,0.08
-Mahaja,1,,,
-```
+Die Datei `data/alliance.csv` hält nur noch die Kernspalten `PlayerName`, `InAlliance` und
+optional `Note` bereit. Legacy-Spalten wie `PrefGroup`, `PrefMode` oder `PrefBoost` werden beim
+Build ignoriert, damit alte Dateien den Ablauf nicht brechen.
 
 - `InAlliance` kennzeichnet die Allianz-Mitgliedschaft: `1` = Spieler ist aktuell Teil der
   Allianz (wird beim Roster berücksichtigt), `0` = Spieler ist ausgetreten bzw. entfernt
@@ -181,11 +174,6 @@ Mahaja,1,,,
   es erscheint jedoch eine Warnung mit dem Hinweis auf die neue Spalte. Das Skript
   `scripts/migrate_active_flag.py data/alliance.csv --backup` benennt alte Dateien auf Wunsch
   automatisch um.
-- `PrefGroup` wählt die Wunschgruppe (`A` oder `B`).
-- `PrefMode = hard` erzwingt die Zuteilung in die Wunschgruppe, außer andernfalls bliebe eine
-  Gruppe dauerhaft unterbesetzt.
-- `PrefMode = soft` bevorzugt die Wunschgruppe, erlaubt aber Wechsel bei Kapazitätskonflikten.
-- `PrefBoost` erhöht den Score nur in der Wunschgruppe (Standard: `0.05`, wenn leer).
 
 ## Admin: Events hochladen (Tabellen-UI)
 
