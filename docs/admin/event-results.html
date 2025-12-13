@@ -171,6 +171,7 @@
         workerUrl: $('#workerUrl'),
         branchInput: $('#branchInput'),
         adminKeyFallback: $('#adminKeyFallback'),
+        adminKeyFallbackBtn: $('#adminKeyFallbackBtn'),
         adminKeyFallbackRow: $('#adminKeyFallbackRow'),
         adminSettings: $('#adminSettings'),
         loadRosterBtn: $('#loadRosterBtn'),
@@ -621,6 +622,7 @@
         shared.initAdminKeyGate?.({
           statusEl: elements.adminKeyState,
           fallbackInput: elements.adminKeyFallback,
+          fallbackButton: elements.adminKeyFallbackBtn,
           fallbackRow: elements.adminKeyFallbackRow,
           settingsToggle: elements.adminSettings,
           onValid: () => {
