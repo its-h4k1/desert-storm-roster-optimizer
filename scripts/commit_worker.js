@@ -209,9 +209,9 @@ async function handleWriteFile(request, env) {
     return jsonResponse({ error: "Method not allowed" }, 405);
   }
 
-  if (request.headers.has("X-Admin-Key") && env.ADMIN_KEY) {
+  if (env.ADMIN_KEY) {
     const provided = request.headers.get("X-Admin-Key");
-    if (provided !== env.ADMIN_KEY) {
+    if (!provided || provided !== env.ADMIN_KEY) {
       return jsonResponse({ error: "unauthorized" }, 401);
     }
   }
@@ -258,9 +258,9 @@ async function handleAttendanceConfig(request, env) {
     return jsonResponse({ error: "Method not allowed" }, 405);
   }
 
-  if (request.headers.has("X-Admin-Key") && env.ADMIN_KEY) {
+  if (env.ADMIN_KEY) {
     const provided = request.headers.get("X-Admin-Key");
-    if (provided !== env.ADMIN_KEY) {
+    if (!provided || provided !== env.ADMIN_KEY) {
       return jsonResponse({ error: "unauthorized" }, 401);
     }
   }
