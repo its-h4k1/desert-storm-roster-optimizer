@@ -1,5 +1,6 @@
 const DEFAULT_REPO = "its-h4k1/desert-storm-roster-optimizer";
 const ATTENDANCE_PATH = "data/attendance_config.yml";
+const PATH_ALLOWLIST = ["data/", "docs/data/event_results/"];
 
 function jsonResponse(data, status = 200) {
   return new Response(JSON.stringify(data), {
@@ -9,6 +10,25 @@ function jsonResponse(data, status = 200) {
       "Access-Control-Allow-Origin": "*",
     },
   });
+}
+
+function isPathAllowed(path = "") {
+  if (typeof path !== "string") return false;
+  if (path.includes("..") || path.startsWith("/")) return false;
+  return PATH_ALLOWLIST.some((prefix) => path.startsWith(prefix));
+}
+
+function validateWritePayload(file) {
+  if (!file || typeof file !== "object") {
+    return { ok: false, error: "payload missing" };
+  }
+  const path = (file.path || "").trim();
+  if (!path) return { ok: false, error: "path missing" };
+  if (!isPathAllowed(path)) return { ok: false, error: "path not allowed" };
+  if (typeof file.content !== "string") return { ok: false, error: "content missing" };
+  const branch = (file.branch || "main").trim() || "main";
+  const message = (file.message || `admin: update ${path}`).trim();
+  return { ok: true, path, branch, message, content: file.content };
 }
 
 function normalizeAttendance(raw = {}) {
@@ -102,6 +122,54 @@ async function githubRequest(env, path, init = {}) {
   return fetch(apiUrl.toString(), { ...init, headers });
 }
 
+async function readCurrentFileSha(env, path, branch) {
+  const currentRes = await githubRequest(env, `contents/${path}?ref=${encodeURIComponent(branch)}`);
+  if (!currentRes.ok) return null;
+  try {
+    const current = await currentRes.json();
+    return current?.sha || null;
+  } catch (err) {
+    return null;
+  }
+}
+
+async function writeRepoFile(env, { path, content, branch, message }) {
+  const sha = await readCurrentFileSha(env, path, branch);
+  const payload = {
+    message,
+    content: btoa(unescape(encodeURIComponent(content))),
+    branch,
+  };
+  if (sha) payload.sha = sha;
+
+  const res = await githubRequest(env, `contents/${path}`, {
+    method: "PUT",
+    body: JSON.stringify(payload),
+  });
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(`GitHub write failed: ${res.status} ${text}`);
+  }
+  return res.json();
+}
+
+async function writeFiles(env, { files, message, branch }) {
+  const results = [];
+  for (const file of files) {
+    const normalized = validateWritePayload({
+      ...file,
+      branch: file.branch || branch,
+      message: file.message || message,
+    });
+    if (!normalized.ok) {
+      throw new Error(normalized.error || "invalid payload");
+    }
+    const commit = await writeRepoFile(env, normalized);
+    results.push({ path: normalized.path, commit });
+  }
+  return results;
+}
+
 async function writeAttendanceFile(env, { content, branch, message }) {
   const currentRes = await githubRequest(env, `contents/${ATTENDANCE_PATH}?ref=${encodeURIComponent(branch)}`);
   let sha = undefined;
@@ -134,6 +202,42 @@ async function writeAttendanceFile(env, { content, branch, message }) {
     throw new Error(`GitHub write failed: ${res.status} ${text}`);
   }
   return res.json();
+}
+
+async function handleWriteFile(request, env) {
+  if (request.method !== "POST") {
+    return jsonResponse({ error: "Method not allowed" }, 405);
+  }
+
+  if (request.headers.has("X-Admin-Key") && env.ADMIN_KEY) {
+    const provided = request.headers.get("X-Admin-Key");
+    if (provided !== env.ADMIN_KEY) {
+      return jsonResponse({ error: "unauthorized" }, 401);
+    }
+  }
+
+  let payload = {};
+  try {
+    payload = await request.json();
+  } catch (err) {
+    return jsonResponse({ error: "invalid json" }, 400);
+  }
+
+  const files = Array.isArray(payload.files)
+    ? payload.files
+    : payload && typeof payload === "object"
+      ? [payload]
+      : [];
+  if (!files.length) {
+    return jsonResponse({ error: "no files provided" }, 400);
+  }
+
+  try {
+    const results = await writeFiles(env, { files, message: payload.message, branch: payload.branch });
+    return jsonResponse({ ok: true, files: results });
+  } catch (err) {
+    return jsonResponse({ ok: false, error: err?.message || String(err) }, 400);
+  }
 }
 
 async function dispatchRosterBuild(env, ref, reason) {
@@ -197,6 +301,14 @@ export default {
       });
     }
 
+    if (url.pathname.endsWith("/write-file") || url.pathname === "/write-file") {
+      try {
+        return await handleWriteFile(request, env);
+      } catch (err) {
+        return jsonResponse({ error: err?.message || String(err) }, 500);
+      }
+    }
+
     if (url.pathname.endsWith("/attendance-config") || url.pathname === "/attendance-config") {
       try {
         return await handleAttendanceConfig(request, env);
@@ -205,6 +317,6 @@ export default {
       }
     }
 
-    return jsonResponse({ status: "ok", hint: "use /attendance-config" });
+    return jsonResponse({ status: "ok", hint: "use /write-file or /attendance-config" });
   },
 };
