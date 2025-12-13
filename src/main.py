@@ -162,9 +162,22 @@ def _load_event_history() -> pd.DataFrame:
             columns=["EventID", "PlayerName", "RoleAtRegistration", "Teilgenommen"]
         )
 
+    def _base_event_id_from_stem(stem: str) -> str:
+        parts = stem.split("-")
+        if len(parts) >= 4 and parts[0].lower() == "ds":
+            return "-".join(parts[:4])
+        return stem
+
     base = Path("data")
     pattern = "DS-*-*-*.csv"
     keep = []
+
+    json_event_ids: set[str] = set()
+
+    event_results_dir = base / "event_results"
+    if event_results_dir.exists():
+        for path in sorted(event_results_dir.glob("DS-*.json")):
+            json_event_ids.add(_base_event_id_from_stem(path.stem))
 
     for path in base.glob(pattern):
         name = path.name
@@ -172,6 +185,11 @@ def _load_event_history() -> pd.DataFrame:
             continue
         if len(name.split("-")) < 4:
             continue
+
+        csv_base_event_id = _base_event_id_from_stem(path.stem)
+        if csv_base_event_id in json_event_ids:
+            continue
+
         try:
             df = pd.read_csv(path)
         except Exception:
