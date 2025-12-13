@@ -46,7 +46,8 @@
     .status.attended { background:#dcfce7; color:#14532d; border-color:#bbf7d0; }
     .status.missed { background:#fee2e2; color:#b91c1c; border-color:#fecdd3; }
     .empty { color:var(--text-muted); font-style:italic; }
-    .sortable { display:flex; align-items:center; gap:0.35rem; }
+    .sortable { cursor:pointer; }
+    .sortable-content { display:inline-flex; align-items:center; gap:0.35rem; }
     .sort-indicator { font-size:0.85rem; color:var(--text-muted); }
   </style>
 </head>
@@ -127,12 +128,24 @@
                 <table>
                   <thead>
                     <tr>
-                      <th data-sort="name" class="sortable">Spieler <span class="sort-indicator" data-sort-indicator="name"></span></th>
-                      <th data-sort="events" class="sortable">Events <span class="sort-indicator" data-sort-indicator="events"></span></th>
-                      <th data-sort="attendance" class="sortable">Attendance <span class="sort-indicator" data-sort-indicator="attendance"></span></th>
-                      <th data-sort="noshow" class="sortable">No-Shows <span class="sort-indicator" data-sort-indicator="noshow"></span></th>
-                      <th data-sort="cancels" class="sortable">Early/Late Cancels <span class="sort-indicator" data-sort-indicator="cancels"></span></th>
-                      <th data-sort="bucket" class="sortable">Bucket <span class="sort-indicator" data-sort-indicator="bucket"></span></th>
+                      <th data-sort="name" class="sortable">
+                        <span class="sortable-content">Spieler <span class="sort-indicator" data-sort-indicator="name"></span></span>
+                      </th>
+                      <th data-sort="events" class="sortable">
+                        <span class="sortable-content">Events <span class="sort-indicator" data-sort-indicator="events"></span></span>
+                      </th>
+                      <th data-sort="attendance" class="sortable">
+                        <span class="sortable-content">Attendance <span class="sort-indicator" data-sort-indicator="attendance"></span></span>
+                      </th>
+                      <th data-sort="noshow" class="sortable">
+                        <span class="sortable-content">No-Shows <span class="sort-indicator" data-sort-indicator="noshow"></span></span>
+                      </th>
+                      <th data-sort="cancels" class="sortable">
+                        <span class="sortable-content">Early/Late Cancels <span class="sort-indicator" data-sort-indicator="cancels"></span></span>
+                      </th>
+                      <th data-sort="bucket" class="sortable">
+                        <span class="sortable-content">Bucket <span class="sort-indicator" data-sort-indicator="bucket"></span></span>
+                      </th>
                     </tr>
                   </thead>
                   <tbody id="reliabilityTableBody">
