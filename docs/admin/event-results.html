@@ -92,8 +92,8 @@
           <div class="page-main">
             <section class="panel">
               <div class="controls">
-                <label>Event-ID (Format DS-YYYY-MM-DD-A/B)
-                  <input id="eventId" type="text" placeholder="DS-2025-01-31-A" autocomplete="off" spellcheck="false">
+                <label>Event-ID (Format DS-YYYY-MM-DD – gilt für beide Gruppen)
+                  <input id="eventId" type="text" placeholder="DS-2025-01-31" autocomplete="off" spellcheck="false">
                 </label>
                 <label>Worker URL
                   <input id="workerUrl" type="url" value="https://ds-commit.hak1.workers.dev/write-file" spellcheck="false">
@@ -119,6 +119,7 @@
             </section>
 
             <section class="panel">
+              <p class="hint">Ein Ergebnisdatensatz enthält immer beide Gruppen (A &amp; B) eines Datums.</p>
               <div class="table-wrapper">
                 <table>
                   <thead>
@@ -167,7 +168,7 @@
       };
 
       const STORAGE_KEY = 'dsro-event-results-admin';
-      const EVENT_RE = /^DS-\d{4}-\d{2}-\d{2}-[AB]$/i;
+      const EVENT_RE = /^DS-\d{4}-\d{2}-\d{2}$/i;
       const state = {
         rosterRows: [],
         savedResults: [],
@@ -417,7 +418,7 @@
       async function handleLoadRoster() {
         const eventId = validateEventId(elements.eventId.value);
         if (!eventId) {
-          setStatus('Ungültige Event-ID. Format: DS-YYYY-MM-DD-A/B', 'error');
+          setStatus('Ungültige Event-ID. Format: DS-YYYY-MM-DD', 'error');
           return;
         }
         setStatus('Lade Aufstellung aus latest.json…');
@@ -426,11 +427,7 @@
           const payload = await fetchLatest();
           state.rosterRows = buildRosterRows(payload);
           state.latestSnapshotMeta = payload?.generated_at || 'latest.json';
-          applyMeta(elements.snapshotMeta, `Aufstellung: ${state.rosterRows.length} Spieler · ${state.latestSnapshotMeta}`);
-          const suggestion = shared.suggestDsEventIdForGroup ? shared.suggestDsEventIdForGroup({ payload, groupLetter: eventId.slice(-1) }) : '';
-          if (!elements.eventId.value && suggestion) {
-            elements.eventId.value = suggestion;
-          }
+          applyMeta(elements.snapshotMeta, `Aufstellung A + B: ${state.rosterRows.length} Spieler · ${state.latestSnapshotMeta}`);
           renderTable();
           setStatus('Aufstellung übernommen.', 'success');
         } catch (err) {
@@ -445,7 +442,7 @@
       async function handleLoadResults() {
         const eventId = validateEventId(elements.eventId.value);
         if (!eventId) {
-          setStatus('Ungültige Event-ID. Format: DS-YYYY-MM-DD-A/B', 'error');
+          setStatus('Ungültige Event-ID. Format: DS-YYYY-MM-DD', 'error');
           return;
         }
         setStatus('Lade gespeichertes Ergebnis…');
@@ -535,7 +532,7 @@
       async function handleSave() {
         const eventId = validateEventId(elements.eventId.value);
         if (!eventId) {
-          setStatus('Ungültige Event-ID. Format: DS-YYYY-MM-DD-A/B', 'error');
+          setStatus('Ungültige Event-ID. Format: DS-YYYY-MM-DD', 'error');
           return;
         }
         const adminKey = shared.getAdminKey ? shared.getAdminKey() : '';
