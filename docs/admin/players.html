@@ -330,6 +330,13 @@
       statusText: document.getElementById("statusText"),
     };
 
+    const openAdminSettings = () => {
+      if (elements.adminSettings) elements.adminSettings.open = true;
+    };
+    const closeAdminSettings = () => {
+      if (elements.adminSettings) elements.adminSettings.open = false;
+    };
+
     function buildNameIndex() {
       const names = [];
       state.groups.forEach(group => {
@@ -379,11 +386,19 @@
       pill.classList.add(tone);
     }
 
-    function renderAdminKeyStatus({ message, tone = "info" }) {
+    function renderAdminKeyStatus({ message, tone = "info", showAlert = false } = {}) {
       if (!elements.adminKeyStatus) return;
       const cls = tone === "success" ? "info" : tone;
       elements.adminKeyStatus.textContent = message || "";
       elements.adminKeyStatus.className = `pill ${cls}`.trim();
+      if (elements.adminKeyFallbackRow) {
+        elements.adminKeyFallbackRow.style.display = showAlert ? "block" : "none";
+      }
+      if (showAlert) {
+        openAdminSettings();
+      } else if (tone === "success") {
+        closeAdminSettings();
+      }
     }
 
       function buildCandidatePaths(path) {
@@ -994,7 +1009,11 @@
     async function saveChanges() {
       rememberSettings();
       const adminKey = window.dsroShared?.getAdminKey?.();
-      if (!adminKey) { alert("Admin-Key fehlt – bitte einloggen."); return; }
+      if (!adminKey) {
+        alert("Admin-Key fehlt – bitte einloggen.");
+        renderAdminKeyStatus({ message: "Admin-Key fehlt.", tone: "warn", showAlert: true });
+        return;
+      }
       state.saving = true; elements.saveBtn.disabled = true; setStatus("Speichere…", "info");
       const allianceCsv = buildAllianceCsv();
       const aliasesCsv = buildAliasCsv();
@@ -1013,6 +1032,7 @@
       } catch (err) {
         console.error(err);
         setStatus(err.message || "Speichern fehlgeschlagen", "error");
+        openAdminSettings();
       } finally {
         state.saving = false; elements.saveBtn.disabled = false;
       }

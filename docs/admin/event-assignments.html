@@ -389,6 +389,13 @@
         hardOnlyToggle: document.getElementById('hardOnlyToggle'),
       };
 
+      const openAdminSettings = () => {
+        if (elements.adminSettings) elements.adminSettings.open = true;
+      };
+      const closeAdminSettings = () => {
+        if (elements.adminSettings) elements.adminSettings.open = false;
+      };
+
       const SETTINGS_KEY = 'dsro-event-assignments-settings';
       const getAdminKey = () => (shared && typeof shared.getAdminKey === 'function') ? shared.getAdminKey() : '';
       const applyAdminKeyInput = (shared && typeof shared.applyAdminKeyInput === 'function')
@@ -1605,6 +1612,7 @@
         if (!adminKey) {
           setStatus('Kein Admin-Key gesetzt – bitte über die Admin-Startseite einloggen.', 'error');
           updateAdminKeyStatus();
+          openAdminSettings();
           return;
         }
         const content = buildCurrentCsv();
@@ -1638,6 +1646,7 @@
           if (responsesSaved) state.originalResponseCsv = responsesContent;
           const prefix = signupSaved && !responsesSaved ? 'Responses fehlgeschlagen. ' : '';
           setStatus(`${prefix}Speichern fehlgeschlagen: ${err.message}`, 'error');
+          openAdminSettings();
         } finally {
           setSaving(false);
           updateSaveButtonState();
@@ -1763,6 +1772,11 @@
         }
         if (elements.adminKeyFallbackRow) {
           elements.adminKeyFallbackRow.style.display = showAlert ? 'block' : 'none';
+        }
+        if (showAlert) {
+          openAdminSettings();
+        } else if (tone === 'success') {
+          closeAdminSettings();
         }
       }
 
