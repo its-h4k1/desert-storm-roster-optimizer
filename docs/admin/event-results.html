@@ -187,6 +187,13 @@
         adminKeyState: $('#adminKeyState'),
       };
 
+      const openAdminSettings = () => {
+        if (elements.adminSettings) elements.adminSettings.open = true;
+      };
+      const closeAdminSettings = () => {
+        if (elements.adminSettings) elements.adminSettings.open = false;
+      };
+
       const STORAGE_KEY = 'dsro-event-results-admin';
       const EVENT_RE = /^DS-\d{4}-\d{2}-\d{2}$/i;
       const state = {
@@ -617,6 +624,7 @@
         const adminKey = shared.getAdminKey ? shared.getAdminKey() : '';
         if (!adminKey) {
           setStatus('Kein Admin-Key gesetzt – bitte einloggen.', 'error');
+          renderAdminKeyState({ message: 'Kein Admin-Key gesetzt.', tone: 'warn', showAlert: true });
           return;
         }
         const workerUrl = (elements.workerUrl.value || '').trim();
@@ -697,6 +705,7 @@
           renderTable();
         } catch (err) {
           console.error(err);
+          openAdminSettings();
           if (!handledError) {
             setStatus(`Speichern fehlgeschlagen: ${err.message}`, 'error');
           }
@@ -706,10 +715,18 @@
         }
       }
 
-      function renderAdminKeyState({ message, tone = 'info' }) {
+      function renderAdminKeyState({ message, tone = 'info', showAlert = false } = {}) {
         if (!elements.adminKeyState) return;
         elements.adminKeyState.textContent = message;
         elements.adminKeyState.className = `pill ${tone}`.trim();
+        if (elements.adminKeyFallbackRow) {
+          elements.adminKeyFallbackRow.style.display = showAlert ? 'block' : 'none';
+        }
+        if (showAlert) {
+          openAdminSettings();
+        } else if (tone === 'success') {
+          closeAdminSettings();
+        }
       }
 
       function initEvents() {
