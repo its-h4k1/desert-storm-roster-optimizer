@@ -13,7 +13,6 @@
   - „Events erfassen“ (`events.html`)
   - „Spieler & Aliase“ (`players.html`)
   - „No-Show Analyse“ (`noshow-dashboard.html`)
-  - (früher: „Callup-Assistent“, jetzt archiviert und nicht mehr verlinkt)
 - **Content** (`.admin-content`): rechter Bereich mit Seiten-spezifischem Inhalt. Panels nutzen `.admin-section` oder `.panel` sowie `card-grid` für Kennzahlen.
 
 ## 3. Design-Richtlinien
@@ -37,7 +36,6 @@
 | `docs/admin/events.html` | Tabellenbasiertes Erfassen/Validieren von Events, inkl. Alias-Resolver, Auto-Vervollständigung und Commit-Flow. | Liest `data/alliance.csv`, `data/aliases.csv` (lokal oder Raw-URLs) und speichert `data/<EventID>.csv`.
 | `docs/admin/players.html` | Pflege von Spielerstatus, Aliases und Abwesenheiten mit Detailpanelen und Modal-Editoren. | Verwaltet `data/alliance.csv`, `data/aliases.csv`, `data/absences.csv`.
 | `docs/admin/noshow-dashboard.html` | Weiterleitung auf das Reliability-Dashboard. | – |
-| `docs/admin/callup-assistant.html` | Archiviertes Werkzeug für Reminder-Analysen; erzeugt keine verbindlichen Zusagen für A/B-Roster. | Liest `out/latest.json`, `data/alliance.csv`, `data/absences.csv`, `data/callups.csv`; Schreibpfad zu Zusagen sollte nicht genutzt werden.|
 
   > Wenn neue Admin- oder Analyse-Seiten entstehen, bitte hier kurz Zweck & Datenquellen ergänzen und in der README verlinken.
 
