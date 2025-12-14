@@ -165,8 +165,7 @@ keinen Build-Schritt.
 ## Allianz-Stammdaten
 
 Die Datei `data/alliance.csv` hält nur noch die Kernspalten `PlayerName`, `InAlliance` und
-optional `Note` bereit. Legacy-Spalten wie `PrefGroup`, `PrefMode` oder `PrefBoost` werden beim
-Build ignoriert, damit alte Dateien den Ablauf nicht brechen.
+optional `Note` bereit.
 
 - `InAlliance` kennzeichnet die Allianz-Mitgliedschaft: `1` = Spieler ist aktuell Teil der
   Allianz (wird beim Roster berücksichtigt), `0` = Spieler ist ausgetreten bzw. entfernt
