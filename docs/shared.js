@@ -620,8 +620,9 @@
 
   function parseReliabilityStartDate(raw) {
     if (typeof raw !== "string") return null;
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(raw)) return null;
-    const parsed = new Date(`${raw}T00:00:00Z`);
+    const trimmed = raw.trim();
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(trimmed)) return null;
+    const parsed = new Date(`${trimmed}T00:00:00Z`);
     return Number.isNaN(parsed.getTime()) ? null : parsed;
   }
 
@@ -772,8 +773,24 @@
     if (shared.prepareAliasMapFromPayload) {
       shared.prepareAliasMapFromPayload(payload);
     }
-    shared.reliabilityStartDate = payload?.reliability_config?.reliability_start_date || null;
-    shared.reliabilityStartDateParsed = parseReliabilityStartDate(shared.reliabilityStartDate);
+    const rawStartDate = (typeof payload?.reliability_config?.reliability_start_date === "string"
+      ? payload.reliability_config.reliability_start_date
+      : null)
+      || (typeof payload?.reliability?.meta?.reliability_start_date === "string"
+        ? payload.reliability?.meta?.reliability_start_date
+        : null)
+      || (typeof payload?.analysis?.reliability?.meta?.reliability_start_date === "string"
+        ? payload.analysis?.reliability?.meta?.reliability_start_date
+        : null)
+      || null;
+
+    const normalizedStartDate = typeof rawStartDate === "string" ? rawStartDate.trim() : null;
+    const parsedStartDate = normalizedStartDate?.toLowerCase() === "all-time"
+      ? null
+      : parseReliabilityStartDate(normalizedStartDate);
+
+    shared.reliabilityStartDate = normalizedStartDate || null;
+    shared.reliabilityStartDateParsed = parsedStartDate || null;
     shared.reliabilityMeta = {
       startDateRaw: shared.reliabilityStartDate || null,
       startDateParsed: shared.reliabilityStartDateParsed || null,
