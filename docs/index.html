@@ -259,7 +259,10 @@
           window.dsroShared.prepareAliasMapFromPayload(data);
         }
         if (window.dsroShared?.hydrateReliabilityFromPayload) {
-          window.dsroShared.hydrateReliabilityFromPayload(data);
+          const siteRoot = window.dsroShared.computeSiteRoot
+            ? window.dsroShared.computeSiteRoot(location.pathname || '/')
+            : './';
+          await window.dsroShared.hydrateReliabilityFromPayload(data, { siteRoot });
         }
         renderEvent(data.event || {});
         const counts = {

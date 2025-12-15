@@ -618,6 +618,13 @@
     return normalized;
   }
 
+  function parseReliabilityStartDate(raw) {
+    if (typeof raw !== "string") return null;
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(raw)) return null;
+    const parsed = new Date(`${raw}T00:00:00Z`);
+    return Number.isNaN(parsed.getTime()) ? null : parsed;
+  }
+
   function buildReliabilityMap(payload) {
     const result = {};
     if (!payload || typeof payload !== "object") return result;
@@ -671,6 +678,78 @@
     return result;
   }
 
+  function computeEventResultIdsSince(startDate) {
+    const ids = [];
+    if (!(startDate instanceof Date) || Number.isNaN(startDate.getTime())) return ids;
+    const today = new Date();
+    const dt = new Date(Date.UTC(
+      startDate.getUTCFullYear(),
+      startDate.getUTCMonth(),
+      startDate.getUTCDate(),
+    ));
+    const MAX_WEEKS = 520; // ~10 Jahre als Schutz vor Endlosschleifen
+    while (dt <= today && ids.length < MAX_WEEKS) {
+      ids.push(`DS-${dt.toISOString().slice(0, 10)}`);
+      dt.setUTCDate(dt.getUTCDate() + 7);
+    }
+    return ids;
+  }
+
+  async function fetchEventResultsSince(startDate, { siteRoot, cacheBuster } = {}) {
+    if (!(startDate instanceof Date) || Number.isNaN(startDate.getTime())) return [];
+    const cache = typeof cacheBuster === "string" ? cacheBuster : `?v=${Date.now()}`;
+    const base = siteRoot || computeSiteRoot(typeof location !== "undefined" ? (location.pathname || "/") : "/");
+    const ids = computeEventResultIdsSince(startDate);
+    const results = [];
+
+    for (const id of ids) {
+      const url = `${base}data/event_results/${id}.json${cache}`;
+      try {
+        const response = await fetch(url, { cache: "no-store" });
+        if (!response.ok) continue;
+        const data = await response.json();
+        data.event_id = data.event_id || id;
+        results.push(data);
+      } catch (err) {
+        console.warn("Event-Result konnte nicht geladen werden", { id, err });
+      }
+    }
+
+    return results;
+  }
+
+  function computeReliabilityStatsFromEventResults(events) {
+    const stats = {};
+    const aliasMap = shared.aliasMap instanceof Map ? shared.aliasMap : null;
+
+    (events || []).forEach((evt) => {
+      if (!Array.isArray(evt?.results)) return;
+      (evt.results || []).forEach((res) => {
+        const canon = canonicalNameJS(res.player_key || res.player || res.display_name_snapshot);
+        if (!canon) return;
+        const resolved = aliasMap?.get(canon) || canon;
+        stats[resolved] = stats[resolved] || {
+          events: 0,
+          attendance: 0,
+          noShows: 0,
+          earlyCancels: 0,
+          lateCancels: 0,
+        };
+        stats[resolved].events += 1;
+        const attended = !!res.attended || !!res.Teilgenommen;
+        if (attended) {
+          stats[resolved].attendance += 1;
+        } else {
+          stats[resolved].noShows += 1;
+        }
+        if (res.early_cancel || res.earlyCancel) stats[resolved].earlyCancels += 1;
+        if (res.late_cancel || res.lateCancel) stats[resolved].lateCancels += 1;
+      });
+    });
+
+    return stats;
+  }
+
   function refreshPlayerReliabilityIndex() {
     const index = new Map();
     const rel = shared.playerReliability || {};
@@ -688,10 +767,33 @@
     return index;
   }
 
-  function hydrateReliabilityFromPayload(payload) {
+  async function hydrateReliabilityFromPayload(payload, { siteRoot, cacheBuster } = {}) {
     shared.latestPayload = payload || null;
+    if (shared.prepareAliasMapFromPayload) {
+      shared.prepareAliasMapFromPayload(payload);
+    }
     shared.reliabilityStartDate = payload?.reliability_config?.reliability_start_date || null;
-    shared.playerReliability = buildReliabilityMap(payload);
+    shared.reliabilityStartDateParsed = parseReliabilityStartDate(shared.reliabilityStartDate);
+    shared.reliabilityMeta = {
+      startDateRaw: shared.reliabilityStartDate || null,
+      startDateParsed: shared.reliabilityStartDateParsed || null,
+      mode: shared.reliabilityStartDateParsed ? "window" : "all-time",
+      source: shared.reliabilityStartDateParsed ? "event-results" : "payload",
+      eventResultsLoaded: 0,
+      scopeLabel: shared.reliabilityStartDateParsed ? `Seit ${shared.reliabilityStartDate}` : "All-time",
+    };
+
+    if (!shared.reliabilityStartDateParsed) {
+      shared.reliabilityEventResults = [];
+      shared.playerReliability = buildReliabilityMap(payload);
+      refreshPlayerReliabilityIndex();
+      return shared.playerReliability;
+    }
+
+    const events = await fetchEventResultsSince(shared.reliabilityStartDateParsed, { siteRoot, cacheBuster });
+    shared.reliabilityEventResults = events;
+    shared.reliabilityMeta.eventResultsLoaded = Array.isArray(events) ? events.length : 0;
+    shared.playerReliability = computeReliabilityStatsFromEventResults(events);
     refreshPlayerReliabilityIndex();
     return shared.playerReliability;
   }
@@ -701,6 +803,16 @@
   shared.aliasMap = shared.aliasMap || new Map();
   shared.playerReliabilityCanonIndex = shared.playerReliabilityCanonIndex || new Map();
   shared.reliabilityStartDate = shared.reliabilityStartDate || null;
+  shared.reliabilityStartDateParsed = shared.reliabilityStartDateParsed || null;
+  shared.reliabilityEventResults = shared.reliabilityEventResults || [];
+  shared.reliabilityMeta = shared.reliabilityMeta || {
+    startDateRaw: null,
+    startDateParsed: null,
+    mode: "all-time",
+    source: "payload",
+    eventResultsLoaded: 0,
+    scopeLabel: "All-time",
+  };
   shared.REL_MIN_EVENTS_FOR_BUCKET =
     shared.REL_MIN_EVENTS_FOR_BUCKET == null ? 3 : shared.REL_MIN_EVENTS_FOR_BUCKET;
   shared.REL_NO_SHOW_GREEN_MAX =
@@ -1060,6 +1172,7 @@
     normalizePlayerName,
     escapeHtml,
     computeSiteRoot,
+    parseReliabilityStartDate,
     buildLatestJsonUrl,
     fetchJsonWithErrors,
     triggerRosterBuild,
@@ -1091,6 +1204,9 @@
     hydrateReliabilityFromPayload,
     refreshPlayerReliabilityIndex,
     playerReliability: shared.playerReliability,
+    reliabilityEventResults: shared.reliabilityEventResults,
+    reliabilityMeta: shared.reliabilityMeta,
+    reliabilityStartDateParsed: shared.reliabilityStartDateParsed,
     latestPayload: shared.latestPayload,
     allKnownPlayersForAdmin: shared.allKnownPlayersForAdmin,
     adminPlayerNameByCanon: shared.adminPlayerNameByCanon,
