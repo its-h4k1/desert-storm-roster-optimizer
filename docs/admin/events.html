@@ -573,7 +573,54 @@
           <h1>Tabellen-Editor</h1>
         </div>
         <div class="admin-header-actions">
-          <a class="btn ghost" href="../index.html">Zur Roster-Ansicht</a>
+          <div class="admin-header-tools">
+            <div class="admin-status-line">
+              <div id="admin-key-status" class="pill warn">Admin-Key wird geprüft…</div>
+            </div>
+            <details id="adminSettings" class="admin-settings">
+              <summary>⚙️ Einstellungen</summary>
+              <div class="admin-settings-grid">
+                <label>Worker URL
+                  <input type="url" id="worker-url" value="https://ds-commit.hak1.workers.dev/write-file">
+                  <small>Wird lokal gespeichert.</small>
+                </label>
+                <label>Ziel-Branch
+                  <select id="branch-select">
+                    <option value="main">main</option>
+                    <option value="ops/events">ops/events</option>
+                    <option value="__custom">Custom…</option>
+                  </select>
+                </label>
+                <label id="custom-branch-wrapper" class="hidden">Custom-Branch
+                  <input type="text" id="custom-branch" placeholder="feature/my-branch">
+                </label>
+                <label>Strategie
+                  <select id="strategy-select">
+                    <option value="replace">replace (überschreiben)</option>
+                    <option value="merge">merge (zusammenführen)</option>
+                    <option value="abort-if-exists">abort-if-exists</option>
+                  </select>
+                </label>
+                <div id="admin-key-fallback" class="hidden" style="grid-column:1 / -1;">
+                  <div class="info-box" style="margin-top:0.35rem;">
+                    <strong>Fallback für den Admin-Key</strong>
+                    <small>Nur nutzen, falls der Key aus der zentralen Verwaltung fehlt.</small>
+                    <div class="inline-input">
+                      <input type="password" id="admin-key" placeholder="Admin-Key einfügen">
+                      <button type="button" id="admin-key-apply">Übernehmen</button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="admin-settings-actions">
+                <label class="inline">
+                  <input type="checkbox" id="remember-settings">
+                  <span>Einstellungen merken</span>
+                </label>
+              </div>
+            </details>
+            <a class="btn ghost" href="../index.html">Zur Roster-Ansicht</a>
+          </div>
         </div>
       </header>
 
@@ -598,53 +645,6 @@
                   <legend>Import</legend>
                   <div class="dropzone" id="dropzone">CSV hierher ziehen (Mehrfach möglich)</div>
                   <button type="button" id="paste-btn" style="margin-top:0.5rem; width:100%">Aus Zwischenablage einfügen</button>
-                </fieldset>
-                <fieldset>
-                  <legend>Branch &amp; Commit</legend>
-                  <label>
-                    Ziel-Branch
-                    <select id="branch-select">
-                      <option value="main">main</option>
-                      <option value="ops/events">ops/events</option>
-                      <option value="__custom">Custom…</option>
-                    </select>
-                  </label>
-                  <label id="custom-branch-wrapper" class="hidden">
-                    Custom-Branch
-                    <input type="text" id="custom-branch" placeholder="feature/my-branch">
-                  </label>
-                  <label>
-                    Strategie
-                    <select id="strategy-select">
-                      <option value="replace">replace (überschreiben)</option>
-                      <option value="merge">merge (zusammenführen)</option>
-                      <option value="abort-if-exists">abort-if-exists</option>
-                    </select>
-                  </label>
-                </fieldset>
-                <fieldset>
-                  <legend>Worker</legend>
-                  <label>
-                    Worker URL
-                    <input type="url" id="worker-url" value="https://ds-commit.hak1.workers.dev/write-file">
-                  </label>
-                  <div id="admin-key-status" class="info-box warn">
-                    Kein Admin-Key gesetzt – bitte über die Admin-Startseite einloggen.
-                  </div>
-                  <div id="admin-key-fallback" class="hidden">
-                    <div class="info-box" style="margin-top:0.5rem;">
-                      <strong>Fallback für den Admin-Key</strong>
-                      <small>Nur nutzen, falls der Key aus der zentralen Verwaltung fehlt.</small>
-                      <div class="inline-input">
-                        <input type="password" id="admin-key" placeholder="Admin-Key einfügen">
-                        <button type="button" id="admin-key-apply">Übernehmen</button>
-                      </div>
-                    </div>
-                  </div>
-                  <label class="inline">
-                    <input type="checkbox" id="remember-settings">
-                    <span>Einstellungen merken</span>
-                  </label>
                 </fieldset>
               </div>
               <div class="controls-row">
@@ -738,6 +738,7 @@
       adminKeyStatus: document.getElementById("admin-key-status"),
       adminKeyFallback: document.getElementById("admin-key-fallback"),
       adminKeyApply: document.getElementById("admin-key-apply"),
+      adminSettings: document.getElementById("adminSettings"),
       remember: document.getElementById("remember-settings"),
       saveBtn: document.getElementById("save-btn"),
       buildBtn: document.getElementById("build-btn"),
@@ -772,17 +773,29 @@
 
     const getAdminKey = () => dsroShared.getAdminKey();
 
+    const openAdminSettings = () => {
+      if (elements.adminSettings) elements.adminSettings.open = true;
+    };
+
+    const closeAdminSettings = () => {
+      if (elements.adminSettings) elements.adminSettings.open = false;
+    };
+
     function updateAdminKeyUi() {
       const adminKey = getAdminKey();
       if (elements.adminKeyStatus) {
         elements.adminKeyStatus.textContent = adminKey
           ? "Admin-Key ist gesetzt (aus zentraler Verwaltung)."
           : "Kein Admin-Key gesetzt – bitte über die Admin-Startseite einloggen.";
-        elements.adminKeyStatus.classList.toggle("ok", Boolean(adminKey));
-        elements.adminKeyStatus.classList.toggle("warn", !adminKey);
+        elements.adminKeyStatus.className = `pill ${adminKey ? "info" : "warn"}`;
       }
       if (elements.adminKeyFallback) {
         elements.adminKeyFallback.classList.toggle("hidden", Boolean(adminKey));
+      }
+      if (!adminKey) {
+        openAdminSettings();
+      } else {
+        closeAdminSettings();
       }
     }
 
@@ -2098,6 +2111,7 @@
       } catch (err) {
         console.error(err);
         showToast(`Speichern fehlgeschlagen: ${err.message}`);
+        openAdminSettings();
       }
     }
 
@@ -2327,6 +2341,7 @@
       if (!adminKey) {
         updateAdminKeyUi();
         showToast("Admin-Key fehlt – bitte über die Admin-Startseite einloggen oder Fallback setzen.");
+        openAdminSettings();
         return;
       }
       try {
