@@ -304,7 +304,39 @@
           <h1>Verwaltung</h1>
         </div>
         <div class="admin-header-actions">
-          <a class="btn ghost" href="../index.html">Zur Roster-Ansicht</a>
+          <div class="admin-header-tools">
+            <div class="admin-status-line">
+              <div id="adminKeyStatus" class="pill info">Admin-Key wird geprüft…</div>
+            </div>
+            <details id="adminSettings" class="admin-settings">
+              <summary>⚙️ Einstellungen</summary>
+              <div class="admin-settings-grid">
+                <label>Worker URL
+                  <input id="workerUrl" type="text" value="https://ds-commit.hak1.workers.dev/write-file" spellcheck="false">
+                </label>
+                <label>Branch
+                  <input id="branchInput" type="text" value="main" spellcheck="false">
+                </label>
+                <div style="display:grid; gap:0.35rem;">
+                  <label style="margin:0; color:var(--text-muted); font-size:0.85rem;">Admin-Key</label>
+                  <div id="adminKeyFallbackRow" style="display:none;">
+                    <label style="margin:0;">
+                      <span style="display:block; font-size:0.85rem; color:var(--text-muted);">Fallback setzen</span>
+                      <input id="adminKeyInput" type="password" placeholder="Optional – wird zentral gespeichert" autocomplete="off">
+                    </label>
+                    <div class="admin-settings-actions" style="margin:0;justify-content:flex-start;">
+                      <button id="applyAdminKeyBtn" type="button">Admin-Key übernehmen</button>
+                    </div>
+                    <small class="hint" style="color:var(--text-muted);">Nur nutzen, falls der zentrale Login noch nicht gesetzt wurde.</small>
+                  </div>
+                </div>
+              </div>
+              <div class="admin-settings-actions">
+                <small class="hint" style="color:var(--text-muted);">Worker-URL &amp; Branch werden lokal gespeichert. Admin-Key kommt aus der zentralen Verwaltung.</small>
+              </div>
+            </details>
+            <a class="btn ghost" href="../index.html">Zur Roster-Ansicht</a>
+          </div>
         </div>
       </header>
 
@@ -316,28 +348,10 @@
                 <h2>Absenzen verwalten</h2>
                 <p style="margin:0;color:#6b7280;font-size:0.9rem">Pflege von <code>data/absences.csv</code> über Worker/Commit-Flow.</p>
               </div>
-              <div class="settings">
-              <label>Worker URL
-                <input id="workerUrl" type="text" value="https://ds-commit.hak1.workers.dev/write-file" spellcheck="false">
-              </label>
-              <label>Branch
-                <input id="branchInput" type="text" value="main" spellcheck="false">
-              </label>
-              <button id="reloadBtn" class="ghost">Neu laden</button>
-              <button id="saveBtn">Speichern</button>
-            </div>
-            <div class="admin-key-banner" id="adminKeyBanner">
-              <div id="adminKeyStatus" class="admin-key-status">Admin-Key wird geprüft…</div>
-              <div id="adminKeyFallback" class="admin-key-fallback hidden">
-                <small>Kein Admin-Key gefunden? Optional hier kurz hinterlegen (wird zentral gespeichert).</small>
-                <div style="display:flex;align-items:flex-end;gap:0.5rem;flex-wrap:wrap;">
-                  <label>Admin-Key (Fallback)
-                    <input id="adminKeyInput" type="password" placeholder="Admin-Key eingeben" autocomplete="off">
-                  </label>
-                  <button id="applyAdminKeyBtn" class="ghost" type="button">Admin-Key übernehmen</button>
-                </div>
+              <div class="settings" style="align-items:center;">
+                <button id="reloadBtn" class="ghost">Neu laden</button>
+                <button id="saveBtn">Speichern</button>
               </div>
-            </div>
             </header>
 
             <main class="page-main">
@@ -408,8 +422,9 @@
         statsPill: document.getElementById("statsPill"),
         emptyState: document.getElementById("emptyState"),
         playerOptions: document.getElementById("playerOptions"),
+        adminSettings: document.getElementById("adminSettings"),
         adminKeyStatus: document.getElementById("adminKeyStatus"),
-        adminKeyFallback: document.getElementById("adminKeyFallback"),
+        adminKeyFallbackRow: document.getElementById("adminKeyFallbackRow"),
         adminKeyInput: document.getElementById("adminKeyInput"),
         applyAdminKeyBtn: document.getElementById("applyAdminKeyBtn"),
       };
@@ -424,11 +439,24 @@
         nextId: 1,
       };
 
-      const SETTINGS_KEY = "dsro-absences-admin-settings";
       const repoOwner = "its-h4k1";
       const repoName = "desert-storm-roster-optimizer";
       const defaultBranch = "main";
       const DEFAULT_HEADERS = ["PlayerName", "From", "To", "Reason", "InAlliance"];
+      const defaultWorkerUrl = dsroShared?.DEFAULT_WRITE_FILE_URL || "https://ds-commit.hak1.workers.dev/write-file";
+
+      const adminControls = dsroShared.initSharedAdminSettings?.({
+        settingsToggle: elements.adminSettings,
+        workerInput: elements.workerUrl,
+        branchInput: elements.branch,
+        adminKeyStatus: elements.adminKeyStatus,
+        adminKeyFallbackRow: elements.adminKeyFallbackRow,
+        adminKeyFallbackInput: elements.adminKeyInput,
+        adminKeyFallbackButton: elements.applyAdminKeyBtn,
+        defaultWorkerUrl,
+        defaultBranch,
+        onValidAdminKey: () => updateSaveButtonState(),
+      });
 
       const getAdminKey = () => dsroShared.getAdminKey();
       const resolvePlayerDisplayName = typeof dsroShared.resolvePlayerDisplayName === "function"
@@ -468,6 +496,7 @@
         : ((inputEl) => setPlayerInputSelection(inputEl, "", ""));
 
       function getBranch() {
+        if (adminControls && typeof adminControls.getBranch === "function") return adminControls.getBranch();
         const raw = elements.branch.value.trim();
         return raw || defaultBranch;
       }
@@ -805,11 +834,19 @@
 
       async function saveChanges() {
         if (state.loading || state.saving) return;
-        const workerUrl = elements.workerUrl.value.trim();
+        const workerUrl = adminControls?.getWorkerUrl ? adminControls.getWorkerUrl() : elements.workerUrl.value.trim();
         const adminKey = getAdminKey();
         const branch = getBranch();
-        if (!workerUrl) { setStatus("Worker-URL fehlt.", "error"); return; }
-        if (!adminKey) { setStatus("Admin-Key erforderlich.", "error"); return; }
+        if (!workerUrl) {
+          setStatus("Worker-URL fehlt.", "error");
+          adminControls?.openSettings?.();
+          return;
+        }
+        if (!adminKey) {
+          setStatus("Admin-Key erforderlich.", "error");
+          adminControls?.openSettings?.();
+          return;
+        }
         const content = buildCurrentCsv();
         setSaving(true);
         setStatus("Speichere Absenzen…", "info");
@@ -831,6 +868,7 @@
         } catch (err) {
           console.error(err);
           setStatus(`Speichern fehlgeschlagen: ${err.message}`, "error");
+          adminControls?.openSettings?.();
         } finally {
           setSaving(false);
           updateSaveButtonState();
@@ -858,66 +896,6 @@
         return result;
       }
 
-      function restoreSettings() {
-        const saved = localStorage.getItem(SETTINGS_KEY);
-        if (saved) {
-          try {
-            const parsed = JSON.parse(saved);
-            if (parsed.workerUrl) elements.workerUrl.value = parsed.workerUrl;
-            if (parsed.branch) elements.branch.value = parsed.branch;
-          } catch (err) { console.warn("Settings konnten nicht gelesen werden", err); }
-        } else {
-          const shared = localStorage.getItem("dsro-admin-settings");
-          if (shared) {
-            try {
-              const parsed = JSON.parse(shared);
-              if (parsed.workerUrl) elements.workerUrl.value = parsed.workerUrl;
-              if (parsed.customBranch) {
-                elements.branch.value = parsed.customBranch;
-              } else if (parsed.branchSelect) {
-                elements.branch.value = parsed.branchSelect;
-              }
-            } catch (err) {
-              console.warn("Shared settings konnten nicht gelesen werden", err);
-            }
-          }
-        }
-      }
-
-      function persistSettings() {
-        const values = {
-          workerUrl: elements.workerUrl.value,
-          branch: elements.branch.value,
-        };
-        localStorage.setItem(SETTINGS_KEY, JSON.stringify(values));
-      }
-
-      function updateAdminKeyStatus() {
-        const hasKey = !!getAdminKey();
-        if (elements.adminKeyStatus) {
-          elements.adminKeyStatus.textContent = hasKey
-            ? "Admin-Key ist gesetzt (aus zentraler Verwaltung)."
-            : "Kein Admin-Key gesetzt – bitte über die Admin-Startseite einloggen.";
-          elements.adminKeyStatus.className = "admin-key-status " + (hasKey ? "ok" : "warn");
-        }
-        if (elements.adminKeyFallback) {
-          elements.adminKeyFallback.classList.toggle("hidden", hasKey);
-        }
-        updateSaveButtonState();
-      }
-
-      function applyAdminKeyFromFallback() {
-        if (!elements.adminKeyInput) return;
-        const value = (elements.adminKeyInput.value || "").trim();
-        if (!value) {
-          setStatus("Kein Admin-Key eingegeben.", "warn");
-          return;
-        }
-        dsroShared.saveAdminKey(value);
-        updateAdminKeyStatus();
-        setStatus("Admin-Key gespeichert (zentraler Store).", "ok");
-      }
-
       function initEvents() {
         elements.reloadBtn.addEventListener("click", () => reloadData());
         elements.saveBtn.addEventListener("click", () => saveChanges());
@@ -925,15 +903,10 @@
         elements.searchInput.addEventListener("input", () => renderTable());
         elements.activeOnly.addEventListener("change", () => renderTable());
         elements.sortSelect.addEventListener("change", () => renderTable());
-        elements.workerUrl.addEventListener("change", persistSettings);
-        elements.branch.addEventListener("change", persistSettings);
-        if (elements.applyAdminKeyBtn) elements.applyAdminKeyBtn.addEventListener("click", applyAdminKeyFromFallback);
       }
 
-      dsroShared.applyAdminKeyInput(elements.adminKeyInput, { syncOnInput: false });
-      restoreSettings();
-      updateAdminKeyStatus();
       initEvents();
+      adminControls?.refreshAdminKey?.();
       reloadData();
     })();
   </script>
