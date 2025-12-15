@@ -176,6 +176,7 @@
 
   const DEFAULT_WORKER_BASE = "https://ds-commit.hak1.workers.dev/";
   const DEFAULT_DISPATCH_URL = `${DEFAULT_WORKER_BASE}dispatch`;
+  const DEFAULT_WRITE_FILE_URL = `${DEFAULT_WORKER_BASE}write-file`;
 
   async function fetchJsonWithErrors(url, { cache = "no-store" } = {}) {
     let response;
@@ -293,6 +294,12 @@
       }
     };
 
+    const closeSettings = () => {
+      if (settingsToggle && typeof settingsToggle === "object") {
+        try { settingsToggle.open = false; } catch (_) { /* ignore */ }
+      }
+    };
+
     const render = ({ message, tone = "info", showAlert = false }) => {
       if (typeof renderStatus === "function") {
         renderStatus({ message, tone, showAlert });
@@ -337,6 +344,7 @@
       if (key) {
         console.debug("admin-key: success");
         render({ message: "Admin-Key ist gesetzt (zentral verwaltet).", tone: "success", showAlert: false });
+        closeSettings();
         if (!initialized && typeof onValid === "function") {
           initialized = true;
           try { onValid(key); } catch (err) { handleError(err); }
@@ -372,7 +380,82 @@
     if (fallbackButton) fallbackButton.addEventListener("click", applyFallback);
     check();
 
-    return { refresh: check, applyFallback };
+    return { refresh: check, applyFallback, openSettings, closeSettings };
+  }
+
+  function readInputValue(el, fallback = "") {
+    if (!el) return fallback;
+    return (el.value || fallback || "").toString().trim();
+  }
+
+  function applyInputValue(el, value) {
+    if (!el) return;
+    const trimmed = (value || "").toString();
+    if (!el.value) el.value = trimmed;
+  }
+
+  function initSharedAdminSettings({
+    settingsToggle,
+    workerInput,
+    branchInput,
+    adminKeyStatus,
+    adminKeyFallbackRow,
+    adminKeyFallbackInput,
+    adminKeyFallbackButton,
+    alertEl,
+    defaultWorkerUrl = DEFAULT_WRITE_FILE_URL,
+    defaultBranch = "main",
+    onValidAdminKey,
+  } = {}) {
+    const restoreSettings = () => {
+      const sharedSettings = readSharedAdminSettings() || {};
+      applyInputValue(workerInput, sharedSettings.workerUrl || defaultWorkerUrl);
+      applyInputValue(branchInput, sharedSettings.customBranch || sharedSettings.branchSelect || defaultBranch);
+      if (!readInputValue(workerInput)) applyInputValue(workerInput, defaultWorkerUrl);
+      if (!readInputValue(branchInput)) applyInputValue(branchInput, defaultBranch);
+    };
+
+    const persistSettings = () => {
+      const update = {};
+      if (workerInput) update.workerUrl = readInputValue(workerInput, defaultWorkerUrl);
+      if (branchInput) update.customBranch = readInputValue(branchInput, defaultBranch);
+      writeSharedAdminSettings(update);
+    };
+
+    const getWorkerUrl = () => readInputValue(workerInput, defaultWorkerUrl) || defaultWorkerUrl;
+    const getBranch = () => readInputValue(branchInput, defaultBranch) || defaultBranch;
+
+    const gate = initAdminKeyGate({
+      statusEl: adminKeyStatus,
+      fallbackInput: adminKeyFallbackInput,
+      fallbackRow: adminKeyFallbackRow,
+      fallbackButton: adminKeyFallbackButton,
+      settingsToggle,
+      alertEl,
+      onValid: (key) => {
+        if (typeof onValidAdminKey === "function") onValidAdminKey(key);
+      },
+    });
+
+    if (workerInput) workerInput.addEventListener("change", persistSettings);
+    if (branchInput) branchInput.addEventListener("change", persistSettings);
+
+    applyAdminKeyInput(adminKeyFallbackInput, { syncOnInput: false });
+    restoreSettings();
+    persistSettings();
+
+    const openSettings = () => gate.openSettings();
+    const closeSettings = () => gate.closeSettings();
+
+    return {
+      getWorkerUrl,
+      getBranch,
+      refreshAdminKey: gate.refresh,
+      applyFallback: gate.applyFallback,
+      openSettings,
+      closeSettings,
+      persistSettings,
+    };
   }
 
   // Baut einen Header-Satz mit X-Admin-Key (falls vorhanden). Sollte von allen
@@ -984,12 +1067,14 @@
     RosterBuildTriggerError,
     DEFAULT_WORKER_BASE,
     DEFAULT_DISPATCH_URL,
+    DEFAULT_WRITE_FILE_URL,
     readSharedAdminSettings,
     writeSharedAdminSettings,
     getAdminKey,
     saveAdminKey,
     applyAdminKeyInput,
     initAdminKeyGate,
+    initSharedAdminSettings,
     buildAdminHeaders,
     initAdminLayout,
     extractDsEventDatesFromPayload,
