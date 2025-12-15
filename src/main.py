@@ -35,6 +35,7 @@ from src.effective_signups import (
 from src.event_responses import EventResponse, load_event_responses_for_next_event
 from src.stats import (
     RELIABILITY_START_DATE,
+    RELIABILITY_START_DATE_RAW,
     PlayerReliability,
     compute_player_reliability,
 )
@@ -338,11 +339,9 @@ def _build_payload(
         entry["name"] = display_name
         signup_states_export[display_name] = entry
 
-    reliability_start = (
-        RELIABILITY_START_DATE.isoformat()
-        if RELIABILITY_START_DATE is not None
-        else "all-time"
-    )
+    reliability_start = RELIABILITY_START_DATE_RAW
+    if RELIABILITY_START_DATE is not None:
+        reliability_start = RELIABILITY_START_DATE.isoformat()
 
     return {
         "event": {
