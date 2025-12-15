@@ -187,6 +187,8 @@
         reliabilityStartDate: null,
         reliabilityStartDateParsed: null,
         latestPayload: null,
+        viewMode: 'window',
+        sourceOrigin: '',
       };
 
       function formatDate(iso){
@@ -389,10 +391,90 @@
         return null;
       }
 
+      function pickAllTimeReliabilityStats(payload){
+        const rel = payload?.reliability || {};
+        const candidates = [
+          rel.players,
+          rel.all_time?.players,
+          payload?.analysis?.reliability?.players,
+          payload?.analysis?.reliability?.all_time?.players,
+        ];
+        for (const candidate of candidates) {
+          if (candidate && typeof candidate === 'object' && Object.keys(candidate).length) {
+            return candidate;
+          }
+        }
+        return null;
+      }
+
+      function renderMeta(){
+        if (elements.eventWindowMeta) {
+          elements.eventWindowMeta.className = 'pill';
+          if (state.viewMode === 'all-time') {
+            elements.eventWindowMeta.textContent = 'All-time aus payload.reliability.players';
+            elements.eventWindowMeta.classList.add('info');
+          } else if (state.viewMode === 'all-time-fallback') {
+            elements.eventWindowMeta.textContent = 'Warnung: Keine Event-Results; zeige All-time aus Payload';
+            elements.eventWindowMeta.classList.add('warn');
+          } else if (state.viewMode === 'window') {
+            if (state.eventResults?.length) {
+              const ids = state.eventResults.map((e) => e.event_id).join(', ');
+              elements.eventWindowMeta.textContent = `Fenster: ${ids}`;
+            } else if (state.sourceOrigin === 'payload-window') {
+              elements.eventWindowMeta.textContent = 'Fenster: payload.reliability.window.*';
+            } else {
+              elements.eventWindowMeta.textContent = 'Fenster: Keine Event-Results geladen';
+              elements.eventWindowMeta.classList.add('warn');
+            }
+          } else {
+            elements.eventWindowMeta.textContent = 'Keine Event-Results im Fenster';
+            elements.eventWindowMeta.classList.add('warn');
+          }
+        }
+
+        if (elements.reliabilityStart) {
+          if (!state.reliabilityStartDate) {
+            elements.reliabilityStart.textContent = 'reliability_start_date fehlt';
+          } else if (!state.reliabilityStartDateParsed) {
+            elements.reliabilityStart.textContent = `reliability_start_date: ${state.reliabilityStartDate} (interpretiert als All-time)`;
+          } else {
+            elements.reliabilityStart.textContent = `reliability_start_date: ${state.reliabilityStartDate}`;
+          }
+        }
+      }
+
       function recomputeRows(){
         const windowStats = pickWindowReliabilityStats(state.latestPayload);
-        const source = windowStats || computeStatsFromEventResults(state.eventResults);
+        const windowStatsData = windowStats && Object.keys(windowStats).length ? windowStats : null;
+        const computedWindow = computeStatsFromEventResults(state.eventResults);
+        const computedWindowData = computedWindow && Object.keys(computedWindow).length ? computedWindow : null;
+        const windowSource = windowStatsData || computedWindowData;
+        const allTimeStats = pickAllTimeReliabilityStats(state.latestPayload);
+        const allTimeData = allTimeStats && Object.keys(allTimeStats).length ? allTimeStats : null;
+
+        const startIsParseable = !!state.reliabilityStartDateParsed;
+        let source = windowSource || {};
+
+        if (!startIsParseable && allTimeData) {
+          state.viewMode = 'all-time';
+          state.sourceOrigin = 'payload-all-time';
+          source = allTimeData;
+        } else if (windowSource) {
+          state.viewMode = 'window';
+          state.sourceOrigin = windowStatsData ? 'payload-window' : 'event-results';
+          source = windowSource;
+        } else if (allTimeData) {
+          state.viewMode = 'all-time-fallback';
+          state.sourceOrigin = 'payload-all-time-fallback';
+          source = allTimeData;
+        } else {
+          state.viewMode = 'window-empty';
+          state.sourceOrigin = 'none';
+          source = {};
+        }
+
         state.rows = parseReliabilityRowsFromStats(source || {});
+        renderMeta();
         renderTable();
       }
 
@@ -558,11 +640,6 @@
         renderSortIndicators();
         try {
           const payload = await fetchLatestPayload();
-          if (elements.reliabilityStart) {
-            elements.reliabilityStart.textContent = state.reliabilityStartDate
-              ? `reliability_start_date: ${state.reliabilityStartDate}`
-              : 'reliability_start_date fehlt';
-          }
           await fetchEventResults();
           recomputeRows();
         } catch (err) {
