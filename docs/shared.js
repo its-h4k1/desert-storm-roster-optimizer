@@ -391,7 +391,7 @@
   function applyInputValue(el, value) {
     if (!el) return;
     const trimmed = (value || "").toString();
-    if (!el.value) el.value = trimmed;
+    el.value = trimmed;
   }
 
   function initSharedAdminSettings({
@@ -442,7 +442,6 @@
 
     applyAdminKeyInput(adminKeyFallbackInput, { syncOnInput: false });
     restoreSettings();
-    persistSettings();
 
     const openSettings = () => gate.openSettings();
     const closeSettings = () => gate.closeSettings();
