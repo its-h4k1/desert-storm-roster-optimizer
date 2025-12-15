@@ -1797,10 +1797,11 @@
         }
       }
 
-      function startAdminFlow() {
+      async function startAdminFlow() {
         restoreSettings();
+        await reloadData();
         initAutocompletes();
-        reloadData();
+        refreshAutocompletes();
       }
 
       function initEvents() {

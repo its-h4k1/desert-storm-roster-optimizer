@@ -574,7 +574,8 @@
       }
 
       async function fetchLatestPayload(){
-        const url = (shared.buildLatestJsonUrl ? shared.buildLatestJsonUrl() : '../out/latest.json');
+        const siteRoot = shared.computeSiteRoot ? shared.computeSiteRoot(location.pathname || '/') : '../';
+        const url = (shared.buildLatestJsonUrl ? shared.buildLatestJsonUrl({ siteRoot }) : `${siteRoot}out/latest.json`);
         if (elements.dataSourceMeta) elements.dataSourceMeta.textContent = `Quelle: ${url}`;
         const payload = await (shared.fetchJsonWithErrors ? shared.fetchJsonWithErrors(url) : fetch(url).then((r) => r.json()));
         if (shared.prepareAliasMapFromPayload) shared.prepareAliasMapFromPayload(payload);
@@ -606,11 +607,12 @@
       }
 
       async function fetchEventResults(){
+        const siteRoot = shared.computeSiteRoot ? shared.computeSiteRoot(location.pathname || '/') : '../';
         const candidates = computeCandidateEventIds();
         const found = [];
         for (const id of candidates) {
           if (found.length >= 4) break;
-          const url = `../data/event_results/${id}.json`;
+          const url = `${siteRoot}data/event_results/${id}.json`;
           try {
             const res = await fetch(url);
             if (!res.ok) continue;
