@@ -493,9 +493,16 @@
           return;
         }
 
+        const scopeMeta = shared.reliabilityMeta || {};
+        const scopeLabel = scopeMeta.mode === 'all-time'
+          ? 'All-time'
+          : `seit ${scopeMeta.startDateRaw || 'reliability_start_date'}`;
         const stats = shared.getPlayerReliability(name);
         if (!stats) {
-          container.textContent = 'Keine Zuverlässigkeitsdaten seit reliability_start_date.';
+          const noDataText = scopeMeta.mode === 'all-time'
+            ? 'Keine Zuverlässigkeitsdaten (All-time aus payload.reliability.players).'
+            : `Keine Event-Results ${scopeLabel}.`;
+          container.textContent = noDataText;
           container.title = '';
           return;
         }
@@ -505,7 +512,7 @@
         container.innerHTML = `
           <span class="${badgeClass}" title="${escapeHtml(bucketInfo.tooltip || '')}">● ${escapeHtml(bucketInfo.label || '')}</span>
           <span class="reliability-details">
-            Events: ${stats.events ?? 0} · Attendance: ${stats.attendance ?? 0} · No-Shows: ${stats.noShows ?? 0} · Early: ${stats.earlyCancels ?? 0} · Late: ${stats.lateCancels ?? 0}
+            (${escapeHtml(scopeLabel)}) Events: ${stats.events ?? 0} · Attendance: ${stats.attendance ?? 0} · No-Shows: ${stats.noShows ?? 0} · Early: ${stats.earlyCancels ?? 0} · Late: ${stats.lateCancels ?? 0}
           </span>
         `;
       }
@@ -848,8 +855,11 @@
         if (!latestData && rosterMissing) {
           console.info('Kein roster.json gefunden; nutze ggf. latest.json als einzige Quelle.');
         }
+        if (shared?.prepareAliasMapFromPayload) {
+          shared.prepareAliasMapFromPayload(sharedPayload);
+        }
         if (shared?.hydrateReliabilityFromPayload) {
-          shared.hydrateReliabilityFromPayload(sharedPayload);
+          await shared.hydrateReliabilityFromPayload(sharedPayload, { siteRoot: SITE_ROOT, cacheBuster });
         }
         if (shared) {
           shared.latestPayload = sharedPayload;

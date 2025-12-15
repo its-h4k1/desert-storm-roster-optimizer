@@ -93,7 +93,7 @@
             <div>
               <p class="eyebrow" style="margin:0; color:var(--text-muted);">Teilnahme erbitten</p>
               <h1>Kompaktes Zuverlässigkeitsfenster</h1>
-              <p class="meta-line">Aggregiert über die letzten 3 Events (JSON Event-Results) seit reliability_start_date.</p>
+              <p class="meta-line">Aggregiert über alle JSON Event-Results seit reliability_start_date (Fallback: All-time aus payload.reliability.players).</p>
             </div>
             <div class="meta-grid">
               <span id="eventWindowMeta" class="pill">Lädt…</span>
@@ -187,6 +187,8 @@
         reliabilityStartDate: null,
         reliabilityStartDateParsed: null,
         latestPayload: null,
+        reliabilityMeta: {},
+        statsSource: {},
         viewMode: 'window',
         sourceOrigin: '',
       };
@@ -374,60 +376,18 @@
         return stats;
       }
 
-      function pickWindowReliabilityStats(payload){
-        const rel = payload?.reliability || {};
-        const candidates = [
-          rel.window_players,
-          rel.players_window,
-          rel.window?.players,
-          payload?.analysis?.reliability?.window_players,
-          payload?.analysis?.reliability?.players_window,
-        ];
-        for (const candidate of candidates) {
-          if (candidate && typeof candidate === 'object' && Object.keys(candidate).length) {
-            return candidate;
-          }
-        }
-        return null;
-      }
-
-      function pickAllTimeReliabilityStats(payload){
-        const rel = payload?.reliability || {};
-        const candidates = [
-          rel.players,
-          rel.all_time?.players,
-          payload?.analysis?.reliability?.players,
-          payload?.analysis?.reliability?.all_time?.players,
-        ];
-        for (const candidate of candidates) {
-          if (candidate && typeof candidate === 'object' && Object.keys(candidate).length) {
-            return candidate;
-          }
-        }
-        return null;
-      }
-
       function renderMeta(){
+        const startLabel = state.reliabilityStartDate || 'reliability_start_date';
         if (elements.eventWindowMeta) {
           elements.eventWindowMeta.className = 'pill';
           if (state.viewMode === 'all-time') {
             elements.eventWindowMeta.textContent = 'All-time aus payload.reliability.players';
             elements.eventWindowMeta.classList.add('info');
-          } else if (state.viewMode === 'all-time-fallback') {
-            elements.eventWindowMeta.textContent = 'Warnung: Keine Event-Results; zeige All-time aus Payload';
-            elements.eventWindowMeta.classList.add('warn');
-          } else if (state.viewMode === 'window') {
-            if (state.eventResults?.length) {
-              const ids = state.eventResults.map((e) => e.event_id).join(', ');
-              elements.eventWindowMeta.textContent = `Fenster: ${ids}`;
-            } else if (state.sourceOrigin === 'payload-window') {
-              elements.eventWindowMeta.textContent = 'Fenster: payload.reliability.window.*';
-            } else {
-              elements.eventWindowMeta.textContent = 'Fenster: Keine Event-Results geladen';
-              elements.eventWindowMeta.classList.add('warn');
-            }
+          } else if (state.eventResults?.length) {
+            const ids = state.eventResults.map((e) => e.event_id).join(', ');
+            elements.eventWindowMeta.textContent = `Events seit ${startLabel}: ${ids}`;
           } else {
-            elements.eventWindowMeta.textContent = 'Keine Event-Results im Fenster';
+            elements.eventWindowMeta.textContent = `Keine Event-Results seit ${startLabel}`;
             elements.eventWindowMeta.classList.add('warn');
           }
         }
@@ -438,42 +398,24 @@
           } else if (!state.reliabilityStartDateParsed) {
             elements.reliabilityStart.textContent = `reliability_start_date: ${state.reliabilityStartDate} (interpretiert als All-time)`;
           } else {
-            elements.reliabilityStart.textContent = `reliability_start_date: ${state.reliabilityStartDate}`;
+            const suffix = state.eventResults?.length ? '' : ' – keine Event-Results gefunden';
+            elements.reliabilityStart.textContent = `reliability_start_date: ${state.reliabilityStartDate}${suffix}`;
           }
         }
       }
 
       function recomputeRows(){
-        const windowStats = pickWindowReliabilityStats(state.latestPayload);
-        const windowStatsData = windowStats && Object.keys(windowStats).length ? windowStats : null;
-        const computedWindow = computeStatsFromEventResults(state.eventResults);
-        const computedWindowData = computedWindow && Object.keys(computedWindow).length ? computedWindow : null;
-        const windowSource = windowStatsData || computedWindowData;
-        const allTimeStats = pickAllTimeReliabilityStats(state.latestPayload);
-        const allTimeData = allTimeStats && Object.keys(allTimeStats).length ? allTimeStats : null;
-
+        const stats = state.statsSource && Object.keys(state.statsSource).length
+          ? state.statsSource
+          : {};
         const startIsParseable = !!state.reliabilityStartDateParsed;
-        let source = windowSource || {};
-
-        if (!startIsParseable && allTimeData) {
-          state.viewMode = 'all-time';
-          state.sourceOrigin = 'payload-all-time';
-          source = allTimeData;
-        } else if (windowSource) {
-          state.viewMode = 'window';
-          state.sourceOrigin = windowStatsData ? 'payload-window' : 'event-results';
-          source = windowSource;
-        } else if (allTimeData) {
-          state.viewMode = 'all-time-fallback';
-          state.sourceOrigin = 'payload-all-time-fallback';
-          source = allTimeData;
-        } else {
-          state.viewMode = 'window-empty';
-          state.sourceOrigin = 'none';
-          source = {};
+        state.viewMode = startIsParseable ? 'window' : 'all-time';
+        state.sourceOrigin = startIsParseable ? 'event-results' : 'payload-all-time';
+        if (state.viewMode === 'window' && (!state.eventResults || !state.eventResults.length)) {
+          state.sourceOrigin = 'event-results-empty';
         }
 
-        state.rows = parseReliabilityRowsFromStats(source || {});
+        state.rows = parseReliabilityRowsFromStats(stats || {});
         renderMeta();
         renderTable();
       }
@@ -579,61 +521,17 @@
         if (elements.dataSourceMeta) elements.dataSourceMeta.textContent = `Quelle: ${url}`;
         const payload = await (shared.fetchJsonWithErrors ? shared.fetchJsonWithErrors(url) : fetch(url).then((r) => r.json()));
         if (shared.prepareAliasMapFromPayload) shared.prepareAliasMapFromPayload(payload);
-        if (shared.hydrateReliabilityFromPayload) shared.hydrateReliabilityFromPayload(payload);
+        if (shared.hydrateReliabilityFromPayload) {
+          await shared.hydrateReliabilityFromPayload(payload, { siteRoot });
+        }
         if (shared.refreshAdminPlayerIndex) shared.refreshAdminPlayerIndex({ payload });
         state.latestPayload = payload || null;
-        state.reliabilityStartDate = payload?.reliability_config?.reliability_start_date || payload?.reliability?.meta?.reliability_start_date || null;
-        const parsed = state.reliabilityStartDate && /^\d{4}-\d{2}-\d{2}$/.test(state.reliabilityStartDate)
-          ? new Date(state.reliabilityStartDate + 'T00:00:00Z')
-          : null;
-        state.reliabilityStartDateParsed = parsed && !Number.isNaN(parsed.getTime()) ? parsed : null;
+        state.reliabilityStartDate = shared.reliabilityStartDate || payload?.reliability_config?.reliability_start_date || payload?.reliability?.meta?.reliability_start_date || null;
+        state.reliabilityStartDateParsed = shared.reliabilityStartDateParsed || null;
+        state.reliabilityMeta = shared.reliabilityMeta || state.reliabilityMeta || {};
+        state.eventResults = Array.isArray(shared.reliabilityEventResults) ? shared.reliabilityEventResults : [];
+        state.statsSource = shared.playerReliability || {};
         return payload;
-      }
-
-      function computeCandidateEventIds(){
-        const ids = [];
-        const today = new Date();
-        let start = state.reliabilityStartDateParsed
-          ? new Date(state.reliabilityStartDateParsed.getTime())
-          : new Date();
-        if (Number.isNaN(start.getTime())) start = new Date();
-        const dt = new Date(Date.UTC(start.getUTCFullYear(), start.getUTCMonth(), start.getUTCDate()));
-        while (dt <= today && ids.length < 16) {
-          const iso = dt.toISOString().slice(0,10);
-          ids.push(`DS-${iso}`);
-          dt.setUTCDate(dt.getUTCDate() + 7);
-        }
-        return ids.slice(-8).reverse();
-      }
-
-      async function fetchEventResults(){
-        const siteRoot = shared.computeSiteRoot ? shared.computeSiteRoot(location.pathname || '/') : '../';
-        const candidates = computeCandidateEventIds();
-        const found = [];
-        for (const id of candidates) {
-          if (found.length >= 4) break;
-          const url = `${siteRoot}data/event_results/${id}.json`;
-          try {
-            const res = await fetch(url);
-            if (!res.ok) continue;
-            const data = await res.json();
-            data.event_id = data.event_id || id;
-            found.push(data);
-          } catch (err) {
-            console.warn('Event-Result nicht geladen', id, err);
-          }
-        }
-        found.sort((a, b) => String(b.event_id || '').localeCompare(String(a.event_id || '')));
-        const filtered = found.filter((evt) => isAfterReliabilityStart(evt));
-        state.eventResults = filtered.slice(0, 3);
-        if (elements.eventWindowMeta) {
-          if (state.eventResults.length) {
-            const ids = state.eventResults.map((e) => e.event_id).join(', ');
-            elements.eventWindowMeta.textContent = `Fenster: ${ids}`;
-          } else {
-            elements.eventWindowMeta.textContent = 'Keine Event-Results geladen';
-          }
-        }
       }
 
       async function init(){
@@ -641,8 +539,7 @@
         initFilters();
         renderSortIndicators();
         try {
-          const payload = await fetchLatestPayload();
-          await fetchEventResults();
+          await fetchLatestPayload();
           recomputeRows();
         } catch (err) {
           console.error(err);
