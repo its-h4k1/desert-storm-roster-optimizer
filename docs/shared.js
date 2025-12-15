@@ -570,7 +570,6 @@
     };
   }
 
-  const RELIABILITY_WARN_ONCE = { missing: false };
 
   function toNumberOrZero(value) {
     const num = Number(value);
@@ -624,59 +623,6 @@
     if (!/^\d{4}-\d{2}-\d{2}$/.test(trimmed)) return null;
     const parsed = new Date(`${trimmed}T00:00:00Z`);
     return Number.isNaN(parsed.getTime()) ? null : parsed;
-  }
-
-  function buildReliabilityMap(payload) {
-    const result = {};
-    if (!payload || typeof payload !== "object") return result;
-
-    const candidateSources = [
-      payload.analysis?.reliability?.players,
-      payload.reliability?.players,
-      payload.players,
-      payload.player_reliability,
-    ];
-
-    let foundSource = null;
-    for (const src of candidateSources) {
-      if (!src || (typeof src !== "object" && !Array.isArray(src))) continue;
-
-      const hasEntries = Array.isArray(src) ? src.length > 0 : Object.keys(src).length > 0;
-
-      if (hasEntries) {
-        foundSource = src;
-        break;
-      }
-
-      if (!foundSource) {
-        foundSource = src;
-      }
-    }
-
-    if (!foundSource) {
-      if (!RELIABILITY_WARN_ONCE.missing) {
-        console.warn("Keine Reliability-Daten in latest.json gefunden – playerReliability bleibt leer.");
-        RELIABILITY_WARN_ONCE.missing = true;
-      }
-      return result;
-    }
-
-    if (Array.isArray(foundSource)) {
-      foundSource.forEach((entry) => {
-        const name = entry?.display || entry?.name || entry?.canon || "";
-        const stats = normalizeReliabilityEntry(entry);
-        if (!name || !stats) return;
-        result[String(name)] = stats;
-      });
-    } else {
-      Object.entries(foundSource).forEach(([name, stats]) => {
-        const normalized = normalizeReliabilityEntry(stats);
-        if (!name || !normalized) return;
-        result[String(name)] = normalized;
-      });
-    }
-
-    return result;
   }
 
   function computeEventResultIdsSince(startDate) {
@@ -785,24 +731,30 @@
       || null;
 
     const normalizedStartDate = typeof rawStartDate === "string" ? rawStartDate.trim() : null;
-    const parsedStartDate = normalizedStartDate?.toLowerCase() === "all-time"
-      ? null
-      : parseReliabilityStartDate(normalizedStartDate);
+    const parsedStartDate = parseReliabilityStartDate(normalizedStartDate);
 
+    const startDateMissing = !normalizedStartDate;
+    const startDateInvalid = !!normalizedStartDate && !parsedStartDate;
     shared.reliabilityStartDate = normalizedStartDate || null;
     shared.reliabilityStartDateParsed = parsedStartDate || null;
+    shared.reliabilityError = startDateMissing || startDateInvalid
+      ? "Reliability start date missing or invalid"
+      : null;
     shared.reliabilityMeta = {
       startDateRaw: shared.reliabilityStartDate || null,
       startDateParsed: shared.reliabilityStartDateParsed || null,
-      mode: shared.reliabilityStartDateParsed ? "window" : "all-time",
-      source: shared.reliabilityStartDateParsed ? "event-results" : "payload",
+      mode: shared.reliabilityError ? "error" : "window",
+      source: "event-results",
       eventResultsLoaded: 0,
-      scopeLabel: shared.reliabilityStartDateParsed ? `Seit ${shared.reliabilityStartDate}` : "All-time",
+      scopeLabel: shared.reliabilityError
+        ? shared.reliabilityError
+        : `Seit ${shared.reliabilityStartDate}`,
+      error: shared.reliabilityError,
     };
 
-    if (!shared.reliabilityStartDateParsed) {
+    if (shared.reliabilityError) {
       shared.reliabilityEventResults = [];
-      shared.playerReliability = buildReliabilityMap(payload);
+      shared.playerReliability = {};
       refreshPlayerReliabilityIndex();
       return shared.playerReliability;
     }
@@ -822,13 +774,15 @@
   shared.reliabilityStartDate = shared.reliabilityStartDate || null;
   shared.reliabilityStartDateParsed = shared.reliabilityStartDateParsed || null;
   shared.reliabilityEventResults = shared.reliabilityEventResults || [];
+  shared.reliabilityError = shared.reliabilityError || null;
   shared.reliabilityMeta = shared.reliabilityMeta || {
     startDateRaw: null,
     startDateParsed: null,
-    mode: "all-time",
-    source: "payload",
+    mode: "error",
+    source: "event-results",
     eventResultsLoaded: 0,
-    scopeLabel: "All-time",
+    scopeLabel: "Reliability start date missing or invalid",
+    error: "Reliability start date missing or invalid",
   };
   shared.REL_MIN_EVENTS_FOR_BUCKET =
     shared.REL_MIN_EVENTS_FOR_BUCKET == null ? 3 : shared.REL_MIN_EVENTS_FOR_BUCKET;
@@ -1220,6 +1174,7 @@
     debugCanonical,
     hydrateReliabilityFromPayload,
     refreshPlayerReliabilityIndex,
+    reliabilityError: shared.reliabilityError,
     playerReliability: shared.playerReliability,
     reliabilityEventResults: shared.reliabilityEventResults,
     reliabilityMeta: shared.reliabilityMeta,

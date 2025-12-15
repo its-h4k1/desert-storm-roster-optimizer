@@ -93,7 +93,7 @@
             <div>
               <p class="eyebrow" style="margin:0; color:var(--text-muted);">Teilnahme erbitten</p>
               <h1>Kompaktes Zuverlässigkeitsfenster</h1>
-              <p class="meta-line">Aggregiert über alle JSON Event-Results seit reliability_start_date (Fallback: All-time aus payload.reliability.players).</p>
+              <p class="meta-line">Aggregiert über alle JSON Event-Results seit reliability_start_date.</p>
             </div>
             <div class="meta-grid">
               <span id="eventWindowMeta" class="pill">Lädt…</span>
@@ -186,6 +186,7 @@
         expanded: new Set(),
         reliabilityStartDate: null,
         reliabilityStartDateParsed: null,
+        reliabilityError: null,
         latestPayload: null,
         reliabilityMeta: {},
         statsSource: {},
@@ -380,27 +381,24 @@
         const startLabel = state.reliabilityStartDate || 'reliability_start_date';
         if (elements.eventWindowMeta) {
           elements.eventWindowMeta.className = 'pill';
-          if (state.viewMode === 'all-time') {
-            elements.eventWindowMeta.textContent = 'All-time aus payload.reliability.players';
-            elements.eventWindowMeta.classList.add('info');
+          if (state.reliabilityError) {
+            elements.eventWindowMeta.textContent = state.reliabilityError;
+            elements.eventWindowMeta.classList.add('warn');
           } else if (state.eventResults?.length) {
             const ids = state.eventResults.map((e) => e.event_id).join(', ');
             elements.eventWindowMeta.textContent = `Events seit ${startLabel}: ${ids}`;
           } else {
-            elements.eventWindowMeta.textContent = `Keine Event-Results seit ${startLabel}`;
+            elements.eventWindowMeta.textContent = `No event results since ${startLabel}`;
             elements.eventWindowMeta.classList.add('warn');
           }
         }
 
         if (elements.reliabilityStart) {
-          if (!state.reliabilityStartDate) {
-            elements.reliabilityStart.textContent = 'reliability_start_date fehlt';
-          } else if (!state.reliabilityStartDateParsed) {
-            elements.reliabilityStart.textContent = `reliability_start_date: ${state.reliabilityStartDate} (interpretiert als All-time)`;
-          } else {
-            const suffix = state.eventResults?.length ? '' : ' – keine Event-Results gefunden';
-            elements.reliabilityStart.textContent = `reliability_start_date: ${state.reliabilityStartDate}${suffix}`;
-          }
+          const suffix = state.eventResults?.length ? '' : ' – keine Event-Results gefunden';
+          const label = state.reliabilityStartDate
+            ? `reliability_start_date: ${state.reliabilityStartDate}${suffix}`
+            : 'reliability_start_date fehlt';
+          elements.reliabilityStart.textContent = state.reliabilityError || label;
         }
       }
 
@@ -408,10 +406,18 @@
         const stats = state.statsSource && Object.keys(state.statsSource).length
           ? state.statsSource
           : {};
-        const startIsParseable = !!state.reliabilityStartDateParsed;
-        state.viewMode = startIsParseable ? 'window' : 'all-time';
-        state.sourceOrigin = startIsParseable ? 'event-results' : 'payload-all-time';
-        if (state.viewMode === 'window' && (!state.eventResults || !state.eventResults.length)) {
+        if (state.reliabilityError) {
+          state.viewMode = 'error';
+          state.sourceOrigin = 'invalid-start-date';
+          state.rows = [];
+          renderMeta();
+          renderTable();
+          return;
+        }
+
+        state.viewMode = 'window';
+        state.sourceOrigin = 'event-results';
+        if (!state.eventResults || !state.eventResults.length) {
           state.sourceOrigin = 'event-results-empty';
         }
 
@@ -424,6 +430,13 @@
         const container = document.createElement('div');
         container.className = 'history';
         const events = state.eventResults || [];
+        if (state.reliabilityError) {
+          const p = document.createElement('p');
+          p.className = 'empty';
+          p.textContent = state.reliabilityError;
+          container.appendChild(p);
+          return container;
+        }
         if (!events.length) {
           const p = document.createElement('p');
           p.className = 'empty';
@@ -526,8 +539,9 @@
         }
         if (shared.refreshAdminPlayerIndex) shared.refreshAdminPlayerIndex({ payload });
         state.latestPayload = payload || null;
-        state.reliabilityStartDate = shared.reliabilityStartDate || payload?.reliability_config?.reliability_start_date || payload?.reliability?.meta?.reliability_start_date || null;
+        state.reliabilityStartDate = shared.reliabilityStartDate || null;
         state.reliabilityStartDateParsed = shared.reliabilityStartDateParsed || null;
+        state.reliabilityError = shared.reliabilityError || null;
         state.reliabilityMeta = shared.reliabilityMeta || state.reliabilityMeta || {};
         state.eventResults = Array.isArray(shared.reliabilityEventResults) ? shared.reliabilityEventResults : [];
         state.statsSource = shared.playerReliability || {};

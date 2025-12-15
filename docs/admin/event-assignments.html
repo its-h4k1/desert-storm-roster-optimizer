@@ -464,6 +464,10 @@
         if (!shared || typeof shared.computeReliabilityBucket !== 'function') {
           return '<span class="reliability-badge reliability-neu" title="Keine Zuverlässigkeitsdaten verfügbar.">● –</span>';
         }
+        if (shared.reliabilityError) {
+          const msg = escapeHtml(shared.reliabilityError);
+          return `<span class="reliability-badge reliability-neu" title="${msg}">● –</span>`;
+        }
         const bucketInfo = shared.computeReliabilityBucket(stats);
         const bucket = bucketInfo?.bucket || 'neu';
         const label = bucketInfo?.label || 'neu';
@@ -494,13 +498,18 @@
         }
 
         const scopeMeta = shared.reliabilityMeta || {};
-        const scopeLabel = scopeMeta.mode === 'all-time'
-          ? 'All-time'
-          : `seit ${scopeMeta.startDateRaw || 'reliability_start_date'}`;
+        const scopeLabel = scopeMeta.startDateRaw
+          ? `seit ${scopeMeta.startDateRaw}`
+          : 'reliability_start_date';
+        if (shared.reliabilityError) {
+          container.textContent = shared.reliabilityError;
+          container.title = '';
+          return;
+        }
         const stats = shared.getPlayerReliability(name);
         if (!stats) {
-          const noDataText = scopeMeta.mode === 'all-time'
-            ? 'Keine Zuverlässigkeitsdaten (All-time aus payload.reliability.players).'
+          const noDataText = scopeMeta.eventResultsLoaded === 0
+            ? `No event results since ${scopeMeta.startDateRaw || 'reliability_start_date'}.`
             : `Keine Event-Results ${scopeLabel}.`;
           container.textContent = noDataText;
           container.title = '';
