@@ -185,6 +185,8 @@
         eventResults: [],
         expanded: new Set(),
         reliabilityStartDate: null,
+        reliabilityStartDateParsed: null,
+        latestPayload: null,
       };
 
       function formatDate(iso){
@@ -202,16 +204,15 @@
         return (num * 100).toFixed(0) + '%';
       }
 
-      function parseReliabilityRows(payload){
-        const rel = (payload && payload.reliability && payload.reliability.players) || {};
+      function parseReliabilityRowsFromStats(rel){
         const rows = [];
         Object.entries(rel).forEach(([canon, raw]) => {
           const stats = {
-            events: Number(raw?.events || 0),
-            attendance: Number(raw?.attendance || 0),
-            noShows: Number(raw?.no_shows || 0),
-            earlyCancels: Number(raw?.early_cancels || 0),
-            lateCancels: Number(raw?.late_cancels || 0),
+            events: Number(raw?.events ?? raw?.event_count ?? 0),
+            attendance: Number(raw?.attendance ?? raw?.attended ?? 0),
+            noShows: Number(raw?.no_shows ?? raw?.noShows ?? 0),
+            earlyCancels: Number(raw?.early_cancels ?? raw?.earlyCancels ?? 0),
+            lateCancels: Number(raw?.late_cancels ?? raw?.lateCancels ?? 0),
           };
           const bucketInfo = typeof shared.computeReliabilityBucket === 'function'
             ? shared.computeReliabilityBucket(stats)
@@ -332,6 +333,69 @@
         return aliasMap?.get(canon) || canon;
       }
 
+      function parseEventDate(event){
+        const id = event?.event_id || event?.id || '';
+        const match = /^DS-(\d{4})-(\d{2})-(\d{2})/.exec(String(id));
+        if (!match) return null;
+        const [_, y, m, d] = match;
+        const dt = new Date(`${y}-${m}-${d}T00:00:00Z`);
+        return Number.isNaN(dt.getTime()) ? null : dt;
+      }
+
+      function isAfterReliabilityStart(event){
+        if (!state.reliabilityStartDateParsed) return true;
+        const date = parseEventDate(event);
+        if (!date) return true;
+        return date >= state.reliabilityStartDateParsed;
+      }
+
+      function computeStatsFromEventResults(events){
+        const stats = {};
+        (events || []).forEach((evt) => {
+          if (!Array.isArray(evt?.results)) return;
+          if (!isAfterReliabilityStart(evt)) return;
+          evt.results.forEach((res) => {
+            const canon = resolveCanon(res.player_key || res.player || res.display_name_snapshot);
+            if (!canon) return;
+            stats[canon] = stats[canon] || { events:0, attendance:0, noShows:0, earlyCancels:0, lateCancels:0 };
+            stats[canon].events += 1;
+            const attended = !!res.attended || !!res.Teilgenommen;
+            if (attended) {
+              stats[canon].attendance += 1;
+            } else {
+              stats[canon].noShows += 1;
+            }
+            if (res.early_cancel || res.earlyCancel) stats[canon].earlyCancels += 1;
+            if (res.late_cancel || res.lateCancel) stats[canon].lateCancels += 1;
+          });
+        });
+        return stats;
+      }
+
+      function pickWindowReliabilityStats(payload){
+        const rel = payload?.reliability || {};
+        const candidates = [
+          rel.window_players,
+          rel.players_window,
+          rel.window?.players,
+          payload?.analysis?.reliability?.window_players,
+          payload?.analysis?.reliability?.players_window,
+        ];
+        for (const candidate of candidates) {
+          if (candidate && typeof candidate === 'object' && Object.keys(candidate).length) {
+            return candidate;
+          }
+        }
+        return null;
+      }
+
+      function recomputeRows(){
+        const windowStats = pickWindowReliabilityStats(state.latestPayload);
+        const source = windowStats || computeStatsFromEventResults(state.eventResults);
+        state.rows = parseReliabilityRowsFromStats(source || {});
+        renderTable();
+      }
+
       function renderHistory(canon){
         const container = document.createElement('div');
         container.className = 'history';
@@ -434,15 +498,20 @@
         if (shared.prepareAliasMapFromPayload) shared.prepareAliasMapFromPayload(payload);
         if (shared.hydrateReliabilityFromPayload) shared.hydrateReliabilityFromPayload(payload);
         if (shared.refreshAdminPlayerIndex) shared.refreshAdminPlayerIndex({ payload });
+        state.latestPayload = payload || null;
         state.reliabilityStartDate = payload?.reliability_config?.reliability_start_date || payload?.reliability?.meta?.reliability_start_date || null;
+        const parsed = state.reliabilityStartDate && /^\d{4}-\d{2}-\d{2}$/.test(state.reliabilityStartDate)
+          ? new Date(state.reliabilityStartDate + 'T00:00:00Z')
+          : null;
+        state.reliabilityStartDateParsed = parsed && !Number.isNaN(parsed.getTime()) ? parsed : null;
         return payload;
       }
 
       function computeCandidateEventIds(){
         const ids = [];
         const today = new Date();
-        let start = state.reliabilityStartDate
-          ? new Date(state.reliabilityStartDate + 'T00:00:00Z')
+        let start = state.reliabilityStartDateParsed
+          ? new Date(state.reliabilityStartDateParsed.getTime())
           : new Date();
         if (Number.isNaN(start.getTime())) start = new Date();
         const dt = new Date(Date.UTC(start.getUTCFullYear(), start.getUTCMonth(), start.getUTCDate()));
@@ -471,7 +540,8 @@
           }
         }
         found.sort((a, b) => String(b.event_id || '').localeCompare(String(a.event_id || '')));
-        state.eventResults = found.slice(0, 3);
+        const filtered = found.filter((evt) => isAfterReliabilityStart(evt));
+        state.eventResults = filtered.slice(0, 3);
         if (elements.eventWindowMeta) {
           if (state.eventResults.length) {
             const ids = state.eventResults.map((e) => e.event_id).join(', ');
@@ -488,15 +558,13 @@
         renderSortIndicators();
         try {
           const payload = await fetchLatestPayload();
-          state.rows = parseReliabilityRows(payload);
           if (elements.reliabilityStart) {
             elements.reliabilityStart.textContent = state.reliabilityStartDate
               ? `reliability_start_date: ${state.reliabilityStartDate}`
               : 'reliability_start_date fehlt';
           }
-          renderTable();
           await fetchEventResults();
-          renderTable();
+          recomputeRows();
         } catch (err) {
           console.error(err);
           if (elements.tableBody) {
