@@ -25,12 +25,32 @@ import math
 import pandas as pd
 
 # Paket-Import (aus utils.py)
+from src.config import get_config
 from src.utils import parse_event_date, exp_decay_weight, canonical_name
 from src.effective_signups import EffectiveSignupState
 
-# Attendance-config is no longer configurable; reliability stats always start
-# from the full available history.
-RELIABILITY_START_DATE: date | None = None
+
+def _load_reliability_start_date() -> tuple[str | None, date | None]:
+    cfg = get_config()
+    start_date = getattr(cfg, "RELIABILITY_START_DATE", None)
+    raw: str | None = None
+    parsed: date | None = None
+
+    if isinstance(start_date, date):
+        raw = start_date.isoformat()
+        parsed = start_date
+    elif isinstance(start_date, str):
+        raw = start_date.strip() or None
+        if raw:
+            try:
+                parsed = date.fromisoformat(raw)
+            except ValueError:
+                parsed = None
+
+    return raw, parsed
+
+
+RELIABILITY_START_DATE_RAW, RELIABILITY_START_DATE = _load_reliability_start_date()
 
 ROLES_START = {"Start"}
 ROLES_SUB = {"Ersatz"}
@@ -616,4 +636,5 @@ __all__ = [
     "eb_rate",
     "eb_score",
     "RELIABILITY_START_DATE",
+    "RELIABILITY_START_DATE_RAW",
 ]

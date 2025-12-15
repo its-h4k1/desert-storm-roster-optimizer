@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import os
 from dataclasses import dataclass
+from datetime import date
 from pathlib import Path
 from typing import Any, Dict
 
@@ -18,6 +19,7 @@ class Config:
     PRIOR_FALLBACK: float
     PRIOR_PAD: float
     HARD_SIGNUPS_ONLY: bool
+    RELIABILITY_START_DATE: date | None
 
 
 DEFAULTS: Dict[str, Any] = {
@@ -29,6 +31,7 @@ DEFAULTS: Dict[str, Any] = {
     "PRIOR_FALLBACK": 0.18,
     "PRIOR_PAD": 0.02,
     "HARD_SIGNUPS_ONLY": True,
+    "RELIABILITY_START_DATE": "2025-11-28",
 }
 
 _CONFIG_CACHE: Config | None = None
@@ -66,6 +69,8 @@ def _coerce_numeric(value: Any, default: float, *, as_int: bool = False) -> floa
 
 
 def _normalize_value(key: str, value: Any, defaults: Dict[str, Any]) -> Any:
+    if key == "RELIABILITY_START_DATE":
+        return _normalize_reliability_start_date(value, defaults[key])
     default = defaults[key]
     if isinstance(default, bool):
         return _coerce_bool(value, default)
@@ -74,6 +79,28 @@ def _normalize_value(key: str, value: Any, defaults: Dict[str, Any]) -> Any:
     if isinstance(default, float):
         return float(_coerce_numeric(value, default))
     return value if value is not None else default
+
+
+def _normalize_reliability_start_date(value: Any, default: Any) -> str | None:
+    def _parse_candidate(raw: Any) -> str | None:
+        if raw is None:
+            return None
+        if isinstance(raw, date):
+            return raw.isoformat()
+        if isinstance(raw, str):
+            trimmed = raw.strip()
+            if not trimmed:
+                return None
+            try:
+                return date.fromisoformat(trimmed).isoformat()
+            except ValueError:
+                return None
+        return None
+
+    parsed = _parse_candidate(value)
+    if parsed is not None:
+        return parsed
+    return _parse_candidate(default)
 
 
 def _read_yaml(path: Path) -> Dict[str, Any]:
@@ -112,6 +139,16 @@ def get_config() -> Config:
         if env_val is not None:
             values[key] = _normalize_value(key, env_val, DEFAULTS)
 
+    start_date_raw = values.get("RELIABILITY_START_DATE")
+    start_date: date | None = None
+    if isinstance(start_date_raw, str):
+        try:
+            start_date = date.fromisoformat(start_date_raw)
+        except ValueError:
+            start_date = None
+    elif isinstance(start_date_raw, date):
+        start_date = start_date_raw
+
     cfg = Config(
         EB_ENABLE=bool(values["EB_ENABLE"]),
         EB_N0=float(values["EB_N0"]),
@@ -121,6 +158,7 @@ def get_config() -> Config:
         PRIOR_FALLBACK=float(values["PRIOR_FALLBACK"]),
         PRIOR_PAD=float(values["PRIOR_PAD"]),
         HARD_SIGNUPS_ONLY=bool(values["HARD_SIGNUPS_ONLY"]),
+        RELIABILITY_START_DATE=start_date,
     )
 
     _CONFIG_CACHE = cfg
