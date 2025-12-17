@@ -697,6 +697,58 @@
     return stats;
   }
 
+  function deriveEventDateFromId(eventId) {
+    const match = typeof eventId === "string" && eventId.match(/^DS-(\d{4})-(\d{2})-(\d{2})/);
+    if (match && match[1] && match[2] && match[3]) {
+      return `${match[1]}-${match[2]}-${match[3]}`;
+    }
+    return null;
+  }
+
+  function deriveEventDate(event) {
+    if (!event) return null;
+    const eventId = event.event_id || event.eventId || event.id || "";
+    const fromId = deriveEventDateFromId(eventId);
+    if (fromId) return fromId;
+    if (typeof event.event_date === "string") return event.event_date.slice(0, 10);
+    if (typeof event.date === "string") return event.date.slice(0, 10);
+    if (typeof event.meta?.event_date === "string") return event.meta.event_date.slice(0, 10);
+    return null;
+  }
+
+  function buildPlayerEventHistoryIndex(events) {
+    const map = new Map();
+    const aliasMap = shared.aliasMap instanceof Map ? shared.aliasMap : null;
+
+    (events || []).forEach((evt) => {
+      if (!Array.isArray(evt?.results)) return;
+      const eventId = evt.event_id || evt.eventId || evt.id || "";
+      const date = deriveEventDate(evt) || deriveEventDateFromId(eventId) || "";
+
+      (evt.results || []).forEach((res) => {
+        const canon = canonicalNameJS(res.player_key || res.player || res.display_name_snapshot);
+        if (!canon) return;
+        const resolved = aliasMap?.get(canon) || canon;
+        const attended = !!res.attended || !!res.Teilgenommen;
+        const current = map.get(resolved) || [];
+        current.push({ eventId, date, attended });
+        map.set(resolved, current);
+      });
+    });
+
+    map.forEach((arr, key) => {
+      arr.sort((a, b) => {
+        const left = a.date || a.eventId || "";
+        const right = b.date || b.eventId || "";
+        return right.localeCompare(left);
+      });
+      map.set(key, arr);
+    });
+
+    shared.playerEventHistoryIndex = map;
+    return map;
+  }
+
   function refreshPlayerReliabilityIndex() {
     const index = new Map();
     const rel = shared.playerReliability || {};
@@ -755,6 +807,7 @@
     if (shared.reliabilityError) {
       shared.reliabilityEventResults = [];
       shared.playerReliability = {};
+      shared.playerEventHistoryIndex = new Map();
       refreshPlayerReliabilityIndex();
       return shared.playerReliability;
     }
@@ -763,6 +816,7 @@
     shared.reliabilityEventResults = events;
     shared.reliabilityMeta.eventResultsLoaded = Array.isArray(events) ? events.length : 0;
     shared.playerReliability = computeReliabilityStatsFromEventResults(events);
+    buildPlayerEventHistoryIndex(events);
     refreshPlayerReliabilityIndex();
     return shared.playerReliability;
   }
@@ -775,6 +829,7 @@
   shared.reliabilityStartDateParsed = shared.reliabilityStartDateParsed || null;
   shared.reliabilityEventResults = shared.reliabilityEventResults || [];
   shared.reliabilityError = shared.reliabilityError || null;
+  shared.playerEventHistoryIndex = shared.playerEventHistoryIndex || new Map();
   shared.reliabilityMeta = shared.reliabilityMeta || {
     startDateRaw: null,
     startDateParsed: null,
@@ -1243,6 +1298,7 @@
     debugCanonical,
     hydrateReliabilityFromPayload,
     refreshPlayerReliabilityIndex,
+    playerEventHistoryIndex: shared.playerEventHistoryIndex,
     reliabilityError: shared.reliabilityError,
     playerReliability: shared.playerReliability,
     reliabilityEventResults: shared.reliabilityEventResults,
