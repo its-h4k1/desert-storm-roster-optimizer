@@ -749,6 +749,34 @@
     return map;
   }
 
+  function buildRollingReliabilityIndex({ windowSize } = {}) {
+    const historyIndex = shared.playerEventHistoryIndex instanceof Map ? shared.playerEventHistoryIndex : null;
+    const size = Number.isFinite(windowSize) && windowSize > 0 ? windowSize : (shared.rollingReliabilityWindowSize || 5);
+    const index = new Map();
+
+    if (historyIndex && historyIndex.size) {
+      historyIndex.forEach((events, canon) => {
+        const window = Array.isArray(events) ? events.slice(0, size) : [];
+        const attendance = window.filter((evt) => evt.attended === true).length;
+        const noShows = window.filter((evt) => evt.attended === false).length;
+        const stats = {
+          events: window.length,
+          attendance,
+          noShows,
+          earlyCancels: 0,
+          lateCancels: 0,
+          basisN: window.length,
+          windowSize: size,
+        };
+        index.set(canon, stats);
+      });
+    }
+
+    shared.rollingReliabilityWindowSize = size;
+    shared.rollingReliabilityIndex = index;
+    return index;
+  }
+
   function refreshPlayerReliabilityIndex() {
     const index = new Map();
     const rel = shared.playerReliability || {};
@@ -808,6 +836,7 @@
       shared.reliabilityEventResults = [];
       shared.playerReliability = {};
       shared.playerEventHistoryIndex = new Map();
+      shared.rollingReliabilityIndex = new Map();
       refreshPlayerReliabilityIndex();
       return shared.playerReliability;
     }
@@ -817,6 +846,7 @@
     shared.reliabilityMeta.eventResultsLoaded = Array.isArray(events) ? events.length : 0;
     shared.playerReliability = computeReliabilityStatsFromEventResults(events);
     buildPlayerEventHistoryIndex(events);
+    buildRollingReliabilityIndex();
     refreshPlayerReliabilityIndex();
     return shared.playerReliability;
   }
@@ -830,6 +860,8 @@
   shared.reliabilityEventResults = shared.reliabilityEventResults || [];
   shared.reliabilityError = shared.reliabilityError || null;
   shared.playerEventHistoryIndex = shared.playerEventHistoryIndex || new Map();
+  shared.rollingReliabilityIndex = shared.rollingReliabilityIndex || new Map();
+  shared.rollingReliabilityWindowSize = shared.rollingReliabilityWindowSize || 5;
   shared.reliabilityMeta = shared.reliabilityMeta || {
     startDateRaw: null,
     startDateParsed: null,
@@ -878,16 +910,20 @@
     return null;
   };
 
-  shared.computeReliabilityBucket = function (stats) {
+  shared.computeReliabilityBucket = function (stats, { minEvents, insufficientTooltip } = {}) {
+    const minEventsForBucket = Number.isFinite(minEvents) ? minEvents : shared.REL_MIN_EVENTS_FOR_BUCKET;
+    const tooltip = typeof insufficientTooltip === "string"
+      ? insufficientTooltip
+      : "Noch zu wenig Daten seit reliability_start_date.";
     if (
       !stats
       || typeof stats.events !== "number"
-      || stats.events < shared.REL_MIN_EVENTS_FOR_BUCKET
+      || stats.events < minEventsForBucket
     ) {
       return {
         bucket: "neu",
         label: "neu",
-        tooltip: "Noch zu wenig Daten seit reliability_start_date.",
+        tooltip,
       };
     }
 
@@ -924,6 +960,28 @@
       label: "niedrig",
       tooltip: `Events: ${events} · Attendance: ${attendance} · No-Shows: ${noShows} · Early: ${earlyCancels} · Late: ${lateCancels}`,
     };
+  };
+
+  shared.getRollingReliability = function (nameOrCanon, windowSize = 5) {
+    if (!nameOrCanon) return null;
+    const normalizedWindow = Number.isFinite(windowSize) && windowSize > 0 ? windowSize : 5;
+    const aliasMap = shared.aliasMap instanceof Map ? shared.aliasMap : null;
+    const buildIndexIfNeeded = () => {
+      const currentIndex = shared.rollingReliabilityIndex;
+      if (!(currentIndex instanceof Map) || shared.rollingReliabilityWindowSize !== normalizedWindow) {
+        return buildRollingReliabilityIndex({ windowSize: normalizedWindow });
+      }
+      return currentIndex;
+    };
+
+    const canon = canonicalNameJS(nameOrCanon);
+    const resolvedCanon = aliasMap?.get(canon) || canon;
+    const index = buildIndexIfNeeded();
+    if (index.size === 0) return null;
+
+    if (index.has(resolvedCanon)) return index.get(resolvedCanon);
+    if (index.has(canon)) return index.get(canon);
+    return null;
   };
 
   shared.prepareAliasMapFromPayload = function (payload) {
@@ -1297,10 +1355,14 @@
     debugTestAdminQuery,
     debugCanonical,
     hydrateReliabilityFromPayload,
+    buildRollingReliabilityIndex,
     refreshPlayerReliabilityIndex,
     playerEventHistoryIndex: shared.playerEventHistoryIndex,
+    rollingReliabilityIndex: shared.rollingReliabilityIndex,
+    rollingReliabilityWindowSize: shared.rollingReliabilityWindowSize,
     reliabilityError: shared.reliabilityError,
     playerReliability: shared.playerReliability,
+    getRollingReliability: shared.getRollingReliability,
     reliabilityEventResults: shared.reliabilityEventResults,
     reliabilityMeta: shared.reliabilityMeta,
     reliabilityStartDateParsed: shared.reliabilityStartDateParsed,

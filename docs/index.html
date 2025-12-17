@@ -23,9 +23,12 @@
     .player h4 { margin:0; font-size:1em; }
     .player .meta { margin:4px 0 0; font-size:0.9em; color:var(--muted); }
     .player-header { display:flex; align-items:center; gap:8px; justify-content:space-between; }
+    .player-heading { display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
     .player-toggle { margin-left:auto; font-size:0.85em; padding:4px 8px; border-radius:8px; border:1px solid var(--line); background:var(--card); cursor:pointer; }
     .player-toggle:focus-visible { outline:2px solid #1d4ed8; outline-offset:2px; }
     .player-accordion { grid-column:1 / -1; border-top:1px solid var(--line); padding-top:8px; margin-top:8px; font-size:0.92em; }
+    .accordion-summary { display:grid; gap:4px; margin-bottom:8px; }
+    .accordion-summary .muted { color:var(--muted); }
     .accordion-events { list-style:none; padding:0; margin:0; display:grid; gap:6px; }
     .accordion-event-row { display:flex; justify-content:space-between; gap:8px; align-items:center; }
     .accordion-date { font-weight:600; }
@@ -36,6 +39,11 @@
     .btn { display:inline-flex; align-items:center; gap:6px; padding:8px 14px; border-radius:10px; border:1px solid var(--line); background:#0f172a; color:white; text-decoration:none; font-weight:600; }
     .btn:hover { filter:brightness(0.95); }
     .btn:disabled { opacity:0.55; cursor:not-allowed; filter:none; }
+    .reliability-badge { display:inline-flex; align-items:center; gap:6px; padding:2px 8px; border-radius:999px; font-size:0.8em; border:1px solid var(--line); background:var(--card); }
+    .reliability-hoch { color:#2e7d32; border-color:#c8e6c9; }
+    .reliability-mittel { color:#f59e0b; border-color:#fde68a; }
+    .reliability-niedrig { color:#b91c1c; border-color:#fecdd3; }
+    .reliability-neu { color:#6b7280; border-color:var(--line); }
   </style>
 </head>
 <body>
@@ -118,6 +126,79 @@
     const exportTeamAStartButton = document.getElementById('export-team-a-start');
     const exportTeamBStartButton = document.getElementById('export-team-b-start');
 
+    const escapeHtml = window.dsroShared?.escapeHtml || ((value) => (value == null
+      ? ''
+      : String(value)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;')));
+
+    const ROLLING_WINDOW_SIZE = 5;
+    const MIN_ROLLING_EVENTS = 3;
+
+    const getRollingStats = (nameOrCanon) => {
+      const shared = window.dsroShared || {};
+      if (typeof shared.getRollingReliability !== 'function') return null;
+      return shared.getRollingReliability(nameOrCanon, ROLLING_WINDOW_SIZE);
+    };
+
+    const buildRollingReliabilityBadge = (nameOrCanon) => {
+      const shared = window.dsroShared || {};
+      if (typeof shared.computeReliabilityBucket !== 'function') return '';
+      const stats = getRollingStats(nameOrCanon);
+      if (!stats) {
+        return '<span class="reliability-badge reliability-neu" title="Keine Rolling-Daten">● Neu</span>';
+      }
+      const basis = stats.basisN ?? stats.events ?? 0;
+      const bucketInfo = shared.computeReliabilityBucket(stats, {
+        minEvents: MIN_ROLLING_EVENTS,
+        insufficientTooltip: 'Zu wenig Rolling-Daten (Basis < 3).',
+      });
+      const tooltipBase = `Rolling (letzte ${stats.windowSize ?? ROLLING_WINDOW_SIZE}, Basis ${basis})`;
+      const details = basis < MIN_ROLLING_EVENTS
+        ? 'Zu wenig Rolling-Daten.'
+        : `Attendance: ${stats.attendance ?? 0}/${stats.events ?? 0} · No-Shows: ${stats.noShows ?? 0}`;
+      const tooltip = `${tooltipBase}: ${details}`;
+      const badgeClass = `reliability-badge reliability-${bucketInfo.bucket || 'neu'}`;
+      const label = bucketInfo.label || 'neu';
+      return `<span class="${badgeClass}" title="${escapeHtml(tooltip)}">● ${escapeHtml(label)}</span>`;
+    };
+
+    const buildRollingSummaryRow = (canonicalKey) => {
+      const stats = getRollingStats(canonicalKey);
+      const windowSize = stats?.windowSize ?? ROLLING_WINDOW_SIZE;
+      if (!stats) return '<div class="muted">Rolling: Keine Rolling-Daten</div>';
+      const basis = stats.basisN ?? stats.events ?? 0;
+      const prefix = `Rolling (letzte ${windowSize}, Basis ${basis})`;
+      if (basis < MIN_ROLLING_EVENTS) {
+        return `<div class="muted">${escapeHtml(prefix)}: zu wenig Rolling-Daten.</div>`;
+      }
+      const attendance = stats.attendance ?? 0;
+      const events = stats.events ?? 0;
+      const noShows = stats.noShows ?? 0;
+      return `<div>${escapeHtml(prefix)}: ${attendance}/${events} · ${noShows} No-Shows</div>`;
+    };
+
+    const buildSinceStartSummaryRow = (canonicalKey) => {
+      const shared = window.dsroShared || {};
+      const startLabel = shared.reliabilityMeta?.startDateRaw || shared.reliabilityStartDate || 'reliability_start_date';
+      if (shared.reliabilityError) {
+        return `<div class="muted">Seit Start: ${escapeHtml(shared.reliabilityError)}</div>`;
+      }
+      const stats = typeof shared.getPlayerReliability === 'function'
+        ? shared.getPlayerReliability(canonicalKey)
+        : null;
+      if (!stats) {
+        return `<div class="muted">Seit Start (seit ${escapeHtml(startLabel)}): Keine Daten</div>`;
+      }
+      const attendance = stats.attendance ?? 0;
+      const events = stats.events ?? 0;
+      const noShows = stats.noShows ?? 0;
+      return `<div>Seit Start (seit ${escapeHtml(startLabel)}, Basis ${events}): ${attendance}/${events} · ${noShows} No-Shows</div>`;
+    };
+
     const state = {
       latestPayload: null,
     };
@@ -153,14 +234,19 @@
         return;
       }
 
+      const summary = document.createElement('div');
+      summary.className = 'accordion-summary';
+      summary.innerHTML = `${buildRollingSummaryRow(canonicalKey)}${buildSinceStartSummaryRow(canonicalKey)}`;
+      accordion.appendChild(summary);
+
       if (!canonicalKey) {
-        accordion.innerHTML = '<div class="muted">Keine Event-Daten gefunden.</div>';
+        accordion.innerHTML += '<div class="muted">Keine Event-Daten gefunden.</div>';
         return;
       }
 
       const events = eventIndex?.get(canonicalKey) || [];
       if (!events.length) {
-        accordion.innerHTML = `<div class="muted">Keine Event-Daten seit ${startLabel}.</div>`;
+        accordion.innerHTML += `<div class="muted">Keine Event-Daten seit ${escapeHtml(startLabel)}.</div>`;
         return;
       }
 
@@ -218,8 +304,9 @@
         const displayName = resolvePlayerName(player.name);
         const tags = (player.tags || []).map((t) => `<span class="tag">${t}</span>`).join('');
         const canonicalKey = resolvePlayerCanonical(player.name);
+        const reliabilityBadge = buildRollingReliabilityBadge(canonicalKey || player.name);
         const accordionId = `accordion-${container.id}-${index}`;
-        li.innerHTML = `<div class="player-number">${index + 1}</div><div><div class="player-header"><h4>${displayName}${tags}</h4><button class="player-toggle" type="button" aria-expanded="false" aria-controls="${accordionId}">Details ▾</button></div><div class="meta">${player.role}${player.note ? ' · ' + player.note : ''}${player.source ? ' · Quelle: ' + player.source : ''}</div></div>`;
+        li.innerHTML = `<div class="player-number">${index + 1}</div><div><div class="player-header"><div class="player-heading"><h4>${displayName}${tags}</h4>${reliabilityBadge}</div><button class="player-toggle" type="button" aria-expanded="false" aria-controls="${accordionId}">Details ▾</button></div><div class="meta">${player.role}${player.note ? ' · ' + player.note : ''}${player.source ? ' · Quelle: ' + player.source : ''}</div></div>`;
         const accordion = document.createElement('div');
         accordion.className = 'player-accordion';
         accordion.id = accordionId;
