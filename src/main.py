@@ -33,12 +33,7 @@ from src.effective_signups import (
     signup_deadline_for_event,
 )
 from src.event_responses import EventResponse, load_event_responses_for_next_event
-from src.stats import (
-    RELIABILITY_START_DATE,
-    RELIABILITY_START_DATE_RAW,
-    PlayerReliability,
-    compute_player_reliability,
-)
+from src.stats import RELIABILITY_START_DATE, RELIABILITY_START_DATE_RAW
 from src.utils import canonical_name, load_alias_map
 
 
@@ -283,7 +278,6 @@ def _build_payload(
     config,
     alias_map: Dict[str, str] | None = None,
     canonical_display: Dict[str, str] | None = None,
-    reliability_players: Dict[str, PlayerReliability] | None = None,
 ) -> Dict[str, object]:
     team_a: Dict[str, List[RosterEntry]] = rosters.get("team_a", {})  # type: ignore[assignment]
     team_b: Dict[str, List[RosterEntry]] = rosters.get("team_b", {})  # type: ignore[assignment]
@@ -403,16 +397,6 @@ def _build_payload(
             "reliability_start_date": reliability_start
         },
         "reliability": {
-            "players": {
-                name: {
-                    "events": stats.events,
-                    "attendance": stats.attendance,
-                    "no_shows": stats.no_shows,
-                    "early_cancels": stats.early_cancels,
-                    "late_cancels": stats.late_cancels,
-                }
-                for name, stats in (reliability_players or {}).items()
-            },
             "meta": {
                 "reliability_start_date": reliability_start
             },
@@ -441,10 +425,6 @@ def main() -> None:
     responses = load_event_responses_for_next_event()
     alias_map, canonical_display = _load_alias_data()
     event_dt_local = compute_event_datetime_local(args.event_date, args.event_time)
-    event_history = _load_event_history()
-    reliability_players = compute_player_reliability(
-        event_history, reliability_start_date=RELIABILITY_START_DATE
-    )
     signup_states = determine_effective_signup_states(
         signups=signups,
         responses=responses,
@@ -469,7 +449,6 @@ def main() -> None:
         config=cfg,
         alias_map=alias_map,
         canonical_display=canonical_display,
-        reliability_players=reliability_players,
     )
     _write_outputs(Path(args.out), payload)
     print(

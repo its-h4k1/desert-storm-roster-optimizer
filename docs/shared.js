@@ -960,15 +960,52 @@
 
   function buildAllKnownPlayersForAdmin(latestPayload) {
     const namesByCanon = new Map();
+    const aliasMap = shared.aliasMap instanceof Map ? shared.aliasMap : null;
+    const canonicalDisplay = shared.canonicalDisplayMap instanceof Map ? shared.canonicalDisplayMap : null;
 
     const upsertName = (raw) => {
       const aliasKey = canonicalNameJS(raw || "");
       if (!aliasKey) return;
-      const canonical = shared.aliasMap ? shared.aliasMap.get(aliasKey) || aliasKey : aliasKey;
-      const normalized = normalizePlayerName(raw || "") || canonical;
+      const canonical = aliasMap ? aliasMap.get(aliasKey) || aliasKey : aliasKey;
+      const display = canonicalDisplay?.get(canonical);
+      const normalized = normalizePlayerName(raw || "") || display || canonical;
       const existing = namesByCanon.get(canonical);
       if (!existing || existing === canonical) {
         namesByCanon.set(canonical, normalized);
+      }
+    };
+
+    const addFromAliasMap = (mapLike) => {
+      if (!mapLike) return;
+      if (mapLike instanceof Map) {
+        mapLike.forEach((canon, alias) => {
+          upsertName(alias);
+          upsertName(canon);
+        });
+        return;
+      }
+      if (typeof mapLike === "object") {
+        Object.entries(mapLike).forEach(([alias, canon]) => {
+          upsertName(alias);
+          upsertName(canon);
+        });
+      }
+    };
+
+    const addFromCanonicalDisplay = (displayMap) => {
+      if (!displayMap) return;
+      if (displayMap instanceof Map) {
+        displayMap.forEach((display, canon) => {
+          upsertName(display || canon);
+          upsertName(canon);
+        });
+        return;
+      }
+      if (typeof displayMap === "object") {
+        Object.entries(displayMap).forEach(([canon, display]) => {
+          upsertName(display || canon);
+          upsertName(canon);
+        });
       }
     };
 
@@ -993,9 +1030,11 @@
     };
 
     if (latestPayload && typeof latestPayload === "object") {
-      addFromObjectKeys(latestPayload.reliability?.players);
-      addFromObjectKeys(latestPayload.analysis?.reliability?.players);
-      addFromObjectKeys(latestPayload.player_reliability);
+      addFromAliasMap(latestPayload.alias_map);
+      addFromAliasMap(aliasMap);
+
+      addFromCanonicalDisplay(latestPayload.canonical_display);
+      addFromCanonicalDisplay(canonicalDisplay);
 
       addFromArray(latestPayload.alliance?.players, [
         (p) => p?.name,
@@ -1011,6 +1050,26 @@
         (p) => p?.display,
         (p) => p?.canon,
         (p) => p?.name,
+      ]);
+
+      const rosterSources = [
+        latestPayload.team_a?.start,
+        latestPayload.team_a?.subs,
+        latestPayload.team_b?.start,
+        latestPayload.team_b?.subs,
+        latestPayload.hard_signups_not_in_roster,
+      ];
+      rosterSources.forEach((source) => {
+        addFromArray(source, [
+          (entry) => entry?.name,
+          (entry) => entry?.raw_name,
+        ]);
+      });
+
+      addFromObjectKeys(latestPayload.signup_states);
+      addFromArray(Object.values(latestPayload.signup_states || {}), [
+        (entry) => entry?.name,
+        (entry) => entry?.canon,
       ]);
 
       addFromArray(latestPayload.signups, [
@@ -1038,6 +1097,16 @@
       addFromArray(latestPayload?.event_signups?.removed_from_pool, [(entry) => entry?.player || entry]);
       addFromArray(latestPayload?.event_responses?.removed_from_pool, [(entry) => entry?.player || entry]);
     }
+
+    const eventResults = Array.isArray(shared.reliabilityEventResults)
+      ? shared.reliabilityEventResults
+      : [];
+    eventResults.forEach((event) => {
+      addFromArray(event?.results, [
+        (res) => res?.display_name_snapshot,
+        (res) => res?.player_key,
+      ]);
+    });
 
     const sortedEntries = Array.from(namesByCanon.entries())
       .sort((a, b) => a[1].localeCompare(b[1], "de", { sensitivity: "base" }));
