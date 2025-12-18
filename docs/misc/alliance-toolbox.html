@@ -105,6 +105,7 @@
     .empty { text-align: center; padding: 18px 8px; color: var(--muted); }
 
     .char-counter { display: flex; align-items: center; gap: 10px; color: var(--muted); font-size: 0.95em; }
+    .copy-status { color: var(--muted); font-size: 0.95em; min-height: 1.2em; }
   </style>
 </head>
 <body>
@@ -140,9 +141,10 @@
         <div class="panel">
           <div class="inline" style="justify-content: space-between; align-items: flex-start; gap:10px; flex-wrap: wrap;">
             <div class="char-counter" id="char-counter">–</div>
-            <div class="inline" style="gap:6px;">
+            <div class="inline" style="gap:6px; align-items: center;">
               <label class="inline" style="gap:6px; font-weight:500;"><input type="checkbox" id="trim-toggle"> Trim auf max</label>
               <button class="btn" id="copy-btn" type="button">In Zwischenablage</button>
+              <span class="copy-status" id="copy-status" aria-live="polite"></span>
             </div>
           </div>
           <div id="output" class="output"></div>
@@ -286,6 +288,7 @@
       const trimToggle = document.getElementById('trim-toggle');
       const charCounter = document.getElementById('char-counter');
       const copyBtn = document.getElementById('copy-btn');
+      const copyStatus = document.getElementById('copy-status');
 
       templateSelect.innerHTML = '';
       ctx.templates.forEach(t => templateSelect.appendChild(createOption(t.id, `${t.category} · ${t.title}`)));
@@ -380,15 +383,91 @@
       policySelect.addEventListener('change', renderOutput);
       memberSelect.addEventListener('change', renderOutput);
       trimToggle.addEventListener('change', renderOutput);
-      copyBtn.addEventListener('click', async () => {
+      const selectOutputForManualCopy = () => {
         try {
-          await navigator.clipboard.writeText(outputEl.textContent || '');
-          copyBtn.textContent = 'Kopiert!';
-          setTimeout(() => (copyBtn.textContent = 'In Zwischenablage'), 1200);
-        } catch (err) {
-          copyBtn.textContent = 'Clipboard blockiert';
-          copyBtn.disabled = true;
+          const selection = window.getSelection();
+          if (!selection) return;
+          selection.removeAllRanges();
+          const range = document.createRange();
+          range.selectNodeContents(outputEl);
+          selection.addRange(range);
+        } catch (_) {
+          /* noop */
         }
+      };
+
+      const copyWithFallback = async (text) => {
+        if (navigator.clipboard?.writeText && window.isSecureContext) {
+          try {
+            await navigator.clipboard.writeText(text);
+            return true;
+          } catch (_) {
+            /* fall through to fallback */
+          }
+        }
+
+        const textarea = document.createElement('textarea');
+        textarea.value = text;
+        textarea.setAttribute('readonly', '');
+        textarea.style.position = 'fixed';
+        textarea.style.top = '-9999px';
+        textarea.style.left = '-9999px';
+        document.body.appendChild(textarea);
+
+        let success = false;
+        try {
+          textarea.select();
+          success = document.execCommand('copy');
+        } catch (_) {
+          success = false;
+        } finally {
+          document.body.removeChild(textarea);
+        }
+
+        return success;
+      };
+
+      let isCopying = false;
+      copyBtn.addEventListener('click', async () => {
+        if (isCopying) return;
+        isCopying = true;
+
+        const originalLabel = 'In Zwischenablage';
+        const text = outputEl.textContent || '';
+        const empty = text.trim().length === 0;
+
+        const resetLabel = (label = originalLabel, delay = 1300) => {
+          setTimeout(() => {
+            copyBtn.textContent = label;
+          }, delay);
+        };
+
+        copyBtn.disabled = true;
+        copyStatus.textContent = '';
+
+        if (empty) {
+          copyBtn.textContent = 'Nichts zu kopieren';
+          resetLabel();
+          copyBtn.disabled = false;
+          isCopying = false;
+          return;
+        }
+
+        copyBtn.textContent = 'Kopieren …';
+        const success = await copyWithFallback(text);
+
+        if (success) {
+          copyBtn.textContent = 'Kopiert';
+          resetLabel();
+        } else {
+          copyBtn.textContent = 'Fehlgeschlagen';
+          copyStatus.textContent = 'Kopieren fehlgeschlagen – bitte manuell markieren';
+          selectOutputForManualCopy();
+          resetLabel();
+        }
+
+        copyBtn.disabled = false;
+        isCopying = false;
       });
 
       handleTemplateChange();
