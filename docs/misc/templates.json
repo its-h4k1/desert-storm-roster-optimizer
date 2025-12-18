@@ -1,0 +1,81 @@
+[
+  {
+    "id": "announcement_long",
+    "title": "Ankündigung – ausführlich",
+    "category": "Announcement",
+    "max_chars": 1200,
+    "variables": [
+      {"key": "event_date", "label": "Event Datum"},
+      {"key": "event_time", "label": "Event Zeit"},
+      {"key": "group", "label": "Gruppe/Team"},
+      {"key": "event_id", "label": "Event ID"},
+      {"key": "policy_title", "label": "Policy Titel"},
+      {"key": "policy_summary", "label": "Policy Zusammenfassung"},
+      {"key": "voice_channel", "label": "Voice Channel"},
+      {"key": "rsvp_deadline", "label": "RSVP Deadline"},
+      {"key": "loadout_hint", "label": "Loadout Hinweis"},
+      {"key": "event_lead", "label": "Event Lead"}
+    ],
+    "body": "Hey @everyone,\n\nam {{event_date}} um {{event_time}} starten wir mit Gruppe {{group}} ({{event_id}}). Laut {{policy_title}} gilt: {{policy_summary}}. Hauptanlaufpunkt ist {{voice_channel}}.\n\nBitte bestätigt bis {{rsvp_deadline}} und bringt {{loadout_hint}} mit. Danke!\n\n- {{event_lead}}"
+  },
+  {
+    "id": "announcement_compact",
+    "title": "Ankündigung – 500 Zeichen",
+    "category": "Announcement",
+    "max_chars": 500,
+    "variables": [
+      {"key": "event_date", "label": "Event Datum"},
+      {"key": "event_time", "label": "Event Zeit"},
+      {"key": "group", "label": "Gruppe/Team"},
+      {"key": "event_id", "label": "Event ID"},
+      {"key": "policy_title", "label": "Policy Titel"},
+      {"key": "voice_channel", "label": "Voice Channel"}
+    ],
+    "body": "{{event_date}} {{event_time}} · {{group}} ({{event_id}}) – Fokus laut {{policy_title}}. Treffpunkt: {{voice_channel}}. Hard confirm asap, danke!"
+  },
+  {
+    "id": "dm_level1",
+    "title": "DM Stufe 1 – Hinweis",
+    "category": "DM",
+    "variables": [
+      {"key": "member_name", "label": "Member"},
+      {"key": "incident_type", "label": "Vorfälle"},
+      {"key": "level", "label": "Level"},
+      {"key": "policy_title", "label": "Policy"},
+      {"key": "policy_summary", "label": "Policy Zusammenfassung"},
+      {"key": "followup_date", "label": "Follow-up Datum"},
+      {"key": "contact", "label": "Kontakt"}
+    ],
+    "body": "Hey {{member_name}}, kurzer Hinweis wegen {{incident_type}} (Level {{level}}). Laut {{policy_title}} gilt: {{policy_summary}}. Lass uns das bis {{followup_date}} fixen. {{contact}}"
+  },
+  {
+    "id": "dm_level2",
+    "title": "DM Stufe 2 – Gelb",
+    "category": "DM",
+    "variables": [
+      {"key": "member_name", "label": "Member"},
+      {"key": "incident_type", "label": "Vorfälle"},
+      {"key": "level", "label": "Level"},
+      {"key": "policy_title", "label": "Policy"},
+      {"key": "policy_summary", "label": "Policy Zusammenfassung"},
+      {"key": "action", "label": "Nächste Schritte"},
+      {"key": "contact", "label": "Kontakt"}
+    ],
+    "body": "Hi {{member_name}}, wir dokumentieren {{incident_type}} als {{level}}. Policy: {{policy_title}} – {{policy_summary}}. Bitte bestätige den Erhalt und setz {{action}} an. {{contact}}"
+  },
+  {
+    "id": "dm_level3",
+    "title": "DM Stufe 3 – Rot",
+    "category": "DM",
+    "variables": [
+      {"key": "member_name", "label": "Member"},
+      {"key": "incident_type", "label": "Vorfälle"},
+      {"key": "level", "label": "Level"},
+      {"key": "policy_title", "label": "Policy"},
+      {"key": "policy_summary", "label": "Policy Zusammenfassung"},
+      {"key": "consequence", "label": "Konsequenz"},
+      {"key": "contact", "label": "Kontakt"}
+    ],
+    "body": "Moin {{member_name}}, erneuter Vorfall: {{incident_type}} (Level {{level}}). Policy-Referenz {{policy_title}}: {{policy_summary}}. Konsequenz: {{consequence}}. Bitte direkt melden. {{contact}}"
+  }
+]

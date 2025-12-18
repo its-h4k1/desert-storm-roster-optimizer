@@ -1,0 +1,490 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1.0">
+  <title>Alliance Toolbox</title>
+  <style>
+    :root {
+      --bg: #f7f9fb;
+      --card: #ffffff;
+      --border: #e2e8f0;
+      --muted: #5f6b7b;
+      --text: #0b1221;
+      --accent: #1d4ed8;
+      --accent-2: #0ea5e9;
+      --shadow: 0 14px 38px rgba(15, 23, 42, 0.12);
+      --radius: 14px;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+      background: linear-gradient(145deg, #eef2ff 0%, #f7f9fb 55%, #f0f9ff 100%);
+      color: var(--text);
+      padding: 32px 16px 48px;
+    }
+
+    .page {
+      max-width: 1200px;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+    }
+
+    .page-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    h1 { margin: 0; font-size: 1.8rem; }
+    p { margin: 0; }
+    .muted { color: var(--muted); }
+
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 18px;
+    }
+
+    .section-title { margin: 0 0 10px; display: flex; align-items: center; gap: 8px; }
+
+    .grid { display: grid; gap: 16px; grid-template-columns: 1fr; }
+    @media (min-width: 960px) { .grid.two { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+
+    label { display: block; font-weight: 600; margin-bottom: 6px; color: #111827; }
+    input, select, textarea { width: 100%; padding: 10px 12px; border-radius: 10px; border: 1px solid var(--border); font: inherit; background: #f8fafc; }
+    textarea { min-height: 120px; resize: vertical; }
+    input:focus, select:focus, textarea:focus { outline: 2px solid #bfdbfe; border-color: #93c5fd; background: #fff; }
+
+    .inline { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+    .btn {
+      appearance: none;
+      border: 1px solid var(--border);
+      background: linear-gradient(135deg, var(--accent) 0%, var(--accent-2) 100%);
+      color: #fff;
+      padding: 10px 14px;
+      border-radius: 12px;
+      font-weight: 700;
+      cursor: pointer;
+      box-shadow: 0 10px 24px rgba(37, 99, 235, 0.25);
+      transition: transform 120ms ease, box-shadow 120ms ease;
+    }
+    .btn:disabled { opacity: 0.5; cursor: not-allowed; box-shadow: none; }
+    .btn:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 14px 30px rgba(37, 99, 235, 0.3); }
+
+    .pill { display: inline-flex; gap: 6px; align-items: center; padding: 4px 10px; border-radius: 999px; background: #eef2ff; border: 1px solid var(--border); color: var(--muted); font-size: 0.9em; }
+
+    .panel {
+      border: 1px dashed var(--border);
+      border-radius: 12px;
+      padding: 12px;
+      background: #f8fafc;
+    }
+
+    .template-controls { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+    .template-variables { display: grid; gap: 12px; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); }
+
+    .output { white-space: pre-wrap; background: #0f172a; color: #e2e8f0; padding: 14px; border-radius: 12px; min-height: 120px; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; }
+
+    table { width: 100%; border-collapse: collapse; }
+    th, td { padding: 10px 8px; border-bottom: 1px solid var(--border); text-align: left; }
+    th { font-size: 0.92em; text-transform: uppercase; letter-spacing: 0.04em; color: var(--muted); }
+    tr:hover td { background: #f8fafc; }
+
+    .badge { padding: 4px 8px; border-radius: 8px; font-size: 0.85em; background: #ecfeff; color: #0ea5e9; border: 1px solid #bae6fd; }
+    .danger { color: #b91c1c; }
+    .empty { text-align: center; padding: 18px 8px; color: var(--muted); }
+
+    .char-counter { display: flex; align-items: center; gap: 10px; color: var(--muted); font-size: 0.95em; }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <header class="page-header">
+      <div>
+        <h1>Alliance Toolbox</h1>
+        <p class="muted">Templates, Policy-Referenzen und Member-Log – alles client-side, ohne Backend.</p>
+      </div>
+      <div class="inline" style="gap:10px;">
+        <span class="pill">misc utilities</span>
+        <a class="pill" href="../index.html">Zurück zur Übersicht</a>
+      </div>
+    </header>
+
+    <section class="card">
+      <div class="section-title">
+        <h2 style="margin:0;">Template-Bibliothek</h2>
+        <span class="pill" id="template-meta">lädt …</span>
+      </div>
+      <p class="muted" style="margin-bottom:12px;">Lädt Templates + Daten aus JSON (members/policies/incidents). Variablen können in der Oberfläche ersetzt werden, mit Live-Zeichenzähler und optionalem Trim auf die Max-Länge des Templates.</p>
+
+      <div class="grid two">
+        <div class="panel">
+          <div class="template-controls" style="margin-bottom:12px;">
+            <label for="template-select" style="margin:0;">Template wählen</label>
+            <select id="template-select" style="min-width:220px;"></select>
+            <select id="policy-select" title="Policy Kontext" style="min-width:200px;"></select>
+            <select id="member-select" title="Member Kontext" style="min-width:200px;"></select>
+          </div>
+          <div id="variable-fields" class="template-variables"></div>
+        </div>
+        <div class="panel">
+          <div class="inline" style="justify-content: space-between; align-items: flex-start; gap:10px; flex-wrap: wrap;">
+            <div class="char-counter" id="char-counter">–</div>
+            <div class="inline" style="gap:6px;">
+              <label class="inline" style="gap:6px; font-weight:500;"><input type="checkbox" id="trim-toggle"> Trim auf max</label>
+              <button class="btn" id="copy-btn" type="button">In Zwischenablage</button>
+            </div>
+          </div>
+          <div id="output" class="output"></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="section-title">
+        <h2 style="margin:0;">Member-Log</h2>
+        <span class="pill">localStorage · CSV Export</span>
+      </div>
+      <p class="muted" style="margin-bottom:12px;">Vorfälle inkl. Policy/Level/Notizen erfassen. Speicherung erfolgt nur lokal im Browser, CSV-Export für die Ablage.</p>
+
+      <div class="grid two">
+        <form id="log-form" class="panel" style="display:grid; gap:10px; align-content:start;">
+          <div>
+            <label for="log-member">Member</label>
+            <select id="log-member" required></select>
+          </div>
+          <div>
+            <label for="log-incident">Incident Type</label>
+            <select id="log-incident" required></select>
+          </div>
+          <div>
+            <label for="log-policy">Policy (optional)</label>
+            <select id="log-policy"></select>
+          </div>
+          <div>
+            <label for="log-level">Level</label>
+            <input id="log-level" name="level" placeholder="z.B. Hinweis / Gelb / Rot" required />
+          </div>
+          <div>
+            <label for="log-note">Note</label>
+            <textarea id="log-note" name="note" placeholder="Kurzbeschreibung …" required></textarea>
+          </div>
+          <div>
+            <label for="log-date">Datum</label>
+            <input type="date" id="log-date" required />
+          </div>
+          <div class="inline" style="justify-content: flex-end;">
+            <button class="btn" type="submit">Speichern</button>
+          </div>
+        </form>
+
+        <div class="panel" style="overflow:auto;">
+          <div class="inline" style="justify-content: space-between; margin-bottom:8px;">
+            <strong>Log</strong>
+            <button class="btn" id="export-csv" type="button">CSV Export</button>
+          </div>
+          <table aria-label="Member Logs">
+            <thead>
+              <tr>
+                <th>Datum</th>
+                <th>Member</th>
+                <th>Incident</th>
+                <th>Policy</th>
+                <th>Level</th>
+                <th>Note</th>
+              </tr>
+            </thead>
+            <tbody id="log-table"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <script>
+    const dataSources = {
+      members: 'members.json',
+      incidents: 'incident_types.json',
+      policies: 'policies.json',
+      templates: 'templates.json'
+    };
+
+    const logStorageKey = 'alliance-toolbox-logs';
+
+    async function loadJson(path) {
+      const res = await fetch(path, { cache: 'no-store' });
+      if (!res.ok) throw new Error(`Fehler beim Laden von ${path}`);
+      return res.json();
+    }
+
+    async function bootstrap() {
+      try {
+        const [members, incidents, policies, templates] = await Promise.all([
+          loadJson(dataSources.members),
+          loadJson(dataSources.incidents),
+          loadJson(dataSources.policies),
+          loadJson(dataSources.templates),
+        ]);
+
+        const ctx = { members, incidents, policies, templates };
+        initTemplateUi(ctx);
+        initLogUi(ctx);
+      } catch (err) {
+        const output = document.getElementById('output');
+        output.textContent = err.message || 'Laden fehlgeschlagen';
+        output.style.background = '#fee2e2';
+        output.style.color = '#7f1d1d';
+      }
+    }
+
+    function createOption(value, label) {
+      const opt = document.createElement('option');
+      opt.value = value;
+      opt.textContent = label;
+      return opt;
+    }
+
+    function suggestValueForKey(key, ctx) {
+      const lower = key.toLowerCase();
+      if (lower.includes('member')) return ctx.members[0]?.name || '';
+      if (lower.includes('policy_title')) return ctx.policies[0]?.title || '';
+      if (lower.includes('policy_summary')) return ctx.policies[0]?.summary || '';
+      if (lower.includes('policy')) return ctx.policies[0]?.id || '';
+      if (lower.includes('incident')) return ctx.incidents[0]?.name || '';
+      if (lower.includes('contact')) return ctx.policies[0]?.contact || '';
+      return '';
+    }
+
+    function optionsForKey(key, ctx) {
+      const lower = key.toLowerCase();
+      if (lower.includes('member')) return ctx.members.map(m => m.name);
+      if (lower.includes('policy_title') || lower === 'policy') return ctx.policies.map(p => p.title);
+      if (lower.includes('policy_summary')) return ctx.policies.map(p => p.summary);
+      if (lower.includes('policy')) return ctx.policies.map(p => p.id);
+      if (lower.includes('incident')) return ctx.incidents.map(i => i.name);
+      if (lower.includes('level')) return Array.from(new Set(ctx.incidents.flatMap(i => i.level_suggestions || [])));
+      return [];
+    }
+
+    function initTemplateUi(ctx) {
+      const templateSelect = document.getElementById('template-select');
+      const policySelect = document.getElementById('policy-select');
+      const memberSelect = document.getElementById('member-select');
+      const variableFields = document.getElementById('variable-fields');
+      const outputEl = document.getElementById('output');
+      const meta = document.getElementById('template-meta');
+      const trimToggle = document.getElementById('trim-toggle');
+      const charCounter = document.getElementById('char-counter');
+      const copyBtn = document.getElementById('copy-btn');
+
+      templateSelect.innerHTML = '';
+      ctx.templates.forEach(t => templateSelect.appendChild(createOption(t.id, `${t.category} · ${t.title}`)));
+
+      policySelect.innerHTML = '';
+      ctx.policies.forEach(p => policySelect.appendChild(createOption(p.id, `${p.title}`)));
+
+      memberSelect.innerHTML = '';
+      ctx.members.forEach(m => memberSelect.appendChild(createOption(m.name, m.name)));
+
+      const renderVariables = (template) => {
+        variableFields.innerHTML = '';
+        (template.variables || []).forEach(def => {
+          const wrap = document.createElement('div');
+          const label = document.createElement('label');
+          label.textContent = def.label || def.key;
+          label.setAttribute('for', `var-${def.key}`);
+          const input = document.createElement('input');
+          input.id = `var-${def.key}`;
+          input.dataset.key = def.key;
+          input.placeholder = suggestValueForKey(def.key, ctx) || def.label || def.key;
+          const options = optionsForKey(def.key, ctx);
+          wrap.appendChild(label);
+          wrap.appendChild(input);
+          if (options.length) {
+            const listId = `list-${def.key}`;
+            input.setAttribute('list', listId);
+            const datalist = document.createElement('datalist');
+            datalist.id = listId;
+            options.forEach(val => datalist.appendChild(createOption(val, val)));
+            wrap.appendChild(datalist);
+          }
+          variableFields.appendChild(wrap);
+        });
+      };
+
+      const renderOutput = () => {
+        const template = ctx.templates.find(t => t.id === templateSelect.value) || ctx.templates[0];
+        if (!template) return;
+        const values = {};
+        (template.variables || []).forEach(def => {
+          const input = document.getElementById(`var-${def.key}`);
+          values[def.key] = input?.value?.trim() || input?.placeholder || '';
+        });
+
+        // Context additions
+        const policy = ctx.policies.find(p => p.id === policySelect.value) || ctx.policies[0];
+        if (policy) {
+          if (!values.policy_title) values.policy_title = policy.title;
+          if (!values.policy_summary) values.policy_summary = policy.summary;
+          if (!values.contact) values.contact = policy.contact || values.contact;
+        }
+        const member = ctx.members.find(m => m.name === memberSelect.value) || ctx.members[0];
+        if (member && !values.member_name) values.member_name = member.name;
+
+        let result = template.body;
+        Object.entries(values).forEach(([key, val]) => {
+          const safe = val || '';
+          result = result.replace(new RegExp(`{{\\s*${key}\\s*}}`, 'g'), safe);
+        });
+
+        const trimmed = template.max_chars && trimToggle.checked
+          ? result.slice(0, template.max_chars)
+          : result;
+
+        outputEl.textContent = trimmed;
+        const length = trimmed.length;
+        const note = template.max_chars ? `${template.max_chars} max` : 'kein Limit';
+        charCounter.textContent = `${length} Zeichen · ${note}`;
+        meta.textContent = `${ctx.templates.length} Templates · ${ctx.members.length} Member · ${ctx.policies.length} Policies`;
+      };
+
+      const handleTemplateChange = () => {
+        const template = ctx.templates.find(t => t.id === templateSelect.value) || ctx.templates[0];
+        if (!template) return;
+        renderVariables(template);
+        trimToggle.checked = false;
+        renderOutput();
+        variableFields.querySelectorAll('input').forEach(input => input.addEventListener('input', renderOutput));
+      };
+
+      templateSelect.addEventListener('change', handleTemplateChange);
+      policySelect.addEventListener('change', renderOutput);
+      memberSelect.addEventListener('change', renderOutput);
+      trimToggle.addEventListener('change', renderOutput);
+      copyBtn.addEventListener('click', async () => {
+        try {
+          await navigator.clipboard.writeText(outputEl.textContent || '');
+          copyBtn.textContent = 'Kopiert!';
+          setTimeout(() => (copyBtn.textContent = 'In Zwischenablage'), 1200);
+        } catch (err) {
+          copyBtn.textContent = 'Clipboard blockiert';
+          copyBtn.disabled = true;
+        }
+      });
+
+      handleTemplateChange();
+    }
+
+    function loadLogs() {
+      try {
+        const raw = localStorage.getItem(logStorageKey);
+        return raw ? JSON.parse(raw) : [];
+      } catch (err) {
+        return [];
+      }
+    }
+
+    function saveLogs(logs) {
+      localStorage.setItem(logStorageKey, JSON.stringify(logs));
+    }
+
+    function initLogUi(ctx) {
+      const memberSelect = document.getElementById('log-member');
+      const incidentSelect = document.getElementById('log-incident');
+      const policySelect = document.getElementById('log-policy');
+      const form = document.getElementById('log-form');
+      const tableBody = document.getElementById('log-table');
+      const exportBtn = document.getElementById('export-csv');
+      const dateInput = document.getElementById('log-date');
+
+      memberSelect.innerHTML = '';
+      ctx.members.forEach(m => memberSelect.appendChild(createOption(m.name, `${m.name} (${m.role})`)));
+
+      incidentSelect.innerHTML = '';
+      ctx.incidents.forEach(i => incidentSelect.appendChild(createOption(i.name, `${i.name}`)));
+
+      policySelect.innerHTML = '';
+      policySelect.appendChild(createOption('', '— optional —'));
+      ctx.policies.forEach(p => policySelect.appendChild(createOption(p.id, `${p.title}`)));
+
+      dateInput.valueAsDate = new Date();
+
+      const renderLogs = () => {
+        const logs = loadLogs();
+        tableBody.innerHTML = '';
+        if (!logs.length) {
+          const row = document.createElement('tr');
+          const cell = document.createElement('td');
+          cell.colSpan = 6;
+          cell.className = 'empty';
+          cell.textContent = 'Noch keine Einträge.';
+          row.appendChild(cell);
+          tableBody.appendChild(row);
+          return;
+        }
+
+        logs.sort((a, b) => b.createdAt - a.createdAt);
+        logs.forEach(entry => {
+          const row = document.createElement('tr');
+          row.innerHTML = `
+            <td>${entry.date || ''}</td>
+            <td>${entry.member || ''}</td>
+            <td>${entry.incident || ''}</td>
+            <td>${entry.policy || ''}</td>
+            <td><span class="badge">${entry.level || ''}</span></td>
+            <td>${entry.note || ''}</td>
+          `;
+          tableBody.appendChild(row);
+        });
+      };
+
+      form.addEventListener('submit', (event) => {
+        event.preventDefault();
+        const payload = {
+          member: memberSelect.value,
+          incident: incidentSelect.value,
+          policy: policySelect.value,
+          level: document.getElementById('log-level').value.trim(),
+          note: document.getElementById('log-note').value.trim(),
+          date: dateInput.value,
+          createdAt: Date.now(),
+        };
+        const logs = loadLogs();
+        logs.push(payload);
+        saveLogs(logs);
+        form.reset();
+        dateInput.valueAsDate = new Date();
+        renderLogs();
+      });
+
+      exportBtn.addEventListener('click', () => {
+        const logs = loadLogs();
+        const header = ['date','member','incident','policy','level','note'];
+        const rows = logs.map(l => header.map(key => (l[key] || '').replace(/"/g, '""')));
+        const csv = [header.join(','), ...rows.map(r => r.map(val => `"${val}"`).join(','))].join('\n');
+        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'alliance-member-log.csv';
+        a.click();
+        URL.revokeObjectURL(url);
+      });
+
+      renderLogs();
+    }
+
+    bootstrap();
+  </script>
+</body>
+</html>
