@@ -347,14 +347,23 @@
           result = result.replace(new RegExp(`{{\\s*${key}\\s*}}`, 'g'), safe);
         });
 
-        const trimmed = template.max_chars && trimToggle.checked
-          ? result.slice(0, template.max_chars)
-          : result;
+        const originalLength = result.length;
+        const limit = template.max_chars;
+        const shouldTrim = Boolean(limit && trimToggle.checked);
+        const trimmed = shouldTrim ? result.slice(0, limit) : result;
+        const trimmedLength = trimmed.length;
 
         outputEl.textContent = trimmed;
-        const length = trimmed.length;
-        const note = template.max_chars ? `${template.max_chars} max` : 'kein Limit';
-        charCounter.textContent = `${length} Zeichen · ${note}`;
+
+        const counterParts = [];
+        if (limit) {
+          counterParts.push(`${originalLength} / ${limit} Zeichen`);
+          if (originalLength > limit) counterParts.push('⚠️ über Limit');
+        } else {
+          counterParts.push(`${originalLength} Zeichen`);
+        }
+        if (shouldTrim) counterParts.push(`nach Trim: ${trimmedLength}`);
+        charCounter.textContent = counterParts.join(' · ');
         meta.textContent = `${ctx.templates.length} Templates · ${ctx.members.length} Member · ${ctx.policies.length} Policies`;
       };
 
