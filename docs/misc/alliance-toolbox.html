@@ -104,6 +104,8 @@
     .danger { color: #b91c1c; }
     .empty { text-align: center; padding: 18px 8px; color: var(--muted); }
 
+    .alert { padding: 10px 12px; border-radius: 10px; background: #fef2f2; color: #b91c1c; border: 1px solid #fecaca; margin-bottom: 8px; }
+
     .char-counter { display: flex; align-items: center; gap: 10px; color: var(--muted); font-size: 0.95em; }
     .copy-status { color: var(--muted); font-size: 0.95em; min-height: 1.2em; }
   </style>
@@ -191,10 +193,21 @@
         </form>
 
         <div class="panel" style="overflow:auto;">
-          <div class="inline" style="justify-content: space-between; margin-bottom:8px;">
+          <div class="inline" style="justify-content: space-between; margin-bottom:8px; align-items: center; gap:12px;">
             <strong>Log</strong>
-            <button class="btn" id="export-csv" type="button">CSV Export</button>
+            <div class="inline" style="gap:8px; align-items:center; flex-wrap: wrap;">
+              <label class="inline" style="gap:6px; font-weight:500;">
+                Delimiter
+                <select id="csv-delimiter" style="min-width:76px;">
+                  <option value=";">;</option>
+                  <option value=",">,</option>
+                </select>
+              </label>
+              <span class="muted" style="font-size:0.92em;">Excel DE: ; empfohlen</span>
+              <button class="btn" id="export-csv" type="button">CSV Export</button>
+            </div>
           </div>
+          <div id="log-status" class="muted" aria-live="polite" style="margin-bottom:8px; min-height:1.2em;"></div>
           <table aria-label="Member Logs">
             <thead>
               <tr>
@@ -222,6 +235,7 @@
     };
 
     const logStorageKey = 'alliance-toolbox-logs';
+    const LOG_SCHEMA_VERSION = 1;
 
     async function loadJson(path) {
       const res = await fetch(path, { cache: 'no-store' });
@@ -473,17 +487,87 @@
       handleTemplateChange();
     }
 
-    function loadLogs() {
-      try {
-        const raw = localStorage.getItem(logStorageKey);
-        return raw ? JSON.parse(raw) : [];
-      } catch (err) {
-        return [];
+    function normalizeLogEntry(entry) {
+      if (!entry || typeof entry !== 'object') return { valid: false };
+
+      const toStr = (val) => (val === undefined || val === null) ? '' : String(val).trim();
+      const normalized = {
+        member: toStr(entry.member),
+        incident: toStr(entry.incident),
+        policy: toStr(entry.policy),
+        level: toStr(entry.level),
+        note: toStr(entry.note),
+        date: toStr(entry.date),
+        createdAt: Number(entry.createdAt),
+      };
+
+      const datePattern = /^\d{4}-\d{2}-\d{2}$/;
+      if (!normalized.member || !normalized.incident || !normalized.level || !normalized.note) return { valid: false };
+      if (!normalized.date || !datePattern.test(normalized.date) || Number.isNaN(Date.parse(normalized.date))) return { valid: false };
+      if (!Number.isFinite(normalized.createdAt)) {
+        const parsedDate = Date.parse(normalized.date);
+        if (!Number.isFinite(parsedDate)) return { valid: false };
+        normalized.createdAt = parsedDate;
       }
+
+      return { valid: true, entry: normalized };
     }
 
-    function saveLogs(logs) {
-      localStorage.setItem(logStorageKey, JSON.stringify(logs));
+    function loadLogs() {
+      const status = { messages: [], invalidCount: 0, reset: false };
+      const raw = localStorage.getItem(logStorageKey);
+      if (!raw) return { items: [], status };
+
+      let parsed;
+      try {
+        parsed = JSON.parse(raw);
+      } catch (_) {
+        status.messages.push('Log-Daten beschädigt, neu gestartet.');
+        status.reset = true;
+        saveLogs([]);
+        return { items: [], status };
+      }
+
+      let items;
+      if (Array.isArray(parsed)) {
+        status.messages.push('Älteres Log-Format erkannt, aktualisiert.');
+        status.reset = true;
+        items = parsed;
+      } else if (parsed && typeof parsed === 'object' && Array.isArray(parsed.items)) {
+        if (parsed.schema_version !== LOG_SCHEMA_VERSION) {
+          status.messages.push('Unbekannte Log-Version, versuche zu lesen.');
+        }
+        items = parsed.items;
+      } else {
+        status.messages.push('Log-Daten unbrauchbar, neu gestartet.');
+        status.reset = true;
+        saveLogs([]);
+        return { items: [], status };
+      }
+
+      const validItems = [];
+      items.forEach(item => {
+        const { valid, entry } = normalizeLogEntry(item);
+        if (valid) {
+          validItems.push(entry);
+        } else {
+          status.invalidCount += 1;
+        }
+      });
+
+      if (status.invalidCount) {
+        status.messages.push(`${status.invalidCount} Einträge verworfen (inkonsistente Felder).`);
+        status.reset = true;
+      }
+
+      if (status.reset) saveLogs(validItems);
+
+      return { items: validItems, status };
+    }
+
+    function saveLogs(items) {
+      const payload = { schema_version: LOG_SCHEMA_VERSION, items: items || [] };
+      localStorage.setItem(logStorageKey, JSON.stringify(payload));
     }
 
     function initLogUi(ctx) {
@@ -493,7 +577,9 @@
       const form = document.getElementById('log-form');
       const tableBody = document.getElementById('log-table');
       const exportBtn = document.getElementById('export-csv');
+      const delimiterSelect = document.getElementById('csv-delimiter');
       const dateInput = document.getElementById('log-date');
+      const logStatus = document.getElementById('log-status');
 
       memberSelect.innerHTML = '';
       ctx.members.forEach(m => memberSelect.appendChild(createOption(m.name, `${m.name} (${m.role})`)));
@@ -508,8 +594,17 @@
       dateInput.valueAsDate = new Date();
 
       const renderLogs = () => {
-        const logs = loadLogs();
+        const { items: logs, status } = loadLogs();
         tableBody.innerHTML = '';
+
+        if (status.messages.length) {
+          logStatus.textContent = status.messages.join(' · ');
+          logStatus.className = 'alert';
+        } else {
+          logStatus.textContent = '';
+          logStatus.className = 'muted';
+        }
+
         if (!logs.length) {
           const row = document.createElement('tr');
           const cell = document.createElement('td');
@@ -518,22 +613,27 @@
           cell.textContent = 'Noch keine Einträge.';
           row.appendChild(cell);
           tableBody.appendChild(row);
+          exportBtn.disabled = true;
+          exportBtn.title = 'Keine Einträge vorhanden';
           return;
         }
 
-        logs.sort((a, b) => b.createdAt - a.createdAt);
-        logs.forEach(entry => {
+        const sortedLogs = [...logs].sort((a, b) => b.createdAt - a.createdAt);
+        sortedLogs.forEach(entry => {
           const row = document.createElement('tr');
           row.innerHTML = `
             <td>${entry.date || ''}</td>
             <td>${entry.member || ''}</td>
             <td>${entry.incident || ''}</td>
             <td>${entry.policy || ''}</td>
-            <td><span class="badge">${entry.level || ''}</span></td>
+            <td><span class=\"badge\">${entry.level || ''}</span></td>
             <td>${entry.note || ''}</td>
           `;
           tableBody.appendChild(row);
         });
+
+        exportBtn.disabled = false;
+        exportBtn.title = '';
       };
 
       form.addEventListener('submit', (event) => {
@@ -547,7 +647,7 @@
           date: dateInput.value,
           createdAt: Date.now(),
         };
-        const logs = loadLogs();
+        const { items: logs } = loadLogs();
         logs.push(payload);
         saveLogs(logs);
         form.reset();
@@ -555,12 +655,26 @@
         renderLogs();
       });
 
+
       exportBtn.addEventListener('click', () => {
-        const logs = loadLogs();
+        const { items: logs } = loadLogs();
+        if (!logs.length) return;
+
+        const delimiter = delimiterSelect.value || ';';
         const header = ['date','member','incident','policy','level','note'];
-        const rows = logs.map(l => header.map(key => (l[key] || '').replace(/"/g, '""')));
-        const csv = [header.join(','), ...rows.map(r => r.map(val => `"${val}"`).join(','))].join('\n');
-        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+        const escapeField = (value) => {
+          const str = (value === undefined || value === null) ? '' : String(value);
+          const needsQuote = str.includes(delimiter) || str.includes('"') || str.includes('\n') || str.includes('\r');
+          const escaped = str.replace(/"/g, '""');
+          return needsQuote ? `"${escaped}"` : escaped;
+        };
+
+
+        const lines = [header, ...logs.map(log => header.map(key => log[key] || ''))]
+          .map(row => row.map(escapeField).join(delimiter));
+
+        const csv = lines.join('\r\n');
+        const blob = new Blob(['\ufeff', csv], { type: 'text/csv;charset=utf-8;' });
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
