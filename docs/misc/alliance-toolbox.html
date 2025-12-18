@@ -150,6 +150,7 @@
             </div>
           </div>
           <div id="output" class="output"></div>
+          <div id="missing-vars" class="muted" style="margin-top:8px; font-size:0.95em;"></div>
         </div>
       </div>
     </section>
@@ -235,7 +236,38 @@
     };
 
     const logStorageKey = 'alliance-toolbox-logs';
-    const LOG_SCHEMA_VERSION = 1;
+    const LOG_SCHEMA_VERSION = 2;
+
+    const normalizeKey = (val) => (val ?? '').toString().trim().toLowerCase();
+    function buildLookups(ctx) {
+      const memberById = Object.fromEntries((ctx.members || []).map(m => [m.id, m]));
+      const incidentById = Object.fromEntries((ctx.incidents || []).map(i => [i.id, i]));
+      const policyById = Object.fromEntries((ctx.policies || []).map(p => [p.id, p]));
+
+      const memberByDisplay = {};
+      (ctx.members || []).forEach(m => {
+        const key = normalizeKey(m.name || m.display || m.id);
+        if (key) memberByDisplay[key] = m.id;
+      });
+
+      const incidentByLabel = {};
+      (ctx.incidents || []).forEach(i => {
+        const key = normalizeKey(i.label || i.name || i.id);
+        if (key) incidentByLabel[key] = i.id;
+      });
+
+      const policyByTitle = {};
+      (ctx.policies || []).forEach(p => {
+        const key = normalizeKey(p.title || p.id);
+        if (key) policyByTitle[key] = p.id;
+      });
+
+      return {
+        members: { byId: memberById, byDisplay: memberByDisplay },
+        incidents: { byId: incidentById, byDisplay: incidentByLabel },
+        policies: { byId: policyById, byDisplay: policyByTitle },
+      };
+    }
 
     async function loadJson(path) {
       const res = await fetch(path, { cache: 'no-store' });
@@ -253,6 +285,7 @@
         ]);
 
         const ctx = { members, incidents, policies, templates };
+        ctx.lookups = buildLookups(ctx);
         initTemplateUi(ctx);
         initLogUi(ctx);
       } catch (err) {
@@ -276,7 +309,7 @@
       if (lower.includes('policy_title')) return ctx.policies[0]?.title || '';
       if (lower.includes('policy_summary')) return ctx.policies[0]?.summary || '';
       if (lower.includes('policy')) return ctx.policies[0]?.id || '';
-      if (lower.includes('incident')) return ctx.incidents[0]?.name || '';
+      if (lower.includes('incident')) return ctx.incidents[0]?.label || '';
       if (lower.includes('contact')) return ctx.policies[0]?.contact || '';
       return '';
     }
@@ -287,7 +320,7 @@
       if (lower.includes('policy_title') || lower === 'policy') return ctx.policies.map(p => p.title);
       if (lower.includes('policy_summary')) return ctx.policies.map(p => p.summary);
       if (lower.includes('policy')) return ctx.policies.map(p => p.id);
-      if (lower.includes('incident')) return ctx.incidents.map(i => i.name);
+      if (lower.includes('incident')) return ctx.incidents.map(i => i.label);
       if (lower.includes('level')) return Array.from(new Set(ctx.incidents.flatMap(i => i.level_suggestions || [])));
       return [];
     }
@@ -303,6 +336,7 @@
       const charCounter = document.getElementById('char-counter');
       const copyBtn = document.getElementById('copy-btn');
       const copyStatus = document.getElementById('copy-status');
+      const missingListEl = document.getElementById('missing-vars');
 
       templateSelect.innerHTML = '';
       ctx.templates.forEach(t => templateSelect.appendChild(createOption(t.id, `${t.category} · ${t.title}`)));
@@ -311,7 +345,7 @@
       ctx.policies.forEach(p => policySelect.appendChild(createOption(p.id, `${p.title}`)));
 
       memberSelect.innerHTML = '';
-      ctx.members.forEach(m => memberSelect.appendChild(createOption(m.name, m.name)));
+      ctx.members.forEach(m => memberSelect.appendChild(createOption(m.id, m.name)));
 
       const renderVariables = (template) => {
         variableFields.innerHTML = '';
@@ -345,23 +379,30 @@
         const values = {};
         (template.variables || []).forEach(def => {
           const input = document.getElementById(`var-${def.key}`);
-          values[def.key] = input?.value?.trim() || input?.placeholder || '';
+          const val = input?.value?.trim();
+          if (val) values[def.key] = val;
         });
 
         // Context additions
         const policy = ctx.policies.find(p => p.id === policySelect.value) || ctx.policies[0];
         if (policy) {
-          if (!values.policy_title) values.policy_title = policy.title;
-          if (!values.policy_summary) values.policy_summary = policy.summary;
-          if (!values.contact) values.contact = policy.contact || values.contact;
+          if (!values.policy_title && policy.title) values.policy_title = policy.title;
+          if (!values.policy_summary && policy.summary) values.policy_summary = policy.summary;
+          if (!values.contact && policy.contact) values.contact = policy.contact;
         }
-        const member = ctx.members.find(m => m.name === memberSelect.value) || ctx.members[0];
+        const member = ctx.members.find(m => m.id === memberSelect.value) || ctx.members[0];
         if (member && !values.member_name) values.member_name = member.name;
 
-        let result = template.body;
-        Object.entries(values).forEach(([key, val]) => {
-          const safe = val || '';
-          result = result.replace(new RegExp(`{{\\s*${key}\\s*}}`, 'g'), safe);
+        const missingVars = new Set();
+        const tokenRegex = /{{\s*([^{}\s]+)\s*}}/g;
+        const result = template.body.replace(tokenRegex, (_, rawKey) => {
+          const key = rawKey.trim();
+          const val = values[key];
+          if (val === undefined || val === null || `${val}`.trim() === '') {
+            missingVars.add(key);
+            return `[MISSING:${key}]`;
+          }
+          return `${val}`;
         });
 
         const originalLength = result.length;
@@ -371,6 +412,14 @@
         const trimmedLength = trimmed.length;
 
         outputEl.textContent = trimmed;
+
+        if (missingVars.size) {
+          missingListEl.textContent = `Fehlende Variablen: ${Array.from(missingVars).join(', ')}`;
+          missingListEl.className = 'alert';
+        } else {
+          missingListEl.textContent = '';
+          missingListEl.className = 'muted';
+        }
 
         const counterParts = [];
         if (limit) {
@@ -487,33 +536,52 @@
       handleTemplateChange();
     }
 
-    function normalizeLogEntry(entry) {
-      if (!entry || typeof entry !== 'object') return { valid: false };
+    function mapToStableId(value, lookup) {
+      const cleaned = (value ?? '').toString().trim();
+      if (!cleaned) return { id: '', migrated: false };
+      if (lookup.byId[cleaned]) return { id: cleaned, migrated: false };
+      const fromDisplay = lookup.byDisplay[normalizeKey(cleaned)];
+      if (fromDisplay) return { id: fromDisplay, migrated: true };
+      return { id: 'unknown', migrated: true, raw: cleaned };
+    }
+
+    function normalizeLogEntry(entry, lookups) {
+      if (!entry || typeof entry !== 'object') return { valid: false, migrated: false };
 
       const toStr = (val) => (val === undefined || val === null) ? '' : String(val).trim();
+
+      const memberSource = mapToStableId(entry.member_id ?? entry.member, lookups.members);
+      const incidentSource = mapToStableId(entry.incident_type_id ?? entry.incident, lookups.incidents);
+      const policySource = mapToStableId(entry.policy_id ?? entry.policy, lookups.policies);
+
       const normalized = {
-        member: toStr(entry.member),
-        incident: toStr(entry.incident),
-        policy: toStr(entry.policy),
+        member_id: memberSource.id,
+        incident_type_id: incidentSource.id,
+        policy_id: policySource.id || '',
         level: toStr(entry.level),
         note: toStr(entry.note),
         date: toStr(entry.date),
         createdAt: Number(entry.createdAt),
       };
 
+      if (memberSource.raw) normalized.member_raw = memberSource.raw;
+      if (incidentSource.raw) normalized.incident_raw = incidentSource.raw;
+      if (policySource.raw) normalized.policy_raw = policySource.raw;
+
       const datePattern = /^\d{4}-\d{2}-\d{2}$/;
-      if (!normalized.member || !normalized.incident || !normalized.level || !normalized.note) return { valid: false };
-      if (!normalized.date || !datePattern.test(normalized.date) || Number.isNaN(Date.parse(normalized.date))) return { valid: false };
+      if (!normalized.member_id || !normalized.incident_type_id || !normalized.level || !normalized.note) return { valid: false, migrated: false };
+      if (!normalized.date || !datePattern.test(normalized.date) || Number.isNaN(Date.parse(normalized.date))) return { valid: false, migrated: false };
       if (!Number.isFinite(normalized.createdAt)) {
         const parsedDate = Date.parse(normalized.date);
-        if (!Number.isFinite(parsedDate)) return { valid: false };
+        if (!Number.isFinite(parsedDate)) return { valid: false, migrated: false };
         normalized.createdAt = parsedDate;
       }
 
-      return { valid: true, entry: normalized };
+      const migrated = Boolean(memberSource.migrated || incidentSource.migrated || policySource.migrated || entry.member !== undefined || entry.incident !== undefined || entry.policy !== undefined);
+      return { valid: true, entry: normalized, migrated };
     }
 
-    function loadLogs() {
+    function loadLogs(ctx) {
       const status = { messages: [], invalidCount: 0, reset: false };
       const raw = localStorage.getItem(logStorageKey);
       if (!raw) return { items: [], status };
@@ -535,7 +603,8 @@
         items = parsed;
       } else if (parsed && typeof parsed === 'object' && Array.isArray(parsed.items)) {
         if (parsed.schema_version !== LOG_SCHEMA_VERSION) {
-          status.messages.push('Unbekannte Log-Version, versuche zu lesen.');
+          status.messages.push('Unbekannte Log-Version, versuche zu migrieren.');
+          status.reset = true;
         }
         items = parsed.items;
       } else {
@@ -547,9 +616,10 @@
 
       const validItems = [];
       items.forEach(item => {
-        const { valid, entry } = normalizeLogEntry(item);
+        const { valid, entry, migrated } = normalizeLogEntry(item, ctx.lookups);
         if (valid) {
           validItems.push(entry);
+          if (migrated) status.reset = true;
         } else {
           status.invalidCount += 1;
         }
@@ -558,6 +628,10 @@
       if (status.invalidCount) {
         status.messages.push(`${status.invalidCount} Einträge verworfen (inkonsistente Felder).`);
         status.reset = true;
+      }
+
+      if (status.reset && !status.messages.length) {
+        status.messages.push('Log-Daten aktualisiert.');
       }
 
       if (status.reset) saveLogs(validItems);
@@ -582,10 +656,10 @@
       const logStatus = document.getElementById('log-status');
 
       memberSelect.innerHTML = '';
-      ctx.members.forEach(m => memberSelect.appendChild(createOption(m.name, `${m.name} (${m.role})`)));
+      ctx.members.forEach(m => memberSelect.appendChild(createOption(m.id, `${m.name} (${m.role})`)));
 
       incidentSelect.innerHTML = '';
-      ctx.incidents.forEach(i => incidentSelect.appendChild(createOption(i.name, `${i.name}`)));
+      ctx.incidents.forEach(i => incidentSelect.appendChild(createOption(i.id, `${i.label}`)));
 
       policySelect.innerHTML = '';
       policySelect.appendChild(createOption('', '— optional —'));
@@ -593,8 +667,16 @@
 
       dateInput.valueAsDate = new Date();
 
+      const resolveDisplay = (id, lookup, raw) => {
+        if (!id) return 'Unbekannt';
+        const item = lookup.byId[id];
+        if (item) return item.name || item.display || item.label || item.title || id;
+        if (id === 'unknown' && raw) return `Unbekannt (raw value: ${raw})`;
+        return raw ? `Unbekannt (raw value: ${raw})` : 'Unbekannt';
+      };
+
       const renderLogs = () => {
-        const { items: logs, status } = loadLogs();
+        const { items: logs, status } = loadLogs(ctx);
         tableBody.innerHTML = '';
 
         if (status.messages.length) {
@@ -620,12 +702,15 @@
 
         const sortedLogs = [...logs].sort((a, b) => b.createdAt - a.createdAt);
         sortedLogs.forEach(entry => {
+          const memberLabel = resolveDisplay(entry.member_id, ctx.lookups.members, entry.member_raw);
+          const incidentLabel = resolveDisplay(entry.incident_type_id, ctx.lookups.incidents, entry.incident_raw);
+          const policyLabel = entry.policy_id ? resolveDisplay(entry.policy_id, ctx.lookups.policies, entry.policy_raw) : '';
           const row = document.createElement('tr');
           row.innerHTML = `
             <td>${entry.date || ''}</td>
-            <td>${entry.member || ''}</td>
-            <td>${entry.incident || ''}</td>
-            <td>${entry.policy || ''}</td>
+            <td>${memberLabel || ''}</td>
+            <td>${incidentLabel || ''}</td>
+            <td>${policyLabel || ''}</td>
             <td><span class=\"badge\">${entry.level || ''}</span></td>
             <td>${entry.note || ''}</td>
           `;
@@ -639,15 +724,15 @@
       form.addEventListener('submit', (event) => {
         event.preventDefault();
         const payload = {
-          member: memberSelect.value,
-          incident: incidentSelect.value,
-          policy: policySelect.value,
+          member_id: memberSelect.value,
+          incident_type_id: incidentSelect.value,
+          policy_id: policySelect.value,
           level: document.getElementById('log-level').value.trim(),
           note: document.getElementById('log-note').value.trim(),
           date: dateInput.value,
           createdAt: Date.now(),
         };
-        const { items: logs } = loadLogs();
+        const { items: logs } = loadLogs(ctx);
         logs.push(payload);
         saveLogs(logs);
         form.reset();
@@ -657,11 +742,11 @@
 
 
       exportBtn.addEventListener('click', () => {
-        const { items: logs } = loadLogs();
+        const { items: logs } = loadLogs(ctx);
         if (!logs.length) return;
 
         const delimiter = delimiterSelect.value || ';';
-        const header = ['date','member','incident','policy','level','note'];
+        const header = ['date','member_id','member','incident_type_id','incident','policy_id','policy','level','note'];
         const escapeField = (value) => {
           const str = (value === undefined || value === null) ? '' : String(value);
           const needsQuote = str.includes(delimiter) || str.includes('"') || str.includes('\n') || str.includes('\r');
@@ -669,9 +754,15 @@
           return needsQuote ? `"${escaped}"` : escaped;
         };
 
-
-        const lines = [header, ...logs.map(log => header.map(key => log[key] || ''))]
-          .map(row => row.map(escapeField).join(delimiter));
+        const lines = [
+          header,
+          ...logs.map(log => header.map(key => {
+            if (key === 'member') return resolveDisplay(log.member_id, ctx.lookups.members, log.member_raw);
+            if (key === 'incident') return resolveDisplay(log.incident_type_id, ctx.lookups.incidents, log.incident_raw);
+            if (key === 'policy') return log.policy_id ? resolveDisplay(log.policy_id, ctx.lookups.policies, log.policy_raw) : '';
+            return log[key] || '';
+          }))
+        ].map(row => row.map(escapeField).join(delimiter));
 
         const csv = lines.join('\r\n');
         const blob = new Blob(['\ufeff', csv], { type: 'text/csv;charset=utf-8;' });
