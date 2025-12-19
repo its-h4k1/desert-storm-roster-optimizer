@@ -332,7 +332,8 @@
 
       function renderWarnings(rows) {
         clearWarnings();
-        const duplicateKeys = rows.reduce((acc, row) => {
+        const rosterRows = state.rosterRows.filter((row) => row.player_key);
+        const duplicateKeys = rosterRows.reduce((acc, row) => {
           acc[row.player_key] = (acc[row.player_key] || 0) + 1;
           return acc;
         }, {});
@@ -344,11 +345,11 @@
           setWarningBanner('');
         }
 
-        const missing = rows.filter((row) => !state.savedResultsMap.has(row.player_key));
+        const missing = rosterRows.filter((row) => !state.savedResultsMap.has(row.player_key));
         if (missing.length) {
           addWarning(`${missing.length} Spieler haben noch kein Ergebnis – bitte prüfen.`);
         }
-        const extra = state.savedResults.filter((entry) => !rows.some((row) => row.player_key === entry.player_key));
+        const extra = state.savedResults.filter((entry) => entry.player_key && !rosterRows.some((row) => row.player_key === entry.player_key));
         if (extra.length) {
           addWarning(`${extra.length} gespeicherte Einträge nicht im aktuellen Roster gefunden.`);
         }
@@ -366,6 +367,20 @@
         });
         state.savedResults.forEach((entry) => {
           if (seen.has(entry.player_key)) return;
+          if (!entry.player_key) {
+            rows.push({
+              player_key: '',
+              display_name: entry.display_name_snapshot || entry.display_name || entry.name || 'Unbekannter Spieler (ID fehlt)',
+              display_name_snapshot: entry.display_name_snapshot || entry.display_name || entry.name || 'Unbekannter Spieler (ID fehlt)',
+              group: entry.group || entry.team || '–',
+              slot: entry.slot || entry.role || 'n/a',
+              role: entry.role || entry.slot || '',
+              attended: !!entry.attended,
+              points: Number(entry.points) || 0,
+              note: entry.note || '',
+            });
+            return;
+          }
           rows.push({
             player_key: entry.player_key || derivePlayerKey(entry.display_name_snapshot || entry.display_name || entry.name || ''),
             display_name: entry.display_name_snapshot || entry.display_name || entry.name || entry.player_key,
@@ -508,6 +523,7 @@
         if (!elements.tableBody) return [];
         const rows = Array.from(elements.tableBody.querySelectorAll('tr'));
         return rows.map((row) => {
+          if (!row.dataset.playerKey) return null;
           const attended = row.querySelector('input.attended')?.checked || false;
           const pointsVal = parseInt(row.querySelector('input.points')?.value, 10);
           const points = Number.isFinite(pointsVal) ? pointsVal : 0;
@@ -523,7 +539,7 @@
             points,
             note,
           };
-        });
+        }).filter(Boolean);
       }
 
       function describeWorkerError(err) {
