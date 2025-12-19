@@ -642,11 +642,54 @@
     return ids;
   }
 
+  function normalizeEventResultsIndex(rawIds) {
+    const ids = Array.isArray(rawIds)
+      ? rawIds
+      : Array.isArray(rawIds?.event_ids)
+        ? rawIds.event_ids
+        : [];
+    const unique = new Set();
+    ids.forEach((id) => {
+      if (typeof id === "string" && id.trim()) {
+        unique.add(id.trim());
+      }
+    });
+    return Array.from(unique).sort((a, b) => b.localeCompare(a));
+  }
+
+  async function fetchEventResultsIndex({ siteRoot, cacheBuster } = {}) {
+    const cache = typeof cacheBuster === "string" ? cacheBuster : `?v=${Date.now()}`;
+    const base = siteRoot || computeSiteRoot(typeof location !== "undefined" ? (location.pathname || "/") : "/");
+    const url = `${base}data/event_results/index.json${cache}`;
+    try {
+      const response = await fetch(url, { cache: "no-store" });
+      if (!response.ok) return null;
+      const data = await response.json();
+      const normalized = normalizeEventResultsIndex(data);
+      return normalized.length ? normalized : null;
+    } catch (err) {
+      console.warn("Event-Results-Index konnte nicht geladen werden", err);
+      return null;
+    }
+  }
+
+  function isEventOnOrAfterStartDate(eventId, startDate) {
+    if (!(startDate instanceof Date) || Number.isNaN(startDate.getTime())) return true;
+    const dateStr = deriveEventDateFromId(eventId);
+    if (!dateStr) return true;
+    const parsed = new Date(`${dateStr}T00:00:00Z`);
+    if (Number.isNaN(parsed.getTime())) return true;
+    return parsed >= startDate;
+  }
+
   async function fetchEventResultsSince(startDate, { siteRoot, cacheBuster } = {}) {
     if (!(startDate instanceof Date) || Number.isNaN(startDate.getTime())) return [];
     const cache = typeof cacheBuster === "string" ? cacheBuster : `?v=${Date.now()}`;
     const base = siteRoot || computeSiteRoot(typeof location !== "undefined" ? (location.pathname || "/") : "/");
-    const ids = computeEventResultIdsSince(startDate);
+    const indexIds = await fetchEventResultsIndex({ siteRoot: base, cacheBuster });
+    const ids = (indexIds && indexIds.length)
+      ? indexIds.filter((id) => isEventOnOrAfterStartDate(id, startDate))
+      : computeEventResultIdsSince(startDate);
     const results = [];
 
     for (const id of ids) {
