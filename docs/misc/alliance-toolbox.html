@@ -536,13 +536,25 @@
       handleTemplateChange();
     }
 
-    function mapToStableId(value, lookup) {
-      const cleaned = (value ?? '').toString().trim();
-      if (!cleaned) return { id: '', migrated: false };
-      if (lookup.byId[cleaned]) return { id: cleaned, migrated: false };
-      const fromDisplay = lookup.byDisplay[normalizeKey(cleaned)];
-      if (fromDisplay) return { id: fromDisplay, migrated: true };
-      return { id: 'unknown', migrated: true, raw: cleaned };
+    function mapToStableId(value, lookup, rawFallback) {
+      const cleanedValue = (value ?? '').toString().trim();
+      const cleanedRaw = (rawFallback ?? '').toString().trim();
+      const candidates = [];
+      if (cleanedValue) candidates.push(cleanedValue);
+      if (cleanedRaw && cleanedRaw !== cleanedValue) candidates.push(cleanedRaw);
+
+      for (const candidate of candidates) {
+        if (lookup.byId[candidate]) {
+          return { id: candidate, migrated: candidate !== cleanedValue, raw: cleanedRaw || undefined };
+        }
+        const fromDisplay = lookup.byDisplay[normalizeKey(candidate)];
+        if (fromDisplay) {
+          return { id: fromDisplay, migrated: true, raw: cleanedRaw || candidate };
+        }
+      }
+
+      const preservedRaw = cleanedRaw || (cleanedValue && cleanedValue !== 'unknown' ? cleanedValue : '');
+      return { id: candidates.length ? 'unknown' : '', migrated: Boolean(candidates.length), raw: preservedRaw || undefined };
     }
 
     function normalizeLogEntry(entry, lookups) {
@@ -550,9 +562,9 @@
 
       const toStr = (val) => (val === undefined || val === null) ? '' : String(val).trim();
 
-      const memberSource = mapToStableId(entry.member_id ?? entry.member, lookups.members);
-      const incidentSource = mapToStableId(entry.incident_type_id ?? entry.incident, lookups.incidents);
-      const policySource = mapToStableId(entry.policy_id ?? entry.policy, lookups.policies);
+      const memberSource = mapToStableId(entry.member_id ?? entry.member, lookups.members, entry.member_raw ?? entry.member);
+      const incidentSource = mapToStableId(entry.incident_type_id ?? entry.incident, lookups.incidents, entry.incident_raw ?? entry.incident);
+      const policySource = mapToStableId(entry.policy_id ?? entry.policy, lookups.policies, entry.policy_raw ?? entry.policy);
 
       const normalized = {
         member_id: memberSource.id,
