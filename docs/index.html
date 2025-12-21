@@ -42,6 +42,10 @@
     .top-no-show-details { display:flex; flex-direction:column; gap:4px; }
     .top-no-show-name { font-weight:600; }
     .top-no-show-meta { color:var(--muted); font-size:0.9em; }
+    .top-no-show-header { display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap; }
+    .top-no-show-controls { display:flex; align-items:center; gap:8px; flex-wrap:wrap; font-size:0.9em; }
+    .top-no-show-controls label { display:flex; align-items:center; gap:6px; color:var(--muted); }
+    .top-no-show-controls select { padding:4px 8px; border-radius:8px; border:1px solid var(--line); background:#fff; }
   </style>
 </head>
 <body>
@@ -71,8 +75,28 @@
       <div id="history-result" class="player-accordion" style="display:block;border:0;padding-top:0;margin-top:0;"></div>
     </div>
     <div id="top-no-shows-card" class="card" style="margin-top:12px;">
-      <h3>Top No-Shows</h3>
-      <p id="top-no-shows-meta" class="muted">seit reliability_start_date · minEvents=3 · TopK=8</p>
+      <div class="top-no-show-header">
+        <h3>Top No-Shows</h3>
+        <div class="top-no-show-controls">
+          <label for="top-no-shows-min-events">Min. Einsätze
+            <select id="top-no-shows-min-events">
+              <option value="2">2</option>
+              <option value="3" selected>3</option>
+              <option value="4">4</option>
+              <option value="5">5</option>
+            </select>
+          </label>
+          <label for="top-no-shows-top-k">Max. Spieler
+            <select id="top-no-shows-top-k">
+              <option value="5">max. 5 Spieler</option>
+              <option value="8" selected>max. 8 Spieler</option>
+              <option value="10">max. 10 Spieler</option>
+              <option value="15">max. 15 Spieler</option>
+            </select>
+          </label>
+        </div>
+      </div>
+      <p id="top-no-shows-meta" class="muted">seit reliability_start_date · min. Einsätze 3 · max. 8 Spieler</p>
       <ul id="top-no-shows-list" class="list"></ul>
     </div>
   </section>
@@ -124,6 +148,8 @@
     const historyNameOptions = document.getElementById('history-name-options');
     const topNoShowsList = document.getElementById('top-no-shows-list');
     const topNoShowsMeta = document.getElementById('top-no-shows-meta');
+    const topNoShowsMinEventsSelect = document.getElementById('top-no-shows-min-events');
+    const topNoShowsTopKSelect = document.getElementById('top-no-shows-top-k');
     const teamAStartList = document.getElementById('team-a-start');
     const teamASubsList = document.getElementById('team-a-subs');
     const teamBStartList = document.getElementById('team-b-start');
@@ -139,6 +165,49 @@
       latestPayload: null,
       historyNameRegistry: [],
       historyUiWired: false,
+    };
+
+    const NO_SHOW_PREFS = {
+      minEventsKey: 'noShows_minEvents',
+      topKKey: 'noShows_topK',
+      minEventsOptions: [2, 3, 4, 5],
+      topKOptions: [5, 8, 10, 15],
+      defaults: {
+        minEvents: 3,
+        topK: 8,
+      },
+    };
+
+    const normalizeNoShowPreference = (value, options, fallback) => {
+      const numeric = Number(value);
+      return options.includes(numeric) ? numeric : fallback;
+    };
+
+    const readNoShowPreferences = () => ({
+      minEvents: normalizeNoShowPreference(
+        localStorage.getItem(NO_SHOW_PREFS.minEventsKey),
+        NO_SHOW_PREFS.minEventsOptions,
+        NO_SHOW_PREFS.defaults.minEvents
+      ),
+      topK: normalizeNoShowPreference(
+        localStorage.getItem(NO_SHOW_PREFS.topKKey),
+        NO_SHOW_PREFS.topKOptions,
+        NO_SHOW_PREFS.defaults.topK
+      ),
+    });
+
+    const writeNoShowPreferences = (preferences) => {
+      localStorage.setItem(NO_SHOW_PREFS.minEventsKey, String(preferences.minEvents));
+      localStorage.setItem(NO_SHOW_PREFS.topKKey, String(preferences.topK));
+    };
+
+    const syncNoShowControls = (preferences) => {
+      if (topNoShowsMinEventsSelect) {
+        topNoShowsMinEventsSelect.value = String(preferences.minEvents);
+      }
+      if (topNoShowsTopKSelect) {
+        topNoShowsTopKSelect.value = String(preferences.topK);
+      }
     };
 
     const resolvePlayerName = (name) => {
@@ -408,11 +477,19 @@
       const shared = window.dsroShared || {};
       const meta = shared.reliabilityMeta || {};
       const startLabel = meta.startDateRaw || shared.reliabilityStartDate || 'unbekannt';
-      const minEvents = Number.isFinite(shared.REL_MIN_EVENTS_FOR_BUCKET)
-        ? shared.REL_MIN_EVENTS_FOR_BUCKET
-        : 3;
-      const topK = 8;
-      topNoShowsMeta.textContent = `seit ${startLabel} · minEvents=${minEvents} · TopK=${topK}`;
+      const preferences = readNoShowPreferences();
+      const minEvents = normalizeNoShowPreference(
+        topNoShowsMinEventsSelect?.value ?? preferences.minEvents,
+        NO_SHOW_PREFS.minEventsOptions,
+        NO_SHOW_PREFS.defaults.minEvents
+      );
+      const topK = normalizeNoShowPreference(
+        topNoShowsTopKSelect?.value ?? preferences.topK,
+        NO_SHOW_PREFS.topKOptions,
+        NO_SHOW_PREFS.defaults.topK
+      );
+      syncNoShowControls({ minEvents, topK });
+      topNoShowsMeta.textContent = `seit ${startLabel} · min. Einsätze ${minEvents} · max. ${topK} Spieler`;
       topNoShowsList.innerHTML = '';
 
       const resultsLoaded =
@@ -457,6 +534,30 @@
         li.appendChild(button);
         topNoShowsList.appendChild(li);
       });
+    }
+
+    function wireTopNoShowsControls() {
+      if (!topNoShowsMinEventsSelect || !topNoShowsTopKSelect) return;
+      const preferences = readNoShowPreferences();
+      syncNoShowControls(preferences);
+      const handleChange = () => {
+        const nextPreferences = {
+          minEvents: normalizeNoShowPreference(
+            topNoShowsMinEventsSelect.value,
+            NO_SHOW_PREFS.minEventsOptions,
+            NO_SHOW_PREFS.defaults.minEvents
+          ),
+          topK: normalizeNoShowPreference(
+            topNoShowsTopKSelect.value,
+            NO_SHOW_PREFS.topKOptions,
+            NO_SHOW_PREFS.defaults.topK
+          ),
+        };
+        writeNoShowPreferences(nextPreferences);
+        renderTopNoShowsCard();
+      };
+      topNoShowsMinEventsSelect.addEventListener('change', handleChange);
+      topNoShowsTopKSelect.addEventListener('change', handleChange);
     }
 
     function showError(message) {
@@ -562,6 +663,7 @@
         renderList(notInRosterList, data.hard_signups_not_in_roster || []);
         buildRosterHistoryNameRegistry();
         wireHistoryLookupUI();
+        wireTopNoShowsControls();
         renderTopNoShowsCard();
       } catch (err) {
         console.error(err);
