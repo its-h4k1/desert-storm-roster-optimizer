@@ -708,6 +708,13 @@
     return results;
   }
 
+  function resolveAttendanceFlag(res) {
+    if (!res) return null;
+    if (typeof res.attended === "boolean") return res.attended;
+    if (typeof res.Teilgenommen === "boolean") return res.Teilgenommen;
+    return null;
+  }
+
   function computeReliabilityStatsFromEventResults(events) {
     const stats = {};
     const aliasMap = shared.aliasMap instanceof Map ? shared.aliasMap : null;
@@ -718,6 +725,8 @@
         const canon = canonicalNameJS(res.player_key || res.player || res.display_name_snapshot);
         if (!canon) return;
         const resolved = aliasMap?.get(canon) || canon;
+        const attended = resolveAttendanceFlag(res);
+        if (attended == null) return;
         stats[resolved] = stats[resolved] || {
           events: 0,
           attendance: 0,
@@ -726,7 +735,6 @@
           lateCancels: 0,
         };
         stats[resolved].events += 1;
-        const attended = !!res.attended || !!res.Teilgenommen;
         if (attended) {
           stats[resolved].attendance += 1;
         } else {
@@ -772,7 +780,7 @@
         const canon = canonicalNameJS(res.player_key || res.player || res.display_name_snapshot);
         if (!canon) return;
         const resolved = aliasMap?.get(canon) || canon;
-        const attended = !!res.attended || !!res.Teilgenommen;
+        const attended = resolveAttendanceFlag(res);
         const current = map.get(resolved) || [];
         current.push({ eventId, date, attended });
         map.set(resolved, current);
@@ -790,6 +798,55 @@
 
     shared.playerEventHistoryIndex = map;
     return map;
+  }
+
+  function computeTopNoShowsFromHistoryIndex(historyIndex, opts = {}) {
+    const index = historyIndex instanceof Map ? historyIndex : shared.playerEventHistoryIndex;
+    if (!(index instanceof Map)) return [];
+    const minEvents = Number.isFinite(opts.minEvents)
+      ? opts.minEvents
+      : (Number.isFinite(shared.REL_MIN_EVENTS_FOR_BUCKET) ? shared.REL_MIN_EVENTS_FOR_BUCKET : 3);
+    const topK = Number.isFinite(opts.topK) ? opts.topK : 8;
+    const resolveDisplay = typeof shared.resolvePlayerDisplayName === "function"
+      ? shared.resolvePlayerDisplayName
+      : (name) => name;
+    const rows = [];
+
+    index.forEach((events, canon) => {
+      if (!canon || !Array.isArray(events)) return;
+      let total = 0;
+      let noShows = 0;
+      let lastNoShowEventId = "";
+      for (const evt of events) {
+        if (evt?.attended !== true && evt?.attended !== false) continue;
+        total += 1;
+        if (evt.attended === false) {
+          noShows += 1;
+          if (!lastNoShowEventId) {
+            lastNoShowEventId = evt.date || evt.eventId || "";
+          }
+        }
+      }
+      if (total < minEvents || noShows === 0) return;
+      const display = resolveDisplay(canon) || canon;
+      rows.push({
+        canon,
+        display,
+        noShows,
+        total,
+        rate: total > 0 ? noShows / total : 0,
+        lastNoShowEventId,
+      });
+    });
+
+    rows.sort((a, b) => {
+      if (b.rate !== a.rate) return b.rate - a.rate;
+      if (b.noShows !== a.noShows) return b.noShows - a.noShows;
+      if (b.total !== a.total) return b.total - a.total;
+      return (a.display || a.canon).localeCompare(b.display || b.canon, "de", { sensitivity: "base" });
+    });
+
+    return rows.slice(0, topK);
   }
 
   function refreshPlayerReliabilityIndex() {
@@ -1340,6 +1397,7 @@
     debugTestAdminQuery,
     debugCanonical,
     hydrateReliabilityFromPayload,
+    computeTopNoShowsFromHistoryIndex,
     refreshPlayerReliabilityIndex,
     playerEventHistoryIndex: shared.playerEventHistoryIndex,
     reliabilityError: shared.reliabilityError,

@@ -36,6 +36,12 @@
     .btn { display:inline-flex; align-items:center; gap:6px; padding:8px 14px; border-radius:10px; border:1px solid var(--line); background:#0f172a; color:white; text-decoration:none; font-weight:600; }
     .btn:hover { filter:brightness(0.95); }
     .btn:disabled { opacity:0.55; cursor:not-allowed; filter:none; }
+    .top-no-show-entry { width:100%; text-align:left; border:1px solid var(--line); border-radius:10px; background:#fff; padding:10px; display:flex; align-items:center; justify-content:space-between; gap:12px; cursor:pointer; }
+    .top-no-show-entry:hover { background:#f1f5f9; }
+    .top-no-show-entry:focus-visible { outline:2px solid #1d4ed8; outline-offset:2px; }
+    .top-no-show-details { display:flex; flex-direction:column; gap:4px; }
+    .top-no-show-name { font-weight:600; }
+    .top-no-show-meta { color:var(--muted); font-size:0.9em; }
   </style>
 </head>
 <body>
@@ -63,6 +69,11 @@
       </div>
       <datalist id="history-name-options"></datalist>
       <div id="history-result" class="player-accordion" style="display:block;border:0;padding-top:0;margin-top:0;"></div>
+    </div>
+    <div id="top-no-shows-card" class="card" style="margin-top:12px;">
+      <h3>Top No-Shows</h3>
+      <p id="top-no-shows-meta" class="muted">seit reliability_start_date · minEvents=3 · TopK=8</p>
+      <ul id="top-no-shows-list" class="list"></ul>
     </div>
   </section>
 
@@ -111,6 +122,8 @@
     const historyClearButton = document.getElementById('history-clear');
     const historyResultBox = document.getElementById('history-result');
     const historyNameOptions = document.getElementById('history-name-options');
+    const topNoShowsList = document.getElementById('top-no-shows-list');
+    const topNoShowsMeta = document.getElementById('top-no-shows-meta');
     const teamAStartList = document.getElementById('team-a-start');
     const teamASubsList = document.getElementById('team-a-subs');
     const teamBStartList = document.getElementById('team-b-start');
@@ -141,6 +154,12 @@
       if (!canon) return '';
       const aliasMap = shared.aliasMap instanceof Map ? shared.aliasMap : null;
       return aliasMap?.get(canon) || canon;
+    };
+
+    const formatAttendanceLabel = (attended) => {
+      if (attended === true) return '✅ Teilgenommen';
+      if (attended === false) return '❌ No-Show';
+      return '❔ Unbekannt';
     };
 
     const getPlayerEventHistoryIndex = () => {
@@ -297,7 +316,7 @@
       events.forEach((evt) => {
         const row = document.createElement('li');
         row.className = 'accordion-event-row';
-        const statusLabel = evt.attended ? '✅ Teilgenommen' : '❌ No-Show';
+        const statusLabel = formatAttendanceLabel(evt.attended);
         const dateLabel = evt.date || evt.eventId || 'Event';
         row.innerHTML = `<span class="accordion-date">${dateLabel}</span><span class="accordion-status">${statusLabel}</span>`;
         list.appendChild(row);
@@ -375,13 +394,69 @@
       events.forEach((evt) => {
         const row = document.createElement('li');
         row.className = 'accordion-event-row';
-        const statusLabel = evt.attended ? '✅ Teilgenommen' : '❌ No-Show';
+        const statusLabel = formatAttendanceLabel(evt.attended);
         const dateLabel = evt.date || evt.eventId || 'Event';
         row.innerHTML = `<span class="accordion-date">${dateLabel}</span><span class="accordion-status">${statusLabel}</span>`;
         list.appendChild(row);
       });
 
       accordion.appendChild(list);
+    }
+
+    function renderTopNoShowsCard() {
+      if (!topNoShowsList || !topNoShowsMeta) return;
+      const shared = window.dsroShared || {};
+      const meta = shared.reliabilityMeta || {};
+      const startLabel = meta.startDateRaw || shared.reliabilityStartDate || 'unbekannt';
+      const minEvents = Number.isFinite(shared.REL_MIN_EVENTS_FOR_BUCKET)
+        ? shared.REL_MIN_EVENTS_FOR_BUCKET
+        : 3;
+      const topK = 8;
+      topNoShowsMeta.textContent = `seit ${startLabel} · minEvents=${minEvents} · TopK=${topK}`;
+      topNoShowsList.innerHTML = '';
+
+      const resultsLoaded =
+        meta.eventResultsLoaded ?? (Array.isArray(shared.reliabilityEventResults) ? shared.reliabilityEventResults.length : 0);
+      if (meta.error || !resultsLoaded) {
+        topNoShowsList.innerHTML = '<li class="muted">Noch keine Daten.</li>';
+        return;
+      }
+
+      const historyIndex = getPlayerEventHistoryIndex();
+      if (!historyIndex || historyIndex.size === 0 || !shared.computeTopNoShowsFromHistoryIndex) {
+        topNoShowsList.innerHTML = '<li class="muted">Noch keine Daten.</li>';
+        return;
+      }
+
+      const list = shared.computeTopNoShowsFromHistoryIndex(historyIndex, { minEvents, topK });
+      if (!list.length) {
+        topNoShowsList.innerHTML = '<li class="muted">Noch keine Daten.</li>';
+        return;
+      }
+
+      list.forEach((entry) => {
+        const li = document.createElement('li');
+        const ratePercent = Math.round(entry.rate * 100);
+        const lastNoShow = entry.lastNoShowEventId || '–';
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.className = 'top-no-show-entry';
+        button.innerHTML = `
+          <div class="top-no-show-details">
+            <span class="top-no-show-name">${entry.display || entry.canon}</span>
+            <span class="top-no-show-meta">Letzter No-Show: ${lastNoShow}</span>
+          </div>
+          <div class="top-no-show-meta">${entry.noShows}/${entry.total} · ${ratePercent}%</div>
+        `;
+        button.addEventListener('click', () => {
+          if (historyInput) {
+            historyInput.value = entry.display || entry.canon || '';
+          }
+          renderHistoryLookupResult(entry.canon);
+        });
+        li.appendChild(button);
+        topNoShowsList.appendChild(li);
+      });
     }
 
     function showError(message) {
@@ -487,6 +562,7 @@
         renderList(notInRosterList, data.hard_signups_not_in_roster || []);
         buildRosterHistoryNameRegistry();
         wireHistoryLookupUI();
+        renderTopNoShowsCard();
       } catch (err) {
         console.error(err);
         showError('latest.json konnte nicht geladen werden – bitte Build prüfen.');
