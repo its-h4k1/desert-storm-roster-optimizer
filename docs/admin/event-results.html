@@ -200,12 +200,21 @@
         rosterRows: [],
         savedResults: [],
         savedResultsMap: new Map(),
+        invalidRosterRows: [],
+        invalidSavedExtras: [],
         latestSnapshotMeta: '',
         resultMeta: '',
         loading: false,
         saving: false,
         lastSave: null,
+        saveBlockedReason: '',
       };
+
+      function refreshSaveButton() {
+        if (!elements.saveBtn) return;
+        elements.saveBtn.disabled = state.saving || !!state.saveBlockedReason;
+        elements.saveBtn.title = state.saveBlockedReason || '';
+      }
 
       function setStatus(text, tone = 'muted') {
         if (elements.statusText) {
@@ -304,7 +313,7 @@
             const rawName = entry?.name || entry?.raw_name || `#${idx + 1}`;
             const display = shared.resolvePlayerDisplayName ? shared.resolvePlayerDisplayName(rawName) : rawName;
             rows.push({
-              player_key: derivePlayerKey(rawName),
+              player_key: (derivePlayerKey(rawName) || '').trim(),
               display_name: display,
               display_name_snapshot: display,
               slot,
@@ -323,7 +332,7 @@
       function mapResultsByKey(results = []) {
         const map = new Map();
         results.forEach((entry) => {
-          const key = entry?.player_key || derivePlayerKey(entry?.display_name || entry?.name || '');
+          const key = (entry?.player_key || '').trim();
           if (!key) return;
           map.set(key, entry);
         });
@@ -345,10 +354,21 @@
           setWarningBanner('');
         }
 
-        const missing = rosterRows.filter((row) => !state.savedResultsMap.has(row.player_key));
-        if (missing.length) {
-          addWarning(`${missing.length} Spieler haben noch kein Ergebnis – bitte prüfen.`);
+        if (state.invalidRosterRows.length) {
+          const examples = state.invalidRosterRows.slice(0, 3).map((row) => row.display_name || row.slot || 'Unbekannt');
+          addWarning(`Roster fehlerhaft: ${state.invalidRosterRows.length} Einträge ohne player_key (${examples.join(', ')}). Alias/Name korrigieren, sonst kann No-Show nicht gezählt werden.`);
         }
+
+        const missing = rosterRows.filter((row) => !state.savedResultsMap.has(row.player_key));
+        if (missing.length && state.savedResults.length) {
+          addWarning(`Roster-Spieler fehlen im geladenen Ergebnis: ${missing.length}. Bitte prüfen.`);
+        }
+
+        const invalidExtras = state.invalidSavedExtras || [];
+        if (invalidExtras.length) {
+          addWarning(`Ungültige gespeicherte Einträge ohne player_key: ${invalidExtras.length} (werden ignoriert).`);
+        }
+
         const extra = state.savedResults.filter((entry) => entry.player_key && !rosterRows.some((row) => row.player_key === entry.player_key));
         if (extra.length) {
           addWarning(`${extra.length} gespeicherte Einträge nicht im aktuellen Roster gefunden.`);
@@ -360,6 +380,7 @@
         elements.tableBody.innerHTML = '';
         const rows = [];
         const seen = new Set();
+        const invalidExtras = [];
         state.rosterRows.forEach((row) => {
           const saved = state.savedResultsMap.get(row.player_key) || {};
           rows.push({ ...row, attended: !!saved.attended, points: Number(saved.points) || 0, note: saved.note || '' });
@@ -368,21 +389,11 @@
         state.savedResults.forEach((entry) => {
           if (seen.has(entry.player_key)) return;
           if (!entry.player_key) {
-            rows.push({
-              player_key: '',
-              display_name: entry.display_name_snapshot || entry.display_name || entry.name || 'Unbekannter Spieler (ID fehlt)',
-              display_name_snapshot: entry.display_name_snapshot || entry.display_name || entry.name || 'Unbekannter Spieler (ID fehlt)',
-              group: entry.group || entry.team || '–',
-              slot: entry.slot || entry.role || 'n/a',
-              role: entry.role || entry.slot || '',
-              attended: !!entry.attended,
-              points: Number(entry.points) || 0,
-              note: entry.note || '',
-            });
+            invalidExtras.push(entry);
             return;
           }
           rows.push({
-            player_key: entry.player_key || derivePlayerKey(entry.display_name_snapshot || entry.display_name || entry.name || ''),
+            player_key: (entry.player_key || '').trim(),
             display_name: entry.display_name_snapshot || entry.display_name || entry.name || entry.player_key,
             display_name_snapshot: entry.display_name_snapshot || entry.display_name || entry.name || entry.player_key,
             group: entry.group || entry.team || '–',
@@ -455,7 +466,9 @@
           elements.tableBody.appendChild(tr);
         });
 
+        state.invalidSavedExtras = invalidExtras;
         renderWarnings(rows);
+        refreshSaveButton();
       }
 
       async function fetchLatest() {
@@ -474,6 +487,10 @@
         try {
           const payload = await fetchLatest();
           state.rosterRows = buildRosterRows(payload);
+          state.invalidRosterRows = state.rosterRows.filter((row) => !(row.player_key || '').trim());
+          state.saveBlockedReason = state.invalidRosterRows.length
+            ? 'Roster enthält Einträge ohne player_key. Alias korrigieren.'
+            : '';
           state.latestSnapshotMeta = payload?.generated_at || 'latest.json';
           applyMeta(elements.snapshotMeta, `Aufstellung A + B: ${state.rosterRows.length} Spieler · ${state.latestSnapshotMeta}`);
           renderTable();
@@ -501,6 +518,7 @@
           const resultJson = await (shared.fetchJsonWithErrors ? shared.fetchJsonWithErrors(url) : (await fetch(url)).json());
           const entries = Array.isArray(resultJson) ? resultJson : Array.isArray(resultJson?.results) ? resultJson.results : [];
           state.savedResults = entries.map((entry) => ({ event_id: eventId, ...entry }));
+          state.invalidSavedExtras = state.savedResults.filter((entry) => !(entry.player_key || '').trim());
           state.savedResultsMap = mapResultsByKey(state.savedResults);
           state.resultMeta = resultJson?.generated_at || 'geladen';
           applyMeta(elements.resultMeta, `Ergebnis geladen @ ${state.resultMeta}`, 'success');
@@ -523,14 +541,15 @@
         if (!elements.tableBody) return [];
         const rows = Array.from(elements.tableBody.querySelectorAll('tr'));
         return rows.map((row) => {
-          if (!row.dataset.playerKey) return null;
-          const attended = row.querySelector('input.attended')?.checked || false;
+          const playerKey = (row.dataset.playerKey || '').trim();
+          if (!playerKey) return null;
+          const attended = !!(row.querySelector('input.attended')?.checked ?? false);
           const pointsVal = parseInt(row.querySelector('input.points')?.value, 10);
           const points = Number.isFinite(pointsVal) ? pointsVal : 0;
           const note = row.querySelector('textarea.note')?.value || '';
           return {
             event_id: validateEventId(elements.eventId.value) || '',
-            player_key: row.dataset.playerKey || '',
+            player_key: playerKey,
             display_name_snapshot: row.dataset.displayName || row.dataset.playerKey,
             slot: row.dataset.slot || '',
             group: row.dataset.group || '',
@@ -684,9 +703,44 @@
           setStatus('Worker-URL fehlt.', 'error');
           return;
         }
+        clearWarnings();
+        if (state.invalidRosterRows.length) {
+          const examples = state.invalidRosterRows.slice(0, 3).map((row) => row.display_name || row.slot || 'Unbekannt');
+          state.saveBlockedReason = 'Roster enthält Einträge ohne player_key.';
+          refreshSaveButton();
+          addWarning(`Speichern blockiert: ${state.invalidRosterRows.length} Roster-Einträge ohne player_key (${examples.join(', ')}). Alias/Name korrigieren.`);
+          setStatus('Speichern blockiert: Roster-Einträge ohne player_key.', 'error');
+          return;
+        }
         const results = collectResults();
         if (!results.length) {
           setStatus('Keine Daten zum Speichern.', 'error');
+          return;
+        }
+
+        const rosterKeys = new Set(state.rosterRows.map((r) => (r.player_key || '').trim()).filter(Boolean));
+        const resultKeys = new Set(results.map((entry) => (entry.player_key || '').trim()).filter(Boolean));
+        const missingKeys = Array.from(rosterKeys).filter((key) => !resultKeys.has(key));
+        if (missingKeys.length) {
+          const displayNames = state.rosterRows
+            .filter((row) => missingKeys.includes(row.player_key))
+            .map((row) => row.display_name || row.player_key)
+            .slice(0, 10);
+          const listText = displayNames.join(', ') + (missingKeys.length > displayNames.length ? ', …' : '');
+          setStatus('Speichern blockiert: Roster-Spieler fehlen im Ergebnis.', 'error');
+          addWarning(`Speichern blockiert: ${missingKeys.length} Roster-Spieler fehlen im Ergebnis (player_key mismatch/leer). (${listText})`);
+          return;
+        }
+
+        const resultMap = new Map(results.map((entry) => [(entry.player_key || '').trim(), entry]));
+        const invalidAttendance = Array.from(rosterKeys).filter((key) => typeof resultMap.get(key)?.attended !== 'boolean');
+        if (invalidAttendance.length) {
+          const names = state.rosterRows
+            .filter((row) => invalidAttendance.includes(row.player_key))
+            .map((row) => row.display_name || row.player_key)
+            .slice(0, 10);
+          setStatus('Speichern blockiert: Attendance nicht gesetzt/ungültig.', 'error');
+          addWarning(`Speichern blockiert: Attendance nicht gesetzt/ungültig für ${invalidAttendance.length} Spieler. (${names.join(', ')})`);
           return;
         }
         let handledError = false;
