@@ -197,6 +197,7 @@
                       </div>
                       <div style="display:flex; gap:0.35rem; align-items:center; flex-wrap:wrap;">
                         <span id="resultsStatusBadge" class="pill" title="Die Event-Ergebnisse sind auf der Website verfügbar.">Ergebnisse sichtbar (Website): …</span>
+                        <span id="signupWindowBadge" class="pill" title="Anmeldefenster für das kommende Event">Anmeldefenster: …</span>
                       </div>
                       <small id="resetGuardHint" class="hint" style="color:var(--text-muted);"></small>
                     </div>
@@ -401,6 +402,7 @@
         refreshGuardBtn: document.getElementById('refreshGuardBtn'),
         lastEventIdLabel: document.getElementById('lastEventIdLabel'),
         resultsStatusBadge: document.getElementById('resultsStatusBadge'),
+        signupWindowBadge: document.getElementById('signupWindowBadge'),
         resetGuardHint: document.getElementById('resetGuardHint'),
         addPanel: document.getElementById('addPanel'),
         hardOnlyToggle: document.getElementById('hardOnlyToggle'),
@@ -639,14 +641,18 @@
         signupPoolEntries: [],
         filters: { hardOnly: false },
         resetGuards: {
-          lastEventId: '',
-          mirrorOk: null,
-          ssotOk: null,
-          indexOk: null,
-          checking: false,
-          poolCleared: false,
-        },
-      };
+        lastEventId: '',
+        mirrorOk: null,
+        ssotOk: null,
+        indexOk: null,
+        checking: false,
+        poolCleared: false,
+        windowOpen: null,
+        nextFridayId: '',
+        signupWindowStartsText: '',
+        signupWindowEndsText: '',
+      },
+    };
 
       // Konzept-Notiz: data/alliance.csv liefert nur noch die Kaderbasis; die tatsächliche Einteilung kommt allein aus Hard-Commitments.
       // Der Zusage-Pool (data/event_signups_next.csv) gehört immer zum nächsten Event (aktuelles out/latest.json) und überschreibt den Optimizer nicht dauerhaft.
@@ -657,13 +663,20 @@
         const match = (value || '').toString().match(/\d{4}-\d{2}-\d{2}/);
         return match ? `DS-${match[0]}` : '';
       }
+      function formatDsIdFromDate(date) {
+        if (!(date instanceof Date)) return '';
+        const pad = (num) => num.toString().padStart(2, '0');
+        return `DS-${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
+      }
+      function isValidDsEventId(value) {
+        return /^DS-\d{4}-\d{2}-\d{2}$/.test((value || '').toString().trim());
+      }
       function computeLastFridayId(now = new Date()) {
         const reference = new Date(now);
         const weekday = reference.getDay();
         const diff = (weekday + 7 - 5) % 7; // 5 = Friday
         reference.setDate(reference.getDate() - diff);
-        const iso = reference.toISOString().slice(0, 10);
-        return `DS-${iso}`;
+        return formatDsIdFromDate(reference);
       }
       function extractEventIdFromIndexEntry(entry) {
         if (typeof entry === 'string') return entry.trim();
@@ -713,7 +726,7 @@
             const data = await res.json();
             if (Array.isArray(data) && data.length) {
               const candidate = extractEventIdFromIndexEntry(data[0]);
-              if (candidate) return candidate;
+              if (isValidDsEventId(candidate)) return candidate;
             }
           } catch (err) {
             console.warn('resolveLastEventId: index read failed', url, err);
@@ -721,18 +734,63 @@
           return '';
         };
         let lastEventId = await readIndex(mirrorIndexUrl);
-        if (!lastEventId) lastEventId = await readIndex(ssotIndexUrl);
-        if (!lastEventId) {
-          lastEventId = (state.eventSignupsMeta?.event_id || state.eventInfo?.id || '').toString().trim();
-        }
-        if (!lastEventId) {
+        if (!isValidDsEventId(lastEventId)) lastEventId = await readIndex(ssotIndexUrl);
+        const fallbackId = (state.eventSignupsMeta?.event_id || state.eventInfo?.id || '').toString().trim();
+        if (!isValidDsEventId(lastEventId) && isValidDsEventId(fallbackId)) lastEventId = fallbackId;
+        if (!isValidDsEventId(lastEventId)) {
           const fallbackDate = state.eventSignupsMeta?.event_date || state.eventInfo?.date || '';
-          lastEventId = dsEventIdFromIsoDate(fallbackDate);
+          const fromDate = dsEventIdFromIsoDate(fallbackDate);
+          if (isValidDsEventId(fromDate)) lastEventId = fromDate;
         }
-        if (!lastEventId) {
+        const findRecentMirrorEvent = async () => {
+          let cursor = new Date();
+          const weekday = cursor.getDay();
+          const diff = (weekday + 7 - 5) % 7; // 5 = Friday
+          cursor.setDate(cursor.getDate() - diff); // start with last Friday (or today if Friday)
+          for (let i = 0; i < 8; i += 1) {
+            const candidateId = formatDsIdFromDate(cursor);
+            const mirrorUrl = `${SITE_ROOT}data/event_results/${candidateId}.json${cacheBuster}`;
+            const mirrorRes = await checkExists(mirrorUrl);
+            if (mirrorRes.ok) return candidateId;
+            cursor.setDate(cursor.getDate() - 7);
+          }
+          return '';
+        };
+        if (!isValidDsEventId(lastEventId)) {
+          lastEventId = await findRecentMirrorEvent();
+        }
+        if (!isValidDsEventId(lastEventId)) {
           lastEventId = computeLastFridayId(Date.now());
         }
-        return lastEventId;
+        return isValidDsEventId(lastEventId) ? lastEventId : '';
+      }
+      function computeSignupWindowStatus(now = new Date()) {
+        const base = new Date(now);
+        const pad = (num) => num.toString().padStart(2, '0');
+        const determineNextFriday = () => {
+          const candidate = new Date(base);
+          const weekday = candidate.getDay();
+          const daysUntilFriday = (5 - weekday + 7) % 7;
+          candidate.setDate(candidate.getDate() + daysUntilFriday);
+          if (weekday === 5 && base.getHours() < 3) {
+            candidate.setDate(candidate.getDate() + 7);
+          }
+          return new Date(candidate.getFullYear(), candidate.getMonth(), candidate.getDate());
+        };
+        const nextFriday = determineNextFriday();
+        const nextFridayId = `DS-${nextFriday.getFullYear()}-${pad(nextFriday.getMonth() + 1)}-${pad(nextFriday.getDate())}`;
+        const monday = new Date(nextFriday);
+        monday.setDate(nextFriday.getDate() - ((nextFriday.getDay() + 6) % 7));
+        monday.setHours(3, 0, 0, 0);
+        const thursday = new Date(monday);
+        thursday.setDate(monday.getDate() + 3);
+        const windowOpen = base >= monday && base < thursday;
+        return {
+          windowOpen,
+          nextFridayId,
+          signupWindowStartsText: 'Mo 03:00',
+          signupWindowEndsText: 'Do 03:00',
+        };
       }
       function formatSourceLabel(value) {
         const val = (value || '').toString().trim();
@@ -1096,11 +1154,12 @@
         const missingEvent = !guard.lastEventId;
         const mirrorMissing = guard.mirrorOk === false;
         const checking = guard.checking;
-        const disabled = state.loading || state.saving || checking || missingEvent || mirrorMissing;
+        const windowClosed = guard.windowOpen !== true;
+        const disabled = state.loading || state.saving || checking || missingEvent || mirrorMissing || windowClosed;
         elements.resetBtn.disabled = disabled;
         const reason = mirrorMissing || missingEvent
           ? 'Ergebnisse noch nicht sichtbar – bitte zuerst die Event-Ergebnisse speichern.'
-          : '';
+          : windowClosed ? 'Anmeldefenster geschlossen – Pool leeren ab Mo 03:00.' : '';
         elements.resetBtn.title = reason;
       }
       function setLoading(isLoading) {
@@ -1166,11 +1225,26 @@
           el.textContent = `Ergebnisse sichtbar (Website): ${symbol}`;
         };
         applyBadge(elements.resultsStatusBadge, guard.mirrorOk, { blocker: true });
+        const applyWindowBadge = (el, windowOpen, startsAt, endsAt) => {
+          if (!el) return;
+          const isUnknown = windowOpen == null;
+          const toneClass = windowOpen === true ? 'info' : 'warn';
+          const label = windowOpen === true
+            ? `offen (bis ${endsAt || 'Do 03:00'})`
+            : windowOpen === false
+              ? `geschlossen (ab ${startsAt || 'Mo 03:00'})`
+              : '…';
+          el.className = `pill ${toneClass}`;
+          el.textContent = `Anmeldefenster: ${label}`;
+        };
+        applyWindowBadge(elements.signupWindowBadge, guard.windowOpen, guard.signupWindowStartsText, guard.signupWindowEndsText);
         if (elements.resetGuardHint) {
           let hint = '';
           if (guard.checking) hint = 'Prüfe Event-Ergebnisse …';
           else if (guard.mirrorOk === false || !guard.lastEventId) hint = 'Ergebnisse noch nicht sichtbar – bitte zuerst die Event-Ergebnisse speichern.';
           else if (guard.poolCleared) hint = 'Zusage-Pool geleert. Event-Ergebnisse bleiben erhalten.';
+          else if (guard.windowOpen === false) hint = 'Anmeldefenster geschlossen – Pool leeren ab Mo 03:00.';
+          else if (guard.windowOpen === true && guard.mirrorOk === true) hint = 'Anmeldefenster offen (bis Do 03:00).';
           elements.resetGuardHint.textContent = hint;
         }
         updateResetButtonState();
@@ -1210,7 +1284,8 @@
         renderResetGuardStatus();
         const eventId = await resolveLastEventId();
         const guardStatus = await computeResetGuardStatus(eventId);
-        state.resetGuards = { ...state.resetGuards, ...guardStatus, checking: false };
+        const signupWindow = computeSignupWindowStatus(new Date());
+        state.resetGuards = { ...state.resetGuards, ...guardStatus, ...signupWindow, checking: false };
         renderResetGuardStatus();
       }
 
@@ -1862,6 +1937,10 @@
           setStatus('Ergebnisse noch nicht sichtbar – Reset nicht möglich.', 'warn');
           return;
         }
+        if (guard.windowOpen !== true) {
+          setStatus('Anmeldefenster geschlossen – Pool leeren ab Mo 03:00.', 'warn');
+          return;
+        }
         const workerUrl = elements.workerUrl.value.trim();
         const adminKey = getAdminKey();
         const branch = elements.branch.value.trim() || 'main';
@@ -1871,8 +1950,10 @@
           updateAdminKeyStatus();
           return;
         }
+        const resultsEventId = guard.lastEventId || 'unbekanntes Event';
+        const targetEventId = guard.nextFridayId || 'nächstes Event';
         const confirmReset = window.confirm(
-          `Zusage-Pool leeren?\n\nDie Ergebnisse für ${guard.lastEventId} sind gespeichert.\nMöchtest du jetzt den Zusage- und Antwort-Pool für das nächste Event leeren?\nDie Event-Ergebnisse bleiben erhalten.`
+          `Zusage-Pool leeren?\n\nDie Ergebnisse für ${resultsEventId} sind gespeichert und sichtbar.\nMöchtest du jetzt den Zusage- und Antwort-Pool für das nächste Event (${targetEventId}) leeren?\nDie Event-Ergebnisse bleiben erhalten.`
         );
         if (!confirmReset) return;
         const headers = state.headers.length ? state.headers : [...DEFAULT_HEADERS];
