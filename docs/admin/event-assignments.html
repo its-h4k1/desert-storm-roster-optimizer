@@ -189,21 +189,19 @@
                   <div class="toolbar-meta" style="align-items:flex-start; gap:0.65rem;">
                     <div id="resetStatusBlock" style="display:grid; gap:0.25rem; min-width:240px;">
                       <div style="display:flex; align-items:center; gap:0.5rem; flex-wrap:wrap;">
-                        <span><strong>Letztes Event:</strong> <span id="lastEventIdLabel">lädt …</span></span>
+                        <span><strong>Letztes Event:</strong> <span id="lastEventIdLabel">DS-YYYY-MM-DD</span></span>
                         <div style="display:flex; gap:0.35rem; align-items:center;">
-                          <button id="refreshGuardBtn" class="ghost" style="padding:0.25rem 0.5rem;">Refresh</button>
+                          <button id="refreshGuardBtn" class="ghost" style="padding:0.25rem 0.5rem;" title="Status der Event-Ergebnisse neu prüfen">Aktualisieren</button>
                           <a href="event-results.html" class="ghost" style="padding:0.25rem 0.5rem; text-decoration:none;">Ergebnisse erfassen</a>
                         </div>
                       </div>
                       <div style="display:flex; gap:0.35rem; align-items:center; flex-wrap:wrap;">
-                        <span id="mirrorStatusBadge" class="pill" title="Mirror-Result">Mirror …</span>
-                        <span id="ssotStatusBadge" class="pill" title="SSOT (Raw GitHub)">SSOT …</span>
-                        <span id="indexStatusBadge" class="pill" title="Index">Index …</span>
+                        <span id="resultsStatusBadge" class="pill" title="Die Event-Ergebnisse sind auf der Website verfügbar.">Ergebnisse sichtbar (Website): …</span>
                       </div>
                       <small id="resetGuardHint" class="hint" style="color:var(--text-muted);"></small>
                     </div>
                     <div class="toolbar-actions">
-                      <button id="resetBtn" class="ghost" style="border-color:var(--border);color:#b91c1c;">Event abgeschlossen – Pool leeren</button>
+                      <button id="resetBtn" class="ghost" style="border-color:var(--border);color:#b91c1c;">Event abschließen &amp; Zusage-Pool leeren</button>
                       <button id="reloadBtn" class="ghost">Neu laden</button>
                       <button id="saveBtn">Speichern</button>
                     </div>
@@ -402,9 +400,7 @@
         resetBtn: document.getElementById('resetBtn'),
         refreshGuardBtn: document.getElementById('refreshGuardBtn'),
         lastEventIdLabel: document.getElementById('lastEventIdLabel'),
-        mirrorStatusBadge: document.getElementById('mirrorStatusBadge'),
-        ssotStatusBadge: document.getElementById('ssotStatusBadge'),
-        indexStatusBadge: document.getElementById('indexStatusBadge'),
+        resultsStatusBadge: document.getElementById('resultsStatusBadge'),
         resetGuardHint: document.getElementById('resetGuardHint'),
         addPanel: document.getElementById('addPanel'),
         hardOnlyToggle: document.getElementById('hardOnlyToggle'),
@@ -1102,11 +1098,9 @@
         const checking = guard.checking;
         const disabled = state.loading || state.saving || checking || missingEvent || mirrorMissing;
         elements.resetBtn.disabled = disabled;
-        const reason = mirrorMissing
-          ? 'Mirror fehlt – bitte Event-Results erneut speichern (Mirror)'
-          : missingEvent
-            ? 'Keine Event-ID ermittelbar'
-            : '';
+        const reason = mirrorMissing || missingEvent
+          ? 'Ergebnisse noch nicht sichtbar – bitte zuerst die Event-Ergebnisse speichern.'
+          : '';
         elements.resetBtn.title = reason;
       }
       function setLoading(isLoading) {
@@ -1161,25 +1155,22 @@
       function renderResetGuardStatus() {
         const guard = state.resetGuards || {};
         if (elements.lastEventIdLabel) {
-          elements.lastEventIdLabel.textContent = guard.lastEventId || 'unbekannt';
+          elements.lastEventIdLabel.textContent = guard.lastEventId || 'DS-YYYY-MM-DD';
         }
-        const applyBadge = (el, label, ok, { blocker = false } = {}) => {
+        const applyBadge = (el, ok, { blocker = false } = {}) => {
           if (!el) return;
           const isUnknown = ok == null;
           const symbol = isUnknown ? '…' : ok ? '✅' : blocker ? '❌' : '⚠️';
           const toneClass = ok === true ? 'info' : isUnknown ? 'warn' : blocker ? 'error' : 'warn';
           el.className = `pill ${toneClass}`;
-          el.textContent = `${label}: ${symbol}`;
+          el.textContent = `Ergebnisse sichtbar (Website): ${symbol}`;
         };
-        applyBadge(elements.mirrorStatusBadge, 'Mirror', guard.mirrorOk, { blocker: true });
-        applyBadge(elements.ssotStatusBadge, 'SSOT', guard.ssotOk, { blocker: false });
-        applyBadge(elements.indexStatusBadge, 'Index', guard.indexOk, { blocker: false });
+        applyBadge(elements.resultsStatusBadge, guard.mirrorOk, { blocker: true });
         if (elements.resetGuardHint) {
           let hint = '';
-          if (guard.checking) hint = 'Prüfe Event-Result Guard…';
-          else if (!guard.lastEventId) hint = 'Keine Event-ID ermittelbar – nutze Freitag-Fallback.';
-          else if (guard.mirrorOk === false) hint = 'Mirror fehlt – bitte Event-Results erneut speichern (Mirror).';
-          else if (guard.poolCleared) hint = 'Pool geleert.';
+          if (guard.checking) hint = 'Prüfe Event-Ergebnisse …';
+          else if (guard.mirrorOk === false || !guard.lastEventId) hint = 'Ergebnisse noch nicht sichtbar – bitte zuerst die Event-Ergebnisse speichern.';
+          else if (guard.poolCleared) hint = 'Zusage-Pool geleert. Event-Ergebnisse bleiben erhalten.';
           elements.resetGuardHint.textContent = hint;
         }
         updateResetButtonState();
@@ -1864,11 +1855,11 @@
         await refreshResetGuardStatus();
         const guard = state.resetGuards || {};
         if (!guard.lastEventId) {
-          setStatus('Letzte Event-ID fehlt – Reset blockiert.', 'warn');
+          setStatus('Ergebnisse noch nicht sichtbar – Reset nicht möglich.', 'warn');
           return;
         }
         if (guard.mirrorOk === false) {
-          setStatus('Mirror fehlt – bitte Event-Results erneut speichern (Mirror).', 'warn');
+          setStatus('Ergebnisse noch nicht sichtbar – Reset nicht möglich.', 'warn');
           return;
         }
         const workerUrl = elements.workerUrl.value.trim();
@@ -1881,7 +1872,7 @@
           return;
         }
         const confirmReset = window.confirm(
-          'Dies löscht die aktuellen Zusagen/Responses für DS-NEXT. Event-Ergebnisse bleiben erhalten. Fortfahren?'
+          `Zusage-Pool leeren?\n\nDie Ergebnisse für ${guard.lastEventId} sind gespeichert.\nMöchtest du jetzt den Zusage- und Antwort-Pool für das nächste Event leeren?\nDie Event-Ergebnisse bleiben erhalten.`
         );
         if (!confirmReset) return;
         const headers = state.headers.length ? state.headers : [...DEFAULT_HEADERS];
@@ -1911,7 +1902,7 @@
           state.resetGuards.poolCleared = true;
           renderAssignments();
           renderResponses();
-          setStatus('Pool für das nächste Event geleert. Event-Ergebnisse bleiben erhalten.', 'ok');
+          setStatus('Zusage-Pool für das nächste Event geleert. Event-Ergebnisse bleiben erhalten.', 'ok');
         } catch (err) {
           console.error(err);
           setStatus(`Fehler: Leeren nicht möglich (${err.message}).`, 'error');
