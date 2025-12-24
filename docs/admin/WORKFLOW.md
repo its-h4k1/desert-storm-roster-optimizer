@@ -1,42 +1,43 @@
 # Admin-Workflow: Event-Ergebnisse und Zusage-Pool Reset
 
-## 1) Überblick / Zweck
-Dieses Dokument beschreibt, wann und wie Admins den Button **„Event abschließen & Zusage-Pool leeren“** nutzen. Es soll helfen, den Wochenrhythmus einzuhalten und zu verstehen, wann der Reset verfügbar ist.
+## 1) Zweck
+Wann Admins den Button **„Event abschließen & Zusage-Pool leeren“** klicken, damit der Wochenrhythmus sauber bleibt.
 
-## 2) Wochenablauf (Fr → Mo 03:00 → Do 03:00)
+## 2) Was zählt als letztes Event?
+- Der Eintrag **DS-YYYY-MM-DD** vom vergangenen Freitag ist das letzte Event.
+- **DS-NEXT** ist nur die Vorschau auf das kommende Event und zählt nicht als Ergebnis.
+
+## 3) Wochenablauf (Fr → Mo 03:00 → Do 03:00)
 - **Freitag:** Event findet statt.
-- **Nach dem Event:** Ergebnisse erfassen und unter einem Eintrag wie **DS-YYYY-MM-DD** speichern.
-- **Montag 03:00 (Europe/Zurich):** Start des Zusagefensters.
-- **Donnerstag 03:00 (Europe/Zurich):** Ende des Zusagefensters.
-- Zusagen werden im Fenster **Mo 03:00 bis Do 03:00** gesammelt.
+- **Nach dem Event:** Ergebnisse als **DS-YYYY-MM-DD** speichern.
+- **Montag 03:00 (Europe/Zurich):** Zusagefenster öffnet.
+- **Donnerstag 03:00 (Europe/Zurich):** Zusagefenster schließt (Sommerzeit beachten; im Zweifel den UI-Fensterstatus checken).
 
-## 3) Schritt-für-Schritt: Ergebnisse erfassen und Reset ausführen
-1. Ergebnisse des Events eintragen und speichern (z. B. als **DS-YYYY-MM-DD**).
-2. Prüfen, dass die Ergebnisse auf der Website sichtbar sind.
-3. Zwischen **Mo 03:00 und Do 03:00** den Button **„Event abschließen & Zusage-Pool leeren“** klicken, um den Zusage-Pool zurückzusetzen.
-4. Danach neue Zusagen bis **Do 03:00** sammeln.
+## 4) Ergebnisse sichtbar machen
+- „Sichtbar“ heißt: Die gespeicherten Ergebnisse sind auf der Website unter der passenden Event-Ansicht zu sehen.
+- Schneller Check: Event-Seite öffnen oder neu laden und prüfen, ob der Eintrag **DS-YYYY-MM-DD** mit den Ergebnissen erscheint.
 
-## 4) Warum der Reset manchmal deaktiviert ist
-Der Button **„Event abschließen & Zusage-Pool leeren“** bleibt deaktiviert, wenn:
-1. **Ergebnisse nicht sichtbar sind:** Die gespeicherten Resultate müssen auf der Website erscheinen.
-2. **Fenster geschlossen ist:** Außerhalb des Zeitfensters **Mo 03:00 bis Do 03:00** (Europe/Zurich) ist kein Reset möglich.
+## 5) Schritt-für-Schritt
+1) Ergebnisse des letzten Events speichern (**DS-YYYY-MM-DD**, nicht **DS-NEXT**).
+2) Kurz prüfen, ob sie auf der Website sichtbar sind (siehe oben).
+3) Zwischen **Mo 03:00 und Do 03:00** den Button **„Event abschließen & Zusage-Pool leeren“** klicken.
+4) Danach laufen neue Zusagen bis **Do 03:00** ein.
 
-## 5) Troubleshooting
-- **Aktualisieren:** Seite neu laden, falls der Button nicht wie erwartet verfügbar ist.
-- **Event-Ergebnisse öffnen:** Sicherstellen, dass die Ergebnisse gespeichert und sichtbar sind.
-- **Nächstes Fenster abwarten:** Wenn das Zeitfenster vorbei ist, bis **Mo 03:00** der nächsten Woche warten.
+## 6) Mini-FAQ
+- **Warum ist der Button deaktiviert?** Entweder die Ergebnisse sind nicht sichtbar, oder das Zeitfenster **Mo 03:00–Do 03:00 (Europe/Zurich)** ist gerade geschlossen.
+- **Ergebnisse gespeichert, Button trotzdem aus – was tun?** Seite neu laden und bestätigen, dass **DS-YYYY-MM-DD** angezeigt wird. Falls ja, aber das Fenster laut UI zu ist: bis zum nächsten Öffnen **Mo 03:00** warten.
 
-## 6) Betroffene Daten
+## 7) Betroffene Daten
 - **Bleibt bestehen:** Event-Ergebnisse.
 - **Wird geleert:** Zusagen/Responses im Zusage-Pool.
 
-## 7) Nützliche Links
+## 8) Nützliche Links
 - [Event-Ergebnisse verwalten](./event-results.html)
 - [Zuweisungen & Zusagen](./event-assignments.html)
 
 ## Kurzcheckliste vor dem Reset
 - Ergebnisse eingetragen und unter **DS-YYYY-MM-DD** gespeichert.
 - Ergebnisse sind auf der Website sichtbar.
-- Aktuell im Zeitfenster **Mo 03:00 bis Do 03:00** (Europe/Zurich).
+- Aktuell im Zeitfenster **Mo 03:00 bis Do 03:00** (Europe/Zurich); UI zeigt „Fenster offen“.
 - Seite aktualisiert und auf den richtigen Event gewechselt.
 - Bereit, den Button **„Event abschließen & Zusage-Pool leeren“** zu klicken.
