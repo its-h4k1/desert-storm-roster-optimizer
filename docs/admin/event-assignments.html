@@ -186,9 +186,24 @@
                     <strong>Kontext nächstes Event</strong>
                     <small class="hint" style="color:var(--text-muted);">Alle Einträge gelten für das kommende Event (aktuelles Roster). <code>Commitment=hard</code> = verbindliche Zusage / Fixplatz im nächsten Build; nach einem gespielten Event über „Neues Event vorbereiten“ leeren.</small>
                   </div>
-                  <div class="toolbar-meta">
-                    <button id="resetBtn" class="ghost" style="border-color:var(--border);color:#b91c1c;">Neues Event vorbereiten</button>
+                  <div class="toolbar-meta" style="align-items:flex-start; gap:0.65rem;">
+                    <div id="resetStatusBlock" style="display:grid; gap:0.25rem; min-width:240px;">
+                      <div style="display:flex; align-items:center; gap:0.5rem; flex-wrap:wrap;">
+                        <span><strong>Letztes Event:</strong> <span id="lastEventIdLabel">lädt …</span></span>
+                        <div style="display:flex; gap:0.35rem; align-items:center;">
+                          <button id="refreshGuardBtn" class="ghost" style="padding:0.25rem 0.5rem;">Refresh</button>
+                          <a href="event-results.html" class="ghost" style="padding:0.25rem 0.5rem; text-decoration:none;">Ergebnisse erfassen</a>
+                        </div>
+                      </div>
+                      <div style="display:flex; gap:0.35rem; align-items:center; flex-wrap:wrap;">
+                        <span id="mirrorStatusBadge" class="pill" title="Mirror-Result">Mirror …</span>
+                        <span id="ssotStatusBadge" class="pill" title="SSOT (Raw GitHub)">SSOT …</span>
+                        <span id="indexStatusBadge" class="pill" title="Index">Index …</span>
+                      </div>
+                      <small id="resetGuardHint" class="hint" style="color:var(--text-muted);"></small>
+                    </div>
                     <div class="toolbar-actions">
+                      <button id="resetBtn" class="ghost" style="border-color:var(--border);color:#b91c1c;">Event abgeschlossen – Pool leeren</button>
                       <button id="reloadBtn" class="ghost">Neu laden</button>
                       <button id="saveBtn">Speichern</button>
                     </div>
@@ -385,6 +400,12 @@
         contextMeta: document.getElementById('contextMeta'),
         eventQuickMeta: document.getElementById('eventQuickMeta'),
         resetBtn: document.getElementById('resetBtn'),
+        refreshGuardBtn: document.getElementById('refreshGuardBtn'),
+        lastEventIdLabel: document.getElementById('lastEventIdLabel'),
+        mirrorStatusBadge: document.getElementById('mirrorStatusBadge'),
+        ssotStatusBadge: document.getElementById('ssotStatusBadge'),
+        indexStatusBadge: document.getElementById('indexStatusBadge'),
+        resetGuardHint: document.getElementById('resetGuardHint'),
         addPanel: document.getElementById('addPanel'),
         hardOnlyToggle: document.getElementById('hardOnlyToggle'),
       };
@@ -621,6 +642,14 @@
         playerNames: [],
         signupPoolEntries: [],
         filters: { hardOnly: false },
+        resetGuards: {
+          lastEventId: '',
+          mirrorOk: null,
+          ssotOk: null,
+          indexOk: null,
+          checking: false,
+          poolCleared: false,
+        },
       };
 
       // Konzept-Notiz: data/alliance.csv liefert nur noch die Kaderbasis; die tatsächliche Einteilung kommt allein aus Hard-Commitments.
@@ -628,6 +657,87 @@
 
       function normalizeLineEndings(text) { return (text || '').replace(/\r\n/g, '\n').replace(/\r/g, '\n'); }
       function ensureTrailingNewline(text) { if (!text) return '\n'; return /\n$/.test(text) ? text : text + '\n'; }
+      function dsEventIdFromIsoDate(value) {
+        const match = (value || '').toString().match(/\d{4}-\d{2}-\d{2}/);
+        return match ? `DS-${match[0]}` : '';
+      }
+      function computeLastFridayId(now = new Date()) {
+        const reference = new Date(now);
+        const weekday = reference.getDay();
+        const diff = (weekday + 7 - 5) % 7; // 5 = Friday
+        reference.setDate(reference.getDate() - diff);
+        const iso = reference.toISOString().slice(0, 10);
+        return `DS-${iso}`;
+      }
+      function extractEventIdFromIndexEntry(entry) {
+        if (typeof entry === 'string') return entry.trim();
+        if (entry && typeof entry === 'object') {
+          return (
+            entry.event_id
+            || entry.id
+            || entry.eventId
+            || entry.event
+            || dsEventIdFromIsoDate(entry.date || entry.event_date)
+            || ''
+          ).toString().trim();
+        }
+        return '';
+      }
+      async function checkExists(url) {
+        const result = { ok: false };
+        if (!url) return result;
+        const run = async (method) => {
+          try {
+            const res = await fetch(url, { method, cache:'no-store' });
+            if (res.status === 404) return { ok: false, status: res.status };
+            return { ok: res.ok || res.status === 304, status: res.status };
+          } catch (err) {
+            console.warn('checkExists failed', method, url, err);
+            return { ok: false };
+          }
+        };
+        const headResult = await run('HEAD');
+        if (headResult.status === 405 || headResult.status === 501) {
+          const getResult = await run('GET');
+          return getResult;
+        }
+        if (headResult.ok || headResult.status === 404) return headResult;
+        const fallbackResult = await run('GET');
+        return fallbackResult.ok ? fallbackResult : { ok: false, status: fallbackResult.status };
+      }
+      async function resolveLastEventId() {
+        const branch = elements.branch?.value?.trim() || 'main';
+        const mirrorIndexUrl = `${SITE_ROOT}data/event_results/index.json${cacheBuster}`;
+        const ssotIndexUrl = buildRawDataUrl('data/event_results/index.json', branch);
+        const readIndex = async (url) => {
+          if (!url) return '';
+          try {
+            const res = await fetch(url, { cache:'no-store' });
+            if (!res.ok) return '';
+            const data = await res.json();
+            if (Array.isArray(data) && data.length) {
+              const candidate = extractEventIdFromIndexEntry(data[0]);
+              if (candidate) return candidate;
+            }
+          } catch (err) {
+            console.warn('resolveLastEventId: index read failed', url, err);
+          }
+          return '';
+        };
+        let lastEventId = await readIndex(mirrorIndexUrl);
+        if (!lastEventId) lastEventId = await readIndex(ssotIndexUrl);
+        if (!lastEventId) {
+          lastEventId = (state.eventSignupsMeta?.event_id || state.eventInfo?.id || '').toString().trim();
+        }
+        if (!lastEventId) {
+          const fallbackDate = state.eventSignupsMeta?.event_date || state.eventInfo?.date || '';
+          lastEventId = dsEventIdFromIsoDate(fallbackDate);
+        }
+        if (!lastEventId) {
+          lastEventId = computeLastFridayId(Date.now());
+        }
+        return lastEventId;
+      }
       function formatSourceLabel(value) {
         const val = (value || '').toString().trim();
         if (val === 'manual') return 'Manuell';
@@ -984,17 +1094,32 @@
         elements.statusBadge.textContent = tone === 'ok' ? 'OK' : tone === 'error' ? 'Fehler' : tone === 'warn' ? 'Hinweis' : 'Status';
         elements.statusText.textContent = message;
       }
+      function updateResetButtonState() {
+        if (!elements.resetBtn) return;
+        const guard = state.resetGuards || {};
+        const missingEvent = !guard.lastEventId;
+        const mirrorMissing = guard.mirrorOk === false;
+        const checking = guard.checking;
+        const disabled = state.loading || state.saving || checking || missingEvent || mirrorMissing;
+        elements.resetBtn.disabled = disabled;
+        const reason = mirrorMissing
+          ? 'Mirror fehlt – bitte Event-Results erneut speichern (Mirror)'
+          : missingEvent
+            ? 'Keine Event-ID ermittelbar'
+            : '';
+        elements.resetBtn.title = reason;
+      }
       function setLoading(isLoading) {
         state.loading = isLoading;
         elements.reloadBtn.disabled = isLoading || state.saving;
-        if (elements.resetBtn) elements.resetBtn.disabled = isLoading || state.saving;
+        updateResetButtonState();
         updateSaveButtonState();
         if (isLoading) setStatus('Lade Daten…', 'info');
         updateBuildControls();
       }
       function setSaving(isSaving) {
         state.saving = isSaving;
-        if (elements.resetBtn) elements.resetBtn.disabled = isSaving || state.loading;
+        updateResetButtonState();
         updateSaveButtonState();
         updateBuildControls();
       }
@@ -1033,9 +1158,69 @@
           if (elements.eventQuickMeta) elements.eventQuickMeta.textContent = text;
         }
 
+      function renderResetGuardStatus() {
+        const guard = state.resetGuards || {};
+        if (elements.lastEventIdLabel) {
+          elements.lastEventIdLabel.textContent = guard.lastEventId || 'unbekannt';
+        }
+        const applyBadge = (el, label, ok, { blocker = false } = {}) => {
+          if (!el) return;
+          const isUnknown = ok == null;
+          const symbol = isUnknown ? '…' : ok ? '✅' : blocker ? '❌' : '⚠️';
+          const toneClass = ok === true ? 'info' : isUnknown ? 'warn' : blocker ? 'error' : 'warn';
+          el.className = `pill ${toneClass}`;
+          el.textContent = `${label}: ${symbol}`;
+        };
+        applyBadge(elements.mirrorStatusBadge, 'Mirror', guard.mirrorOk, { blocker: true });
+        applyBadge(elements.ssotStatusBadge, 'SSOT', guard.ssotOk, { blocker: false });
+        applyBadge(elements.indexStatusBadge, 'Index', guard.indexOk, { blocker: false });
+        if (elements.resetGuardHint) {
+          let hint = '';
+          if (guard.checking) hint = 'Prüfe Event-Result Guard…';
+          else if (!guard.lastEventId) hint = 'Keine Event-ID ermittelbar – nutze Freitag-Fallback.';
+          else if (guard.mirrorOk === false) hint = 'Mirror fehlt – bitte Event-Results erneut speichern (Mirror).';
+          else if (guard.poolCleared) hint = 'Pool geleert.';
+          elements.resetGuardHint.textContent = hint;
+        }
+        updateResetButtonState();
+      }
+
       function formatCommitShort(value) {
         if (!value) return '';
         return value.slice(0, 7);
+      }
+
+      async function computeResetGuardStatus(eventId) {
+        const branch = elements.branch?.value?.trim() || 'main';
+        if (!eventId) {
+          return { lastEventId: '', mirrorOk: false, ssotOk: false, indexOk: false };
+        }
+        const mirrorUrl = `${SITE_ROOT}data/event_results/${eventId}.json${cacheBuster}`;
+        const ssotUrl = buildRawDataUrl(`data/event_results/${eventId}.json`, branch);
+        const mirrorIndexUrl = `${SITE_ROOT}data/event_results/index.json${cacheBuster}`;
+        const ssotIndexUrl = buildRawDataUrl('data/event_results/index.json', branch);
+        const [mirrorRes, ssotRes, mirrorIndexRes, ssotIndexRes] = await Promise.all([
+          checkExists(mirrorUrl),
+          checkExists(ssotUrl),
+          checkExists(mirrorIndexUrl),
+          checkExists(ssotIndexUrl),
+        ]);
+        return {
+          lastEventId: eventId,
+          mirrorOk: mirrorRes.ok,
+          ssotOk: ssotRes.ok,
+          indexOk: mirrorIndexRes.ok || ssotIndexRes.ok,
+        };
+      }
+
+      async function refreshResetGuardStatus() {
+        state.resetGuards.checking = true;
+        state.resetGuards.poolCleared = false;
+        renderResetGuardStatus();
+        const eventId = await resolveLastEventId();
+        const guardStatus = await computeResetGuardStatus(eventId);
+        state.resetGuards = { ...state.resetGuards, ...guardStatus, checking: false };
+        renderResetGuardStatus();
       }
 
       function extractBuildCommit(meta) {
@@ -1612,6 +1797,7 @@
           applyPlayerPrefill();
           renderAssignments();
           renderResponses();
+          await refreshResetGuardStatus();
           setStatus('Daten geladen.', 'ok');
         } catch (err) {
           console.error(err);
@@ -1672,10 +1858,19 @@
         }
       }
 
-      // Manual post-event action: archive current signups and clear the "next event" pool plus responses
-      // so R4/R5 can start from an empty slate for the following roster build.
+      // Manual post-event action: clear the "next event" pool plus responses without archiving.
       async function resetPool() {
         if (state.loading || state.saving) return;
+        await refreshResetGuardStatus();
+        const guard = state.resetGuards || {};
+        if (!guard.lastEventId) {
+          setStatus('Letzte Event-ID fehlt – Reset blockiert.', 'warn');
+          return;
+        }
+        if (guard.mirrorOk === false) {
+          setStatus('Mirror fehlt – bitte Event-Results erneut speichern (Mirror).', 'warn');
+          return;
+        }
         const workerUrl = elements.workerUrl.value.trim();
         const adminKey = getAdminKey();
         const branch = elements.branch.value.trim() || 'main';
@@ -1685,11 +1880,8 @@
           updateAdminKeyStatus();
           return;
         }
-        const assignmentCount = state.assignments.length;
-        const hasAssignments = assignmentCount > 0;
         const confirmReset = window.confirm(
-          'Neues Event vorbereiten?\n\nVorhandene Zusagen werden zuerst archiviert und danach werden event_signups_next.csv & ' +
-          'event_responses_next.csv geleert. Das ist der manuelle Startpunkt nach einem gespielten Event.'
+          'Dies löscht die aktuellen Zusagen/Responses für DS-NEXT. Event-Ergebnisse bleiben erhalten. Fortfahren?'
         );
         if (!confirmReset) return;
         const headers = state.headers.length ? state.headers : [...DEFAULT_HEADERS];
@@ -1697,19 +1889,8 @@
         const responseHeaders = state.responseHeaders.length ? state.responseHeaders : [...DEFAULT_RESPONSE_HEADERS];
         const emptyResponsesCsv = buildCsv(responseHeaders, []);
         setSaving(true);
-        setStatus(hasAssignments ? 'Archiviert Zusagen und leert den Pool…' : 'Leere event_signups_next.csv & event_responses_next.csv…', 'info');
+        setStatus('Leere event_signups_next.csv & event_responses_next.csv…', 'info');
         try {
-          let archivePath = null;
-          if (hasAssignments) {
-            archivePath = buildArchivePath();
-            const archiveContent = buildCurrentCsv();
-            await writeFile(workerUrl, adminKey, {
-              path: archivePath,
-              content: archiveContent,
-              branch,
-              message: 'admin: archive event_signups_next.csv via event assignments ui',
-            });
-          }
           await writeFile(workerUrl, adminKey, {
             path: 'data/event_signups_next.csv',
             content: emptyCsv,
@@ -1727,21 +1908,19 @@
           state.originalCsv = emptyCsv;
           state.originalResponseCsv = emptyResponsesCsv;
           await refreshFileCommit(branch);
+          state.resetGuards.poolCleared = true;
           renderAssignments();
           renderResponses();
-          if (hasAssignments && archivePath) {
-            setStatus(`${assignmentCount} Zusagen archiviert nach ${archivePath} und Pool für das nächste Event geleert.`, 'ok');
-          } else {
-            setStatus('Keine Zusagen zum Archivieren – Pool ist bereits leer. Antworten wurden zurückgesetzt.', 'info');
-          }
+          setStatus('Pool für das nächste Event geleert. Event-Ergebnisse bleiben erhalten.', 'ok');
         } catch (err) {
           console.error(err);
-          setStatus(`Fehler: Archivieren oder Leeren nicht möglich (${err.message}).`, 'error');
+          setStatus(`Fehler: Leeren nicht möglich (${err.message}).`, 'error');
         } finally {
           setSaving(false);
           updateSaveButtonState();
+          renderResetGuardStatus();
         }
-        }
+      }
 
       async function writeFile(workerUrl, adminKey, payload) {
         const headers = shared?.buildAdminHeaders ? shared.buildAdminHeaders({
@@ -1818,6 +1997,7 @@
 
       async function startAdminFlow() {
         restoreSettings();
+        renderResetGuardStatus();
         await reloadData();
         initAutocompletes();
         refreshAutocompletes();
@@ -1827,6 +2007,7 @@
         elements.reloadBtn.addEventListener('click', reloadData);
         elements.saveBtn.addEventListener('click', saveChanges);
         elements.addBtn.addEventListener('click', addAssignment);
+        if (elements.refreshGuardBtn) elements.refreshGuardBtn.addEventListener('click', refreshResetGuardStatus);
         if (elements.playerInput) {
           elements.playerInput.addEventListener('input', () => {
             updatePlayerReliabilityPreview(elements.playerInput.value, 'signup');
@@ -1834,7 +2015,10 @@
         }
         if (elements.addResponseBtn) elements.addResponseBtn.addEventListener('click', addResponse);
         if (elements.resetBtn) elements.resetBtn.addEventListener('click', resetPool);
-        ['workerUrl','branch'].forEach(key => elements[key].addEventListener('change', persistSettings));
+        ['workerUrl','branch'].forEach(key => elements[key].addEventListener('change', () => {
+          persistSettings();
+          if (key === 'branch') refreshResetGuardStatus();
+        }));
         elements.playerInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); addAssignment(); } });
         if (elements.responsePlayerInput) {
           elements.responsePlayerInput.addEventListener('input', () => {
