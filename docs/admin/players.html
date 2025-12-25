@@ -148,6 +148,8 @@
     .group-actions { display: inline-flex; gap: 0.15rem; }
 
     .alias-line { display: flex; align-items: center; gap: 0.4rem; flex-wrap: wrap; }
+    .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 0.75rem; }
+    .form-error { margin-top: 0.35rem; color: #b91c1c; font-weight: 600; }
     .chip {
       display: inline-flex;
       align-items: center;
@@ -265,6 +267,26 @@
             </div>
           </section>
 
+          <section class="card" id="createPlayerCard">
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:0.5rem;flex-wrap:wrap;">
+              <h3 style="margin:0">Neuen Spieler anlegen</h3>
+              <small class="group-meta">Speichert direkt per CSV-Write</small>
+            </div>
+            <div class="form-grid" style="margin-top:0.65rem;">
+              <label>Spielername
+                <input id="newPlayerName" type="text" placeholder="z.B. Max Muster" autocomplete="off">
+              </label>
+              <label>Aliase (optional)
+                <textarea id="newPlayerAliases" rows="2" placeholder="Komma oder Zeilenumbruch"></textarea>
+              </label>
+            </div>
+            <div style="display:flex;align-items:center;gap:0.5rem;flex-wrap:wrap;margin-top:0.65rem;">
+              <button id="createPlayerBtn" class="primary" type="button">Anlegen</button>
+              <small id="createPlayerHint" class="group-meta"></small>
+            </div>
+            <div id="createPlayerError" class="form-error" aria-live="assertive"></div>
+          </section>
+
           <section class="card">
             <div style="display:flex;align-items:center;justify-content:space-between;gap:0.5rem;flex-wrap:wrap;">
               <h3 style="margin:0">Gruppen</h3>
@@ -328,6 +350,11 @@
       reloadBtn: document.getElementById("reloadBtn"),
       saveBtn: document.getElementById("saveBtn"),
       statusText: document.getElementById("statusText"),
+      newPlayerName: document.getElementById("newPlayerName"),
+      newPlayerAliases: document.getElementById("newPlayerAliases"),
+      createPlayerBtn: document.getElementById("createPlayerBtn"),
+      createPlayerError: document.getElementById("createPlayerError"),
+      createPlayerHint: document.getElementById("createPlayerHint"),
     };
 
     const openAdminSettings = () => {
@@ -401,6 +428,20 @@
       }
     }
 
+    function setCreateError(message = "") {
+      if (elements.createPlayerError) elements.createPlayerError.textContent = message || "";
+    }
+
+    function isDataLoaded() { return state.playerHeaders.length > 0 && state.originalAllianceCsv; }
+
+    function updateCreateState() {
+      const disabled = state.loading || state.saving || !isDataLoaded();
+      if (elements.createPlayerBtn) elements.createPlayerBtn.disabled = disabled;
+      if (elements.createPlayerHint) {
+        elements.createPlayerHint.textContent = isDataLoaded() ? "" : "Erst neu laden, danach anlegen.";
+      }
+    }
+
       function buildCandidatePaths(path) {
         const clean = path.replace(/^\/+/, "");
         const prefixes = ["../../", "../", "./", ""];
@@ -454,6 +495,36 @@
         state.groups.set(canonicalKey, group);
       }
       return group;
+    }
+
+    function findAliasOwner(aliasValue) {
+      const key = canonicalNameJS(normalizePlayerName(aliasValue));
+      if (!key) return null;
+      for (const group of state.groups.values()) {
+        const matchesCurrent = canonicalNameJS(group.currentName) === key;
+        const matchesLabel = canonicalNameJS(group.canonicalLabel || "") === key;
+        const matchesAlias = Array.from(group.aliases).some(a => canonicalNameJS(a) === key);
+        if (matchesCurrent || matchesLabel || matchesAlias) return group;
+      }
+      return null;
+    }
+
+    function parseAliasInput(rawAliases, playerName) {
+      const cleaned = normalizeLineEndings(rawAliases || "");
+      const baseKey = canonicalNameJS(playerName);
+      const tokens = cleaned.split(/[\n,]+/);
+      const seen = new Set();
+      const aliases = [];
+      tokens.forEach(token => {
+        const alias = normalizePlayerName(token);
+        const aliasKey = canonicalNameJS(alias);
+        if (!alias || !aliasKey) return;
+        if (aliasKey === baseKey) return;
+        if (seen.has(aliasKey)) return;
+        seen.add(aliasKey);
+        aliases.push(alias);
+      });
+      return aliases;
     }
 
     async function loadAlliance() {
@@ -1006,6 +1077,143 @@
       renderGroups();
     }
 
+    function buildNewAllianceRow(name, canonicalKey) {
+      const headers = state.playerHeaders && state.playerHeaders.length ? state.playerHeaders : [state.playerNameField];
+      const row = {};
+      headers.forEach(h => { row[h] = ""; });
+      row[state.playerNameField] = name;
+      if (headers.includes("InAlliance")) row.InAlliance = "1";
+      if (headers.includes("Note")) row.Note = row.Note ?? "";
+      row.canonicalKey = canonicalKey;
+      row.currentName = name;
+      return row;
+    }
+
+    function applyNewPlayerFocus(canonicalKey, name) {
+      state.showAllPlayers = true;
+      if (elements.showAllToggle) elements.showAllToggle.textContent = "Nur Alias-Gruppen anzeigen";
+      state.highlightedKey = canonicalKey;
+      if (elements.searchInput) elements.searchInput.value = name;
+      renderGroups();
+    }
+
+    async function createPlayer() {
+      setCreateError("");
+      if (!isDataLoaded()) { setCreateError("CSV noch nicht geladen – bitte zuerst Neu laden."); return; }
+      if (state.loading || state.saving) return;
+
+      const newName = normalizePlayerName(elements.newPlayerName?.value || "");
+      if (!newName) { setCreateError("Spielername darf nicht leer sein."); return; }
+      const newKey = canonicalNameJS(newName);
+
+      if (state.groups.has(newKey)) { setCreateError("Spieler existiert bereits."); return; }
+      const nameCollision = Array.from(state.groups.values())
+        .find(g => (g.currentName || "").toLowerCase() === newName.toLowerCase());
+      if (nameCollision) { setCreateError("Spieler existiert bereits."); return; }
+
+      const aliases = parseAliasInput(elements.newPlayerAliases?.value || "", newName);
+      for (const alias of aliases) {
+        const owner = findAliasOwner(alias);
+        if (owner) {
+          const ownerName = resolvePlayerDisplayName(owner.currentName || owner.canonicalLabel || owner.canonicalKey);
+          setCreateError(`Alias '${alias}' existiert bereits bei '${ownerName}'`);
+          return;
+        }
+      }
+
+      const adminKey = window.dsroShared?.getAdminKey?.();
+      if (!adminKey) {
+        alert("Admin-Key fehlt – bitte einloggen.");
+        renderAdminKeyStatus({ message: "Admin-Key fehlt.", tone: "warn", showAlert: true });
+        setCreateError("Admin-Key fehlt.");
+        return;
+      }
+
+      rememberSettings();
+      state.saving = true; elements.saveBtn.disabled = true; updateCreateState(); setStatus("Speichere neuen Spieler…", "info");
+
+      const prevGroups = state.groups;
+      const prevAllianceRows = state.allianceRows;
+      const nextGroups = new Map(state.groups);
+      const newGroup = {
+        canonicalKey: newKey,
+        canonicalLabel: newName,
+        currentName: newName,
+        aliases: new Set(),
+        rows: [],
+      };
+      aliases.forEach(a => newGroup.aliases.add(a));
+      const newRow = buildNewAllianceRow(newName, newKey);
+      newGroup.rows.push(newRow);
+      nextGroups.set(newKey, newGroup);
+
+      state.groups = nextGroups;
+      state.allianceRows = [...state.allianceRows, newRow];
+
+      const branch = elements.branchInput.value.trim() || "main";
+      const workerUrl = elements.workerUrl.value.trim();
+      const headers = window.dsroShared.buildAdminHeaders({ adminKey, headers: { "Content-Type": "application/json" } });
+      const payload = async (path, content) => {
+        const res = await fetch(workerUrl, { method: "POST", headers, body: JSON.stringify({ path, content, branch }) });
+        const json = await res.json().catch(() => ({}));
+        if (!res.ok || !json.ok) throw new Error(json.error || json.detail || `Schreiben fehlgeschlagen (${path})`);
+      };
+
+      let aliasWriteFailed = false;
+      let writeSucceeded = false;
+      try {
+        const allianceCsv = buildAllianceCsv();
+        await payload("data/alliance.csv", allianceCsv);
+        writeSucceeded = true;
+        if (aliases.length) {
+          const aliasCsv = buildAliasCsv();
+          try {
+            await payload("data/aliases.csv", aliasCsv);
+            setStatus("Spieler und Aliase gespeichert.", "ok");
+          } catch (err) {
+            aliasWriteFailed = true;
+            console.error(err);
+            setStatus("Spieler angelegt, Aliase nicht gespeichert", "error");
+            setCreateError("Alias-Schreiben fehlgeschlagen.");
+          }
+        } else {
+          setStatus("Spieler angelegt.", "ok");
+        }
+
+        elements.newPlayerName.value = "";
+        if (elements.newPlayerAliases) elements.newPlayerAliases.value = "";
+        try {
+          await reloadData();
+          applyNewPlayerFocus(newKey, newName);
+          if (aliasWriteFailed) {
+            state.groups.get(newKey)?.aliases.clear();
+            renderGroups();
+          }
+        } catch (reloadErr) {
+          console.error(reloadErr);
+          setStatus("Spieler angelegt, aber Reload fehlgeschlagen – bitte Neu laden.", "error");
+          setCreateError("Anlage ok, aber Reload fehlgeschlagen – bitte Neu laden.");
+          applyNewPlayerFocus(newKey, newName);
+          if (aliasWriteFailed) state.groups.get(newKey)?.aliases.clear();
+          renderGroups();
+        }
+      } catch (err) {
+        console.error(err);
+        setStatus(err.message || "Speichern fehlgeschlagen", "error");
+        setCreateError(err.message || "Speichern fehlgeschlagen");
+        if (!writeSucceeded) {
+          state.groups = prevGroups;
+          state.allianceRows = prevAllianceRows;
+          renderGroups();
+        } else if (aliasWriteFailed) {
+          state.groups.get(newKey)?.aliases.clear();
+          renderGroups();
+        }
+      } finally {
+        state.saving = false; elements.saveBtn.disabled = false; updateCreateState();
+      }
+    }
+
     async function saveChanges() {
       rememberSettings();
       const adminKey = window.dsroShared?.getAdminKey?.();
@@ -1014,7 +1222,7 @@
         renderAdminKeyStatus({ message: "Admin-Key fehlt.", tone: "warn", showAlert: true });
         return;
       }
-      state.saving = true; elements.saveBtn.disabled = true; setStatus("Speichere…", "info");
+      state.saving = true; elements.saveBtn.disabled = true; updateCreateState(); setStatus("Speichere…", "info");
       const allianceCsv = buildAllianceCsv();
       const aliasesCsv = buildAliasCsv();
       const branch = elements.branchInput.value.trim() || "main";
@@ -1034,12 +1242,12 @@
         setStatus(err.message || "Speichern fehlgeschlagen", "error");
         openAdminSettings();
       } finally {
-        state.saving = false; elements.saveBtn.disabled = false;
+        state.saving = false; elements.saveBtn.disabled = false; updateCreateState();
       }
     }
 
     async function reloadData() {
-      state.loading = true; elements.reloadBtn.disabled = true; elements.saveBtn.disabled = true; setStatus("Lade…", "info");
+      state.loading = true; elements.reloadBtn.disabled = true; elements.saveBtn.disabled = true; updateCreateState(); setStatus("Lade…", "info");
       try {
         state.highlightedKey = "";
         state.showAllPlayers = false;
@@ -1064,7 +1272,7 @@
         console.error(err);
         setStatus(err.message || "Laden fehlgeschlagen", "error");
       } finally {
-        state.loading = false; elements.reloadBtn.disabled = false; elements.saveBtn.disabled = false;
+        state.loading = false; elements.reloadBtn.disabled = false; elements.saveBtn.disabled = false; updateCreateState();
       }
     }
 
@@ -1089,10 +1297,17 @@
           state.highlightedKey = match ? match.canonicalKey : "";
         },
       });
+      if (elements.createPlayerBtn) elements.createPlayerBtn.addEventListener("click", createPlayer);
+      if (elements.newPlayerName) elements.newPlayerName.addEventListener("keydown", (ev) => {
+        if (ev.key === "Enter") { ev.preventDefault(); createPlayer(); }
+      });
+      if (elements.newPlayerAliases) elements.newPlayerAliases.addEventListener("input", () => setCreateError(""));
+      if (elements.newPlayerName) elements.newPlayerName.addEventListener("input", () => setCreateError(""));
       elements.searchInput.addEventListener("input", handleSearchInput);
       elements.showAllToggle.addEventListener("click", toggleShowAll);
       elements.reloadBtn.addEventListener("click", reloadData);
       elements.saveBtn.addEventListener("click", saveChanges);
+      updateCreateState();
       reloadData();
     }
 
