@@ -54,8 +54,8 @@
       font-weight: 600;
     }
     .status-pill.ok { background: #dcfce7; border-color: #bbf7d0; color: #166534; }
+    .status-pill.working { background: var(--panel-muted); color: var(--muted); }
     .status-pill.error { background: #fee2e2; border-color: #fecaca; color: #991b1b; }
-    .status-pill.info { background: var(--panel-muted); color: var(--muted); }
     .status-dot { width: 10px; height: 10px; border-radius: 999px; background: currentColor; box-shadow: 0 0 0 3px rgba(255,255,255,0.7); }
 
     .toolbar { display: flex; flex-wrap: wrap; gap: 0.65rem; align-items: center; }
@@ -216,9 +216,9 @@
         </div>
         <div class="admin-header-actions">
           <div class="admin-header-tools">
-            <div class="admin-status-line">
-              <div id="adminKeyStatus" class="pill info">Admin-Key wird geprüft…</div>
-            </div>
+              <div class="admin-status-line">
+                <div id="adminKeyStatus" class="pill working">Admin-Key wird geprüft…</div>
+              </div>
             <details id="adminSettings" class="admin-settings">
               <summary>⚙️ Einstellungen</summary>
               <div class="admin-settings-grid">
@@ -254,7 +254,7 @@
                 <h2>Alias-Gruppen</h2>
                 <p class="lede">Pflegt <code>data/alliance.csv</code> und <code>data/aliases.csv</code> mit stabilen kanonischen IDs.</p>
               </div>
-              <div class="status-pill info" id="statusBar">
+              <div class="status-pill working" id="statusBar">
                 <span class="status-dot"></span>
                 <span id="statusText">Bereit</span>
               </div>
@@ -349,7 +349,10 @@
       saving: false,
       showAllPlayers: false,
       highlightedKey: "",
+      loadError: "",
+      loadAttempted: false,
     };
+    let initialLoadTriggered = false;
 
     const elements = {
       groupList: document.getElementById("groupList"),
@@ -422,17 +425,23 @@
     }
     function detectAliasField(headers, preferred) { return headers.find(h => preferred.includes(h)) || preferred[0]; }
 
-    function setStatus(text, tone = "info") {
+    function setStatus(text, tone = "working") {
       elements.statusText.textContent = text;
       const pill = document.getElementById("statusBar");
-      pill.classList.remove("ok", "error", "info");
-      pill.classList.add(tone);
+      pill.classList.remove("ok", "error", "working");
+      const cls = tone === "info" ? "working" : tone;
+      pill.classList.add(cls);
     }
 
     function renderAdminKeyStatus({ message, tone = "info", showAlert = false } = {}) {
       if (!elements.adminKeyStatus) return;
-      const cls = tone === "success" ? "info" : tone;
-      elements.adminKeyStatus.textContent = message || "";
+      const cls = tone === "success" ? "ok" : tone === "info" ? "working" : tone;
+      const fallbackMessage = tone === "success"
+        ? "Admin-Key ok."
+        : tone === "warn"
+          ? "Admin-Key fehlt."
+          : message;
+      elements.adminKeyStatus.textContent = fallbackMessage || "";
       elements.adminKeyStatus.className = `pill ${cls}`.trim();
       if (elements.adminKeyFallbackRow) {
         elements.adminKeyFallbackRow.style.display = showAlert ? "block" : "none";
@@ -611,6 +620,16 @@
       });
     }
 
+    function resolveEmptyMessage(filteredLength, hasQuery) {
+      const adminKeyMissing = !window.dsroShared?.getAdminKey?.();
+      if (state.loading) return "Lade Spieler…";
+      if (adminKeyMissing) return "Kein Admin-Key – bitte über Admin-Startseite einloggen oder Fallback-Key eintragen.";
+      if (state.loadError) return "Laden fehlgeschlagen – Neu laden versuchen.";
+      if (state.loadAttempted && state.groups.size === 0) return "Keine Spieler gefunden – CSV prüfen oder neu laden.";
+      if (filteredLength === 0 && state.groups.size > 0) return "Keine Treffer – Filter anpassen.";
+      return "Noch keine Spieler geladen.";
+    }
+
     function renderGroups() {
       const query = elements.searchInput.value.trim();
       const queryCanon = canonicalNameJS(query);
@@ -644,6 +663,8 @@
       }).sort((a, b) => a.currentName.localeCompare(b.currentName, "de", { sensitivity: "base" }));
 
       elements.groupList.innerHTML = "";
+      const emptyMessage = resolveEmptyMessage(filtered.length, hasQuery);
+      elements.groupEmpty.textContent = emptyMessage;
       elements.groupEmpty.classList.toggle("hidden", filtered.length > 0);
       if (!filtered.length) return;
 
@@ -1162,7 +1183,7 @@
       }
 
       rememberSettings();
-      state.saving = true; elements.saveBtn.disabled = true; updateCreateState(); setStatus("Speichere…", "info");
+      state.saving = true; elements.saveBtn.disabled = true; updateCreateState(); setStatus("Speichere…", "working");
 
       const prevGroups = state.groups;
       const prevAllianceRows = state.allianceRows;
@@ -1254,7 +1275,7 @@
         renderAdminKeyStatus({ message: "Admin-Key fehlt.", tone: "warn", showAlert: true });
         return;
       }
-      state.saving = true; elements.saveBtn.disabled = true; updateCreateState(); setStatus("Speichere…", "info");
+      state.saving = true; elements.saveBtn.disabled = true; updateCreateState(); setStatus("Speichere…", "working");
       const allianceCsv = buildAllianceCsv();
       const aliasesCsv = buildAliasCsv();
       const branch = elements.branchInput.value.trim() || "main";
@@ -1279,7 +1300,19 @@
     }
 
     async function reloadData() {
-      state.loading = true; elements.reloadBtn.disabled = true; elements.saveBtn.disabled = true; updateCreateState(); setStatus("Lade…", "info");
+      if (state.loading || state.saving) return;
+      const adminKey = window.dsroShared?.getAdminKey?.();
+      if (!adminKey) {
+        state.loadError = "Admin-Key fehlt.";
+        setStatus("Admin-Key fehlt.", "error");
+        renderAdminKeyStatus({ message: "Admin-Key fehlt.", tone: "warn", showAlert: true });
+        renderGroups();
+        return;
+      }
+
+      state.loading = true; elements.reloadBtn.disabled = true; elements.saveBtn.disabled = true; updateCreateState(); setStatus("Lade…", "working");
+      state.loadAttempted = true;
+      state.loadError = "";
       try {
         state.highlightedKey = "";
         state.showAllPlayers = false;
@@ -1295,6 +1328,7 @@
         if (elements.showAllToggle) elements.showAllToggle.checked = false;
         if (elements.searchInput) elements.searchInput.value = "";
         state.groups = new Map();
+        renderGroups();
         await loadAlliance();
         await loadAliases();
         rebuildGroupsFromAlliance();
@@ -1302,26 +1336,44 @@
         setStatus(`Geladen (${state.groups.size} Gruppen).`, "ok");
       } catch (err) {
         console.error(err);
-        setStatus(err.message || "Fehler beim Laden.", "error");
+        state.loadError = err?.message || "Fehler beim Laden.";
+        setStatus(state.loadError, "error");
+        renderGroups();
       } finally {
         state.loading = false; elements.reloadBtn.disabled = false; elements.saveBtn.disabled = false; updateCreateState();
       }
     }
 
-    function initAdminKeyGate() {
-      if (!window.dsroShared?.initAdminKeyGate) return;
-      window.dsroShared.initAdminKeyGate({
+    function initAdminKeyGate({ onValid } = {}) {
+      if (!window.dsroShared?.initAdminKeyGate) {
+        if (typeof onValid === "function") onValid();
+        return null;
+      }
+      return window.dsroShared.initAdminKeyGate({
         statusEl: elements.adminKeyStatus,
         fallbackInput: elements.adminKeyFallback,
         fallbackRow: elements.adminKeyFallbackRow,
         fallbackButton: elements.adminKeyFallbackBtn,
         settingsToggle: elements.adminSettings,
         renderStatus: renderAdminKeyStatus,
+        onValid: (key) => {
+          if (typeof onValid === "function") onValid(key);
+        },
       });
     }
 
     function init() {
-      initAdminKeyGate();
+      if (!window.dsroShared?.getAdminKey?.()) openAdminSettings();
+      else closeAdminSettings();
+
+      initAdminKeyGate({
+        onValid: () => {
+          if (initialLoadTriggered) return;
+          initialLoadTriggered = true;
+          reloadData();
+        },
+      });
+
       restoreSettings();
       const auto = attachPlayerAutocomplete(elements.searchInput, {
         onCommit: (value) => {
@@ -1340,7 +1392,7 @@
       elements.reloadBtn.addEventListener("click", reloadData);
       elements.saveBtn.addEventListener("click", saveChanges);
       updateCreateState();
-      reloadData();
+      renderGroups();
     }
 
     init();
