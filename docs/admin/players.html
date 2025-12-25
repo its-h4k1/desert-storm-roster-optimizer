@@ -60,6 +60,8 @@
 
     .toolbar { display: flex; flex-wrap: wrap; gap: 0.65rem; align-items: center; }
     .toolbar .search { flex: 1; min-width: 220px; }
+    .search-controls { display: flex; gap: 0.55rem; align-items: center; flex-wrap: wrap; }
+    .search-toggle { display: inline-flex; align-items: center; gap: 0.35rem; color: var(--muted); font-size: 0.9rem; }
     .toolbar-actions { display: inline-flex; gap: 0.45rem; flex-wrap: wrap; align-items: center; }
 
     label {
@@ -134,6 +136,8 @@
       background: var(--row-bg);
       box-shadow: 0 6px 14px rgba(15, 23, 42, 0.06);
     }
+
+    .group-row.spotlight { border-color: var(--accent); box-shadow: 0 8px 18px rgba(11, 99, 246, 0.18); }
 
     .group-head {
       display: flex;
@@ -256,11 +260,17 @@
               </div>
             </div>
             <div class="toolbar">
-              <label class="search">Spieler suchen
-                <input id="searchInput" type="search" placeholder="Name suchen…" autocomplete="off">
-              </label>
+              <div class="search">
+                <label for="searchInput">Spieler suchen</label>
+                <div class="search-controls">
+                  <input id="searchInput" type="search" placeholder="Name suchen…" autocomplete="off">
+                  <label class="search-toggle">
+                    <input id="showAllToggle" type="checkbox">
+                    <span>Alle anzeigen</span>
+                  </label>
+                </div>
+              </div>
               <div class="toolbar-actions">
-                <button id="showAllToggle" class="ghost" type="button">Alle Spieler anzeigen</button>
                 <button id="reloadBtn" class="ghost" type="button">Neu laden</button>
                 <button id="saveBtn" class="primary" type="button">Speichern</button>
               </div>
@@ -270,15 +280,21 @@
           <section class="card" id="createPlayerCard">
             <div style="display:flex;align-items:center;justify-content:space-between;gap:0.5rem;flex-wrap:wrap;">
               <h3 style="margin:0">Neuen Spieler anlegen</h3>
-              <small class="group-meta">Speichert direkt per CSV-Write</small>
+              <small class="group-meta">Speichert sofort.</small>
             </div>
             <div class="form-grid" style="margin-top:0.65rem;">
               <label>Spielername
                 <input id="newPlayerName" type="text" placeholder="z.B. Max Muster" autocomplete="off">
               </label>
-              <label>Aliase (optional)
-                <textarea id="newPlayerAliases" rows="2" placeholder="Komma oder Zeilenumbruch"></textarea>
-              </label>
+              <details class="advanced" id="aliasAccordion">
+                <summary>Aliase hinzufügen (optional)</summary>
+                <div class="settings-grid" style="padding-left:0;">
+                  <label>Aliase
+                    <textarea id="newPlayerAliases" rows="2" placeholder="Komma oder Zeilenumbruch"></textarea>
+                  </label>
+                  <small class="group-meta">Komma oder Zeilenumbruch</small>
+                </div>
+              </details>
             </div>
             <div style="display:flex;align-items:center;gap:0.5rem;flex-wrap:wrap;margin-top:0.65rem;">
               <button id="createPlayerBtn" class="primary" type="button">Anlegen</button>
@@ -655,6 +671,8 @@
       filtered.forEach(group => {
         const row = document.createElement("div");
         row.className = "group-row";
+        row.dataset.key = group.canonicalKey;
+        const spotlight = spotlightKey && spotlightKey === group.canonicalKey;
 
         const head = document.createElement("div");
         head.className = "group-head";
@@ -667,7 +685,8 @@
         title.appendChild(nameSlot);
         const meta = document.createElement("span");
         meta.className = "group-meta";
-        meta.textContent = `${group.rows.length} Datensätze · ${group.aliases.size} Aliase`;
+        const recordLabel = group.rows.length === 1 ? "1 Datensatz" : `${group.rows.length} Datensätze`;
+        meta.textContent = `${recordLabel} · ${group.aliases.size} Aliase`;
         title.appendChild(meta);
         head.appendChild(title);
 
@@ -783,9 +802,12 @@
           row.appendChild(hint);
         }
 
+        if (spotlight) row.classList.add("spotlight");
+
         elements.groupList.appendChild(row);
       });
       buildNameIndex();
+      scrollHighlightedIntoView();
     }
 
     function moveAlias(alias, fromKey) {
@@ -1071,10 +1093,20 @@
       renderGroups();
     }
 
-    function toggleShowAll() {
-      state.showAllPlayers = !state.showAllPlayers;
-      elements.showAllToggle.textContent = state.showAllPlayers ? "Nur Alias-Gruppen anzeigen" : "Alle Spieler anzeigen";
+    function toggleShowAll(ev) {
+      const nextValue = ev?.target ? ev.target.checked : !state.showAllPlayers;
+      state.showAllPlayers = nextValue;
+      if (elements.showAllToggle) elements.showAllToggle.checked = state.showAllPlayers;
       renderGroups();
+    }
+
+    function scrollHighlightedIntoView() {
+      if (!state.highlightedKey || !elements.groupList) return;
+      const key = window.CSS?.escape ? CSS.escape(state.highlightedKey) : state.highlightedKey;
+      const target = elements.groupList.querySelector(`[data-key="${key}"]`);
+      if (target?.scrollIntoView) {
+        target.scrollIntoView({ block: "center", behavior: "smooth" });
+      }
     }
 
     function buildNewAllianceRow(name, canonicalKey) {
@@ -1091,7 +1123,7 @@
 
     function applyNewPlayerFocus(canonicalKey, name) {
       state.showAllPlayers = true;
-      if (elements.showAllToggle) elements.showAllToggle.textContent = "Nur Alias-Gruppen anzeigen";
+      if (elements.showAllToggle) elements.showAllToggle.checked = true;
       state.highlightedKey = canonicalKey;
       if (elements.searchInput) elements.searchInput.value = name;
       renderGroups();
@@ -1130,7 +1162,7 @@
       }
 
       rememberSettings();
-      state.saving = true; elements.saveBtn.disabled = true; updateCreateState(); setStatus("Speichere neuen Spieler…", "info");
+      state.saving = true; elements.saveBtn.disabled = true; updateCreateState(); setStatus("Speichere…", "info");
 
       const prevGroups = state.groups;
       const prevAllianceRows = state.allianceRows;
@@ -1169,15 +1201,15 @@
           const aliasCsv = buildAliasCsv();
           try {
             await payload("data/aliases.csv", aliasCsv);
-            setStatus("Spieler und Aliase gespeichert.", "ok");
+            setStatus("Gespeichert.", "ok");
           } catch (err) {
             aliasWriteFailed = true;
             console.error(err);
-            setStatus("Spieler angelegt, Aliase nicht gespeichert", "error");
+            setStatus("Angelegt, Alias-Fehler.", "error");
             setCreateError("Alias-Schreiben fehlgeschlagen.");
           }
         } else {
-          setStatus("Spieler angelegt.", "ok");
+          setStatus("Gespeichert.", "ok");
         }
 
         elements.newPlayerName.value = "";
@@ -1191,7 +1223,7 @@
           }
         } catch (reloadErr) {
           console.error(reloadErr);
-          setStatus("Spieler angelegt, aber Reload fehlgeschlagen – bitte Neu laden.", "error");
+          setStatus("Angelegt, Reload fehlgeschlagen.", "error");
           setCreateError("Anlage ok, aber Reload fehlgeschlagen – bitte Neu laden.");
           applyNewPlayerFocus(newKey, newName);
           if (aliasWriteFailed) state.groups.get(newKey)?.aliases.clear();
@@ -1199,7 +1231,7 @@
         }
       } catch (err) {
         console.error(err);
-        setStatus(err.message || "Speichern fehlgeschlagen", "error");
+        setStatus(err.message || "Speichern fehlgeschlagen.", "error");
         setCreateError(err.message || "Speichern fehlgeschlagen");
         if (!writeSucceeded) {
           state.groups = prevGroups;
@@ -1239,7 +1271,7 @@
         setStatus("Gespeichert.", "ok");
       } catch (err) {
         console.error(err);
-        setStatus(err.message || "Speichern fehlgeschlagen", "error");
+        setStatus(err.message || "Speichern fehlgeschlagen.", "error");
         openAdminSettings();
       } finally {
         state.saving = false; elements.saveBtn.disabled = false; updateCreateState();
@@ -1260,7 +1292,7 @@
         state.aliasAliasField = "Alias";
         state.aliasRows = [];
         state.originalAliasesCsv = "";
-        if (elements.showAllToggle) elements.showAllToggle.textContent = "Alle Spieler anzeigen";
+        if (elements.showAllToggle) elements.showAllToggle.checked = false;
         if (elements.searchInput) elements.searchInput.value = "";
         state.groups = new Map();
         await loadAlliance();
@@ -1270,7 +1302,7 @@
         setStatus(`Geladen (${state.groups.size} Gruppen).`, "ok");
       } catch (err) {
         console.error(err);
-        setStatus(err.message || "Laden fehlgeschlagen", "error");
+        setStatus(err.message || "Fehler beim Laden.", "error");
       } finally {
         state.loading = false; elements.reloadBtn.disabled = false; elements.saveBtn.disabled = false; updateCreateState();
       }
@@ -1304,7 +1336,7 @@
       if (elements.newPlayerAliases) elements.newPlayerAliases.addEventListener("input", () => setCreateError(""));
       if (elements.newPlayerName) elements.newPlayerName.addEventListener("input", () => setCreateError(""));
       elements.searchInput.addEventListener("input", handleSearchInput);
-      elements.showAllToggle.addEventListener("click", toggleShowAll);
+      elements.showAllToggle.addEventListener("change", toggleShowAll);
       elements.reloadBtn.addEventListener("click", reloadData);
       elements.saveBtn.addEventListener("click", saveChanges);
       updateCreateState();
