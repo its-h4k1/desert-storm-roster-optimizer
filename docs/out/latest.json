@@ -3,7 +3,7 @@
     "id": "DS-NEXT",
     "date": "",
     "time": "",
-    "generated_at": "2025-12-25T00:49:23.647917+00:00",
+    "generated_at": "2025-12-25T00:53:49.034649+00:00",
     "source": "data/event_signups_next.csv",
     "event_datetime_local": "2025-12-26T21:00:00+01:00",
     "signup_deadline_local": "2025-12-25T03:00:00+01:00"
@@ -93,6 +93,16 @@
       {
         "name": "Jimmy die Robbe",
         "raw_name": "Jimmy die Robbe",
+        "role": "Start",
+        "note": "",
+        "tags": [
+          "hard"
+        ],
+        "source": "manual"
+      },
+      {
+        "name": "Kommandant743",
+        "raw_name": "Kommandant743",
         "role": "Start",
         "note": "",
         "tags": [
@@ -403,10 +413,10 @@
     "zombie666 80 420": "zombie666 80 420"
   },
   "signup_stats": {
-    "hard_signups": 24,
-    "hard_signups_eligible": 24,
+    "hard_signups": 25,
+    "hard_signups_eligible": 25,
     "responses": 0,
-    "team_a_start": 15,
+    "team_a_start": 16,
     "team_a_subs": 0,
     "team_b_start": 9,
     "team_b_subs": 0,
@@ -460,6 +470,11 @@
       "state": "hard_active",
       "canon": "jimmy die robbe",
       "name": "Jimmy die Robbe"
+    },
+    "Kommandant743": {
+      "state": "hard_active",
+      "canon": "kommandant743",
+      "name": "Kommandant743"
     },
     "Kurdun Laneti": {
       "state": "hard_active",
@@ -539,8 +554,8 @@
   },
   "event_signups": {
     "hard_signups_only": true,
-    "hard_signups": 24,
-    "hard_signups_eligible": 24,
+    "hard_signups": 25,
+    "hard_signups_eligible": 25,
     "responses": 0
   },
   "reliability_config": {
