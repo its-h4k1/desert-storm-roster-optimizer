@@ -1160,9 +1160,11 @@
       };
 
       let aliasWriteFailed = false;
+      let writeSucceeded = false;
       try {
         const allianceCsv = buildAllianceCsv();
         await payload("data/alliance.csv", allianceCsv);
+        writeSucceeded = true;
         if (aliases.length) {
           const aliasCsv = buildAliasCsv();
           try {
@@ -1180,19 +1182,33 @@
 
         elements.newPlayerName.value = "";
         if (elements.newPlayerAliases) elements.newPlayerAliases.value = "";
-        await reloadData();
-        applyNewPlayerFocus(newKey, newName);
-        if (aliasWriteFailed) {
-          state.groups.get(newKey)?.aliases.clear();
+        try {
+          await reloadData();
+          applyNewPlayerFocus(newKey, newName);
+          if (aliasWriteFailed) {
+            state.groups.get(newKey)?.aliases.clear();
+            renderGroups();
+          }
+        } catch (reloadErr) {
+          console.error(reloadErr);
+          setStatus("Spieler angelegt, aber Reload fehlgeschlagen – bitte Neu laden.", "error");
+          setCreateError("Anlage ok, aber Reload fehlgeschlagen – bitte Neu laden.");
+          applyNewPlayerFocus(newKey, newName);
+          if (aliasWriteFailed) state.groups.get(newKey)?.aliases.clear();
           renderGroups();
         }
       } catch (err) {
         console.error(err);
         setStatus(err.message || "Speichern fehlgeschlagen", "error");
         setCreateError(err.message || "Speichern fehlgeschlagen");
-        state.groups = prevGroups;
-        state.allianceRows = prevAllianceRows;
-        renderGroups();
+        if (!writeSucceeded) {
+          state.groups = prevGroups;
+          state.allianceRows = prevAllianceRows;
+          renderGroups();
+        } else if (aliasWriteFailed) {
+          state.groups.get(newKey)?.aliases.clear();
+          renderGroups();
+        }
       } finally {
         state.saving = false; elements.saveBtn.disabled = false; updateCreateState();
       }
