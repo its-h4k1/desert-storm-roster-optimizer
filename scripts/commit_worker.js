@@ -1,5 +1,12 @@
 const DEFAULT_REPO = "its-h4k1/desert-storm-roster-optimizer";
-const PATH_ALLOWLIST = ["data/", "docs/data/event_results/"];
+// Align with the deployed Worker allowlist so local/testing behavior matches
+// production (see Workers KV/ENV `ALLOWED_ROOTS`).
+const PATH_ALLOWLIST = [
+  "data/",
+  "out/",
+  "admin/",
+  "docs/data/event_results/",
+];
 
 function jsonResponse(data, status = 200) {
   return new Response(JSON.stringify(data), {
