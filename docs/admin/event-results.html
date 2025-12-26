@@ -41,6 +41,9 @@
     .warning { border:1px solid #fed7aa; background:#fff7ed; color:#9a3412; border-radius:0.85rem; padding:0.65rem 0.8rem; font-size:0.9rem; }
     .empty-state { padding:1rem; border:1px dashed var(--border); border-radius:0.9rem; text-align:center; color:var(--text-muted); }
     .mono { font-family: ui-monospace, SFMono-Regular, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace; }
+    .success-cta { display:none; font-size:0.9rem; color:var(--text-muted); }
+    .success-cta a { margin-left:0.5rem; text-decoration:none; font-weight:600; }
+    .success-cta a:hover { text-decoration:underline; }
   </style>
 </head>
   <body>
@@ -131,6 +134,10 @@
                 <span id="warningPill" class="pill warn" style="display:none;"></span>
                 <button id="retryMirrorBtn" type="button" style="display:none;">Mirror erneut versuchen</button>
               </div>
+              <div id="saveSuccessCta" class="success-cta" aria-live="polite">
+                ✅ Ergebnisse gespeichert. Nächster Schritt: Zusage-Pool leeren (ab Mo 03:00).
+                <a href="./event-assignments.html">→ Zur Zusagen-Seite</a>
+              </div>
               <div class="warnings" id="warningList" aria-live="polite"></div>
             </section>
 
@@ -185,6 +192,7 @@
         snapshotMeta: $('#snapshotMeta'),
         resultMeta: $('#resultMeta'),
         adminKeyState: $('#adminKeyState'),
+        saveSuccessCta: $('#saveSuccessCta'),
       };
 
       const openAdminSettings = () => {
@@ -220,6 +228,9 @@
         if (elements.statusText) {
           elements.statusText.textContent = text;
           elements.statusText.className = tone === 'error' ? 'error' : tone === 'success' ? 'success' : '';
+        }
+        if (elements.saveSuccessCta) {
+          elements.saveSuccessCta.style.display = tone === 'success' ? 'block' : 'none';
         }
       }
 
