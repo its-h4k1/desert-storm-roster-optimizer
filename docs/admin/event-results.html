@@ -677,11 +677,10 @@
       }
 
       async function fetchEventResultsIndex() {
-        const base = shared.computeSiteRoot ? shared.computeSiteRoot(location.pathname) : './';
-        const url = `${base}data/event_results/index.json?v=${Date.now()}`;
+        const url = `../data/event_results/index.json?v=${Date.now()}`;
         try {
           const response = await fetch(url, { cache: 'no-store' });
-          if (response.status === 404) return [];
+          if (response.status === 404) return null;
           if (!response.ok) throw new Error(`Index HTTP ${response.status}`);
           const data = await response.json();
           return normalizeEventResultsIndex(data);
@@ -792,6 +791,7 @@
           });
         } else {
           addWarning('Event-Results-Index konnte nicht aktualisiert werden.');
+          setStatus('Index konnte nicht geladen werden – Ergebnis wird ohne Index gespeichert.', 'warn');
         }
         const commitMessage = `admin: update event results ${eventId} (ssot + mirror)`;
         state.lastSave = {
