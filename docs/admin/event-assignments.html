@@ -197,9 +197,12 @@
                       </div>
                       <div style="display:flex; gap:0.35rem; align-items:center; flex-wrap:wrap;">
                         <span id="resultsStatusBadge" class="pill" title="Die Event-Ergebnisse sind auf der Website verfügbar.">Ergebnisse sichtbar (Website): …</span>
+                        <a id="openResultsLink" href="./event-results.html" class="ghost" style="padding:0.2rem 0.5rem; display:none; text-decoration:none;">Event-Ergebnisse öffnen</a>
                         <span id="signupWindowBadge" class="pill" title="Anmeldefenster für das kommende Event">Anmeldefenster: …</span>
                       </div>
+                      <small id="lastEventHint" class="hint" style="color:var(--text-muted); display:none;"></small>
                       <small id="resetGuardHint" class="hint" style="color:var(--text-muted);"></small>
+                      <small class="hint" style="color:var(--text-muted);">Reset ist nur im Anmeldefenster erlaubt: Mo 03:00 – Do 03:00 (Europe/Zurich).</small>
                     </div>
                     <div class="toolbar-actions">
                       <button id="resetBtn" class="ghost" style="border-color:var(--border);color:#b91c1c;">Event abschließen &amp; Zusage-Pool leeren</button>
@@ -402,8 +405,10 @@
         refreshGuardBtn: document.getElementById('refreshGuardBtn'),
         lastEventIdLabel: document.getElementById('lastEventIdLabel'),
         resultsStatusBadge: document.getElementById('resultsStatusBadge'),
+        openResultsLink: document.getElementById('openResultsLink'),
         signupWindowBadge: document.getElementById('signupWindowBadge'),
         resetGuardHint: document.getElementById('resetGuardHint'),
+        lastEventHint: document.getElementById('lastEventHint'),
         addPanel: document.getElementById('addPanel'),
         hardOnlyToggle: document.getElementById('hardOnlyToggle'),
       };
@@ -1213,8 +1218,17 @@
 
       function renderResetGuardStatus() {
         const guard = state.resetGuards || {};
+        const eventIdRe = /^DS-\d{4}-\d{2}-\d{2}$/;
         if (elements.lastEventIdLabel) {
-          elements.lastEventIdLabel.textContent = guard.lastEventId || 'DS-YYYY-MM-DD';
+          const lastEventId = guard.lastEventId || 'DS-YYYY-MM-DD';
+          const isPlanning = guard.lastEventId && !eventIdRe.test(guard.lastEventId);
+          elements.lastEventIdLabel.textContent = isPlanning ? `${lastEventId} (Planung)` : lastEventId;
+          if (elements.lastEventHint) {
+            elements.lastEventHint.style.display = isPlanning ? 'block' : 'none';
+            elements.lastEventHint.textContent = isPlanning
+              ? 'Hinweis: DS-NEXT ist nur Planung fürs kommende Event. Ergebnisse haben immer DS-YYYY-MM-DD.'
+              : '';
+          }
         }
         const applyBadge = (el, ok, { blocker = false } = {}) => {
           if (!el) return;
@@ -1238,6 +1252,12 @@
           el.textContent = `Anmeldefenster: ${label}`;
         };
         applyWindowBadge(elements.signupWindowBadge, guard.windowOpen, guard.signupWindowStartsText, guard.signupWindowEndsText);
+        if (elements.openResultsLink) {
+          const missingEvent = !guard.lastEventId;
+          const mirrorMissing = guard.mirrorOk === false;
+          const showShortcut = mirrorMissing || missingEvent;
+          elements.openResultsLink.style.display = showShortcut ? 'inline-flex' : 'none';
+        }
         if (elements.resetGuardHint) {
           let hint = '';
           if (guard.checking) hint = 'Prüfe Event-Ergebnisse …';
