@@ -65,6 +65,36 @@ jobs:
             --event-signups data/event_signups_next.csv \
             --out out
 
+      - name: Rebuild event results index
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+import json
+import re
+from pathlib import Path
+
+results_dir = Path("data/event_results")
+pattern = re.compile(r"DS-\d{4}-\d{2}-\d{2}$")
+
+event_ids = []
+for path in results_dir.glob("DS-*.json"):
+    event_id = path.stem
+    if pattern.fullmatch(event_id):
+        event_ids.append(event_id)
+
+event_ids.sort(reverse=True)
+
+index_data = {"event_ids": event_ids}
+
+for target in [
+    Path("data/event_results/index.json"),
+    Path("docs/data/event_results/index.json"),
+]:
+    target.parent.mkdir(parents=True, exist_ok=True)
+    target.write_text(json.dumps(index_data, indent=2) + "\n")
+PY
+
       - name: Commit generated files
         if: github.ref == 'refs/heads/main'
         shell: bash
@@ -72,7 +102,7 @@ jobs:
           set -euo pipefail
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add out/ docs/out/
+          git add out/ docs/out/ data/event_results/index.json docs/data/event_results/index.json
           if git diff --cached --quiet; then
             echo "No changes to commit."
           else
