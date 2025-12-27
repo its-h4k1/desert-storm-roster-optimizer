@@ -129,15 +129,15 @@
                   <button id="saveBtn" type="button">Speichern</button>
                 </div>
               </div>
-              <div class="status-bar">
-                <span id="statusText">Warte auf Aktion…</span>
-                <span id="warningPill" class="pill warn" style="display:none;"></span>
-                <button id="retryMirrorBtn" type="button" style="display:none;">Mirror erneut versuchen</button>
-              </div>
-              <div id="saveSuccessCta" class="success-cta" aria-live="polite">
-                ✅ Ergebnisse gespeichert. Nächster Schritt: Zusage-Pool leeren (ab Mo 03:00).
-                <a href="./event-assignments.html">→ Zur Zusagen-Seite</a>
-              </div>
+            <div class="status-bar">
+              <span id="statusText">Warte auf Aktion…</span>
+              <span id="warningPill" class="pill warn" style="display:none;"></span>
+              <button id="retryMirrorBtn" type="button" style="display:none;">Mirror erneut versuchen</button>
+            </div>
+            <div id="saveSuccessCta" class="success-cta" aria-live="polite">
+              ✅ Ergebnisse gespeichert. Der Event-Index wird automatisch aktualisiert (CI). Falls die Homepage noch nicht aktualisiert ist: 1–2 Minuten warten und neu laden.
+              <a href="./event-assignments.html">→ Zur Zusagen-Seite</a>
+            </div>
               <div class="warnings" id="warningList" aria-live="polite"></div>
             </section>
 
@@ -217,6 +217,8 @@
         lastSave: null,
         saveBlockedReason: '',
       };
+
+      const SUCCESS_STATUS = 'Ergebnisse gespeichert. Der Event-Index wird automatisch aktualisiert (CI). Falls die Homepage noch nicht aktualisiert ist: 1–2 Minuten warten und neu laden.';
 
       function refreshSaveButton() {
         if (!elements.saveBtn) return;
@@ -661,41 +663,6 @@
         }
       }
 
-      function normalizeEventResultsIndex(rawIndex) {
-        const ids = Array.isArray(rawIndex)
-          ? rawIndex
-          : Array.isArray(rawIndex?.event_ids)
-            ? rawIndex.event_ids
-            : [];
-        const unique = new Set();
-        ids.forEach((id) => {
-          if (typeof id === 'string' && id.trim()) {
-            unique.add(id.trim());
-          }
-        });
-        return Array.from(unique).sort((a, b) => b.localeCompare(a));
-      }
-
-      async function fetchEventResultsIndex() {
-        const url = `../data/event_results/index.json?v=${Date.now()}`;
-        try {
-          const response = await fetch(url, { cache: 'no-store' });
-          if (response.status === 404) return null;
-          if (!response.ok) throw new Error(`Index HTTP ${response.status}`);
-          const data = await response.json();
-          return normalizeEventResultsIndex(data);
-        } catch (err) {
-          console.warn('Event-Results-Index konnte nicht geladen werden', err);
-          return null;
-        }
-      }
-
-      function updateEventResultsIndex(ids, eventId) {
-        const next = new Set(Array.isArray(ids) ? ids : []);
-        next.add(eventId);
-        return Array.from(next).sort((a, b) => b.localeCompare(a));
-      }
-
       async function handleSave() {
         const eventId = validateEventId(elements.eventId.value);
         if (!eventId) {
@@ -772,27 +739,6 @@
           message: `admin: mirror event results ${eventId}`,
           content,
         };
-        const indexIds = await fetchEventResultsIndex();
-        const indexFiles = [];
-        if (indexIds !== null) {
-          const nextIndex = updateEventResultsIndex(indexIds, eventId);
-          const indexContent = JSON.stringify({ event_ids: nextIndex }, null, 2);
-          indexFiles.push({
-            path: 'data/event_results/index.json',
-            branch,
-            message: `admin: update event results index ${eventId}`,
-            content: indexContent,
-          });
-          indexFiles.push({
-            path: 'docs/data/event_results/index.json',
-            branch,
-            message: `admin: mirror event results index ${eventId}`,
-            content: indexContent,
-          });
-        } else {
-          addWarning('Event-Results-Index konnte nicht aktualisiert werden.');
-          setStatus('Index konnte nicht geladen werden – Ergebnis wird ohne Index gespeichert.', 'warn');
-        }
         const commitMessage = `admin: update event results ${eventId} (ssot + mirror)`;
         state.lastSave = {
           eventId,
@@ -805,24 +751,16 @@
         try {
           clearWarnings();
           setMirrorRetryVisible(false);
-          const files = [baseFile, mirrorFile, ...indexFiles];
+          const files = [baseFile, mirrorFile];
           try {
             await writeFilesAtomic({ files, workerUrl, message: commitMessage });
-            setStatus('Ergebnis gespeichert & Mirror aktualisiert.', 'success');
+            setStatus(SUCCESS_STATUS, 'success');
           } catch (atomicErr) {
             console.warn('Batch-Commit fehlgeschlagen, versuche sequenziell', atomicErr);
             let ssotWritten = false;
             try {
               await writeSingleFile({ file: baseFile, workerUrl });
               ssotWritten = true;
-              if (indexFiles[0]) {
-                try {
-                  await writeSingleFile({ file: indexFiles[0], workerUrl });
-                } catch (indexErr) {
-                  const msg = describeWorkerError(indexErr);
-                  addWarning(`SSOT Index konnte nicht gespeichert werden: ${msg}`);
-                }
-              }
             } catch (ssotErr) {
               const msg = describeWorkerError(ssotErr);
               addWarning(`SSOT konnte nicht gespeichert werden: ${msg}`);
@@ -830,15 +768,7 @@
             }
             try {
               await writeSingleFile({ file: mirrorFile, workerUrl });
-              if (indexFiles[1]) {
-                try {
-                  await writeSingleFile({ file: indexFiles[1], workerUrl });
-                } catch (indexErr) {
-                  const msg = describeWorkerError(indexErr);
-                  addWarning(`Mirror Index konnte nicht gespeichert werden: ${msg}`);
-                }
-              }
-              setStatus('Ergebnis gespeichert & Mirror aktualisiert.', 'success');
+              setStatus(SUCCESS_STATUS, 'success');
             } catch (mirrorErr) {
               const msg = describeWorkerError(mirrorErr);
               addWarning(`SSOT gespeichert, Mirror fehlgeschlagen: ${msg}`);
