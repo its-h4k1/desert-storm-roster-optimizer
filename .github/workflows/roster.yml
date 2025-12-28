@@ -4,45 +4,34 @@ on:
   push:
     branches: [ main, feat/** ]
     paths-ignore:
-      - 'out/**'
+      - "out/**"
   pull_request:
     branches: [ main ]
     paths-ignore:
-      - 'out/**'
+      - "out/**"
   workflow_dispatch: {}
 
 permissions:
-  contents: write  # Verhindert Push-Konflikte / parallele Runs auf demselben Branch
+  contents: write
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
+  group: roster-${{ github.ref }}
   cancel-in-progress: true
 
-env:
-  PYTHONUNBUFFERED: "1"
-
 jobs:
-  roster:
+  build-rosters:
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0  # volle History für rebase-sicheren Push
+          fetch-depth: 0
 
-      - name: Set up Python
+      - name: Setup Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.11'
-
-      - name: Cache pip
-        uses: actions/cache@v4
-        with:
-          path: ~/.cache/pip
-          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
-          restore-keys: |
-            ${{ runner.os }}
+          python-version: "3.11"
 
       - name: Install dependencies
         shell: bash
@@ -50,12 +39,6 @@ jobs:
           set -euo pipefail
           python -m pip install --upgrade pip
           pip install -r requirements.txt
-
-      - name: Ensure out/ exists
-        shell: bash
-        run: |
-          set -euo pipefail
-          mkdir -p out
 
       - name: Build roster
         shell: bash
@@ -65,76 +48,93 @@ jobs:
             --event-signups data/event_signups_next.csv \
             --out out
 
-      - name: Rebuild event results index
+      - name: Mirror roster output to docs/out
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p docs/out
+          rsync -a --delete out/ docs/out/
+
+      - name: Rebuild event results index (SSOT) + mirror DS results to docs
         shell: bash
         run: |
           set -euo pipefail
           python - <<'PY'
-import json
-import re
-from pathlib import Path
+          import json
+          import re
+          import shutil
+          from pathlib import Path
 
-results_dir = Path("data/event_results")
-docs_dir = Path("docs/data/event_results")
-pattern = re.compile(r"DS-\d{4}-\d{2}-\d{2}$")
+          results_dir = Path("data/event_results")
+          docs_dir = Path("docs/data/event_results")
+          docs_dir.mkdir(parents=True, exist_ok=True)
 
-event_ids = []
-for path in results_dir.glob("DS-*.json"):
-    event_id = path.stem
-    if pattern.fullmatch(event_id):
-        event_ids.append(event_id)
+          pattern = re.compile(r"DS-\d{4}-\d{2}-\d{2}$")
 
-docs_dir.mkdir(parents=True, exist_ok=True)
-for path in results_dir.glob("DS-*.json"):
-    if not pattern.fullmatch(path.stem):
-        continue
-    target = docs_dir / path.name
-    content = path.read_text()
-    if not target.exists() or target.read_text() != content:
-        target.write_text(content)
+          # Collect IDs from SSOT filenames
+          event_ids = []
+          for path in results_dir.glob("DS-*.json"):
+            if pattern.fullmatch(path.stem):
+              event_ids.append(path.stem)
 
-event_ids.sort(reverse=True)
+          if not event_ids:
+            raise SystemExit("No event result files found to index (data/event_results/DS-*.json).")
 
-index_data = {"event_ids": event_ids}
+          event_ids.sort(reverse=True)
+          index_obj = {"event_ids": event_ids}
+          index_text = json.dumps(index_obj, indent=2, ensure_ascii=False) + "\n"
 
-for target in [
-    Path("data/event_results/index.json"),
-    Path("docs/data/event_results/index.json"),
-]:
-    target.parent.mkdir(parents=True, exist_ok=True)
-    target.write_text(json.dumps(index_data, indent=2) + "\n")
-PY
+          # Mirror DS-*.json from SSOT -> docs (only when different)
+          mirrored = 0
+          for src in results_dir.glob("DS-*.json"):
+            if not pattern.fullmatch(src.stem):
+              continue
+            dst = docs_dir / src.name
+            if not dst.exists() or src.read_bytes() != dst.read_bytes():
+              shutil.copy2(src, dst)
+              mirrored += 1
 
-      - name: Commit generated files
+          # Write both indexes deterministically
+          (results_dir / "index.json").write_text(index_text, encoding="utf-8")
+          (docs_dir / "index.json").write_text(index_text, encoding="utf-8")
+
+          # Basic sanity check (helps debugging in Actions logs)
+          missing_in_docs = [eid for eid in event_ids if not (docs_dir / f"{eid}.json").exists()]
+          if missing_in_docs:
+            raise SystemExit(f"Mirror sanity check failed; missing in docs: {missing_in_docs}")
+
+          print(f"Indexed {len(event_ids)} events. Mirrored {mirrored} DS result files into docs/.")
+          PY
+
+      - name: Commit generated files (main only)
         if: github.ref == 'refs/heads/main'
         shell: bash
         run: |
           set -euo pipefail
+
           git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add out/ docs/out/ data/event_results/index.json docs/data/event_results/index.json docs/data/event_results/
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          # Stage: roster outputs + event-results index + mirrored docs event results
+          git add out/ docs/out/ data/event_results/index.json docs/data/event_results/
+
           if git diff --cached --quiet; then
             echo "No changes to commit."
-          else
-            git commit -m "chore: update roster output [skip ci]"
-            # Hol dir vor dem Push immer den aktuellen Stand von main und rebase unsere
-            # generierten Artefakte darauf. Dadurch schlagen Pushes nicht mehr fehl,
-            # wenn seit Workflow-Start neue Commits auf main gelandet sind (z. B. durch
-            # mehrere Admin-Runs oder parallele Merges).
+            exit 0
+          fi
+
+          git commit -m "ci: rebuild roster outputs + event results index"
+
+          # Push with simple rebase retry to avoid conflicts on busy main
+          for attempt in 1 2 3; do
+            if git push; then
+              break
+            fi
+            if [[ "${attempt}" -eq 3 ]]; then
+              echo "Push failed after ${attempt} attempts." >&2
+              exit 1
+            fi
+            echo "Push attempt ${attempt} failed; rebasing onto latest origin/main and retrying..."
             git fetch origin main
             git rebase origin/main
-            # Falls main in der Zwischenzeit erneut vorgerückt ist, versuchen wir es
-            # bis zu drei Mal: rebase auf den neuen Stand und erneut pushen.
-            for attempt in 1 2 3; do
-              if git push; then
-                break
-              fi
-              if [[ "${attempt}" -eq 3 ]]; then
-                echo "Push failed after ${attempt} attempts." >&2
-                exit 1
-              fi
-              echo "Push attempt ${attempt} failed; rebasing onto latest origin/main and retrying..."
-              git fetch origin main
-              git rebase origin/main
-            done
-          fi
+          done
