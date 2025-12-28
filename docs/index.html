@@ -52,7 +52,7 @@
   <div class="page-header">
     <div>
       <h1>Desert Storm – Matchday Roster</h1>
-      <p class="muted">Basis: harte Zusagen aus <code>data/event_signups_next.csv</code>. Teams A/B folgen direkt den Wünschen der Spieler, Überhänge landen getrennt pro Team.</p>
+      <p class="muted">Basis: Zusagen aus <code>data/event_signups_next.csv</code>. Teams A/B folgen direkt den Wünschen der Spieler, Überhänge landen getrennt pro Team.</p>
     </div>
     <a class="btn" href="admin/index.html">Admin &amp; Tools</a>
   </div>
@@ -129,7 +129,7 @@
     </div>
 
     <div class="card" style="margin-top:18px;">
-      <h3 id="heading-not-in-roster">Zugesagt (hard), aber nicht im Roster</h3>
+      <h3 id="heading-not-in-roster">Zugesagt, aber nicht im Roster</h3>
       <ul id="not-in-roster" class="list"></ul>
     </div>
   </section>
@@ -435,25 +435,48 @@
       }
     }
 
-    function renderPlayerAccordion(accordion, canonicalKey) {
+    function renderPlayerAccordion(accordion, canonicalKey, debugMeta = {}) {
       const shared = window.dsroShared || {};
       const eventIndex = getPlayerEventHistoryIndex();
       const startLabel = shared.reliabilityMeta?.startDateRaw || shared.reliabilityStartDate || 'unbekannt';
       accordion.innerHTML = '';
 
+      const appendMessage = (message) => {
+        const messageDiv = document.createElement('div');
+        messageDiv.className = 'muted';
+        messageDiv.innerHTML = message;
+        accordion.appendChild(messageDiv);
+      };
+
+      const needsDebug = debugMeta.hasException;
+      const debugParts = [];
+      if (needsDebug && !isDefaultTags(debugMeta.tags)) {
+        const tagList = normalizeTags(debugMeta.tags).join(', ') || '–';
+        debugParts.push(`<div class="muted">Tags: ${tagList}</div>`);
+      }
+      if (needsDebug && !isDefaultSource(debugMeta.source)) {
+        debugParts.push(`<div class="muted">Quelle: ${debugMeta.source}</div>`);
+      }
+      if (debugParts.length) {
+        const debugBlock = document.createElement('div');
+        debugBlock.style.marginBottom = '8px';
+        debugBlock.innerHTML = `<div style="font-weight:600;">Debug</div>${debugParts.join('')}`;
+        accordion.appendChild(debugBlock);
+      }
+
       if (!Array.isArray(shared.reliabilityEventResults) || shared.reliabilityEventResults.length === 0) {
-        accordion.innerHTML = '<div class="muted">Keine Event-Results geladen.</div>';
+        appendMessage('Keine Event-Results geladen.');
         return;
       }
 
       if (!canonicalKey) {
-        accordion.innerHTML = '<div class="muted">Keine Event-Daten gefunden.</div>';
+        appendMessage('Keine Event-Daten gefunden.');
         return;
       }
 
       const events = eventIndex?.get(canonicalKey) || [];
       if (!events.length) {
-        accordion.innerHTML = `<div class="muted">Keine Event-Daten seit ${startLabel}.</div>`;
+        appendMessage(`Keine Event-Daten seit ${startLabel}.`);
         return;
       }
 
@@ -584,7 +607,26 @@
 
     function renderSummary(counts) {
       const total = counts.teamAStart + counts.teamASubs + counts.teamBStart + counts.teamBSubs + counts.notInRoster;
-      summaryBox.innerHTML = `<strong>Harte Zusagen gesamt:</strong> ${total}<br />A: ${counts.teamAStart} Start + ${counts.teamASubs} Ersatz · B: ${counts.teamBStart} Start + ${counts.teamBSubs} Ersatz · nicht im Roster: ${counts.notInRoster}`;
+      summaryBox.innerHTML = `<strong>Zusagen gesamt:</strong> ${total}<br />A: ${counts.teamAStart} Start + ${counts.teamASubs} Ersatz · B: ${counts.teamBStart} Start + ${counts.teamBSubs} Ersatz · nicht im Roster: ${counts.notInRoster}`;
+    }
+
+    function normalizeTags(tags) {
+      return Array.isArray(tags) ? tags.filter(Boolean) : [];
+    }
+
+    function isDefaultTags(tags) {
+      const normalized = normalizeTags(tags);
+      if (!normalized.length) return true;
+      if (normalized.length !== 1) return false;
+      return normalized[0] === 'hard';
+    }
+
+    function isDefaultSource(source) {
+      return source === undefined || source === null || source === '' || source === 'manual';
+    }
+
+    function hasException(tags, source) {
+      return !isDefaultTags(tags) || !isDefaultSource(source);
     }
 
     function renderList(container, entries) {
@@ -597,16 +639,27 @@
         const li = document.createElement('li');
         li.className = 'player';
         const displayName = resolvePlayerName(player.name);
-        const tags = (player.tags || []).map((t) => `<span class="tag">${t}</span>`).join('');
+        const tags = normalizeTags(player.tags);
+        const sourceLabel = isDefaultSource(player.source) ? '' : player.source;
+        const tagsMarkup = isDefaultTags(tags)
+          ? ''
+          : tags.map((t) => `<span class="tag">${t}</span>`).join('');
         const canonicalKey = resolvePlayerCanonical(player.name);
         if (canonicalKey) li.dataset.canon = canonicalKey;
         const accordionId = `accordion-${container.id}-${index}`;
-        li.innerHTML = `<div class="player-number">${index + 1}</div><div><div class="player-header"><h4>${displayName}${tags}</h4><button class="player-toggle" type="button" aria-expanded="false" aria-controls="${accordionId}">Details ▾</button></div><div class="meta">${player.role}${player.note ? ' · ' + player.note : ''}${player.source ? ' · Quelle: ' + player.source : ''}</div></div>`;
+        const metaParts = [player.role];
+        if (player.note) metaParts.push(player.note);
+        if (sourceLabel) metaParts.push(`Quelle: ${sourceLabel}`);
+        li.innerHTML = `<div class="player-number">${index + 1}</div><div><div class="player-header"><h4>${displayName}${tagsMarkup}</h4><button class="player-toggle" type="button" aria-expanded="false" aria-controls="${accordionId}">Details ▾</button></div><div class="meta">${metaParts.join(' · ')}</div></div>`;
         const accordion = document.createElement('div');
         accordion.className = 'player-accordion';
         accordion.id = accordionId;
         accordion.style.display = 'none';
-        renderPlayerAccordion(accordion, canonicalKey);
+        renderPlayerAccordion(accordion, canonicalKey, {
+          tags,
+          source: player.source,
+          hasException: hasException(tags, player.source),
+        });
         const toggle = li.querySelector('.player-toggle');
         toggle.addEventListener('click', () => {
           const open = accordion.style.display === 'block';
@@ -653,7 +706,7 @@
         formatHeading(headingTeamASubs, 'Gruppe A · Ersatz', counts.teamASubs);
         formatHeading(headingTeamBStart, 'Gruppe B · Start', counts.teamBStart);
         formatHeading(headingTeamBSubs, 'Gruppe B · Ersatz', counts.teamBSubs);
-        formatHeading(headingNotInRoster, 'Zugesagt (hard), aber nicht im Roster', counts.notInRoster);
+        formatHeading(headingNotInRoster, 'Zugesagt, aber nicht im Roster', counts.notInRoster);
         renderSummary(counts);
 
         renderList(teamAStartList, data.team_a?.start || []);
