@@ -25,48 +25,48 @@ jobs:
         run: |
           set -euo pipefail
           python - <<'PY'
-import json
-import re
-from pathlib import Path
+          import json
+          import re
+          from pathlib import Path
 
-results_dir = Path("data/event_results")
-docs_dir = Path("docs/data/event_results")
-pattern = re.compile(r"DS-\d{4}-\d{2}-\d{2}$")
+          results_dir = Path("data/event_results")
+          docs_dir = Path("docs/data/event_results")
+          pattern = re.compile(r"DS-\d{4}-\d{2}-\d{2}$")
 
-event_ids = []
-for path in results_dir.glob("DS-*.json"):
-    event_id = path.stem
-    if pattern.fullmatch(event_id):
-        event_ids.append(event_id)
+          event_ids = []
+          for path in results_dir.glob("DS-*.json"):
+              event_id = path.stem
+              if pattern.fullmatch(event_id):
+                  event_ids.append(event_id)
 
-if not event_ids:
-    raise SystemExit("No event result files found to index.")
+          if not event_ids:
+              raise SystemExit("No event result files found to index.")
 
-docs_dir.mkdir(parents=True, exist_ok=True)
-for path in results_dir.glob("DS-*.json"):
-    if not pattern.fullmatch(path.stem):
-        continue
-    target = docs_dir / path.name
-    content = path.read_text()
-    if not target.exists() or target.read_text() != content:
-        target.write_text(content)
+          docs_dir.mkdir(parents=True, exist_ok=True)
+          for path in results_dir.glob("DS-*.json"):
+              if not pattern.fullmatch(path.stem):
+                  continue
+              target = docs_dir / path.name
+              content = path.read_text()
+              if not target.exists() or target.read_text() != content:
+                  target.write_text(content)
 
-unique_ids = sorted(set(event_ids), reverse=True)
-index_data = {"event_ids": unique_ids}
+          unique_ids = sorted(set(event_ids), reverse=True)
+          index_data = {"event_ids": unique_ids}
 
-for target in [
-    results_dir / "index.json",
-    docs_dir / "index.json",
-]:
-    target.parent.mkdir(parents=True, exist_ok=True)
-    target.write_text(json.dumps(index_data, indent=2) + "\n")
+          for target in [
+              results_dir / "index.json",
+              docs_dir / "index.json",
+          ]:
+              target.parent.mkdir(parents=True, exist_ok=True)
+              target.write_text(json.dumps(index_data, indent=2) + "\n")
 
-if len(unique_ids) != len(event_ids):
-    raise SystemExit(
-        f"Sanity check failed: {len(event_ids)} files found, "
-        f"but {len(unique_ids)} unique IDs written to index."
-    )
-PY
+          if len(unique_ids) != len(event_ids):
+              raise SystemExit(
+                  f"Sanity check failed: {len(event_ids)} files found, "
+                  f"but {len(unique_ids)} unique IDs written to index."
+              )
+          PY
 
       - name: Commit and push index updates
         if: github.ref == 'refs/heads/main'
