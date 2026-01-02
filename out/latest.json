@@ -3,7 +3,7 @@
     "id": "DS-NEXT",
     "date": "",
     "time": "",
-    "generated_at": "2026-01-02T18:46:47.032334+00:00",
+    "generated_at": "2026-01-02T18:51:21.860878+00:00",
     "source": "data/event_signups_next.csv",
     "event_datetime_local": "2026-01-02T21:00:00+01:00",
     "signup_deadline_local": "2026-01-01T03:00:00+01:00"
@@ -168,6 +168,16 @@
       {
         "name": "Cupra290",
         "raw_name": "Cupra290",
+        "role": "Start",
+        "note": "",
+        "tags": [
+          "hard"
+        ],
+        "source": "manual"
+      },
+      {
+        "name": "dd12041953",
+        "raw_name": "dd12041953",
         "role": "Start",
         "note": "",
         "tags": [
@@ -404,12 +414,12 @@
     "zombie666 80 420": "zombie666 80 420"
   },
   "signup_stats": {
-    "hard_signups": 24,
-    "hard_signups_eligible": 24,
+    "hard_signups": 25,
+    "hard_signups_eligible": 25,
     "responses": 0,
     "team_a_start": 13,
     "team_a_subs": 0,
-    "team_b_start": 11,
+    "team_b_start": 12,
     "team_b_subs": 0,
     "hard_signups_not_in_roster": 0
   },
@@ -497,6 +507,11 @@
       "canon": "cupra290",
       "name": "Cupra290"
     },
+    "dd12041953": {
+      "state": "hard_active",
+      "canon": "dd12041953",
+      "name": "dd12041953"
+    },
     "Elevn765": {
       "state": "hard_active",
       "canon": "elevn765",
@@ -540,8 +555,8 @@
   },
   "event_signups": {
     "hard_signups_only": true,
-    "hard_signups": 24,
-    "hard_signups_eligible": 24,
+    "hard_signups": 25,
+    "hard_signups_eligible": 25,
     "responses": 0
   },
   "reliability_config": {
